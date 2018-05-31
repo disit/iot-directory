@@ -1,0 +1,16 @@
+.hello-slide {
+  width: 100%;
+  max-width: 400px;
+  color: #FFF;
+  margin: 120px auto 0;
+  text-align: center;
+  
+  font-family: "Helvetica Neue", Arial, sans-serif;
+  
+}
+h1 {
+  font-weight: normal;
+}
+.hello-slide a {
+  color: #B5AEF7 !important;
+}

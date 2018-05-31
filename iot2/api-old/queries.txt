@@ -1,0 +1,26 @@
+ select d.id, d.devicetype, d.macaddress, d.model, d.producer, d.protocol, d.format,
+       d.latitude AS dlat, d.longitude AS dlong, c.name, c.protocol AS cprot, c.ip, c.port, c.latitude, c.longitude,
+v.value_name, v.data_type, v.value_type, v.value_unit, v.healthiness_criteria
+	   from devices d JOIN contextbroker c ON (d.contextbroker=c.name)
+       JOIN event_values v ON (d.contextbroker=v.cb AND d.id =v.device)	   WHERE mandatoryproperties=1 and mandatoryvalues=1
+
+
+select d.devicetype, d.model, d.protocol, d.format,
+       d.latitude AS dlat, d.longitude AS dlong, c.name,  c.ip, c.port, c.latitude, c.longitude,
+v.value_name, v.data_type
+from devices d JOIN contextbroker c ON (d.contextbroker=c.name)
+JOIN event_values v ON (d.contextbroker=v.cb AND d.id =v.device)
+WHERE mandatoryproperties=1 and mandatoryvalues=1
+
+select d.devicetype, d.model, d.protocol, d.format,
+       d.latitude AS dlat, d.longitude AS dlong, c.name,  c.ip, c.port, c.latitude, c.longitude,
+GROUP_CONCAT(v.value_name, v.data_type SEPARATED BY "\t")
+from devices d JOIN contextbroker c ON (d.contextbroker=c.name)
+JOIN event_values v ON (d.contextbroker=v.cb AND d.id =v.device)
+WHERE mandatoryproperties=1 and mandatoryvalues=1
+GROUP BY d.devicetype, d.model, d.protocol, d.format,
+       d.latitude, d.longitude, c.name,  c.ip, c.port, c.latitude, c.longitude	   
+
+	   
+	  
+	  
