@@ -2041,14 +2041,19 @@ body.dashboardViewBodyAuth
 #mainContentCnt
 {
     overflow-y: auto;
-    background: rgb(241, 245, 244);
+    background: rgb(138, 159, 168);
 }
 
 div.mainContentCellCnt
 {
-    background: white;
+    background: rgb(241, 245, 244);
     padding-left: 15px;
     padding-right: 15px;
+}
+
+#ListTableCnt div.mainContentCellCnt, #displayAllDeviceRow div.mainContentCellCnt
+{
+    margin-bottom: 80px;
 }
 
 #dashboardTotNumberCnt div.pageSingleDataCnt, #dashboardTotNumberCnt div.pageSingleDataLabel
@@ -2064,6 +2069,11 @@ div.mainContentCellCnt
 #dashboardTotPermCnt div.pageSingleDataCnt, #dashboardTotPermCnt div.pageSingleDataLabel
 {
     background: #e37777;
+}
+
+#dashboardTotPrivateCnt div.pageSingleDataCnt, #dashboardTotPrivateCnt div.pageSingleDataLabel
+{
+    background: #228B22;
 }
 
 #dashboardLastCnt div.lastDashName, #dashboardLastCnt div.pageSingleDataLabel
@@ -2117,7 +2127,7 @@ div.accountEditIconContainer i
     }
 }
 
-#accountFirstName, #accountLastName, #accountOrganization, #accountEmail, #accountPassword, #accountPasswordConfirmation
+#accountFirstName, #accountLastName, #accountOrganization, #accountEmail, #accountPassword, #accountPasswordConfirmation, #policyName, #policyContextbroker, #policyHealthiness_Criteria, #policyHealthiness_value
 {
     border-top: none;
     border-left: none;
@@ -2128,7 +2138,7 @@ div.accountEditIconContainer i
     margin-bottom: 10px;
 }
 
-#accountFirstNameMsg, #accountLastNameMsg, #accountOrganizationMsg, #accountEmailMsg, #accountPasswordMsg, #accountPasswordConfirmationMsg
+#accountFirstNameMsg, #accountLastNameMsg, #accountOrganizationMsg, #accountEmailMsg, #accountPasswordMsg, #accountPasswordConfirmationMsg, #policyNameMsg, #policyContextbrokerMsg, #policyHealthiness_CriteriaMsg, #policyHealthiness_valueMsg
 {
     font-size: 0.95em;
 }
@@ -2139,7 +2149,7 @@ div.pageSingleDataCnt
 {
     padding-top: 14px;
     padding-bottom: 14px;
-    font-size: 2em;
+    font-size: 1em;
     color: white;
     font-weight: bold;
     text-transform: uppercase;
@@ -2168,7 +2178,7 @@ div.lastDashName a:hover
 
 div.mainContentRow
 {
-    background: white;
+    background: rgb(241, 245, 244);
     margin-top: 15px;
     padding-top: 15px;
     padding-bottom: 15px;
@@ -2315,6 +2325,30 @@ a.moduleLink:hover
     text-transform: uppercase;
 }
 
+.activeIoTBtn
+{
+    height: 20px;
+    background-color: rgba(92,184,92);/*#5cb85c;*/
+    border: none;
+    color: rgba(92,184,92);;
+    font-family: 'Montserrat';
+	font-size:8px;
+    font-weight: bold;
+    text-transform: uppercase;
+}
+
+.idelIoTBtn
+{
+    height: 20px;
+    background-color: rgba(240,173,78);/*#5cb85c;*/
+    border: none;
+    color: rgba(240,173,78);;
+    font-family: 'Montserrat';
+	font-size:8px;
+    font-weight: bold;
+    text-transform: uppercase;
+}
+
 .editDashBtnCard
 {
     border: none;
@@ -2359,6 +2393,111 @@ a.moduleLink:hover
     font-family: 'Montserrat';
     font-weight: bold;
     text-transform: uppercase;
+}
+
+
+.myOwnPrivateBtn
+{
+    height: 20px;
+    background-color: #e37777;
+    border: none;
+    color: white;
+    font-family: 'Montserrat';
+    font-weight: bold;
+    text-transform: uppercase;
+}
+
+.myOwnPublicBtn
+{
+    height: 20px;
+    background-color: #008000;
+    border: none;
+    color: white;
+    font-family: 'Montserrat';
+    font-weight: bold;
+    text-transform: uppercase;
+}
+
+.privateBtn
+{
+    height: 20px;
+    background-color: transparent;
+    border: none;
+    color: #e37777;
+    font-family: 'Montserrat';
+    font-weight: bold;
+    text-transform: uppercase;
+}
+
+.privateBtn:hover
+{
+    cursor: default;
+}
+
+.publicBtn
+{
+    height: 20px;
+    background-color: transparent;
+    border: none;
+    color: #008000;
+    font-family: 'Montserrat';
+    font-weight: bold;
+    text-transform: uppercase;
+}
+
+.publicBtn:hover
+{
+    cursor: default;
+}
+
+.delegatedBtn
+{
+    height: 20px;
+    background-color: transparent;
+    border: none;
+    color: rgba(0, 162, 211, 1);
+    font-family: 'Montserrat';
+    font-weight: bold;
+    text-transform: uppercase;
+}
+
+.delegatedBtn:hover
+{
+    cursor: default;
+}
+
+
+.statusActiveBtn
+{
+    height: 20px;
+    background-color: transparent;
+    border: none;
+    color: #008000;
+    font-family: 'Montserrat';
+    font-weight: bold;
+    text-transform: uppercase;
+}
+
+.statusActiveBtn:hover
+{
+    cursor: default;
+}
+
+
+.statusIdleBtn
+{
+    height: 20px;
+    background-color: transparent;
+    border: none;
+    color: #ffa500;
+    font-family: 'Montserrat';
+    font-weight: bold;
+    text-transform: uppercase;
+}
+
+.statusIdleBtn:hover
+{
+    cursor: default;
 }
 
 .undeletableDashBtn, .undeletableMetricBtn
@@ -3080,3 +3219,431 @@ input[type="text"]:disabled
     background-color: rgba(108, 135, 147, 1) !important;
     color: white;
 }
+
+
+#mainMenuScrollableCnt.col-md-12, .mainMenuScrollBtnsCnt.col-md-12
+{
+    padding-left: 0px !important;
+    padding-right: 0px !important;
+}
+
+#mainMenuScrollableCnt
+{
+    
+}
+
+#mainMenuInnerCnt
+{
+    position: relative;
+    padding-left: 0px !important;
+    padding-right: 0px !important;
+}
+
+#delDashRunningMsg, #delDashOkMsg, #delDashKoMsg
+{
+    display: none;
+}
+
+#dashToDelPic, #dashToClonePic
+{
+    height: 250px;
+}
+
+#dashToClonePic
+{
+    margin-top: 5px !important;
+    margin-bottom: 15px;
+}
+
+.dashboardsListCardVisibilityDiv
+{
+    color: white;
+    font-size: 11px;
+    margin-top: 10px;
+    margin-bottom: 5px;
+}
+
+.dashboardsListCardIotDiv
+{
+    /*border: 1px solid red;*/
+    color: white;
+    font-weight: normal;
+    font-style: normal;
+    font-size: 12px;
+    margin-top: 5px;
+    margin-bottom: 10px;
+}
+
+.dashboardWizardTabTxt {
+    color: white !important;
+    font-weight: bold !important;
+}
+
+#delDashModalBody, #delDashModalFooter, #delDashNameMsg, #cloneDashboardModalBody, #cloneDashboardModalFooter, #delegationsModalBody, #delegationsModalFooter,
+#iotAppsModalBody, #iotAppsModalFooter
+{
+    background-color: rgba(108, 135, 147, 1) !important;
+}
+
+#delegationsModalBody
+{
+    min-height: 26vh;
+}
+
+#delDashNameMsg
+{
+    color: white !important;
+}
+
+#currentDashboardTitleCnt
+{
+    margin-bottom: 10px;
+}
+
+#currentDashboardTitle
+{
+    font-weight: bold; 
+    margin-top: 6px; 
+    color: white;
+}
+
+#cloneDashboardModal
+{
+    color: white;
+}
+
+#delegationsDashPic
+{
+    height: 250px;
+    margin-top: 0px !important;
+    margin-bottom: 15px;
+}
+
+.delegationsModalTxt
+{
+    font-weight: bold;
+    color: white;
+}
+
+#newDelegationLbl, #currentDelegationsLbl, #newDelegationLblGroup, #currentDelegationsLblGroup
+{
+    padding-left: 0px !important;
+    padding-right: 0px !important;
+    font-weight: bold;
+    color: white;
+}
+
+#currentDelegationsLbl, #currentDelegationsLblGroup
+{
+    margin-top: 25px;
+}
+
+#newDelegationCnt, #newDelegationCntGroup
+{
+    padding-left: 0px !important;
+    padding-right: 0px !important;
+}
+
+#newDelegation, #newDelegationGroup
+{
+    width: 100%;
+}
+
+#delegationsTableCnt, #delegationsTableCntGroup
+{
+    max-height: 200px;
+    overflow-y: auto;
+    padding-left: 0px !important;
+    padding-right: 0px !important;
+}
+
+#delegationsTable
+{
+    width: 100%;
+}
+
+#delegationsTable thead, #delegationsTableGroup thead
+{
+    background-color: #576c75 !important;
+    color: white;
+}
+
+#delegationsTable td, #delegationsTable th, #delegationsTableGroup td, #delegationsTableGroup th
+{
+    text-align: center;
+}
+
+.removeDelegationBtn, .removeDelegationBtnGroup
+{
+    color: red;
+    font-size: 18px;
+}
+
+.delegatedName
+{
+    color: #576c75;
+}
+
+tr.delegationTableRow:nth-child(odd), tr.delegationTableRowGroup:nth-child(odd)
+{
+    background-color: #f9f9f9;
+}
+
+tr.delegationTableRow:nth-child(even), tr.delegationTableRowGroup:nth-child(even)
+{
+    background-color: #ffffff;
+}
+
+.removeDelegationBtn:hover, .removeDelegationBtnGroup:hover
+{
+    cursor: pointer;
+    color: #f3cf58;
+}
+
+#newDelegatedMsg, .delegationsModalMsg, #newDelegatedMsgGroup
+{
+    color: #f3cf58;
+    font-style: italic;
+    font-weight: bold;
+    font-size: 12px;
+    padding-left: 0px !important; 
+    padding-right: 0px !important;
+}
+
+span.dashboardListCardTypeSpan[data-hasIotModal="true"]:hover
+{
+    cursor: pointer;
+    color: rgb(255, 204, 0);
+}
+
+#iotAppsModal div.modal-dialog
+{
+   width: 98vw;
+}
+
+#iotAppsDashPic
+{
+    height: 155px;
+    margin-top: 0px !important;
+    /*margin-bottom: 15px;*/
+}
+
+#iotAppsTableCnt
+{
+    max-height: 300px;
+    overflow-y: auto;
+    padding-left: 0px !important;
+    padding-right: 0px !important;
+}
+
+#iotAppsTable
+{
+    width: 100%;
+}
+
+#iotAppsTable thead
+{
+    background-color: #576c75 !important;
+    color: white;
+}
+
+#iotAppsTable td, #iotAppsTable th
+{
+    text-align: center;
+}
+
+.iotAppName
+{
+    color: #576c75;
+    margin-top: 0px !important;
+}
+
+tr.iotAppsTableRow:nth-child(odd)
+{
+    background-color: #f9f9f9;
+}
+
+tr.iotAppsTableRow:nth-child(even)
+{
+    background-color: #ffffff;
+}
+
+.iotAppName:hover
+{
+    cursor: pointer;
+    font-weight: bold;
+    background-color: #f3cf58;
+}
+
+#iotAppsIframe
+{
+    width: 100%;
+    height: 80vh;
+}
+
+.iotAppsModalLbl
+{
+    font-weight: bold;
+    color: white;
+    margin-top: 10px;
+}
+
+#iotAppsNoAppsCnt
+{
+    font-style: italic;
+    font-size: 12px;
+    font-weight: bold;
+    color: #f3cf58;
+}
+
+#delegationsModal div.modal-dialog
+{
+    width: 50vw;
+}
+
+.delegationsModalLbl
+{
+    font-weight: bold;
+    color: white;
+}
+
+#newOwnershipResultMsg, #newVisibilityResultMsg
+{
+    display: none;
+    font-weight: bold;
+    color: white;
+}
+
+#delegationsNotAvailableRow
+{
+    display: none;
+    font-weight: bold;
+    color: white;
+}
+
+/*div.modalScrOverlayDiv
+{
+    position: absolute;
+    top: 55px;
+    left: 0;
+    width: 90%;
+    margin-left: 5%;
+    background-color: black;
+    opacity: 0.05;
+    -webkit-transition: opacity 0.15s ease-in-out;
+    -ms-transition:     opacity 0.15s ease-in-out;
+    transition:         opacity 0.15s ease-in-out;
+}*/
+
+/**/
+
+#delegationsModal .nav-tabs > li.active > a, #delegationsModal .nav > li > a:hover, #delegationsModal .nav > li > a:focus
+{
+    background-color: transparent !important;
+    border-bottom: none !important;
+}
+
+#delegationsModal .nav > li > a:hover
+{
+    font-style: italic;
+}
+
+.modalFirstLbl
+{
+    margin-top: 15px;
+}
+
+/* Aggiunta per metriche HTTP - Jason Ravagli*/
+.invalid-field
+{
+    border: 2px solid red;
+}
+
+.error-feedback
+{
+    color: red;
+}
+
+.flex-center{
+    display: flex;
+    justify-content: center;
+}
+
+
+
+
+
+.btn-round {
+			width: 30px;
+			height:30px;
+			border-radius: 50%;
+}
+		
+.unity-input #inputFrequencyDeviceM, #inputFrequencyDevice {
+			border-right:0!important;
+			
+}
+.unity-input .input-group-addon{
+	background:white!important;
+	border-left:none!important;
+	font-weight:bold;
+	color:#333;
+}
+/*		
+td.details-control {
+    text-align:center;
+	color: #fff;
+    background-color: #337ab7;
+    border-color: #2e6da4;
+    cursor: pointer;
+}
+tr.details td.details-control {
+  text-align:center; 
+  color: #fff;
+    background-color: #337ab7;
+    border-color: #2e6da4;
+  
+}
+*/
+
+td.details-control {
+    text-align:center;
+	color: #337ab7;
+    background-color: #fff; 
+    border-color: #2e6da4;
+    cursor: pointer;
+}
+tr.details td.details-control {
+	text-align:center; 
+	color: #337ab7;
+    background-color: #fff;
+    border-color: #2e6da4;
+  
+} 
+/*Sara2410 start*/
+div.mainContentCellCntWhiteLines
+{
+    background: rgb(241, 245, 244);
+    padding: 10px;
+    margin-top: 10px;
+    margin-bottom: 10px;
+    vertical-align: middle;
+    background-color: white;
+}
+div.paddingTop{
+	padding-top:6.5px;
+    font-size: 1em;
+    font-weight: bold;
+}
+div.uploadBulkLoad{
+	margin-right:10px;
+	margin-top:15px;
+}
+
+.divider{
+    width:5px;
+    height:auto;
+    display:inline-block;
+}
+
+/*Sara2410 end*/

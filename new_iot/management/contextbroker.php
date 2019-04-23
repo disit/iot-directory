@@ -54,12 +54,14 @@
 
 
 	if (isset($_SESSION['refreshToken'])) {
-	  $oidc = new OpenIDConnectClient('https://www.snap4city.org', $clientId, $clientSecret);
-	  $oidc->providerConfigParam(array('token_endpoint' => 'https://www.snap4city.org/auth/realms/master/protocol/openid-connect/token'));
+	  $oidc = new OpenIDConnectClient($keycloakHostUri, $clientId, $clientSecret);
+	  $oidc->providerConfigParam(array('token_endpoint' => $keycloakHostUri.'/auth/realms/master/protocol/openid-connect/token'));
 	  $tkn = $oidc->refreshToken($_SESSION['refreshToken']);
 	  $accessToken = $tkn->access_token;
 	  $_SESSION['refreshToken'] = $tkn->refresh_token;
 	}
+	 
+	
 ?>
 
 <!DOCTYPE html>
@@ -100,6 +102,22 @@
        <link rel="stylesheet" href="../boostrapTable/dist/bootstrap-table.css">
        <script src="../boostrapTable/dist/bootstrap-table.js"></script>
 	   <script src="../boostrapTable/dist/bootstrap-table-filter-control.js"></script>
+	   
+	   
+	    <!-- DataTables -->
+	   
+	    <script type="text/javascript" charset="utf8" src="../js/DataTables/datatables.js"></script>
+        <link rel="stylesheet" type="text/css" href="../js/DataTables/datatables.css">
+        <script type="text/javascript" charset="utf8" src="../js/DataTables/dataTables.bootstrap.min.js"></script>
+        <script type="text/javascript" charset="utf8" src="../js/DataTables/dataTables.responsive.min.js"></script>
+        <script type="text/javascript" charset="utf8" src="../js/DataTables/responsive.bootstrap.min.js"></script>
+		
+		
+        <link rel="stylesheet" type="text/css" href="../css/DataTables/dataTables.bootstrap.min.css">
+        <link rel="stylesheet" type="text/css" href="../css/DataTables/responsive.bootstrap.min.css">
+        <link rel="stylesheet" type="text/css" href="../css/DataTables/jquery.dataTables.min.css">
+
+
 
        <!-- Questa inclusione viene sempre DOPO bootstrap-table.js -->
        <script src="../boostrapTable/dist/locale/bootstrap-table-en-US.js"></script>
@@ -118,15 +136,38 @@
         
         <!-- Custom CSS -->
         <link href="../css/dashboard.css" rel="stylesheet">
+		<style> .btn-round { width: 30px; height:30px; border-radius: 50%; }
+        #mainMenuCnt
+		{
+			background-color: rgba(51, 64, 69, 1);
+			color: white;
+			height: 100vh;
+			<?php if ($hide_menu=="hide") echo "display:none"; //MM201218 ?>
+		}
+        
+        </style>
         
         <!-- Custom scripts -->
 <script>
  var loggedRole = "<?php echo $_SESSION['loggedRole']; ?>";
+ var loggedUser = "<?php echo $_SESSION['loggedUsername']; ?>";
  var admin = "<?php echo $_SESSION['loggedRole']; ?>";
+
+    var organization = "<?php echo $_SESSION['organization']; ?>";
+    console.log("loggedRole is "+ loggedRole);
+    console.log("loggedUser is "+ loggedUser);
+    console.log("orgnization is "+ organization);
+    
+    var kbUrl = "<?php echo $_SESSION['kbUrl']; ?>";
+    var gpsCentreLatLng = "<?php echo $_SESSION['gpsCentreLatLng']; ?>";
+    var zoomLevel = "<?php echo $_SESSION['zoomLevel']; ?>";
+    
+    
  var titolo_default = "<?php echo $default_title; ?>";	
  var access_denied = "<?php echo $access_denied; ?>";
  var nascondi= "<?php echo $hide_menu; ?>";
  var sessionEndTime = "<?php echo $_SESSION['sessionEndTime']; ?>"; 
+ var sessionToken = "<?php  if (isset($_SESSION['refreshToken'])) echo $_SESSION['refreshToken']; else echo ""; ?>";
  var creatorVisibile = true;
  var detailView = true;
  //var statusVisibile = true;
@@ -178,16 +219,27 @@
             <?php include "sessionExpiringPopup.php" ?>         
             <div class="row mainRow">
                 <?php include "mainMenu.php" ?>
-                <div class="col-xs-12 col-md-10" id="mainCnt">
+                <div 
+                     <?php //MM201218
+				if (($hide_menu=="hide")) {?>
+				class="col-xs-12 col-md-12" 
+				<?php }else {?>
+				class="col-xs-12 col-md-10" 
+				<?php } //MM201218 FINE?>
+                     id="mainCnt">
                     <div class="row hidden-md hidden-lg">
                         <div id="mobHeaderClaimCnt" class="col-xs-12 hidden-md hidden-lg centerWithFlex">
                             Snap4City IoT Directory
                         </div>
                     </div>
+					<?php //MM201218
+					if (($hide_menu!="hide")) {?>
                     <div class="row" id="title_row">
                         <div class="col-xs-10 col-md-12 centerWithFlex" id="headerTitleCnt">IoT Directory: Context Brokers</div>
                         <div class="col-xs-2 hidden-md hidden-lg centerWithFlex" id="headerMenuCnt"><?php include "mobMainMenu.php" ?></div>
                     </div>
+					<?php } //MM201218 FINE ?>
+					
                     <div class="row">
                         <div class="col-xs-12" id="mainContentCnt">
                             <div id="synthesis" class="row hidden-xs hidden-sm mainContentRow">
@@ -218,9 +270,38 @@
                                
                               </div>
                             <div class="row mainContentRow">
-                                <div class="col-xs-12 mainContentRowDesc">List</div>
+                                <div class="col-xs-12 mainContentRowDesc"></div>
                                 <div class="col-xs-12 mainContentCellCnt">
-                                    <table id="contextBrokerTable" class="table"></table>
+    							<div class="row" style= "background-color: rgb(241, 245, 244);">
+									<div class="col-xs-12 col-md-6 modalCell" style= "background-color: rgb(241, 245, 244);">
+									<div id="displayDevicesMapCB" class="pull-right"><button type="button" class="btn btn-primary btn-round"><span class="glyphicon glyphicon-globe" style="font-size:36px; color: #0000ff"></span></button></div>
+									</div>
+									<div class="col-xs-12 col-md-6 modalCell" style= "background-color: rgb(241, 245, 244);">
+									<?php if ($_SESSION['loggedRole']=='RootAdmin'  || $_SESSION['loggedRole']=='ToolAdmin') { ?>
+									<div class="pull-right"><button id="addContextBrokerBtn"  class="btn btn-primary">New IOT Broker</button></div>
+									<?php } ?>
+									</div>
+								</div>
+								<div>
+								<table id="contextBrokerTable" class="table table-bordered table-striped" cellspacing="0" width="100%">
+									 <thead>
+									  <tr>
+										<th></th>	
+									    <th data-cellTitle="name">IOT Broker</th>
+										<th data-cellTitle="accesslink">Access Link</th>
+										<th data-cellTitle="accessport">Access Port</th>
+										<th data-cellTitle="protocol">Protocol</th>
+										<th data-cellTitle="ownership">Ownership</th>
+										<th data-cellTitle="organization">Organization</th>
+										<th data-cellTitle="owner">Owner</th>
+										<th data-cellTitle="created">Created</th>
+										<th data-cellTitle="edit">Edit</th>
+										<th data-cellTitle="delete">Delete</th>		
+										<!-- <th data-cellTitle="stub">STUB</th> -->										
+									</tr>
+									 </thead>
+									</table>
+								</div>
                                 </div>
                             </div>
                         </div>
@@ -250,7 +331,6 @@
         <!-- Create Context Broker -->
         <div class="modal fade" id="addContextBrokerModal" tabindex="-1" role="dialog" aria-hidden="true">
             <div class="modal-dialog" role="document">
-              <form id="addContextBrokerForm" class="form-horizontal" name="addContextBrokerForm" role="form" method="post" action="">  
               <div class="modal-content">
                 <div class="modalHeader centerWithFlex">
                   Add new context broker 
@@ -268,22 +348,40 @@
                         <!-- Info tab -->
                         <div id="infoTabCB" class="tab-pane fade in active">
                             <div class="row">
-                                <div class="col-xs-12 col-md-6 modalCell">
+                                
+								
+								<div class="col-xs-12 col-md-6 modalCell">          
+                                     <div class="modalFieldCnt">
+                                        <select id="selectKindCB" name="selectKindCB" class="modalInputTxt">
+											<option></option>
+											<option value="internal">Internal</option>
+											<option value="external">External</option>
+										</select>
+                                    </div>
+                                    <div class="modalFieldLabelCnt">Kind</div>
+                                    <div id="selectKindCBMsg" class="modalFieldMsgCnt">&nbsp;</div>
+                                </div>
+								
+								<div class="col-xs-12 col-md-6 modalCell">
                                     <div class="modalFieldCnt">
                                         <input type="text" class="modalInputTxt" name="inputNameCB" id="inputNameCB" required> 
                                     </div>
                                     <div class="modalFieldLabelCnt">Name</div>
 									<div id="inputNameCBMsg" class="modalFieldMsgCnt">&nbsp;</div>
                                 </div>
+								
+							</div>	
+							
+							<div class="row">							
                               
-                                <div class="col-xs-12 col-md-6 modalCell">
+								 <div class="col-xs-12 col-md-6 modalCell">
                                     <div class="modalFieldCnt">
                                         <input type="text" class="modalInputTxt" name="inputIpCB" id="inputIpCB"> 
                                     </div>
                                     <div class="modalFieldLabelCnt">IP</div>
 									<div id="inputIpCBMsg" class="modalFieldMsgCnt">&nbsp;</div>
                                 </div>
-                              
+								
                                  <div class="col-xs-12 col-md-6 modalCell">
                                     <div class="modalFieldCnt">
                                         <input type="text" class="modalInputTxt" name="inputPortCB" id="inputPortCB">
@@ -291,11 +389,13 @@
                                     <div class="modalFieldLabelCnt">Port</div>
 									<div id="inputPortCBMsg" class="modalFieldMsgCnt">&nbsp;</div>
                                 </div>
- 
-									<div class="col-xs-12 col-md-6 modalCell">
+								
+							</div>	
+							<div class="row">	
+								<div class="col-xs-12 col-md-6 modalCell">
                                     <div class="modalFieldCnt">
                                         <select id="selectProtocolCB" name="selectProtocolCB" class="modalInputTxt">
-                                            <option value="none">None</option>
+                                           <!-- <option value="none">None</option> -->
                                             <?php 
                                                 $link = mysqli_connect($host, $username, $password);
                                                 mysqli_select_db($link, $dbname);
@@ -317,8 +417,68 @@
                                     <div class="modalFieldLabelCnt">Protocol</div>
 									<div id="inputProtocolCBMsg" class="modalFieldMsgCnt">&nbsp;</div>
                                 </div>
-        
+								
+								 <div class="col-xs-12 col-md-6 modalCell">
+                                    <div class="modalFieldCnt">
+                                        <input type="text" class="modalInputTxt" name="inputVersionCB" id="inputVersionCB"> 
+                                    </div>
+                                    <div class="modalFieldLabelCnt">Version</div>
+									<div id="inputVersionCBMsg" class="modalFieldMsgCnt">&nbsp;</div>
+                                </div>
+							
                             </div>
+							
+						  <div class="row">
+                                <div class="col-xs-12 col-md-6 modalCell">
+                                    <div class="modalFieldCnt">
+                                        <input type="text" class="modalInputTxt" name="inputAccessLinkCB" id="inputAccessLinkCB"> 
+                                    </div>
+                                    <div class="modalFieldLabelCnt">Access Link</div>
+									<div id="inputAccessLinkCBMsg" class="modalFieldMsgCnt">&nbsp;</div>
+                                </div>
+                              
+                                <div class="col-xs-12 col-md-6 modalCell">
+                                    <div class="modalFieldCnt">
+                                        <input type="text" class="modalInputTxt" name="inputAccessPortCB" id="inputAccessPortCB"> 
+                                    </div>
+                                    <div class="modalFieldLabelCnt">Access Port</div>
+									<div id="inputAccessPortCBMsg" class="modalFieldMsgCnt">&nbsp;</div>
+                                </div>
+								
+							</div>	
+							
+							<div id="loginExternal" class="row">
+                                <div class="col-xs-12 col-md-6 modalCell">
+                                    <div class="modalFieldCnt">
+                                        <input type="text" class="modalInputTxt" name="inputApiKeyCB" id="inputApiKeyCB"> 
+                                    </div>
+                                    <div class="modalFieldLabelCnt">API Key</div>
+									<div id="inputApiKeyCBMsg" class="modalFieldMsgCnt">&nbsp;</div>
+                                </div>
+								<div class="col-xs-12 col-md-6 modalCell">
+                                    <div class="modalFieldCnt">
+                                        <input type="text" class="modalInputTxt" name="inputPathCB" id="inputPathCB"> 
+                                    </div>
+                                    <div class="modalFieldLabelCnt">Path</div>
+									<div id="inputPathCBMsg" class="modalFieldMsgCnt">&nbsp;</div>
+                                </div>
+                          
+							</div>
+							
+							<div class="row">
+							
+								<div class="col-xs-12 col-md-6 modalCell">
+                                    <div class="modalFieldCnt">
+                                        <select id="selectVisibilityCB" name="selectVisibilityCB" class="modalInputTxt">
+											<option value="private">Private</option>
+										</select>
+                                    </div>
+                                    <div class="modalFieldLabelCnt">Ownership</div>
+									<div id="selectVisibilityCBMsg" class="modalFieldMsgCnt">&nbsp;</div> 
+                                </div>
+								
+							</div>
+							
                         </div>
                          
                         <!-- Geo-Position tab -->
@@ -351,7 +511,7 @@
 						
 	                  <!-- Device Schema tab -->
                         <div id="securityTabCB" class="tab-pane fade">
-                            <div class="row">
+                            <div id="loginInternal" class="row">
 								<div class="col-xs-12 col-md-6 modalCell">
                                     <div class="modalFieldCnt">
                                         <input type="text" class="modalInputTxt" name="inputLoginCB" id="inputLoginCB"> 
@@ -368,9 +528,24 @@
                                 </div>
                  
                             </div>
+							
+							<div class="row">
+								<div class="col-xs-12 col-md-6 modalCell">
+                                    <div class="modalFieldCnt">
+                                        <input type="text" class="modalInputTxt" name="inputSHACB" id="inputSHACB"> 
+                                    </div>
+                                    <div class="modalFieldLabelCnt">SHA</div>
+									<div id="inputSHACBMsg" class="modalFieldMsgCnt">&nbsp;</div>
+                                </div>
+						  </div>
+							
                         </div>
                     </div>
-					<!--
+					
+					
+				</div>
+				
+				
 					<div class="row" id="addCBLoadingMsg">
                         <div class="col-xs-12 centerWithFlex">Adding Contextbroker, please wait</div>
                     </div>
@@ -389,14 +564,12 @@
                     <div class="row" id="addCBKoIcon">
                         <div class="col-xs-12 centerWithFlex"><i class="fa fa-thumbs-o-down" style="font-size:36px"></i></div>
                     </div>
-					-->
-				</div>
 			   <div id="addContextBrokerModalFooter" class="modal-footer">
                   <button type="button" id="addContextBrokerCancelBtn" class="btn cancelBtn" data-dismiss="modal">Cancel</button>
                   <button type="submit" id="addContextBrokerConfirmBtn" name="addContextBrokerConfirmBtn" class="btn confirmBtn internalLink">Confirm</button>
                 </div>
             </div>
-            </form>		
+            
         </div>
 	</div>
 	
@@ -445,28 +618,51 @@
                         <!-- Info tab -->
                         <div id="editInfoTabCB" class="tab-pane fade in active">
                             <div class="row">
+							
+								<div class="col-xs-12 col-md-6 modalCell">          
+                                     <div class="modalFieldCnt">
+                                        <select id="selectKindCBM" name="selectKindCBM" class="modalInputTxt">
+											<option></option>
+											<option value="internal">Internal</option>
+											<option value="external">External</option>
+										</select>
+                                    </div>
+                                    <div class="modalFieldLabelCnt">Kind</div>
+                                    <div id="selectKindCBMMsg" class="modalFieldMsgCnt">&nbsp;</div>
+                                </div>
+								
                                 <div class="col-xs-12 col-md-6 modalCell">
                                     <div class="modalFieldCnt">
                                         <input type="text" class="modalInputTxt" name="inputNameCBM" id="inputNameCBM" required readonly> 
+                                        <input type="text" class="modalInputTxt" name="inputOrganizationCBM" id="inputOrganizationCBM" style="display:none"> 
                                     </div>
                                     <div class="modalFieldLabelCnt">Name</div>
 									<div id="inputNameCBMMsg" class="modalFieldMsgCnt">&nbsp;</div>
                                 </div>
                               
-                                <div class="col-xs-12 col-md-6 modalCell">
+                              
+							</div>
+
+							<div class="row">
+								
+								<div class="col-xs-12 col-md-6 modalCell">
                                     <div class="modalFieldCnt">
                                         <input type="text" class="modalInputTxt" name="inputIpCBM" id="inputIpCBM"> 
                                     </div>
                                     <div class="modalFieldLabelCnt">IP</div>
 									<div id="inputIpCBMMsg" class="modalFieldMsgCnt">&nbsp;</div>
-                                </div>
-                                <div class="col-xs-12 col-md-6 modalCell">
+								</div>
+								
+	                            <div class="col-xs-12 col-md-6 modalCell">
                                     <div class="modalFieldCnt">
                                         <input type="text" class="modalInputTxt" name="inputPortCBM" id="inputPortCBM">
                                     </div>
                                     <div class="modalFieldLabelCnt">Port</div>
 									<div id="inputPortCBMMsg" class="modalFieldMsgCnt">&nbsp;</div>
                                 </div>
+								
+							</div>
+							<div class="row">
                                	  <div class="col-xs-12 col-md-6 modalCell">
                                     <div class="modalFieldCnt">
                                         <select id="selectProtocolCBM" name="selectProtocolCBM" class="modalInputTxt">
@@ -491,7 +687,51 @@
                                     <div class="modalFieldLabelCnt">Protocol</div>
 									<div id="selectProtocolCBMMsg" class="modalFieldMsgCnt">&nbsp;</div>
                                 </div>
+								 <div class="col-xs-12 col-md-6 modalCell">
+                                    <div class="modalFieldCnt">
+                                        <input type="text" class="modalInputTxt" name="inputVersionCBM" id="inputVersionCBM"> 
+                                    </div>
+                                    <div class="modalFieldLabelCnt">Version</div>
+									<div id="inputVersionCBMMsg" class="modalFieldMsgCnt">&nbsp;</div>
+                                </div>
+								
+							</div>	
+							
+							<div class="row">
+                                <div class="col-xs-12 col-md-6 modalCell">
+                                    <div class="modalFieldCnt">
+                                        <input type="text" class="modalInputTxt" name="inputAccessLinkCBM" id="inputAccessLinkCBM"> 
+                                    </div>
+                                    <div class="modalFieldLabelCnt">Access Link</div>
+									<div id="inputAccessLinkCBMMsg" class="modalFieldMsgCnt">&nbsp;</div>
+                                </div>
                               
+                                <div class="col-xs-12 col-md-6 modalCell">
+                                    <div class="modalFieldCnt">
+                                        <input type="text" class="modalInputTxt" name="inputAccessPortCBM" id="inputAccessPortCBM"> 
+                                    </div>
+                                    <div class="modalFieldLabelCnt">Access Port</div>
+									<div id="inputAccessPortCBMMsg" class="modalFieldMsgCnt">&nbsp;</div>
+                                </div>
+								
+							</div>	
+							
+							
+						   <div class="row">
+						   
+								<div class="col-xs-12 col-md-6 modalCell">
+                                    <div class="modalFieldCnt">
+                                        <select id="selectVisibilityCBM" name="selectVisibilityCBM" class="modalInputTxt">
+											<option></option>	
+											<option value="private">Private</option>
+											<option value="public">Public</option>
+										</select>
+                                    </div>
+                                    <div class="modalFieldLabelCnt">Ownership</div>
+									<div id="selectVisibilityCBMMsg" class="modalFieldMsgCnt">&nbsp;</div> 
+                                </div>
+								
+								
                                 <div class="col-xs-12 col-md-6 modalCell">
                                     <div class="modalFieldCnt">
                                         <input id="createdDateCBM" name="createdDateCBM" type="text" readonly>
@@ -501,6 +741,26 @@
                                 </div>
                                
                             </div>
+							
+							<div class="row">
+                                <div class="col-xs-12 col-md-6 modalCell">
+                                    <div class="modalFieldCnt">
+                                        <input type="text" class="modalInputTxt" name="inputApiKeyCBM" id="inputApiKeyCBM"> 
+                                    </div>
+                                    <div class="modalFieldLabelCnt">API Key</div>
+									<div id="inputApiKeyCBMMsg" class="modalFieldMsgCnt">&nbsp;</div>
+                                </div>
+								
+								<div class="col-xs-12 col-md-6 modalCell">
+                                    <div class="modalFieldCnt">
+                                        <input type="text" class="modalInputTxt" name="inputPathCBM" id="inputPathCBM"> 
+                                    </div>
+                                    <div class="modalFieldLabelCnt">Path</div>
+									<div id="inputPathCBMMsg" class="modalFieldMsgCnt">&nbsp;</div>
+                                </div>
+						
+							</div>
+							
                         </div>
                          
                         <!-- Geo-Position tab -->
@@ -550,6 +810,15 @@
                                 </div>
                
                             </div>
+						 <div class="row">
+							<div class="col-xs-12 col-md-6 modalCell">
+								<div class="modalFieldCnt">
+									<input type="text" class="modalInputTxt" name="inputSHACBM" id="inputSHACBM"> 
+								</div>
+								<div class="modalFieldLabelCnt">SHA</div>
+								<div id="inputSHACBMMsg" class="modalFieldMsgCnt">&nbsp;</div>
+							</div>
+						</div>
                         </div>
                     </div>
 			
@@ -582,6 +851,168 @@
               </div>
             </div>
         </div>
+        
+        <div class="modal fade" id="delegationsModal" tabindex="-1" role="dialog" aria-labelledby="modalAddWidgetTypeLabel" aria-hidden="true">
+			<div class="modal-dialog" role="document">
+			  <div class="modal-content">
+				<div id="delegationHeadModalLabel"  class="modalHeader centerWithFlex">
+				  
+				</div>
+				<form class="form-horizontal">
+	
+					<div id="delegationsModalBody" class="modal-body modalBody">
+						   <!-- Tabs -->
+						   <ul id="delegationsTabsContainer" class="nav nav-tabs nav-justified">
+									   <li id="ownershipTab" class="active"><a data-toggle="tab" href="#ownershipCnt" class="dashboardWizardTabTxt" aria-expanded="false">Ownership</a></li>
+									   <li id="visibilityTab"><a data-toggle="tab" href="#visibilityCnt" class="dashboardWizardTabTxt">Visibility</a></li>
+									   <li id="delegationsTab"><a data-toggle="tab" href="#delegationsCnt" class="dashboardWizardTabTxt">Delegations</a></li>
+									   <li id="delegationsTabGroup"><a data-toggle="tab" href="#delegationsCntGroup" class="dashboardWizardTabTxt">Group Delegations</a></li>
+						   </ul>
+						   <!-- Fine tabs -->
+
+						   <!-- Tab content -->
+						   <div class="tab-content">
+
+							   <!-- Visibility cnt -->
+								<div id="visibilityCnt" class="tab-pane fade in">
+									<div class="row" id="visibilityFormRow">
+										 <legend><div class="col-xs-12 centerWithFlex delegationsModalLbl modalFirstLbl" id="changeOwnershipLbl">
+											Change visibility 
+										</div> </legend>
+										<div class="row" class="col-xs-12 col-md-6">
+											<!--<div class="col-xs-12" id="newVisibilityCnt"> -->
+											<div class="col-xs-12 col-md-2" id="newVisibilityCnt">
+											
+												 <div id="visID"></div>
+											</div>
+											<div class="col-xs-12 col-md-6" id="newVisibilityCnt">	 
+											<div  class="row">	
+											
+												  <button type="button" id="newVisibilityPublicBtn" class="btn pull-right confirmBtn">Make It Public</button> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+												
+												  <button type="button" id="newVisibilityPrivateBtn" class="btn pull-right confirmBtn">Make It Private</button>
+											  
+											</div>
+											
+											</div>
+											<!-- <div class="col-xs-12 centerWithFlex" id="newVisibilityResultMsg"> -->
+											<div class="col-xs-12 col-md-4" id="newVisibilityResultMsg">
+											
+											</div> 
+										
+										</div>
+									</div>    
+								</div>
+								
+								<!-- Ownership cnt -->	
+								<div id="ownershipCnt" class="tab-pane fade in active">
+									<div class="row" id="ownershipFormRow">
+										 <legend><div class="col-xs-12 centerWithFlex delegationsModalLbl modalFirstLbl" id="changeOwnershipLbl">
+											Change ownership
+										</div> </legend>
+										<div class="col-xs-12" id="newOwnershipCnt">
+											<div class="input-group">
+												<input type="text" class="form-control" id="newOwner" placeholder="New owner username">
+												<span class="input-group-btn">
+												  <button type="button" id="newOwnershipConfirmBtn" class="btn confirmBtn disabled">Confirm</button>
+												</span>
+											</div>
+											<div class="col-xs-12 centerWithFlex delegationsModalMsg" id="newOwnerMsg">
+												New owner username can't be empty
+											</div>    
+										</div>
+										<div class="col-xs-12 centerWithFlex" id="newOwnershipResultMsg">
+											
+										</div>   
+									</div>    
+</div>
+
+					   <!-- Delegation cnt -->
+					   <div id="delegationsCnt" class="tab-pane fade in">
+							   <div class="row" id="delegationsFormRow">
+									   <legend><div class="col-xs-12 centerWithFlex modalFirstLbl" id="newDelegationLbl">
+											   Add new delegation
+									   </div></legend>
+									   <div class="col-xs-12" id="newDelegationCnt">
+											   <div class="input-group">
+													   <input type="text" class="form-control" name="newDelegation" id="newDelegation" placeholder="Delegated username">
+													   <span class="input-group-btn">
+														 <button type="button" id="newDelegationConfirmBtn" class="btn confirmBtn disabled">Confirm</button>
+													   </span>
+											   </div>
+											   <div class="col-xs-12 centerWithFlex delegationsModalMsg" id="newDelegatedMsg">
+													   Delegated username can't be empty
+											   </div>
+									   </div>
+
+									   <legend><div class="col-xs-12 centerWithFlex" id="currentDelegationsLbl">
+											   Current delegations
+									   </div></legend>
+									   <div class="col-xs-12" id="delegationsTableCnt">
+											   <table id="delegationsTable">
+													   <thead>
+														 <th>Delegated user</th>
+														 <th>Remove</th>
+													   </thead>
+													   <tbody>
+													   </tbody>
+											   </table>
+									   </div>
+							   </div>
+					   </div>
+
+					   <!-- Delegation Group cnt -->
+						<div id="delegationsCntGroup" class="tab-pane fade in">
+								<div class="row" id="delegationsFormRowGroup">
+										<legend><div class="col-xs-12 centerWithFlex modalFirstLbl" id="newDelegationLblGroup">
+												Add new Group delegation
+										</div></legend>
+								  <div class="col-xs-12"  class="input-group">
+															   <div id="newDelegationCntGroup">
+															   <div class="col-xs-4">
+																	   <select name="newDelegationOrganization" id="newDelegationOrganization" class="modalInputTxt">
+																	   </select>
+															   </div>
+															   <div class="col-xs-4">
+																	   <select name="newDelegationGroup" id="newDelegationGroup" class="modalInputTxt">
+																	   </select>
+															   </div>
+															   <div class="col-xs-4">
+																	   <span class="input-group-btn">
+																			   <button type="button" id="newDelegationConfirmBtnGroup" class="btn confirmBtn">Confirm</button>
+																	   </span>
+															   </div>
+															   <div class="col-xs-12 centerWithFlex delegationsModalMsg" id="newDelegatedMsgGroup">
+															   </div>
+													   </div>
+										</div>
+										<legend><div class="col-xs-12 centerWithFlex" id="currentDelegationsLblGroup">
+												Current Group delegations
+										</div></legend>
+										<div class="col-xs-12" id="delegationsTableCntGroup">
+												<table id="delegationsTableGroup">
+														<thead>
+														  <th>Delegated group</th>
+														  <th>Remove</th>
+														</thead>
+														<tbody>
+														</tbody>
+												</table>
+										</div>
+								</div>
+						</div>
+
+
+
+						</div>
+					</div>
+					<div id="delegationsModalFooter" class="modal-footer">
+					  <button type="button" id="delegationsCancelBtn" class="btn cancelBtn" data-dismiss="modal">Close</button>
+					</div>
+				 </form>	
+		</div>
+			</div>
+		</div>
 	
     </body>
 </html>

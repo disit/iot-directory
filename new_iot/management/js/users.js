@@ -4,6 +4,8 @@
         $('#sessionExpiringPopup').css("top", parseInt($('body').height() - $('#sessionExpiringPopup').height()) + "px");
         $('#sessionExpiringPopup').css("left", parseInt($('body').width() - $('#sessionExpiringPopup').width()) + "px");
         
+		
+		
         setInterval(function(){
             var now = parseInt(new Date().getTime() / 1000);
             var difference = sessionEndTime - now;
@@ -102,19 +104,21 @@
                  url: "../api/user.php",
                  data:{
 						action: "insert",
-						username: $("#addUserForm #username").val(),
-						firstName: $("#addUserForm #firstName").val(),
-						lastName: $("#addUserForm #lastName").val(),
-						organization: $("#addUserForm #organization").val(),
-						userType: $("#addUserForm #userType").val(),
-						email: $("#addUserForm #email").val()
+						/*sara711 - for logging*/
+						loggedUser: loggedUser,
+						username: $("#addUserModalBody #username").val(),
+						firstName: $("#addUserModalBody #firstName").val(),
+						lastName: $("#addUserModalBody #lastName").val(),
+						organization: $("#addUserModalBody #organization").val(),
+						userType: $("#addUserModalBody #userType").val(),
+						email: $("#addUserModalBody #email").val()
 						},
 						
                  type: "POST",
                  async: true,
 				 success: function (data) 
                  {
-                     console.log(data);
+                     console.log("insert "+data);
                           if(data["status"] === 'ko')
 						  {
                              $("#addUserModal").modal('hide');
@@ -176,7 +180,10 @@
                 url: "../api/user.php",
                 data:{
 					action: "delete",
-					username: username
+					username: username,
+                    organization : organization,
+					/*sara711 - for logging*/
+					loggedUser: loggedUser
 					},
                 type: "POST",
 				datatype: "json",
@@ -231,6 +238,8 @@
                  url: "../api/user.php",
                  data:{ 
 						 action: "update",
+						 /*sara711 - for logging*/
+						 loggedUser: loggedUser,
 						 username: $("#editUserForm #usernameM").val(),
 						 firstName: $("#editUserForm #firstNameM").val(),
 						 lastName: $("#editUserForm #lastNameM").val(),
@@ -354,7 +363,7 @@
             
 			if (selected==null)
 			{
-			  mydata = {action: "get_all_user"};
+			  mydata = {action: "get_all_user",/*Sara611 -for logging*/ username: loggedUser, organization : organization};
 			}
 			else
 			{

@@ -1,36 +1,57 @@
 
 var cbnamesArray, editCbConditionsArray;
 
+editCbConditionsArray = new Array();
+
 function showEditCbModal()
 {
     cbnamesArray = new Array();
-    editCbConditionsArray = new Array();
-    editCbConditionsArray['inputNameCBM'] = false;
     editCbConditionsArray['inputIpCBM'] = false;
     editCbConditionsArray['inputPortCBM'] = false;
     //editCbConditionsArray['selectProtocolCB'] = false;
     editCbConditionsArray['inputLatitudeCBM'] = false;
     editCbConditionsArray['inputLongitudeCBM'] = false;
-    editCbConditionsArray['inputLoginCBM'] = true;
-    editCbConditionsArray['inputPasswordCBM'] = true;
+   // editCbConditionsArray['inputLoginCBM'] = true;
+    //editCbConditionsArray['inputPasswordCBM'] = true;
 
-     $("#editContextBrokerConfirmBtn").attr("disabled", true);
+     //$("#editContextBrokerConfirmBtn").attr("disabled", true);
+	 
+	 
+	
+	$("#editInfoTabCB #inputIpCBM").on('input', checkEditCbIp);
+	$("#editInfoTabCB #inputIpCBM").on('input', checkEditCbConditions);
+	
+	$("#editInfoTabCB #inputPortCBM").on('input', checkEditCbPort);
+	$("#editInfoTabCB #inputPortCBM").on('input', checkEditCbConditions);
+	
+	
+	$("#editGeoPositionTabCB #inputLatitudeCBM").on('input', checkEditCbLatitude);
+	$("#editGeoPositionTabCB #inputLatitudeCBM").on('input', checkEditCbConditions);
+	
+	$("#editGeoPositionTabCB #inputLongitudeCBM").on('input', checkEditCbLongitude);
+	$("#editGeoPositionTabCB #inputLongitudeCBM").on('input', checkEditCbConditions);
+	
+	/* 
+	$("#editSecurityTabCB #inputLoginCBM").on('input', checkEditCbLogin);
+	$("#editSecurityTabCB #inputLoginCBM").on('input', checkEditCbConditions);
+	
+	$("#editSecurityTabCB #inputPasswordCBM").on('input', checkEditCbpassword);
+	$("#editSecurityTabCB #inputPasswordCBM").on('input', checkEditCbConditions);
 
-	$("#editInfoTabCB #inputNameCBM").on('input', function(){checkEditCbName(); checkEditCbConditions(); });
-    
-	$("#editInfoTabCB #inputIpCBM").on('input', function(){checkEditCbIp(); checkEditCbConditions(); });
-	
-	$("#editInfoTabCB #inputPortCBM").on('input', function(){checkEditCbPort(); checkEditCbConditions(); });
-	
-	$("#editGeoPositionTabCB #inputLatitudeCBM").on('input', function(){checkEditCbLatitude(); checkEditCbConditions(); });
-	    
-	$("#editGeoPositionTabCB #inputLongitudeCBM").on('input', function(){checkEditCbLongitude(); checkEditCbConditions(); });
-	$("#editSecurityTabCB #inputLoginCBM").on('input', function(){checkEditCbLogin(); checkEditCbConditions(); });
-	$("#editSecurityTabCB #inputPasswordCBM").on('input', function(){checkEditCbpassword(); checkEditCbConditions(); });  
+ */
+
+	checkEditCbIp();
+	checkEditCbPort();
+	checkEditCbLatitude();
+	checkEditCbLongitude();
+	//checkEditCbLogin();
+	//checkEditCbpassword();
+
+
      
 }
 
-
+/* 
 function checkEditCbName()
 {
     var message = null;
@@ -49,31 +70,22 @@ function checkEditCbName()
     }
     else
     {
-		//Check if this part is necessary
-        if(($.inArray($("#editInfoTabCB #inputNameCBM").val(), cbnamesArray, 0) > 0)||($("#editInfoTabCB #inputNameCBM").val() === cbnamesArray[0]))
-        {
-            $("#inputNameCBMMsg").css("color", "red");
-            message = 'Context Broker name already used';
-            editCbConditionsArray['inputNameCBM'] = false;
-        }
-        else
-        {
-            $("#inputNameCBMMsg").css("color", "#337ab7");
+		   $("#inputNameCBMMsg").css("color", "#337ab7");
             message = 'Ok';
             editCbConditionsArray['inputNameCBM'] = true;
-        }
+        
     }
     
     $("#inputNameCBMMsg").html(message);
 }
 
-
+ */
 
 
 function checkEditCbIp()
 {
     var message = null;
-    var pattern = /^(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$/;  /* /^(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?).){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?) */
+    var pattern = /^(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)|^(https?:\/\/(?:www\.|(?!www))[a-zA-Z0-9][a-zA-Z0-9-]+[a-zA-Z0-9]\.[^\s]{2,}|www\.[a-zA-Z0-9][a-zA-Z0-9-]+[a-zA-Z0-9]\.[^\s]{2,}|https?:\/\/(?:www\.|(?!www))[a-zA-Z0-9]\.[^\s]{2,}|www\.[a-zA-Z0-9]\.[^\s]{2,})$/;  /* /^(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?).){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?) */
     var value = document.getElementById("inputIpCBM").value;
 	 
     if(value === '')
@@ -84,7 +96,7 @@ function checkEditCbIp()
     }
     else if(!pattern.test(value))
     {
-        message = 'IP format is not correct (xxx.xxx.xxx.xxx)';
+        message = 'IP format is not correct (xxx.xxx.xxx.xxx) or URL like http://www.example.it';
         editCbConditionsArray['inputIpCBM'] = false;
         $("#inputIpCBMMsg").css("color", "red");
     }

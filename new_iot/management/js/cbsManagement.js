@@ -1,32 +1,55 @@
 
-var cbnamesArray, addCbConditionsArray;
+var cbnamesArray;
+var addCbConditionsArray = new Array();
 
 function showAddCbModal()
 {
     cbnamesArray = new Array();
-    addCbConditionsArray = new Array();
+    //addCbConditionsArray = new Array();
     addCbConditionsArray['inputNameCB'] = false;
     addCbConditionsArray['inputIpCB'] = false;
     addCbConditionsArray['inputPortCB'] = false;
     //addCbConditionsArray['selectProtocolCB'] = false;
     addCbConditionsArray['inputLatitudeCB'] = false;
     addCbConditionsArray['inputLongitudeCB'] = false;
-    addCbConditionsArray['inputLoginCB'] = true;
-    addCbConditionsArray['inputPasswordCB'] = true;
+    // addCbConditionsArray['inputLoginCB'] = true;
+    // addCbConditionsArray['inputPasswordCB'] = true;
 
      $("#addContextBrokerConfirmBtn").attr("disabled", true);
 
-	$("#infoTabCB #inputNameCB").on('input', function(){checkCbName(); checkAddCbConditions(); });
-    
-	$("#infoTabCB #inputIpCB").on('input', function(){checkCbIp(); checkAddCbConditions(); });
 	
-	$("#infoTabCB #inputPortCB").on('input', function(){checkCbPort(); checkAddCbConditions(); });
+	$("#infoTabCB #inputNameCB").on('input', checkCbName); 
+	$("#infoTabCB #inputNameCB").on('input', checkAddCbConditions);
 	
-	$("#geoPositionTabCB #inputLatitudeCB").on('input', function(){checkCbLatitude(); checkAddCbConditions(); });
-	    
-	$("#geoPositionTabCB #inputLongitudeCB").on('input', function(){checkCbLongitude(); checkAddCbConditions(); });
-	$("#securityTabCB #inputLoginCB").on('input', function(){checkCbLogin(); checkAddCbConditions(); });
-	$("#securityTabCB #inputPasswordCB").on('input', function(){checkCbpassword(); checkAddCbConditions(); });  
+	$("#infoTabCB #inputIpCB").on('input', checkCbIp);
+	$("#infoTabCB #inputIpCB").on('input', checkAddCbConditions);
+	
+	$("#infoTabCB #inputPortCB").on('input', checkCbPort);
+	$("#infoTabCB #inputPortCB").on('input', checkAddCbConditions);
+	
+	
+	$("#geoPositionTabCB #inputLatitudeCB").on('input', checkCbLatitude);
+	$("#geoPositionTabCB #inputLatitudeCB").on('input', checkAddCbConditions);
+	
+	$("#geoPositionTabCB #inputLongitudeCB").on('input', checkCbLongitude);
+	$("#geoPositionTabCB #inputLongitudeCB").on('input', checkAddCbConditions);
+	
+	// $("#securityTabCB #inputLoginCB").on('input', checkCbLogin);
+	// $("#securityTabCB #inputLoginCB").on('input', checkAddCbConditions);
+	
+	// $("#securityTabCB #inputPasswordCB").on('input', checkCbpassword);
+	// $("#securityTabCB #inputPasswordCB").on('input', checkAddCbConditions);
+	
+	
+	checkCbName();
+	checkCbIp();
+	checkCbPort();
+	checkCbLatitude();
+	checkCbLongitude();
+	// checkCbLogin();
+	// checkCbpassword();
+	
+	 $("#addContextBrokerModal").modal('show');
      
 }
 
@@ -73,18 +96,18 @@ function checkCbName()
 function checkCbIp()
 {
     var message = null;
-    var pattern = /^(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$/;  /* /^(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?).){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?) */
+    var pattern = /^(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)|^(https?:\/\/(?:www\.|(?!www))[a-zA-Z0-9][a-zA-Z0-9-]+[a-zA-Z0-9]\.[^\s]{2,}|www\.[a-zA-Z0-9][a-zA-Z0-9-]+[a-zA-Z0-9]\.[^\s]{2,}|https?:\/\/(?:www\.|(?!www))[a-zA-Z0-9]\.[^\s]{2,}|www\.[a-zA-Z0-9]\.[^\s]{2,})$/;  /* /^(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?).){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?) */
     var value = document.getElementById("inputIpCB").value;
 	 
     if(value === '')
     {
-        message = 'Ip is mandatory';
+        message = 'IP is mandatory';
         addCbConditionsArray['inputIpCB'] = false;
         $("#inputIpCBMsg").css("color", "red");
     }
     else if(!pattern.test(value))
     {
-        message = 'IP format is not correct (xxx.xxx.xxx.xxx)';
+        message = 'IP format is not correct (xxx.xxx.xxx.xxx) or URL like http://www.example.it';
         addCbConditionsArray['inputIpCB'] = false;
         $("#inputIpCBMsg").css("color", "red");
     }
@@ -199,9 +222,9 @@ function checkCbLogin()
     }
     else if(value === '')
     {
-        message = 'Longin is not mandatory but good to have';
+        message = 'Login is not mandatory but good to have';
         addCbConditionsArray['inputLoginCB'] = true;
-        $("#inputLoginCBMsg").css("color", "yellow");
+        $("#inputLoginCBMsg").css("color", "green");
     }
     else if(value.length > 5)
     {
@@ -226,9 +249,9 @@ function checkCbpassword()
     }
     else if(value === '')
     {
-        message = 'Longin is not mandatory but good to have';
+        message = 'Password is not mandatory but good to have';
         addCbConditionsArray['inputPasswordCB'] = true;
-        $("#inputPasswordCBMsg").css("color", "yellow");
+        $("#inputPasswordCBMsg").css("color", "green");
     }
     else if(value.length > 5)
     {

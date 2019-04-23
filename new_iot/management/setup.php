@@ -124,6 +124,10 @@ if (isset($_REQUEST['redirect'])){
 		<script>
 		 var loggedRole = "<?php echo $_SESSION['loggedRole']; ?>";
          var admin = "<?php echo $_SESSION['loggedRole']; ?>";
+         var organization = "<?php echo $_SESSION['organization']; ?>";
+                 var kbUrl = "<?php echo $_SESSION['kbUrl']; ?>";
+                 var gpsCentreLatLng = "<?php echo $_SESSION['gpsCentreLatLng']; ?>";
+                 var zoomLevel = "<?php echo $_SESSION['zoomLevel']; ?>";    
 		 var titolo_default = "<?php echo $default_title; ?>";	
 		 var access_denied = "<?php echo $access_denied; ?>";
 		 var nascondi= "<?php echo $hide_menu; ?>";

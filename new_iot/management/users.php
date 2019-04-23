@@ -104,8 +104,11 @@
 		<script type="text/javascript" src="../js/leaflet.draw.js"></script>
 		<script type="text/javascript" src="../js/jquery.fancytree-all.min.js"></script>
 		
-		
-		
+		<!-- Sara611 - for logging purpose -->
+		<script>
+		  var loggedUser = "<?php echo $_SESSION['loggedUsername']; ?>";
+		</script>
+
         
         <!--<link href="https://fonts.googleapis.com/css?family=Cabin:400,500,600,700|Catamaran|Varela+Round" rel="stylesheet">
         <link href="https://fonts.googleapis.com/css?family=Montserrat" rel="stylesheet">-->

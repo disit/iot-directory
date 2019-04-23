@@ -8,11 +8,13 @@ session_start();
 
 echo "in";
 
-print_r($_REQUEST);
+print_r($_SESSION['refreshToken']);
+
+echo "<br><br>";
 
 if (isset($_SESSION['refreshToken'])) {
-  $oidc = new OpenIDConnectClient('https://www.snap4city.org', $clientId, $clientSecret);
-  $oidc->providerConfigParam(array('token_endpoint' => 'https://www.snap4city.org/auth/realms/master/protocol/openid-connect/token'));
+  $oidc = new OpenIDConnectClient($keycloakHostUri, $clientId, $clientSecret);
+  $oidc->providerConfigParam(array('token_endpoint' => $keycloakHostUri.'/auth/realms/master/protocol/openid-connect/token'));
 
   $tkn = $oidc->refreshToken($_SESSION['refreshToken']);
 
@@ -20,17 +22,19 @@ if (isset($_SESSION['refreshToken'])) {
   $_SESSION['refreshToken'] = $tkn->refresh_token;
 
 
-$a ="http://192.168.0.207/ownership-api/v1/list/?type=IOTID&accessToken=". $accessToken;
+$a =$ownershipURI."ownership-api/v1/list/?type=IOTID&accessToken=". $accessToken;
 
 echo $a;
 
 
-$json = file_get_contents("http://192.168.0.207/ownership-api/v1/list/?type=IOTID&username=finaluser1");    //accessToken=". $accessToken);
+$json = file_get_contents($ownershipURI."ownership-api/v1/list/?type=IOTID&username=finaluser1");    //accessToken=". $accessToken);
 
 print_r($json);
 
 
-$json = file_get_contents("http://192.168.0.207/ownership-api/v1/list/?type=IOTID&accessToken=". $accessToken);
+echo "<br><br>";
+
+$json = file_get_contents($ownershipURI."ownership-api/v1/list/?type=IOTID&accessToken=". $accessToken);
 
 print_r($json);
 echo "done";

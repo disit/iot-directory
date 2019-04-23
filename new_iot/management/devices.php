@@ -50,22 +50,25 @@ if (isset($_REQUEST['redirect'])){
     {
         header("location: unauthorizedUser.php");
     }
- 
- 
+
+/* 
 require '../sso/autoload.php';
 use Jumbojett\OpenIDConnectClient;
 
 
-if (isset($_SESSION['refreshToken'])) {
-  $oidc = new OpenIDConnectClient('https://www.snap4city.org', $clientId, $clientSecret);
-  $oidc->providerConfigParam(array('token_endpoint' => 'https://www.snap4city.org/auth/realms/master/protocol/openid-connect/token'));
-  $tkn = $oidc->refreshToken($_SESSION['refreshToken']);
-  $accessToken = $tkn->access_token;
-  $_SESSION['refreshToken'] = $tkn->refresh_token;
+ if (isset($_SESSION['refreshToken'])) {
+   $oidc = new OpenIDConnectClient($keycloakHostUri, $clientId, $clientSecret);
+   $oidc->providerConfigParam(array('token_endpoint' => $keycloakHostUri.'/auth/realms/master/protocol/openid-connect/token'));
+   $tkn = $oidc->refreshToken($_SESSION['refreshToken']);
+   $accessToken = $tkn->access_token;
+   $_SESSION['refreshToken'] = $tkn->refresh_token;
 }
+else 
+	$accessToken ="";
 
-
- 
+ */
+$accessToken = "";
+   
 ?>
 
 
@@ -108,6 +111,19 @@ if (isset($_SESSION['refreshToken'])) {
        <link rel="stylesheet" href="../boostrapTable/dist/bootstrap-table.css">
        <script src="../boostrapTable/dist/bootstrap-table.js"></script>
 	   <script src="../boostrapTable/dist/bootstrap-table-filter-control.js"></script>
+	   
+	   <!-- DataTables -->
+	   
+	    <script type="text/javascript" charset="utf8" src="../js/DataTables/datatables.js"></script>
+        <link rel="stylesheet" type="text/css" href="../js/DataTables/datatables.css">
+        <script type="text/javascript" charset="utf8" src="../js/DataTables/dataTables.bootstrap.min.js"></script>
+        <script type="text/javascript" charset="utf8" src="../js/DataTables/dataTables.responsive.min.js"></script>
+        <script type="text/javascript" charset="utf8" src="../js/DataTables/responsive.bootstrap.min.js"></script>
+		
+		
+        <link rel="stylesheet" type="text/css" href="../css/DataTables/dataTables.bootstrap.min.css">
+        <link rel="stylesheet" type="text/css" href="../css/DataTables/responsive.bootstrap.min.css">
+        <link rel="stylesheet" type="text/css" href="../css/DataTables/jquery.dataTables.min.css">
 
        <!-- Questa inclusione viene sempre DOPO bootstrap-table.js -->
        <script src="../boostrapTable/dist/locale/bootstrap-table-en-US.js"></script>
@@ -126,19 +142,27 @@ if (isset($_SESSION['refreshToken'])) {
         
         <!-- Custom CSS -->
         <link href="../css/dashboard.css" rel="stylesheet">
-		
-		<style>
-		.btn-round {
-			width: 30px;
-			height:30px;
-			border-radius: 50%;
+		<style> .btn-round { width: 30px; height:30px; border-radius: 50%; }
+        #mainMenuCnt
+		{
+			background-color: rgba(51, 64, 69, 1);
+			color: white;
+			height: 100vh;
+			<?php if ($hide_menu=="hide") echo "display:none"; //MM201218 ?>
 		}
-		</style>
- 
-
+        
+        </style>
+	
 		<script>
 		 var loggedRole = "<?php echo $_SESSION['loggedRole']; ?>";
+		 var loggedUser = "<?php echo $_SESSION['loggedUsername']; ?>";
          var admin = "<?php echo $_SESSION['loggedRole']; ?>";
+         
+         var organization = "<?php echo $_SESSION['organization']; ?>";
+                 var kbUrl = "<?php echo $_SESSION['kbUrl']; ?>";
+                 var gpsCentreLatLng = "<?php echo $_SESSION['gpsCentreLatLng']; ?>";
+                 var zoomLevel = "<?php echo $_SESSION['zoomLevel']; ?>";    
+            
 		 var titolo_default = "<?php echo $default_title; ?>";	
 		 var access_denied = "<?php echo $access_denied; ?>";
 		 var nascondi= "<?php echo $hide_menu; ?>";
@@ -194,17 +218,26 @@ if (isset($_SESSION['refreshToken'])) {
             
              <div class="row mainRow"> 
                 <?php include "mainMenu.php" ?> 
-                <div class="col-xs-12 col-md-10" id="mainCnt">
+                 <div 
+                     <?php //MM201218
+				if (($hide_menu=="hide")) {?>
+				class="col-xs-12 col-md-12" 
+				<?php }else {?>
+				class="col-xs-12 col-md-10" 
+				<?php } //MM201218 FINE?>
+                     id="mainCnt">
                     <div class="row hidden-md hidden-lg">
                         <div id="mobHeaderClaimCnt" class="col-xs-12 hidden-md hidden-lg centerWithFlex">
                             Snap4City
                         </div>
                     </div>
+					<?php //MM201218
+					if (($hide_menu!="hide")) {?>
                     <div class="row" id="title_row">
                         <div class="col-xs-10 col-md-12 centerWithFlex" id="headerTitleCnt">IoT Directory: Devices</div>
                         <div class="col-xs-2 hidden-md hidden-lg centerWithFlex" id="headerMenuCnt"><?php include "mobMainMenu.php" ?></div> 
                     </div>
-					
+					<?php } //MM201218 FINE ?>
 							
                     <div class="row">
                         <div class="col-xs-12" id="mainContentCnt">
@@ -328,8 +361,8 @@ if (isset($_SESSION['refreshToken'])) {
 									<div class="col-xs-12 col-md-6 modalCell">
                                     <div class="modalFieldCnt">
                                         <select id="selectModel" name="selectModel" class="modalInputTxt">
-											<?php
-                                            $query = "SELECT name FROM model";
+										<?php
+                                            $query = "SELECT name, kgenerator FROM model";
                                             $result = mysqli_query($link, $query);
 
                                             if($result)
@@ -337,7 +370,9 @@ if (isset($_SESSION['refreshToken'])) {
                                                while($row = $result->fetch_assoc())
                                                { 
                                                  $name=$row["name"];
-                                                 echo "<option value=\"$name\">$name</option>";
+												 $kgen = $row["kgenerator"];
+                                                 //echo "<option data_key=\"$kgen\" value=\"$name\">$name</option>";
+												 echo "<option data_key=\"$kgen\" value=\"$name\">$name</option>";
                                                }
 
                                             }
@@ -438,7 +473,32 @@ if (isset($_SESSION['refreshToken'])) {
                             <div id="displayAllDeviceRow" class="row mainContentRow">
                                 <div class="col-xs-12 mainContentRowDesc"></div>
                                 <div class="col-xs-12 mainContentCellCnt">
-                                    <table id="devicesTable" class="table"></table>
+								<div class="row" style= "background-color: rgb(241, 245, 244);">
+									<div class="col-xs-12 col-md-6 modalCell" style= "background-color: rgb(241, 245, 244);">
+									<div id="displayDevicesMap" class="pull-right"><button type="button" class="btn btn-primary btn-round"><span class="glyphicon glyphicon-globe" style="font-size:36px; color: #0000ff"></span></button></div>
+									</div>
+									<div class="col-xs-12 col-md-6 modalCell" style= "background-color: rgb(241, 245, 244);">
+									<div class="pull-right"><button id="addDeviceBtn"  class="btn btn-primary">New Device</button></div>
+									</div>
+								</div>
+								<div>
+								<table id="devicesTable" class="table table-bordered table-striped" cellspacing="0" width="100%">
+									 <thead>
+									  <tr>
+										<th></th>	
+									    <th data-cellTitle="name">IOT Device</th>
+										<th data-cellTitle="contextbroker">IOT Broker</th>
+										<th data-cellTitle="devicetype">Device Type</th>
+										<th data-cellTitle="model">Model</th>
+										<th data-cellTitle="ownership">Ownership</th>
+										<th data-cellTitle="status">Status</th>							
+										<th data-cellTitle="edit">Edit</th>
+										<th data-cellTitle="delete">Delete</th>		
+										<th data-cellTitle="location">Location</th>										
+									</tr>
+									 </thead>
+									</table>
+								</div>
                                 </div>
                             </div>
                         </div>
@@ -499,7 +559,7 @@ if (isset($_SESSION['refreshToken'])) {
                 
 					<ul id="addDeviceModalTabs" class="nav nav-tabs nav-justified">
 						<li class="active"><a data-toggle="tab" href="#addInfoTabDevice">Info</a></li>
-                        <li><a data-toggle="tab" href="#addManufacturerTabDevice">IOT Broker</a></li>
+                        <li><a data-toggle="tab" href="#addIOTBrokerTabDevice">IOT Broker</a></li>
                         <li><a data-toggle="tab" href="#addGeoPositionTabDevice">Position</a></li>
                         <li><a data-toggle="tab" href="#addSchemaTabDevice">Values</a></li>
 						
@@ -521,8 +581,9 @@ if (isset($_SESSION['refreshToken'])) {
 								 <div class="col-xs-12 col-md-6 modalCell">
                                     <div class="modalFieldCnt">
 										<select name="selectModelDevice" id="selectModelDevice" class="modalInputTxt">
+											<option></option>   
 										    <option data_key="normal" value="custom">custom</option>    
-											<?php
+											<!--?php
                                             $query = "SELECT name, kgenerator FROM model";
                                             $result = mysqli_query($link, $query);
 
@@ -543,7 +604,7 @@ if (isset($_SESSION['refreshToken'])) {
                                                 $name="ERROR";
                                                 echo "<option value=\"$name\">$name</option>";
                                             }
-                                        ?>
+                                        ?-->
 										</select>
                                     </div>
                                     <div class="modalFieldLabelCnt">Model</div>
@@ -556,7 +617,7 @@ if (isset($_SESSION['refreshToken'])) {
                                     <div class="modalFieldCnt">
                                         <input type="text" class="modalInputTxt" name="inputTypeDevice" id="inputTypeDevice"> 
                                     </div>
-                                    <div class="modalFieldLabelCnt">Type</div>
+                                    <div class="modalFieldLabelCnt">Device Type</div>
 									<div id="inputTypeDeviceMsg" class="modalFieldMsgCnt">&nbsp;</div>
                                 </div>
 
@@ -566,6 +627,43 @@ if (isset($_SESSION['refreshToken'])) {
                                     </div>
                                     <div class="modalFieldLabelCnt">Mac Address</div>
 									<div id="inputMacDeviceMsg" class="modalFieldMsgCnt">&nbsp;</div>
+                                </div>
+								</div>
+								<div class="row">
+								<div class="col-xs-12 col-md-6 modalCell">
+                                    <div class="modalFieldCnt">
+                                        <select name="selectEdgeGatewayType" id="selectEdgeGatewayType" class="modalInputTxt">   
+										    <option value=""></option>    
+											<?php
+                                            $query = "SELECT name FROM edgegatewaytype";
+                                            $result = mysqli_query($link, $query);
+
+                                            if($result)
+                                            {
+                                               while($row = $result->fetch_assoc())
+                                               { 
+                                                 $name=$row["name"];
+												 echo "<option value=\"$name\">$name</option>";
+                                               }
+
+                                            }
+                                            else
+                                            {
+                                                $name="ERROR";
+                                                echo "<option value=\"$name\">$name</option>";
+                                            }
+                                        ?>
+										</select>
+                                    </div>
+                                    <div class="modalFieldLabelCnt">Edge-Gateway Type</div>
+									<div id="selectEdgeGatewayTypeMsg" class="modalFieldMsgCnt">&nbsp;</div>
+                                </div>
+								<div class="col-xs-12 col-md-6 modalCell">
+                                    <div class="modalFieldCnt">
+                                        <input type="text" class="modalInputTxt" name="inputEdgeGatewayUri" id="inputEdgeGatewayUri"> 
+                                    </div>
+                                    <div class="modalFieldLabelCnt">Edge-Gateway URI</div>
+									<div id="inputEdgeGatewayUriMsg" class="modalFieldMsgCnt">&nbsp;</div>
                                 </div>
                                </div>
 							<div class="row">
@@ -578,23 +676,30 @@ if (isset($_SESSION['refreshToken'])) {
                                 </div>
 								
 								<div class="col-xs-12 col-md-6 modalCell">
-                                    <div class="modalFieldCnt">
-                                        <input type="text" class="modalInputTxt" name="inputFrequencyDevice" id="inputFrequencyDevice" value="0"> 
-                                    </div>
-                                    <div class="modalFieldLabelCnt">Frequency</div>
+									<div class="modalFieldCnt">
+										<div class="input-group unity-input"> <input type="text" class="modalInputTxt" name="inputFrequencyDevice" id="inputFrequencyDevice" value="600"> <span class="input-group-addon" id="basic-addon2">sec</span></div>
+
+									</div>
+									<div class="modalFieldLabelCnt">Frequency</div>
 									<div id="inputFrequencyDeviceMsg" class="modalFieldMsgCnt">&nbsp;</div>
-                                </div>
+	                           </div>
+							   
+						   </div>	
+						   <div class="row">
 								<div class="col-xs-12 col-md-6 modalCell">
                                     <div class="modalFieldCnt">
                                         <select id="selectVisibilityDevice" name="selectVisibilityDevice" class="modalInputTxt">
-											<option value="public">Public</option>
 											<option value="private">Private</option>
 										</select>
                                     </div>
-                                    <div class="modalFieldLabelCnt">Visibility</div>
-									<div id="selectVisibilityDeviceMsg" class="modalFieldMsgCnt">&nbsp;</div>
+                                    <div class="modalFieldLabelCnt">Ownership</div>
+									<div id="selectVisibilityDeviceMsg" class="modalFieldMsgCnt">&nbsp;</div> 
                                 </div>
-		                     </div>	
+								<!--Fatima3-->
+                                    <div class="modalFieldCnt">
+                                    <button type="text" id="addNewDeviceGenerateKeyBtn" class="btn confirmBtn internalLink" onclick="generateKeysCLicked()">Generate Keys</button>
+                                    </div>
+		                     </div>
 							 <div class="row">
 									<div class="col-xs-12 col-md-6 modalCell">
 										<div class="modalFieldCnt">
@@ -614,8 +719,8 @@ if (isset($_SESSION['refreshToken'])) {
 								<div id="sigFoxDeviceUserMsg" class="modalFieldMsgCnt">&nbsp;</div>
                         </div>
                         
-                        <!-- Manufacturer tab -->
-                        <div id="addManufacturerTabDevice" class="tab-pane fade">
+                        <!-- IOT Broker tab -->
+                        <div id="addIOTBrokerTabDevice" class="tab-pane fade">
 						
 						
 						
@@ -625,8 +730,8 @@ if (isset($_SESSION['refreshToken'])) {
 							 <div class="col-xs-12 col-md-6 modalCell">
                                     <div class="modalFieldCnt">
                                         <select id="selectContextBroker" name="selectContextBroker" class="modalInputTxt">
-
-                                       <?php
+										<option></option>
+                                       <!--?php
                                             $query = "SELECT name, protocol FROM contextbroker";
                                             $result = mysqli_query($link, $query);
 
@@ -646,7 +751,7 @@ if (isset($_SESSION['refreshToken'])) {
                                                 $nameCB="ERROR";
                                                 echo "<option value=\"$nameCB\">$nameCB</option>";
                                             }
-                                        ?>
+                                        ?-->
 										</select>
                                     </div>
                                     <div class="modalFieldLabelCnt">ContextBroker</div>
@@ -727,9 +832,11 @@ if (isset($_SESSION['refreshToken'])) {
                         <!-- Device Schema tab -->
                         <div id="addSchemaTabDevice" class="tab-pane fade">
 					
-							<div id="addlistAttributes"></div>
-						
-							<div id="addlistAttributesMsg" class="modalFieldMsgCnt">&nbsp;</div>
+														
+										<div id="addlistAttributes"></div>
+										<div class="pull-left"><button id="addAttrBtn" class="btn btn-primary">Add Value</button></div>
+										<div id="addlistAttributesMsg" class="modalFieldMsgCnt">&nbsp;</div>
+								
 
                         </div>
 						
@@ -739,7 +846,11 @@ if (isset($_SESSION['refreshToken'])) {
                     </div>
 					
 					   
-                    <div class="row" id="addDeviceLoadingMsg">
+                   
+				</div> 	
+		       
+			   
+					<div class="row" id="addDeviceLoadingMsg">
                         <div class="col-xs-12 centerWithFlex">Adding device, please wait</div>
                     </div>
                     <div class="row" id="addDeviceLoadingIcon">
@@ -752,13 +863,14 @@ if (isset($_SESSION['refreshToken'])) {
                         <div class="col-xs-12 centerWithFlex"><i class="fa fa-thumbs-o-up" style="font-size:36px"></i></div>
                     </div>
                     <div class="row" id="addDeviceKoMsg">
+					    <div class="col-xs-12 centerWithFlex"></div>
                         <div class="col-xs-12 centerWithFlex">Error adding device</div>
                     </div>
                     <div class="row" id="addDeviceKoIcon">
                         <div class="col-xs-12 centerWithFlex"><i class="fa fa-thumbs-o-down" style="font-size:36px"></i></div>
                     </div>
-				</div> 	
-		       
+					
+			   
          		<div id="addDeviceModalFooter" class="modal-footer">
                   <button type="text" id="addNewDeviceCancelBtn" class="btn cancelBtn" data-dismiss="modal">Cancel</button>
                   <button type="text" id="addNewDeviceConfirmBtn" name="addNewDeviceConfirmBtn" class="btn confirmBtn internalLink">Confirm</button>	  
@@ -793,6 +905,32 @@ if (isset($_SESSION['refreshToken'])) {
             </div>
         </div>
         
+		
+		   <!-- Success  Ownership-->
+        <div class="modal fade" id="changeOwnershipOkModal" tabindex="-1" role="dialog" aria-hidden="true">
+            <div class="modal-dialog" role="document">
+              <div class="modal-content">
+                <div class="modalHeader centerWithFlex">
+                  Change Ownership
+                </div>
+                  <div id="changeOwnershipModalBody" class="modal-body modalBody">
+                    <div class="row">
+                        <div class="col-xs-12 modalCell">
+                            <div id="changeOwnershipOkModalInnerDiv1" class="modalDelMsg col-xs-12 centerWithFlex">
+                                
+                            </div>
+                            <div class="modalDelObjName col-xs-12 centerWithFlex" id="changeOwnershipOkModalInnerDiv2"><i class="fa fa-check" style="font-size:36px"></i></div> 
+                        </div>
+                    </div>
+                </div>
+                <!--<div class="modal-footer">
+                  
+                </div>-->
+              </div>
+            </div>
+        </div>
+		
+		
         <!-- fail -->
         <div class="modal fade" id="addDeviceKoModal" tabindex="-1" role="dialog" aria-hidden="true">
             <div class="modal-dialog" role="document">
@@ -831,7 +969,7 @@ if (isset($_SESSION['refreshToken'])) {
                     
                      <ul id="editDeviceModalTabs" class="nav nav-tabs nav-justified">
 						<li class="active"><a data-toggle="tab" href="#editInfoTabDevice">Info</a></li>
-                        <li><a data-toggle="tab" href="#editManufacturerTabDevice">Manufacturer</a></li>
+                        <li><a data-toggle="tab" href="#editIOTBrokerTabDevice">IoT Broker</a></li>
                         <li><a data-toggle="tab" href="#editGeoPositionTabDevice">Position</a></li>
                         <li><a data-toggle="tab" href="#editSchemaTabDevice">Values</a></li>
 						<li><a data-toggle="tab" href="#editStatusTabDevice">Status</a></li>
@@ -840,27 +978,205 @@ if (isset($_SESSION['refreshToken'])) {
                     
                     <div class="tab-content">
                        
-                        <!-- Info tab -->
+                         <!-- Info tab -->
                         <div id="editInfoTabDevice" class="tab-pane fade in active">
+						
+						
                             <div class="row">
+							
                                 <div class="col-xs-12 col-md-6 modalCell">
                                     <div class="modalFieldCnt">
                                         <input type="text" class="modalInputTxt" name="inputNameDeviceM" id="inputNameDeviceM" required> 
+                                        <input type="text" class="modalInputTxt" name="inputOrganizationDeviceM" id="inputOrganizationDeviceM" style="display:none"> 
                                     </div>
                                     <div class="modalFieldLabelCnt">Name</div>
 									<div id="inputNameDeviceMMsg" class="modalFieldMsgCnt">&nbsp;</div>
                                 </div>
-                                <div class="col-xs-12 col-md-6 modalCell">
+								
+								 <div class="col-xs-12 col-md-6 modalCell">
+                                    <div class="modalFieldCnt">
+										<!--
+										<select name="selectModelDevice" id="selectModelDevice" class="modalInputTxt">
+										    <option data_key="normal" value="custom">custom</option>    
+										</select>
+										-->
+										
+										<input id="selectModelDeviceM" name="selectModelDeviceM" class="modalInputTxt" readonly>	
+                                    </div>
+                                    <div class="modalFieldLabelCnt">Model</div>
+									<div id="inputModelDeviceMsg" class="modalFieldMsgCnt">&nbsp;</div>
+                                </div>
+                               
+							</div>
+								
+							<div class="row">
+						
+						
+								<div class="col-xs-12 col-md-6 modalCell">
                                     <div class="modalFieldCnt">
                                         <input type="text" class="modalInputTxt" name="inputTypeDeviceM" id="inputTypeDeviceM"> 
                                     </div>
-                                    <div class="modalFieldLabelCnt">Type</div>
+                                    <div class="modalFieldLabelCnt">Device Type</div>
 									<div id="inputTypeDeviceMMsg" class="modalFieldMsgCnt">&nbsp;</div>
                                 </div>
+						
+								<div class="col-xs-12 col-md-6 modalCell">
+                                    <div class="modalFieldCnt">
+                                        <input type="text" class="modalInputTxt" name="inputMacDeviceM" id="inputMacDeviceM"> 
+                                    </div>
+                                    <div class="modalFieldLabelCnt">Mac Address</div>
+									<div id="inputMacDeviceMMsg" class="modalFieldMsgCnt">&nbsp;</div>
+                                </div>
+								</div>
+								<div class="row">
+								<div class="col-xs-12 col-md-6 modalCell">
+                                    <div class="modalFieldCnt">
+                                        <select name="selectEdgeGatewayTypeM" id="selectEdgeGatewayTypeM" class="modalInputTxt">
+											<option value=""></option>    
+											<?php
+                                            $query = "SELECT name FROM edgegatewaytype";
+                                            $result = mysqli_query($link, $query);
 
+                                            if($result)
+                                            {
+                                               while($row = $result->fetch_assoc())
+                                               { 
+                                                 $name=$row["name"];
+												 echo "<option value=\"$name\">$name</option>";
+                                               }
+
+                                            }
+                                            else
+                                            {
+                                                $name="ERROR";
+                                                echo "<option value=\"$name\">$name</option>";
+                                            }
+                                        ?>
+										</select>
+                                    </div>
+                                    <div class="modalFieldLabelCnt">Edge-Gateway Type</div>
+									<div id="selectEdgeGatewayTypeMMsg" class="modalFieldMsgCnt">&nbsp;</div>
+                                </div>
+								<div class="col-xs-12 col-md-6 modalCell">
+                                    <div class="modalFieldCnt">
+                                        <input type="text" class="modalInputTxt" name="inputEdgeGatewayUriM" id="inputEdgeGatewayUriM"> 
+                                    </div>
+                                    <div class="modalFieldLabelCnt">Edge-Gateway URI</div>
+									<div id="inputEdgeGatewayUriMMsg" class="modalFieldMsgCnt">&nbsp;</div>
+                                </div>
+								
 							</div>
 							
-						<div class="row">
+							<div class="row">
+							
+								<div class="col-xs-12 col-md-6 modalCell">
+                                    <div class="modalFieldCnt">
+                                        <input type="text" class="modalInputTxt" name="inputProducerDeviceM" id="inputProducerDeviceM"> 
+                                    </div>
+                                    <div class="modalFieldLabelCnt">Producer</div>
+									<div id="inputProducerDeviceMMsg" class="modalFieldMsgCnt">&nbsp;</div>
+                                </div>
+								
+								
+	      						 <div class="col-xs-12 col-md-6 modalCell">
+                                    <div class="modalFieldCnt">
+									<!--
+                                        <select id="selectVisibilityDeviceM" name="selectVisibilityDeviceM" class="modalInputTxt">								
+											<option></option>
+										</select>
+										-->
+										<input id="selectVisibilityDeviceM" name="selectVisibilityDeviceM" class="modalInputTxt" readonly>																
+                                    </div>
+                                    <div class="modalFieldLabelCnt">Ownership</div>
+									<div id="selectVisibilityDeviceMMsg" class="modalFieldMsgCnt">&nbsp;</div>
+                                </div>
+								
+							</div>
+								
+							<div class="row">
+							
+								<div class="col-xs-12 col-md-6 modalCell">
+										<div class="modalFieldCnt" >
+												<div class="input-group unity-input"> <input type="text" class="modalInputTxt" name="inputFrequencyDeviceM" id="inputFrequencyDeviceM"> <span class="input-group-addon" id="basic-addon2">sec</span></div>
+										</div>
+											<div class="modalFieldLabelCnt">Frequency</div>
+											<div id="inputFrequencyDeviceMMsg" class="modalFieldMsgCnt">&nbsp;</div>
+                                </div>
+								
+								  <div class="col-xs-12 col-md-6 modalCell">
+                                    <div class="modalFieldCnt">
+                                        <input type="text" class="modalInputTxt" name="inputUriDeviceM" id="inputUriDeviceM" readonly> 
+                                    </div>
+                                    <div class="modalFieldLabelCnt">Service URI</div>
+									<div id="inputUriDeviceMMsg" class="modalFieldMsgCnt">&nbsp;</div>
+                                </div> 
+                 
+                            </div>
+                            
+                            <!--Fatima4-->
+                            <div class="row">
+                            <div class="modalFieldCnt">
+                                    <button type="text" id="editDeviceGenerateKeyBtn" class="btn confirmBtn internalLink" onclick="editGenerateKeysCLicked()">Generate Keys</button>
+                                    </div>
+                            </div>
+							
+							<div class="row">
+							
+									<div class="col-xs-12 col-md-6 modalCell">
+										<div class="modalFieldCnt">
+											<input type="text" class="modalInputTxt" name="KeyOneDeviceUserM" id="KeyOneDeviceUserM"> 
+										</div>
+										<div class="modalFieldLabelCnt">KEY 1</div>
+										<div id="KeyOneDeviceUserMMsg" class="modalFieldMsgCnt">&nbsp;</div>
+									</div>
+									<div class="col-xs-12 col-md-6 modalCell">
+										<div class="modalFieldCnt">
+											<input type="text" class="modalInputTxt" name="KeyTwoDeviceUserM" id="KeyTwoDeviceUserM"> 
+										</div>
+										<div class="modalFieldLabelCnt">KEY 2</div>
+										<div id="KeyTwoDeviceUserMMsg" class="modalFieldMsgCnt">&nbsp;</div>
+									</div>
+								</div>
+								
+								<div id="sigFoxDeviceUserMMsg" class="modalFieldMsgCnt">&nbsp;</div>
+				
+                        </div>
+                        
+                        <!-- IOT Broker tab -->
+                        <div id="editIOTBrokerTabDevice" class="tab-pane fade">
+                     
+							<div class="row">
+							
+							   <div class="col-xs-12 col-md-6 modalCell">
+                                    <div class="modalFieldCnt">
+                                        <select id="selectContextBrokerM" name="selectContextBrokerM" class="modalInputTxt">				
+										 <!--?php
+                                            $query = "SELECT name, protocol FROM contextbroker";
+                                            $result = mysqli_query($link, $query);
+
+                                            if($result)
+                                            {
+                                               while($row = $result->fetch_assoc())
+                                               { 
+                                                 $nameCB=$row["name"];
+												 $protocol=$row["protocol"];
+                                                 echo "<option my_data=\"$protocol\" value=\"$nameCB\">$nameCB</option>";
+                                               }
+
+                                            }
+                                            else
+                                            {
+                                               
+                                                $nameCB="ERROR";
+                                                echo "<option value=\"$nameCB\">$nameCB</option>";
+                                            }
+                                        ?-->
+									</select>
+                                    </div>
+                                    <div class="modalFieldLabelCnt">ContextBroker</div>
+									<div id="selectContextBrokerMMsg" class="modalFieldMsgCnt">&nbsp;</div>
+                                </div>
+						
                                  <div class="col-xs-12 col-md-6 modalCell">
                                     <div class="modalFieldCnt">
                                         <select id="selectKindDeviceM" name="selectKindDeviceM" class="modalInputTxt">
@@ -871,46 +1187,12 @@ if (isset($_SESSION['refreshToken'])) {
                                     <div class="modalFieldLabelCnt">Kind</div>
 									<div id="selectKindDeviceMMsg" class="modalFieldMsgCnt">&nbsp;</div>
                                 </div>
-
-                                <div class="col-xs-12 col-md-6 modalCell">
-                                    <div class="modalFieldCnt">
-                                        <select id="selectContextBrokerM" name="selectContextBrokerM" class="modalInputTxt">
-										<?php
-                                            $query = "SELECT name FROM contextbroker";
-                                            $result = mysqli_query($link, $query);
-
-                                            if($result)
-                                            {
-                                               while($row = $result->fetch_assoc())
-                                               {
-                                                 $nameCB=$row["name"];
-                                                 echo "<option value=\"$nameCB\">$nameCB</option>";
-                                               }
-
-                                            }
-                                            else
-                                            {
-
-                                                $nameCB="ERROR";
-                                                echo "<option value=\"$nameCB\">$nameCB</option>";
-                                            }
-                                        ?>
-									</select>
-                                    </div>
-                                    <div class="modalFieldLabelCnt">ContextBroker</div>
-									<div id="selectContextBrokerMMsg" class="modalFieldMsgCnt">&nbsp;</div>
-                                </div>
 								
-								</div>
+							</div>
+						
 							<div class="row">
-                                <div class="col-xs-12 col-md-6 modalCell">
-                                    <div class="modalFieldCnt">
-                                        <input type="text" class="modalInputTxt" name="inputUriDeviceM" id="inputUriDeviceM" readonly> 
-                                    </div>
-                                    <div class="modalFieldLabelCnt">URI</div>
-									<div id="inputUriDeviceMMsg" class="modalFieldMsgCnt">&nbsp;</div>
-                                </div> 
-                                <div class="col-xs-12 col-md-6 modalCell">
+							
+							  <div class="col-xs-12 col-md-6 modalCell">
                                     <div class="modalFieldCnt">
                                         <select id="selectProtocolDeviceM" name="selectProtocolDeviceM" class="modalInputTxt">
 											<option value="amqp">amqp</option>
@@ -922,9 +1204,6 @@ if (isset($_SESSION['refreshToken'])) {
                                     <div class="modalFieldLabelCnt">Protocol</div>
 									<div id="selectProtocolDeviceMMsg" class="modalFieldMsgCnt">&nbsp;</div>
                                 </div>
-								
-								</div>
-							<div class="row">
                                 <div class="col-xs-12 col-md-6 modalCell">
                                     <div class="modalFieldCnt">
                                         <select id="selectFormatDeviceM" name="selectFormatDeviceM" class="modalInputTxt">
@@ -936,63 +1215,9 @@ if (isset($_SESSION['refreshToken'])) {
                                     <div class="modalFieldLabelCnt">Format</div>
 									<div id="selectFormatDeviceMMsg" class="modalFieldMsgCnt">&nbsp;</div>
                                 </div>
-                                <div class="col-xs-12 col-md-6 modalCell">
-                                    <div class="modalFieldCnt">
-                                        <input id="createdDateDeviceM" name="createdDateDeviceM" type="text" readonly>
-                                    </div>
-                                    <div class="modalFieldLabelCnt">Created</div>
-									<div id="createdDateDeviceMMsg" class="modalFieldMsgCnt">&nbsp;</div>
-                                </div>
-								</div>
-								
-								<div class="row">
-								<div class="col-xs-12 col-md-6 modalCell">
-                                    <div class="modalFieldCnt">
-                                        <input type="text" class="modalInputTxt" name="inputFrequencyDeviceM" id="inputFrequencyDeviceM"> 
-                                    </div>
-                                    <div class="modalFieldLabelCnt">Frequency</div>
-									<div id="inputFrequencyDeviceMMsg" class="modalFieldMsgCnt">&nbsp;</div>
-                                </div>
-	      						 <div class="col-xs-12 col-md-6 modalCell">
-                                    <div class="modalFieldCnt">
-                                        <select id="selectVisibilityDeviceM" name="selectVisibilityDeviceM" class="modalInputTxt">
-											<option value="public">Public</option>
-											<option value="private">Private</option>
-										</select>
-                                    </div>
-                                    <div class="modalFieldLabelCnt">Visibility</div>
-									<div id="selectVisibilityDeviceMMsg" class="modalFieldMsgCnt">&nbsp;</div>
-                                </div>
-                 
-                            </div>
-                        </div>
-                        
-                        <!-- Manufacturer tab -->
-                        <div id="editManufacturerTabDevice" class="tab-pane fade">
-                            <div class="row">
-								<div class="col-xs-12 col-md-6 modalCell">
-                                    <div class="modalFieldCnt">
-                                        <input type="text" class="modalInputTxt" name="inputMacDeviceM" id="inputMacDeviceM"> 
-                                    </div>
-                                    <div class="modalFieldLabelCnt">Mac Address</div>
-									<div id="inputMacDeviceMMsg" class="modalFieldMsgCnt">&nbsp;</div>
-                                </div>
-                                <div class="col-xs-12 col-md-6 modalCell">
-                                    <div class="modalFieldCnt">
-                                        <input type="text" class="modalInputTxt" name="inputModelDeviceM" id="inputModelDeviceM"> 
-                                    </div>
-                                    <div class="modalFieldLabelCnt">Model</div>
-									<div id="inputModelDeviceMMsg" class="modalFieldMsgCnt">&nbsp;</div>
-                                </div>
-								<div class="col-xs-12 col-md-6 modalCell">
-                                    <div class="modalFieldCnt">
-                                        <input type="text" class="modalInputTxt" name="inputProducerDeviceM" id="inputProducerDeviceM"> 
-                                    </div>
-                                    <div class="modalFieldLabelCnt">Producer</div>
-									<div id="inputProducerDeviceMMsg" class="modalFieldMsgCnt">&nbsp;</div>
-                                </div>
-							
-                            </div>    
+                               
+							</div>
+				 
                         </div>
                         
                         <!-- Geo-Position tab -->
@@ -1057,28 +1282,31 @@ if (isset($_SESSION['refreshToken'])) {
 						
 						
                     </div>
-					
-					
-					<div class="row" id="editDeviceLoadingMsg">
-                        <div class="col-xs-12 centerWithFlex">Updating device, please wait</div>
-                    </div>
-                    <div class="row" id="editDeviceLoadingIcon">
-                        <div class="col-xs-12 centerWithFlex"><i class="fa fa-circle-o-notch fa-spin" style="font-size:36px;"></i></div>
-                    </div>
-                    <div class="row" id="editDeviceOkMsg">
-                        <div class="col-xs-12 centerWithFlex">Device updated successfully</div>
-                    </div>
-                    <div class="row" id="editDeviceOkIcon">
-                        <div class="col-xs-12 centerWithFlex"><i class="fa fa-thumbs-o-up" style="font-size:36px"></i></div>
-                    </div>
-                    <div class="row" id="editDeviceKoMsg">
-                        <div class="col-xs-12 centerWithFlex">Error updating device</div>
-                    </div>
-                    <div class="row" id="editDeviceKoIcon">
-                        <div class="col-xs-12 centerWithFlex"><i class="fa fa-thumbs-o-down" style="font-size:36px"></i></div>
-                    </div>
 		            
                 </div>
+				
+				<div class="row" id="editDeviceLoadingMsg">
+                        <div class="col-xs-12 centerWithFlex">Updating device, please wait</div>
+				</div>
+				<div class="row" id="editDeviceLoadingIcon">
+                        <div class="col-xs-12 centerWithFlex"><i class="fa fa-circle-o-notch fa-spin" style="font-size:36px;"></i></div>
+				</div>
+				<div class="row" id="editDeviceOkMsg">
+                        <div class="col-xs-12 centerWithFlex">Device updated successfully</div>
+				</div>
+				<div class="row" id="editDeviceOkIcon">
+                        <div class="col-xs-12 centerWithFlex"><i class="fa fa-thumbs-o-up" style="font-size:36px"></i></div>
+				</div>
+				<div class="row" id="editDeviceKoMsg">
+						<div class="col-xs-12 centerWithFlex">Error updating device</div>
+						   <div id="editDeviceOkModalInnerDiv1" class="modalDelMsg col-xs-12 centerWithFlex">
+                                
+                            </div>
+				</div>
+				<div class="row" id="editDeviceKoIcon">
+                        <div class="col-xs-12 centerWithFlex"><i class="fa fa-thumbs-o-down" style="font-size:36px"></i></div>
+				</div>
+					
 				<div id="editDeviceModalFooter" class="modal-footer">
                   <button type="button" id="editDeviceCancelBtn" class="btn cancelBtn" data-dismiss="modal">Cancel</button>
                   <button type="button" id="editDeviceConfirmBtn" class="btn confirmBtn internalLink" >Confirm</button>
@@ -1090,7 +1318,7 @@ if (isset($_SESSION['refreshToken'])) {
             </div>
         </div>
         
-        <!--Success -->
+        <!--Success 
         <div class="modal fade" id="editDeviceOkModal" tabindex="-1" role="dialog" aria-hidden="true">
             <div class="modal-dialog" role="document">
               <div class="modal-content">
@@ -1107,14 +1335,14 @@ if (isset($_SESSION['refreshToken'])) {
                         </div>
                     </div>
                 </div>
-                <!--<div class="modal-footer">
+              <div class="modal-footer">
                   
-                </div>-->
+                </div>
               </div>
             </div>
-        </div>
+        </div> -->
         
-        <!-- Fail -->
+        <!-- Fail 
         <div class="modal fade" id="editDeviceKoModal" tabindex="-1" role="dialog" aria-hidden="true">
             <div class="modal-dialog" role="document">
               <div class="modal-content">
@@ -1137,7 +1365,7 @@ if (isset($_SESSION['refreshToken'])) {
                 </div>
               </div>
             </div>
-        </div>
+        </div> -->
 		
 
 		
@@ -1181,8 +1409,377 @@ if (isset($_SESSION['refreshToken'])) {
                 </div>
               </div>
             </div>
-        </div>     
+        </div>  
+
+			<div id="dialog" title="Please Enter the New Owner">
+				<input type="text" name="addNewOwner" id="addNewOwner">
+			</div>
+			
+			
+	  <!-- Modal for Ownership Visibility and Delegations
+		<div class="modal fade" id="delegationsModal" tabindex="-1" role="dialog" aria-labelledby="modalAddWidgetTypeLabel" aria-hidden="true">
+			<div class="modal-dialog" role="document">
+			  <div class="modal-content">
+				<div class="modalHeader centerWithFlex">
+				  Management
+				</div>
+					<div id="delegationsModalBody" class="modal-body modalBody">
+						<ul id="delegationsTabsContainer" class="nav nav-tabs nav-justified">
+							<li id="ownershipTab" class="active"><a data-toggle="tab" href="#ownershipCnt" class="dashboardWizardTabTxt">Ownership</a></li>
+							<li id="visibilityTab"><a data-toggle="tab" href="#visibilityCnt" class="dashboardWizardTabTxt">Visibility</a></li>
+						</ul> 
+						
+						<div id="delegationsModalRightCnt" class="col-xs-12 col-sm-7 col-sm-offset-1">
+							<div class="tab-content">
+								<div id="ownershipCnt" class="tab-pane fade in active">
+									<div class="row" id="ownershipFormRow">
+										<div class="col-xs-12 centerWithFlex delegationsModalLbl modalFirstLbl" id="changeOwnershipLbl">
+											Change ownership
+										</div>
+										<div class="col-xs-12" id="newOwnershipCnt">
+											<div class="input-group">
+												<input type="text" class="form-control" id="newOwner" placeholder="New owner username">
+												<span class="input-group-btn">
+												  <button type="button" id="newOwnershipConfirmBtn" class="btn confirmBtn disabled">Confirm</button>
+												</span>
+											</div>
+											<div class="col-xs-12 centerWithFlex delegationsModalMsg" id="newOwnerMsg">
+												New owner username can't be empty
+											</div>    
+										</div>
+										<div class="col-xs-12 centerWithFlex" id="newOwnershipResultMsg">
+											
+										</div>   
+									</div>    
+								</div>
+								
+								<div id="visibilityCnt" class="tab-pane fade in">
+									<div class="row" id="visibilityFormRow">
+										<div class="col-xs-12 centerWithFlex delegationsModalLbl modalFirstLbl" id="changeOwnershipLbl">
+											Change visibility
+										</div>
+										<div class="col-xs-12" id="newVisibilityCnt">
+										
+											<div class="input-group">
+											
+													<div class="row">
+														<input type="text" class="modalInputTxt" name="CurrentVisiblityTxt" id="CurrentVisiblityTxt" readonly> 
+													</div>
+					
+												  <button type="button" id="newVisibilityPublicBtn" class="btn confirmBtn">Make It Public</button>
+												  <button type="button" id="newVisibilityPrivateBtn" class="btn confirmBtn">Make It Private</button>
+											</div>
+										</div>
+									    <div class="col-xs-12 centerWithFlex" id="newVisibilityResultMsg">
+										  
+											
+										</div> 
+									</div>    
+								</div>
+								
+								
+							</div>    
+							<input type="hidden" id="currDeviceId">
+						</div>
+						
+						
+						<div id="delegationsModalLeftCnt" class="col-xs-12 col-sm-4">
+						
+						</div>
+
+						
+					</div>
+					<div id="delegationsModalFooter" class="modal-footer">
+					  <button type="button" id="delegationsCancelBtn" class="btn cancelBtn" data-dismiss="modal">Close</button>
+					</div>
+				
+			  </div>
+			</div>
+		</div>
+		
+		-->
+		
+		
+		<!-- Modal for Ownership Visibility and Delegations -->
+		<div class="modal fade" id="delegationsModal" tabindex="-1" role="dialog" aria-labelledby="modalAddWidgetTypeLabel" aria-hidden="true">
+			<div class="modal-dialog" role="document">
+			  <div class="modal-content">
+				<div id="delegationHeadModalLabel"  class="modalHeader centerWithFlex">
+				  
+				</div>
+				<form class="form-horizontal">
+	
+					<div id="delegationsModalBody" class="modal-body modalBody">
+                                                       <!-- Tabs -->
+                                                       <ul id="delegationsTabsContainer" class="nav nav-tabs nav-justified">
+                                                                   <li id="ownershipTab" class="active"><a data-toggle="tab" href="#ownershipCnt" class="dashboardWizardTabTxt" aria-expanded="false">Ownership</a></li>
+                                                                   <li id="visibilityTab"><a data-toggle="tab" href="#visibilityCnt" class="dashboardWizardTabTxt">Visibility</a></li>
+                                                                   <li id="delegationsTab"><a data-toggle="tab" href="#delegationsCnt" class="dashboardWizardTabTxt">Delegations</a></li>
+                                                                   <li id="delegationsTabGroup"><a data-toggle="tab" href="#delegationsCntGroup" class="dashboardWizardTabTxt">Group Delegations</a></li>
+                                                       </ul>
+                                                       <!-- Fine tabs -->
+
+                                                       <!-- Tab content -->
+                                                       <div class="tab-content">
+
+                                                               <!-- Visibility cnt -->
+								<div id="visibilityCnt" class="tab-pane fade in">
+									<div class="row" id="visibilityFormRow">
+										 <legend><div class="col-xs-12 centerWithFlex delegationsModalLbl modalFirstLbl" id="changeOwnershipLbl">
+											Change visibility 
+										</div> </legend>
+										<div class="row" class="col-xs-12 col-md-6">
+											<!--<div class="col-xs-12" id="newVisibilityCnt"> -->
+											<div class="col-xs-12 col-md-2" id="newVisibilityCnt">
+											
+												 <div id="visID"></div>
+											</div>
+											<div class="col-xs-12 col-md-6" id="newVisibilityCnt">	 
+											<div  class="row">	
+											
+												  <button type="button" id="newVisibilityPublicBtn" class="btn pull-right confirmBtn">Make It Public</button> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+												
+												  <button type="button" id="newVisibilityPrivateBtn" class="btn pull-right confirmBtn">Make It Private</button>
+											  
+											</div>
+											
+											</div>
+											<!-- <div class="col-xs-12 centerWithFlex" id="newVisibilityResultMsg"> -->
+											<div class="col-xs-12 col-md-4" id="newVisibilityResultMsg">
+											
+											</div> 
+										
+										</div>
+									</div>    
+								</div>
+								
+								<!-- Ownership cnt -->	
+								<div id="ownershipCnt" class="tab-pane fade in active">
+									<div class="row" id="ownershipFormRow">
+										 <legend><div class="col-xs-12 centerWithFlex delegationsModalLbl modalFirstLbl" id="changeOwnershipLbl">
+											Change ownership
+										</div> </legend>
+										<div class="col-xs-12" id="newOwnershipCnt">
+											<div class="input-group">
+												<input type="text" class="form-control" id="newOwner" placeholder="New owner username">
+												<span class="input-group-btn">
+												  <button type="button" id="newOwnershipConfirmBtn" class="btn confirmBtn disabled">Confirm</button>
+												</span>
+											</div>
+											<div class="col-xs-12 centerWithFlex delegationsModalMsg" id="newOwnerMsg">
+												New owner username can't be empty
+											</div>    
+										</div>
+										<div class="col-xs-12 centerWithFlex" id="newOwnershipResultMsg">
+											
+										</div>   
+									</div>    
+								</div>
+
+                                                               <!-- Delegation cnt -->
+                                                               <div id="delegationsCnt" class="tab-pane fade in">
+                                                                       <div class="row" id="delegationsFormRow">
+                                                                               <legend><div class="col-xs-12 centerWithFlex modalFirstLbl" id="newDelegationLbl">
+                                                                                       Add new delegation
+                                                                               </div></legend>
+                                                                               <div class="col-xs-12" id="newDelegationCnt">
+                                                                                       <div class="input-group">
+                                                                                               <input type="text" class="form-control" name="newDelegation" id="newDelegation" placeholder="Delegated username">
+                                                                                               <span class="input-group-btn">
+                                                                                                 <button type="button" id="newDelegationConfirmBtn" class="btn confirmBtn disabled">Confirm</button>
+                                                                                               </span>
+                                                                                       </div>
+                                                                                       <div class="col-xs-12 centerWithFlex delegationsModalMsg" id="newDelegatedMsg">
+                                                                                               Delegated username can't be empty
+                                                                                       </div>
+                                                                               </div>
+
+                                                                               <legend><div class="col-xs-12 centerWithFlex" id="currentDelegationsLbl">
+                                                                                       Current delegations
+                                                                               </div></legend>
+                                                                               <div class="col-xs-12" id="delegationsTableCnt">
+                                                                                       <table id="delegationsTable">
+                                                                                               <thead>
+                                                                                                 <th>Delegated user</th>
+                                                                                                 <th>Remove</th>
+                                                                                               </thead>
+                                                                                               <tbody>
+                                                                                               </tbody>
+                                                                                       </table>
+                                                                               </div>
+                                                                       </div>
+                                                               </div>
+
+                                                               <!-- Delegation Group cnt -->
+                                                                <div id="delegationsCntGroup" class="tab-pane fade in">
+                                                                        <div class="row" id="delegationsFormRowGroup">
+                                                                                <legend><div class="col-xs-12 centerWithFlex modalFirstLbl" id="newDelegationLblGroup">
+                                                                                        Add new Group delegation
+                                                                                </div></legend>
+                                                                          <div class="col-xs-12"  class="input-group">
+                                                                                                       <div id="newDelegationCntGroup">
+                                                                                                       <div class="col-xs-4">
+                                                                                                               <select name="newDelegationOrganization" id="newDelegationOrganization" class="modalInputTxt">
+                                                                                                               </select>
+                                                                                                       </div>
+                                                                                                       <div class="col-xs-4">
+                                                                                                               <select name="newDelegationGroup" id="newDelegationGroup" class="modalInputTxt">
+                                                                                                               </select>
+                                                                                                       </div>
+                                                                                                       <div class="col-xs-4">
+                                                                                                               <span class="input-group-btn">
+                                                                                                                       <button type="button" id="newDelegationConfirmBtnGroup" class="btn confirmBtn">Confirm</button>
+                                                                                                               </span>
+                                                                                                       </div>
+                                                                                                       <div class="col-xs-12 centerWithFlex delegationsModalMsg" id="newDelegatedMsgGroup">
+                                                                                                       </div>
+                                                                                               </div>
+                                                                                </div>
+                                                                                <legend><div class="col-xs-12 centerWithFlex" id="currentDelegationsLblGroup">
+                                                                                        Current Group delegations
+                                                                                </div></legend>
+                                                                                <div class="col-xs-12" id="delegationsTableCntGroup">
+                                                                                        <table id="delegationsTableGroup">
+                                                                                                <thead>
+                                                                                                  <th>Delegated group</th>
+                                                                                                  <th>Remove</th>
+                                                                                                </thead>
+                                                                                                <tbody>
+                                                                                                </tbody>
+                                                                                        </table>
+                                                                                </div>
+                                                                        </div>
+                                                                </div>
+
+
+
+						</div>
+					</div>
+					<div id="delegationsModalFooter" class="modal-footer">
+					  <button type="button" id="delegationsCancelBtn" class="btn cancelBtn" data-dismiss="modal">Close</button>
+					</div>
+				 </form>	
+		</div>
+            </div>
+        </div>
+		<!-- Modal for Ownership Visibility and Delegations All the three Tab -- Just in Case
+		<div class="modal fade" id="delegationsModal" tabindex="-1" role="dialog" aria-labelledby="modalAddWidgetTypeLabel" aria-hidden="true">
+			<div class="modal-dialog" role="document">
+			  <div class="modal-content">
+				<div class="modalHeader centerWithFlex">
+				  Management
+				</div>
+				<form id="delegationsForm" class="form-horizontal" name="delegationsForm" role="form" method="post" action="" data-toggle="validator">
+					<div id="delegationsModalBody" class="modal-body modalBody">
+						<ul id="delegationsTabsContainer" class="nav nav-tabs nav-justified">
+							<li id="ownershipTab" class="active"><a data-toggle="tab" href="#ownershipCnt" class="dashboardWizardTabTxt">Ownership</a></li>
+							<li id="visibilityTab"><a data-toggle="tab" href="#visibilityCnt" class="dashboardWizardTabTxt">Visibility</a></li>
+							<li id="delegationsTab"><a data-toggle="tab" href="#delegationsCnt" class="dashboardWizardTabTxt">Delegations</a></li>
+						</ul> 
+						
+						<div id="delegationsModalLeftCnt" class="col-xs-12 col-sm-4">
+							<div class="col-xs-12 centerWithFlex delegationsModalTxt modalFirstLbl" id="delegationsDashboardTitle">
+							</div>
+							
+							<div id="delegationsDashPic" class="modalDelObjName col-xs-12 centerWithFlex"></div>
+						</div>    
+						
+						<div id="delegationsModalRightCnt" class="col-xs-12 col-sm-7 col-sm-offset-1">
+							<div class="tab-content">
+								<div id="ownershipCnt" class="tab-pane fade in active">
+									<div class="row" id="ownershipFormRow">
+										<div class="col-xs-12 centerWithFlex delegationsModalLbl modalFirstLbl" id="changeOwnershipLbl">
+											Change ownership
+										</div>
+										<div class="col-xs-12" id="newOwnershipCnt">
+											<div class="input-group">
+												<input type="text" class="form-control" id="newOwner" placeholder="New owner username">
+												<span class="input-group-btn">
+												  <button type="button" id="newOwnershipConfirmBtn" class="btn confirmBtn disabled">Confirm</button>
+												</span>
+											</div>
+											<div class="col-xs-12 centerWithFlex delegationsModalMsg" id="newOwnerMsg">
+												New owner username can't be empty
+											</div>    
+										</div>
+										<div class="col-xs-12 centerWithFlex" id="newOwnershipResultMsg">
+											
+										</div>    
+									</div>    
+								</div>
+								
+								<div id="visibilityCnt" class="tab-pane fade in">
+									<div class="row" id="visibilityFormRow">
+										<div class="col-xs-12 centerWithFlex delegationsModalLbl modalFirstLbl" id="changeOwnershipLbl">
+											Change visibility
+										</div>
+										<div class="col-xs-12" id="newVisibilityCnt">
+											<div class="input-group">
+												<select id="newVisibility" class="form-control">
+													<option value="public">Public</option>
+													<option value="private">Private</option>
+												</select>
+												<span class="input-group-btn">
+												  <button type="button" id="newVisibilityConfirmBtn" class="btn confirmBtn">Confirm</button>
+												</span>
+											</div>
+										</div>
+										<div class="col-xs-12 centerWithFlex" id="newVisibilityResultMsg">
+											
+										</div>  
+									</div>    
+								</div>
+								
+								<div id="delegationsCnt" class="tab-pane fade in">
+									<div class="row centerWithFlex modalFirstLbl" id="delegationsNotAvailableRow">
+										Delegations are not possibile on a public dashboard
+									</div>    
+									<div class="row" id="delegationsFormRow">
+										<div class="col-xs-12 centerWithFlex modalFirstLbl" id="newDelegationLbl">
+											Add new delegation
+										</div>
+										<div class="col-xs-12" id="newDelegationCnt">
+											<div class="input-group">
+												<input type="text" class="form-control" id="newDelegation" placeholder="Delegated username">
+												<span class="input-group-btn">
+												  <button type="button" id="newDelegationConfirmBtn" class="btn confirmBtn disabled">Confirm</button>
+												</span>
+											</div>
+											<div class="col-xs-12 centerWithFlex delegationsModalMsg" id="newDelegatedMsg">
+												Delegated username can't be empty
+											</div>    
+										</div>
+
+										<div class="col-xs-12 centerWithFlex" id="currentDelegationsLbl">
+											Current delegations
+										</div>
+										<div class="col-xs-12" id="delegationsTableCnt">
+											<table id="delegationsTable">
+												<thead>
+												  <th>Delegated user</th>
+												  <th>Remove</th>
+												</thead>
+												<tbody>
+												</tbody>
+											</table>
+										</div>
+									</div>
+								</div>
+							</div>    
+							<input type="hidden" id="currDeviceId">
+						</div>
+					</div>
+					<div id="delegationsModalFooter" class="modal-footer">
+					  <button type="button" id="delegationsCancelBtn" class="btn cancelBtn" data-dismiss="modal">Close</button>
+					</div>
+				</form>    
+			  </div>
+			</div>
+		</div> -->
+		
     </body>
 </html>		
+
+
 
 

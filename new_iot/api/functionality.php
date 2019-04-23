@@ -17,6 +17,7 @@
 header("Content-type: application/json");
 header("Access-Control-Allow-Origin: *\r\n");
 include ('../config.php');
+include ('common.php');
 
 $link = mysqli_connect($host, $username, $password) or die("failed to connect to server !!");
 mysqli_select_db($link, $dbname);
@@ -41,15 +42,17 @@ else
 
 //print_r ($_REQUEST);
 
-$result=array();	
+$result=array("status"=>"","msg"=>"","content"=>"","log"=>"");	
 /* all the primitives return an array "result" with the following structure
 
 result["status"] = ok/ko; reports the status of the operation (mandatory)
 result["msg"] a message related to the execution of the operation (optional)
 result["content"] in case of positive execution of the operation the content extracted from the db (optional)
+result["log"] keep trace of the operations executed on the db
 
 This array should be encoded in json
 */	
+
 	
 if ($action=="get_functionality")
 {
@@ -61,6 +64,7 @@ $q = "SELECT * FROM functionalities WHERE link = '$page'";
 	if($r) 
 	{
 	 $result['status'] = 'ok';
+	 $result["log"] .="\n\r action: get_functionality ok " . $q;
 	 $result['content'] = array();
      while($row = mysqli_fetch_assoc($r)) 
      {
@@ -69,15 +73,17 @@ $q = "SELECT * FROM functionalities WHERE link = '$page'";
     }
 	else{
 	   $result['status'] = 'ko';
-	   $result['msg'] = 'The following error occurred' .  mysqli_error($link) . $q;
+	   $result['msg'] = 'The following error occurred' .  mysqli_error($link);
+	   $result['log'] = 'The following error occurred' .  mysqli_error($link) . $q;
 	}
 
-	echo json_encode($result);
+	my_log($result);
 	mysqli_close($link);
 }
 else
 {
 	$result['status'] = 'ko';
 	$result['msg'] = 'invalid action ' . $action;
-	echo json_encode($result);
+	$result['log'] = 'invalid action ' . $action;
+	my_log($result);
 }

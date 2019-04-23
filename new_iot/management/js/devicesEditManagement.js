@@ -1,30 +1,53 @@
 
-var devicenamesArray, editDeviceConditionsArray;
+
+var devicenamesArray = new Array();
+var editDeviceConditionsArray = new Array();
 
 function showEditDeviceModal()
 {
-    devicenamesArray = new Array();
-    editDeviceConditionsArray = new Array();
-    // editDeviceConditionsArray['inputNameDeviceM'] = false;
+   
+       // editDeviceConditionsArray['inputNameDeviceM'] = false;
 	editDeviceConditionsArray['inputTypeDeviceM'] = false;
     editDeviceConditionsArray['inputLatitudeDeviceM'] = false;
     editDeviceConditionsArray['inputLongitudeDeviceM'] = false;
+	editDeviceConditionsArray['inputMacDeviceM'] = false;
+    editDeviceConditionsArray['KeyOneDeviceUserM'] = false;
+	editDeviceConditionsArray['KeyTwoDeviceUserM'] = false;
+	
+	
+	$("#editDeviceConfirmBtn").attr("disabled", true);
+	
+    $("#editInfoTabDevice #inputTypeDeviceM").on('input', function(){checkEditDeviceType();checkEditDeviceConditions();}); 
+	
+	
+	$("#editGeoPositionTabDevice #inputLatitudeDeviceM").on('input', function(){checkEditDeviceLatitude(); checkEditDeviceConditions();}); 
+	
 
+	$("#editGeoPositionTabDevice #inputLongitudeDeviceM").on('input', function(){checkEditDeviceLongitude(); checkEditDeviceConditions();}); 
+	
+	
+	$("#editInfoTabDevice #inputMacDeviceM").on('input', function(){checkEditDeviceMAC(); checkEditDeviceConditions();}); 
+    
+    $("#editInfoTabDevice #KeyOneDeviceUserM").on('input', function(){UserEditKey(); checkEditDeviceConditions();}); 
+    $("#editInfoTabDevice #KeyOneDeviceUserM").change(function(){UserEditKey(); checkEditDeviceConditions();});
+    
+    $("#editInfoTabDevice #KeyTwoDeviceUserM").on('input', function(){UserEditKey(); checkEditDeviceConditions();}); 
+    $("#editInfoTabDevice #KeyTwoDeviceUserM").change( function(){UserEditKey(); checkEditDeviceConditions();}); 
+    
+    $("#editInfoTabDevice #editDeviceGenerateKeyBtn").on('click',function(){UserEditKey(); checkEditDeviceConditions();});
+	
 	
 	checkEditDeviceName();
 	checkEditDeviceType();
 	checkEditDeviceLatitude(); 
 	checkEditDeviceLongitude();
-	
-    // $("#editDeviceConfirmBtn").attr("disabled", true);
+	checkEditDeviceMAC();
+	UserEditKey(); 
+	checkEditDeviceConditions();
+    
 
-	// $("#editInfoTabDevice #inputNameDeviceM").on('input', function(){checkEditDeviceName(); checkEditDeviceConditions(); });
-	$("#editInfoTabDevice #inputTypeDeviceM").on('input', function(){checkEditDeviceType(); checkEditDeviceConditions(); });
-	$("#editGeoPositionTabDevice #inputLatitudeDeviceM").on('input', function(){checkEditDeviceLatitude(); checkEditDeviceConditions(); });
-	$("#editGeoPositionTabDevice #inputLongitudeDeviceM").on('input', function(){checkEditDeviceLongitude(); checkEditDeviceConditions(); });
-
-        $("#editGeoPositionTabDevice #inputLatitudeDeviceM").trigger("change");
-        $("#editGeoPositionTabDevice #inputLongitudeDeviceM").trigger("change");
+	   
+	   $("#editDeviceModal").modal('show');
 	
 }
 
@@ -149,6 +172,80 @@ function checkEditDeviceLongitude()
 }
 
 
+function checkEditDeviceMAC()
+{
+    var message = null;
+	var pattern = /^([0-9A-Fa-f]{2}[:-]){5}([0-9A-Fa-f]{2})$/;
+	
+	if($("#editInfoTabDevice #inputMacDeviceM").val().length === 0 || $("#editInfoTabDevice #inputMacDeviceM").val()==='null')
+    {
+        $("#inputMacDeviceMMsg").css("color", "red");
+        message = '';
+        editDeviceConditionsArray['inputMacDeviceM'] = true;
+    }
+	else {
+			if(!pattern.test($("#editInfoTabDevice #inputMacDeviceM").val()))
+				{
+				message = 'Mac format should be Letter (A-F) and number (eg. 3D:F2:C9:A6:B3:4F)';
+				editDeviceConditionsArray['inputMacDeviceM'] = false;
+				$("#inputMacDeviceMMsg").css("color", "red");
+				}
+			else if(pattern.test($("#editInfoTabDevice #inputMacDeviceM").val()))
+			{
+				message = 'Ok';
+				editDeviceConditionsArray['inputMacDeviceM'] = true;
+				$("#inputMacDeviceMMsg").css("color", "#337ab7");
+			}
+    }
+    
+    $("#inputMacDeviceMMsg").html(message);
+}
+
+
+function UserEditKey()
+	{
+			var message = null;
+			var pattern = /^[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}$/;
+			
+			var value1 = document.getElementById("KeyOneDeviceUserM").value;
+			var value2 = document.getElementById("KeyTwoDeviceUserM").value;
+			
+			if((value1 === '') &&  (value2 === ''))
+			{
+				message = 'Specify Key for the selected option';
+				//document.getElementById("addMyNewDeviceConfirmBtn").disabled = true;
+				editDeviceConditionsArray['KeyOneDeviceUserM'] = false;
+				editDeviceConditionsArray['KeyTwoDeviceUserM'] = false;
+				$("#KeyOneDeviceUserMsgM").css("color", "red");
+				$("#KeyTwoDeviceUserMsgM").css("color", "red");
+				
+			}
+			else if(!pattern.test(value1) || !pattern.test(value2))
+			{
+				message = 'The Key should contain at least one special character and a number';
+				//document.getElementById("addMyNewDeviceConfirmBtn").disabled = true;
+				editDeviceConditionsArray['KeyOneDeviceUserM'] = false;
+				editDeviceConditionsArray['KeyTwoDeviceUserM'] = false;
+				$("#KeyOneDeviceUserMsgM").css("color", "red");
+				$("#KeyTwoDeviceUserMsgM").css("color", "red");
+			}
+			else if(pattern.test(value1) && pattern.test(value2))
+			{
+				message = 'Ok';
+				//document.getElementById("addMyNewDeviceConfirmBtn").disabled = false;
+				editDeviceConditionsArray['KeyOneDeviceUserM'] = true;
+				editDeviceConditionsArray['KeyTwoDeviceUserM'] = true;
+				$("#KeyOneDeviceUserMsgM").css("color", "#337ab7");
+				$("#KeyTwoDeviceUserMsgM").css("color", "#337ab7");
+				gb_key1 = $("#KeyOneDeviceUserM").value;
+			    gb_key2 = $("#KeyTwoDeviceUserM").value;
+			}
+			
+			$("#KeyOneDeviceUserMsgM").html(message);
+			$("#KeyTwoDeviceUserMsgM").html(message);
+	}
+	
+	
 	
 function checkEditDeviceConditions()
 {
@@ -158,6 +255,7 @@ function checkEditDeviceConditions()
     
     for(var key in editDeviceConditionsArray) 
     {
+        console.log(key);
         if(editDeviceConditionsArray[key] === false)
         {
             enableButton = false;

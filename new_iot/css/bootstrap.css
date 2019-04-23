@@ -6809,3 +6809,10 @@ button.close {
     }
 }
 /*# sourceMappingURL=bootstrap.css.map */
+/*Sara 1312*/
+.newButton{
+    position: relative;
+    min-height: 1px;
+    padding-right: 15px;
+	padding-top: 5px;
+}

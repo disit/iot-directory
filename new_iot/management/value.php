@@ -48,18 +48,23 @@
     {
         header("location: unauthorizedUser.php");
     }
-
+/* 
 	require '../sso/autoload.php';
 	use Jumbojett\OpenIDConnectClient;
 
 
 	if (isset($_SESSION['refreshToken'])) {
-	  $oidc = new OpenIDConnectClient('https://www.snap4city.org', $clientId, $clientSecret);
-	  $oidc->providerConfigParam(array('token_endpoint' => 'https://www.snap4city.org/auth/realms/master/protocol/openid-connect/token'));
+	  $oidc = new OpenIDConnectClient($keycloakHostUri, $clientId, $clientSecret);
+	  $oidc->providerConfigParam(array('token_endpoint' => $keycloakHostUri.'/auth/realms/master/protocol/openid-connect/token'));
 	  $tkn = $oidc->refreshToken($_SESSION['refreshToken']);
 	  $accessToken = $tkn->access_token;
 	  $_SESSION['refreshToken'] = $tkn->refresh_token;
-	}	
+	}
+        else  $accessToken = "";	
+	 */	
+		
+	$accessToken = "";	
+
 ?>
 
 <!DOCTYPE html>
@@ -100,6 +105,21 @@
        <link rel="stylesheet" href="../boostrapTable/dist/bootstrap-table.css">
        <script src="../boostrapTable/dist/bootstrap-table.js"></script>
 	   <script src="../boostrapTable/dist/bootstrap-table-filter-control.js"></script>
+	   
+	   
+	     <!-- DataTables -->
+	   
+	    <script type="text/javascript" charset="utf8" src="../js/DataTables/datatables.js"></script>
+        <link rel="stylesheet" type="text/css" href="../js/DataTables/datatables.css">
+        <script type="text/javascript" charset="utf8" src="../js/DataTables/dataTables.bootstrap.min.js"></script>
+        <script type="text/javascript" charset="utf8" src="../js/DataTables/dataTables.responsive.min.js"></script>
+        <script type="text/javascript" charset="utf8" src="../js/DataTables/responsive.bootstrap.min.js"></script>
+		
+		
+        <link rel="stylesheet" type="text/css" href="../css/DataTables/dataTables.bootstrap.min.css">
+        <link rel="stylesheet" type="text/css" href="../css/DataTables/responsive.bootstrap.min.css">
+        <link rel="stylesheet" type="text/css" href="../css/DataTables/jquery.dataTables.min.css">
+
 
        <!-- Questa inclusione viene sempre DOPO bootstrap-table.js -->
        <script src="../boostrapTable/dist/locale/bootstrap-table-en-US.js"></script>
@@ -119,20 +139,30 @@
         <!-- Custom CSS -->
         <link href="../css/dashboard.css" rel="stylesheet">
 		
-		<style>
-		.btn-round {
-			width: 30px;
-			height:30px;
-			border-radius: 50%;
+		<style> .btn-round { width: 30px; height:30px; border-radius: 50%; }
+        #mainMenuCnt
+		{
+			background-color: rgba(51, 64, 69, 1);
+			color: white;
+			height: 100vh;
+			<?php if ($hide_menu=="hide") echo "display:none"; //MM201218 ?>
 		}
-		</style>
+        
+        </style>
         
         <!-- Custom scripts -->
 
 
 		<script>
 		 var loggedRole = "<?php echo $_SESSION['loggedRole']; ?>";
+                 var loggedUser = "<?php echo $_SESSION['loggedUsername']; ?>";
 		 var admin = "<?php echo $_SESSION['loggedRole']; ?>";
+        
+        var organization = "<?php echo $_SESSION['organization']; ?>";
+                 var kbUrl = "<?php echo $_SESSION['kbUrl']; ?>";
+                 var gpsCentreLatLng = "<?php echo $_SESSION['gpsCentreLatLng']; ?>";
+                 var zoomLevel = "<?php echo $_SESSION['zoomLevel']; ?>"; 
+            
 		 var titolo_default = "<?php echo $default_title; ?>";	
 		 var access_denied = "<?php echo $access_denied; ?>";
 		 var nascondi= "<?php echo $hide_menu; ?>";
@@ -185,16 +215,27 @@
             
             <div class="row mainRow">
                 <?php include "mainMenu.php" ?>
-                <div class="col-xs-12 col-md-10" id="mainCnt">
+                 <div 
+                     <?php //MM201218
+				if (($hide_menu=="hide")) {?>
+				class="col-xs-12 col-md-12" 
+				<?php }else {?>
+				class="col-xs-12 col-md-10" 
+				<?php } //MM201218 FINE?>
+                     id="mainCnt">
                     <div class="row hidden-md hidden-lg">
                         <div id="mobHeaderClaimCnt" class="col-xs-12 hidden-md hidden-lg centerWithFlex">
                             Snap4City 
                         </div>
                     </div>
+					<?php //MM201218
+					if (($hide_menu!="hide")) {?>
                     <div class="row" id="title_row">
                         <div class="col-xs-10 col-md-12 centerWithFlex" id="headerTitleCnt">IoT Directory : Sensors and Actuators</div>
                         <div class="col-xs-2 hidden-md hidden-lg centerWithFlex" id="headerMenuCnt"><?php include "mobMainMenu.php" ?></div>
                     </div>
+					<?php } //MM201218 FINE ?>
+					
                     <div class="row">
                         <div class="col-xs-12" id="mainContentCnt">
                             <div id="synthesis" class="row hidden-xs hidden-sm mainContentRow">
@@ -271,10 +312,38 @@
                                 </div>
 			
 							</div>
-                            <div class="row mainContentRow">
-                                <div class="col-xs-12 mainContentRowDesc">List</div>
+                            <div id="ListTableCnt" class="row mainContentRow">
+                                <div class="col-xs-12 mainContentRowDesc"></div>
                                 <div class="col-xs-12 mainContentCellCnt">
-                                    <table id="valuesTable" class="table"></table>
+     								
+								<div class="row" style= "background-color: rgb(241, 245, 244);">
+									<div class="col-xs-12 col-md-6 modalCell" style= "background-color: rgb(241, 245, 244);">
+									<div id="displayDevicesMapSA" class="pull-right"><button type="button" class="btn btn-primary btn-round"><span class="glyphicon glyphicon-globe" title="Location of Values on Map"  style="font-size:36px; color: #0000ff"></span></button></div>
+									</div>
+									<div class="col-xs-12 col-md-6 modalCell" style= "background-color: rgb(241, 245, 244);">
+									<div class="pull-right"><button id="addValueBtn"  class="btn btn-primary">New Value</button></div>
+									</div>
+								</div>
+								<div>
+								<table id="valuesTable" class="table table-bordered table-striped" cellspacing="0" width="100%">
+									 <thead>
+									  <tr>
+										<th></th>	
+										<th data-cellTitle="contextbroker">IOT Broker</th>
+										<th data-cellTitle="device">IOT Device</th>
+										<th data-cellTitle="valueName">Value Name</th>
+										<th data-cellTitle="valueType">Value Type</th>
+										<th data-cellTitle="ownership">Ownership</th>
+										<th data-cellTitle="organization">Organization</th>							
+										<th data-cellTitle="status">Status</th>							
+										<th data-cellTitle="edit">Edit</th>
+										<th data-cellTitle="delete">Delete</th>		
+										<th data-cellTitle="location">Location</th>										
+									</tr>
+									 </thead>
+									</table>
+								</div>
+								
                                 </div>
                             </div>
                         </div>
@@ -329,7 +398,7 @@
                                     <div class="modalFieldCnt">
                                         <select id="selectContextBroker" name="selectContextBroker" class="modalInputTxt">
 
-                                       <?php
+                                       <!--?php
                                             $query = "SELECT name, protocol FROM contextbroker";
                                             $result = mysqli_query($link, $query);
 
@@ -349,7 +418,7 @@
                                                 $nameCB="ERROR";
                                                 echo "<option value=\"$nameCB\">$nameCB</option>";
                                             }
-                                        ?>
+                                        ?-->
 										</select>
                                     </div>
                                     <div class="modalFieldLabelCnt">ContextBroker</div>
@@ -508,7 +577,8 @@
                         <div class="col-xs-12 centerWithFlex"><i class="fa fa-thumbs-o-up" style="font-size:36px"></i></div>
                     </div>
                     <div class="row" id="addValueKoMsg">
-                        <div class="col-xs-12 centerWithFlex">Error adding device</div>
+					    <div class="col-xs-12 centerWithFlex"></div>         
+                        <div class="col-xs-12 centerWithFlex">Error adding value</div>
                     </div>
                     <div class="row" id="addValueKoIcon">
                         <div class="col-xs-12 centerWithFlex"><i class="fa fa-thumbs-o-down" style="font-size:36px"></i></div>
@@ -858,9 +928,159 @@
                 </div>
               </div>
             </div>
-        </div>		
+        </div>	
+
+
+		<!-- Modal for Ownership Visibility and Delegations All the three -->
+		<div class="modal fade" id="delegationsModal" tabindex="-1" role="dialog" aria-labelledby="modalAddWidgetTypeLabel" aria-hidden="true">
+			<div class="modal-dialog" role="document">
+			  <div class="modal-content">
+				<div id="delegationHeadModalLabel"  class="modalHeader centerWithFlex">
+				  
+				</div>
+					<!--div id="delegationsModalBody" class="modal-body modalBody">
+					
+						<div id="delegationsModalRightCnt" class="col-xs-12 col-sm-12"-->
+						
+                                                        <form class="form-horizontal">
+					                       <div id="delegationsModalBody" class="modal-body modalBody">
+					                        <!-- Tabs -->
+					                        <ul id="delegationsTabsContainer" class="nav nav-tabs nav-justified">
+					                            <li id="visibilityTab" class="active"><a data-toggle="tab" href="#visibilityCnt" class="dashboardWizardTabTxt" aria-expanded="false">Visibility</a></li>
+					                            <li id="delegationsTab"><a data-toggle="tab" href="#delegationsCnt" class="dashboardWizardTabTxt">Delegations</a></li>
+					                           <li id="delegationsTabGroup"><a data-toggle="tab" href="#delegationsCntGroup" class="dashboardWizardTabTxt">Group Delegations</a></li>
+					                        </ul>
+					                        <!-- Fine tabs -->
+					                       <!-- Tab content -->
+				                            <div class="tab-content">
+                                				<!-- Visibility cnt -->
+
+
+
+
+                                                               <div id="visibilityCnt" class="tab-pane fade active in">
+									<div class="row" id="visibilityFormRow">
+										<legend><div class="col-xs-12 centerWithFlex delegationsModalLbl modalFirstLbl" id="changeOwnershipLbl">
+											Change visibility
+										</div></legend>
+										
+									<div class="row" class="col-xs-12 col-md-6">
+										
+										<div class="col-xs-12 col-md-3" id="newVisibilityCnt">
+										
+											<div id="visID"></div>
+										</div>
+										<div class="col-xs-12 col-md-6" id="newVisibilityCnt">	 
+											<div class="row">
+												<button type="button" id="newVisibilityPublicBtn" class="btn confirmBtn">Make It Public</button>
+												<button type="button" id="newVisibilityPrivateBtn" class="btn confirmBtn">Make It Private</button>
+												
+											</div>
+										</div>
+										<div class="col-xs-12 col-md-3"  id="newVisibilityResultMsg">
+											
+										</div>  
+			
+									</div>	
+										
+									</div>    
+								</div>
+								
+								<div id="delegationsCnt" class="tab-pane fade in">
+								  
+									<div class="row" id="delegationsFormRow">
+										<legend><div class="col-xs-12 centerWithFlex modalFirstLbl" id="newDelegationLbl">
+											Add new delegation
+										</div></legend>
+										<div class="col-xs-12" id="newDelegationCnt">
+											<div class="input-group">
+												<input type="text" class="form-control" name="newDelegation" id="newDelegation" placeholder="Delegated username">
+												<span class="input-group-btn">
+												  <button type="button" id="newDelegationConfirmBtn" class="btn confirmBtn disabled">Confirm</button>
+												</span>
+											</div>
+											<div class="col-xs-12 centerWithFlex delegationsModalMsg" id="newDelegatedMsg">
+												Delegated username can't be empty
+											</div>    
+										</div>
+
+										<legend><div class="col-xs-12 centerWithFlex" id="currentDelegationsLbl">
+											Current delegations
+										</div></legend>
+										<div class="col-xs-12" id="delegationsTableCnt">
+											<table id="delegationsTable">
+												<thead>
+												  <th>Delegated user</th>
+												  <th>Remove</th>
+												</thead>
+												<tbody>
+												</tbody>
+											</table>
+										</div>
+									</div>
+								</div>
+
+                                                                <div id="delegationsCntGroup" class="tab-pane fade in">
+
+                                                                        <div class="row" id="delegationsFormRowGroup">
+                                                                                <legend><div class="col-xs-12 centerWithFlex modalFirstLbl" id="newDelegationLblGroup">
+                                                                                        Add new Group delegation
+                                                                                </div></legend>
+                                                                                <div class="col-xs-12"  class="input-group">
+                                                                                               	<div id="newDelegationCntGroup">
+													<div class="col-xs-4">
+														<select name="newDelegationOrganization" id="newDelegationOrganization" class="modalInputTxt">
+														</select>
+													</div>
+													<div class="col-xs-4">
+														<select name="newDelegationGroup" id="newDelegationGroup" class="modalInputTxt">
+														</select>
+													</div>
+													<div class="col-xs-4">
+	                                                                                                	<span class="input-group-btn">
+        	                                                                                          		<button type="button" id="newDelegationConfirmBtnGroup" class="btn confirmBtn">Confirm</button>
+                	                                                                                	</span>
+													</div>
+		                                                                                        <div class="col-xs-12 centerWithFlex delegationsModalMsg" id="newDelegatedMsgGroup">
+                                		                                                        </div>
+												</div>
+                                                                                </div>
+
+                                                                                <legend><div class="col-xs-12 centerWithFlex" id="currentDelegationsLblGroup">
+                                                                                        Current Group delegations
+                                                                                </div></legend>
+                                                                                <div class="col-xs-12" id="delegationsTableCntGroup">
+                                                                                        <table id="delegationsTableGroup">
+                                                                                                <thead>
+                                                                                                  <th>Delegated group</th>
+                                                                                                  <th>Remove</th>
+                                                                                                </thead>
+                                                                                                <tbody>
+                                                                                                </tbody>
+                                                                                        </table>
+                                                                                </div>
+                                                                        </div>
+                                                                </div>
+	
+						</div>
+						
+				
+						
+					</div>
+					<div id="delegationsModalFooter" class="modal-footer">
+					  <button type="button" id="delegationsCancelBtn" class="btn cancelBtn">Close</button>
+					</div>	
+			</form>		 
+		</div>
+            </div>
+        </div>
 		
+		
+		
+        
+
         
     </body>
 </html>
+
 

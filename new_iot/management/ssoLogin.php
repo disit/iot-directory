@@ -1,71 +1,72 @@
 <?php
-  
+
+ 
    include '../config.php';
    require '../sso/autoload.php';
    use Jumbojett\OpenIDConnectClient; 
 
-   $ldapServer = '192.168.0.137';   
    $ldapRole = null;
    $ldapOk = false;
-   $ldapToolName = "IOTDirectory";
 
-   $appUrl = 'https://iotdirectory.snap4city.org';
-   
-   $page = 'contextbroker.php';
+   $page = 'mydevices.php';
    if(isset($_REQUEST['redirect']))
 	   $page = $_REQUEST['redirect'];
    
    $oidc = new OpenIDConnectClient(
-        'https://www.snap4city.org',
-        'php-iot-directory',
-        '1893827e-22e0-431e-9d11-8a44e2260c3a'
+        $keycloakHostUri,
+        $clientId,
+        $clientSecret
     );
 
     $oidc->setVerifyHost(false);
     $oidc->setVerifyPeer(false);
 
-    $oidc->providerConfigParam(array('authorization_endpoint'=>'https://www.snap4city.org/auth/realms/master/protocol/openid-connect/auth'));
-    $oidc->providerConfigParam(array('token_endpoint'=>'https://www.snap4city.org/auth/realms/master/protocol/openid-connect/token'));
-    $oidc->providerConfigParam(array('userinfo_endpoint'=>'https://www.snap4city.org/auth/realms/master/protocol/openid-connect/userinfo'));
-    $oidc->providerConfigParam(array('jwks_uri'=>'https://www.snap4city.org/auth/realms/master/protocol/openid-connect/certs'));
-    $oidc->providerConfigParam(array('issuer'=>'https://www.snap4city.org/auth/realms/master'));
-    $oidc->providerConfigParam(array('end_session_endpoint'=>'https://www.snap4city.org/auth/realms/master/protocol/openid-connect/logout'));
+    $oidc->providerConfigParam(array('authorization_endpoint'=>$keycloakHostUri.'/auth/realms/master/protocol/openid-connect/auth'));
+    $oidc->providerConfigParam(array('token_endpoint'=>$keycloakHostUri.'/auth/realms/master/protocol/openid-connect/token'));
+    $oidc->providerConfigParam(array('userinfo_endpoint'=>$keycloakHostUri.'/auth/realms/master/protocol/openid-connect/userinfo'));
+    $oidc->providerConfigParam(array('jwks_uri'=>$keycloakHostUri.'/auth/realms/master/protocol/openid-connect/certs'));
+    $oidc->providerConfigParam(array('issuer'=>$keycloakHostUri.'/auth/realms/master'));
+    $oidc->providerConfigParam(array('end_session_endpoint'=>$keycloakHostUri.'/auth/realms/master/protocol/openid-connect/logout'));
 
     $oidc->addScope(array('openid','username','profile'));
-    $oidc->setRedirectURL($appUrl . '/management/ssoLogin.php?redirect='.$page);
+    $oidc->setRedirectURL($redirectUri . '/management/ssoLogin.php?redirect='.$page);
+
     $oidc->authenticate();
 
     $username = $oidc->requestUserInfo('preferred_username');
-    $ldapUsername = "cn=". $username . ",dc=ldap,dc=disit,dc=org";
+    $ldapUsername = "cn=". $username . ",".$ldapBaseName;
 
     $ds = ldap_connect($ldapServer, $ldapPort);
     ldap_set_option($ds, LDAP_OPT_PROTOCOL_VERSION, 3);
     $bind = ldap_bind($ds);
 
+
+
     if($ds && $bind)
     {
-        if(checkLdapMembership($ds, $ldapUsername, $ldapToolName))
+        if(checkLdapMembership($ds, $ldapUsername, $ldapToolName, $ldapBaseName))
         {
-           if(checkLdapRole($ds, $ldapUsername, "RootAdmin"))
+           $organization= findLdapOrganizationalUnit($ds, $ldapUsername, $ldapToolName, $ldapBaseName);
+           if(checkLdapRole($ds, $ldapUsername, "RootAdmin", $ldapBaseName))
            {
               $ldapRole = "RootAdmin";
               $ldapOk = true;
            }
-           else if(checkLdapRole($ds, $ldapUsername, "ToolAdmin"))
+           else if(checkLdapRole($ds, $ldapUsername, "ToolAdmin", $ldapBaseName))
            {
               $ldapRole = "ToolAdmin";
               $ldapOk = true;
            }
            else
            {
-               if(checkLdapRole($ds, $ldapUsername, "AreaManager"))
+               if(checkLdapRole($ds, $ldapUsername, "AreaManager", $ldapBaseName))
                {
                   $ldapRole = "AreaManager";
                   $ldapOk = true;
                }
                else
                {
-                  if(checkLdapRole($ds, $ldapUsername, "Manager")) {
+                  if(checkLdapRole($ds, $ldapUsername, "Manager", $ldapBaseName)) {
                      $ldapRole = "Manager";
                      $ldapOk = true;
                   } else {
@@ -85,6 +86,7 @@
 
     if($ldapOk)
     {
+
         ini_set('session.gc_maxlifetime', $sessionDuration);
         session_set_cookie_params($sessionDuration);
         $_SESSION['sessionEndTime'] = time() + $sessionDuration;
@@ -93,6 +95,18 @@
         $_SESSION['loggedType'] = "ldap";
         $_SESSION['refreshToken']=$oidc->getRefreshToken();
         $_SESSION['accessToken']=$oidc->getAccessToken();
+        $_SESSION['organization']=$organization;
+        $_SESSION['kbUrl']="";
+            $_SESSION['gpsCentreLatLng']="";
+            $_SESSION['zoomLevel']="";
+        
+        if($organization!="NULL"){
+            $info=get_organization_info($organizationApiURI, $organization);
+            $_SESSION['kbUrl']=$info["kbUrl"];
+            $_SESSION['gpsCentreLatLng']=$info["gpsCentreLatLng"];
+            $_SESSION['zoomLevel']=$info["zoomLevel"];    
+        }
+        
         
         header("Location: $page");
     }
@@ -101,9 +115,9 @@
 		echo $msg;
     }
 	
-function checkLdapMembership($connection, $userDn, $tool) 
+function checkLdapMembership($connection, $userDn, $tool, $ldapBaseName) 
 {
-	 $result = ldap_search($connection, 'dc=ldap,dc=disit,dc=org', '(&(objectClass=posixGroup)(memberUid=' . $userDn . '))');
+	 $result = ldap_search($connection, $ldapBaseName, '(&(objectClass=posixGroup)(memberUid=' . $userDn . '))');
 	 $entries = ldap_get_entries($connection, $result);
 	 foreach ($entries as $key => $value) 
 	 {
@@ -117,9 +131,9 @@ function checkLdapMembership($connection, $userDn, $tool)
 	 return false;
  }
 
-function checkLdapRole($connection, $userDn, $role) 
+function checkLdapRole($connection, $userDn, $role, $ldapBaseName) 
 {
-  $result = ldap_search($connection, 'dc=ldap,dc=disit,dc=org', '(&(objectClass=organizationalRole)(cn=' . $role . ')(roleOccupant=' . $userDn . '))');
+  $result = ldap_search($connection, $ldapBaseName, '(&(objectClass=organizationalRole)(cn=' . $role . ')(roleOccupant=' . $userDn . '))');
   $entries = ldap_get_entries($connection, $result);
   foreach ($entries as $key => $value) 
   {
@@ -131,4 +145,62 @@ function checkLdapRole($connection, $userDn, $role)
 	 }
   }
   return false;
+}
+
+//Fatima
+function findLdapOrganizationalUnit($connection, $userDn, $tool, $ldapBaseName) 
+{
+	$result = ldap_search($connection, $ldapBaseName, '(&(objectClass=organizationalUnit)(l=' . $userDn . '))');
+	$entries = ldap_get_entries($connection, $result);
+	
+    //Print $entries here
+    //echo_log(var_dump($entries));
+    //echo_log($entries);
+    
+
+
+    if (ldap_count_entries($connection,$result)==0){
+        //TODO thrown an error or return an error
+//        echo_log("No LDAP organization Unit found for user".$userDn);
+        return "NULL";
+        }
+    else{
+        $ou=$entries["0"]["ou"][0];
+  //      echo_log("Organization found is:".$ou);
+        return $ou;
+        
+    }
+	// foreach ($entries as $key => $value){
+		// if(is_numeric($key)){
+		   // if($value["ou"]["0"] == $tool) {
+			  // return true;
+		   // }
+		// }
+	// }
+}
+
+//Fatima: to get info related to organization
+function get_organization_info($organizationApiURI, $ou_tmp){
+	$url = $organizationApiURI.'organizations.php?org='.$ou_tmp;
+	$context = stream_context_create(null);
+	$result = file_get_contents($url, false, $context);
+
+
+    $result_json = json_decode($result, true);
+	if(sizeof($result_json)==1){
+		return $result_json[0];
+	}
+	else{
+		return null;
+	}
+}
+
+//Fatima for organizations testing
+function echo_log($words) {
+ /* $fp=fopen("../log/echo_log_org.txt","a") or die("Unable to open file!");;
+  flock($fp,LOCK_EX);
+  $output = date("Y-m-d h:i:sa") . ": ". $words . "\r\n";
+  fwrite($fp,$output);
+  flock($fp,LOCK_UN);
+  fclose($fp);*/
 }

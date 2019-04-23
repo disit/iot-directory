@@ -250,7 +250,7 @@
                           $_SESSION['loggedType'] = "ldap";
                           notificatorLogin($username, $notificatorApiUsr, $notificatorApiPwd, $notificatorUrl, $ldapTool);
                           mysqli_close($link);
-                          header("location: value.php");
+                          header("location: devices.php");
                        }
                        else
                        {
