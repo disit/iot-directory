@@ -62,7 +62,7 @@ if (isset($_REQUEST['token'])) {
 else $accessToken ="";
 }
 
-$result=array("status"=>"","msg"=>"","content"=>"","log"=>"");	
+$result=array("status"=>"","msg"=>"","content"=>"","error_msg"=>"","log"=>"");	
 /* all the primitives return an array "result" with the following structure
 
 result["status"] = ok/ko; reports the status of the operation (mandatory)

@@ -10,7 +10,7 @@ function showEditModelModal()
     editModelConditionsArray['inputTypeModelM'] = false;
     editModelConditionsArray['inputProducerModelM'] = false;
 
-    $("#editModelConfirmBtn").attr("disabled", true);       
+    $("#editModelConfirmBtn").attr("disabled", false);       
 	
 	$("#editInfoTabModel #inputNameModelM").on('input', checkModelNameM); 
 	$("#editInfoTabModel #inputNameModelM").on('input', checkEditModelConditions);

@@ -60,6 +60,7 @@ else
     exit();
 }
 
+
 require '../sso/autoload.php';
 use Jumbojett\OpenIDConnectClient;
 
@@ -85,6 +86,42 @@ else $accessToken ="";
 if (isset($_REQUEST['username'])) {
 	$currentUser = $_REQUEST['username'];
 }
+
+foreach ($_REQUEST as $key =>$param) {
+    if($key=="id" || $key=="device" || $key=="cb" || $key=="contextbroker" || $key=="model" || $key=="value_name"){
+        if($key=="model"){
+            $param=str_replace(' ', '', $param);
+        }
+        if($key=="id"|| $key=="device"){
+            $param=str_replace(':','', $param);
+        }
+        preg_match($regphp, $param,  $matches);
+        if (count($matches)>0){
+            $result["status"]="ko";
+            $result["error_msg"]="strange characters are not allowed";
+            $action="";
+            mysqli_close($link);
+        }
+    }
+    else if($key=="attributes"|| $key=="newattributes" || $key=="deleteattributes"){
+        $listAttributes= json_decode($param);
+        $a=0;
+        while ($a < count($listAttributes))
+		{
+		  $att=$listAttributes[$a];
+          $attName=$att->value_name;
+          preg_match($regphp, $attName,  $matches);
+          if (count($matches)>0){
+            $result["status"]="ko";
+            $result["error_msg"]="strange characters are not allowed";
+            $action="";
+            mysqli_close($link);
+          }
+            $a++;
+        }
+    }
+}
+
 
 if ($action=="insert")
 {   
@@ -658,6 +695,8 @@ else if($action == 'get_device_attributes')
 
 	$id = mysqli_real_escape_string($link, $_REQUEST['id']);
 	$cb = mysqli_real_escape_string($link, $_REQUEST['contextbroker']);
+    
+    if($accessToken !=""){ 
 
 	//$result = array();
 	$q1 = "SELECT * FROM event_values WHERE cb = '$cb' AND device = '$id'";
@@ -700,6 +739,15 @@ else if($action == 'get_device_attributes')
 	}
 	my_log($result);
 	mysqli_close($link);  
+        
+    }
+    else{
+        $result["status"]='ko';
+	    $result["msg"] .= "\n Problem in the access Token "; 
+	    $result["error_msg"] .= "\n Problem in the access Token "; 
+	    $result["log"] .= "\n Problem in the access Token "; 
+    }
+    
 }	
 else if($action == 'get_param_values')
 {	

@@ -221,7 +221,7 @@
 					if (($hide_menu!="hide")) {?>
                     <div class="row" id="title_row">
                         <div class="col-xs-10 col-md-12 centerWithFlex" id="headerTitleCnt">IoT Directory: Models</div>
-                        <div class="col-xs-2 hidden-md hidden-lg centerWithFlex" id="headerMenuCnt"><?php include "mobMainMenu.php" ?></div>
+                        <div class="col-xs-2 hidden-md hidden-lg centerWithFlex" id="headerMenuCnt"><!--php include "mobMainMenu.php" ?--></div>
                     </div>
 					<?php } //MM201218 FINE ?>
 					
@@ -555,30 +555,32 @@
 							
                     </div>
 					
+                  </div>
 					   
-                    <div class="row" id="addModelLoadingMsg">
+                  
+                  <div class="row" id="addModelLoadingMsg">
                         <div class="col-xs-12 centerWithFlex">Adding Model, please wait</div>
                     </div>
-                    <div class="row" id="addModelLoadingIcon">
+                  <div class="row" id="addModelLoadingIcon">
                         <div class="col-xs-12 centerWithFlex"><i class="fa fa-circle-o-notch fa-spin" style="font-size:36px;"></i></div>
                     </div>
-                    <div class="row" id="addModelOkMsg">
+                  <div class="row" id="addModelOkMsg">
                         <div class="col-xs-12 centerWithFlex">Model added successfully</div>
                     </div>
-                    <div class="row" id="addModelOkIcon">
+                  <div class="row" id="addModelOkIcon">
                         <div class="col-xs-12 centerWithFlex"><i class="fa fa-thumbs-o-up" style="font-size:36px"></i></div>
                     </div>
-                    <div class="row" id="addModelKoMsg">
+                  <div class="row" id="addModelKoMsg">
 					    <div class="col-xs-12 centerWithFlex"></div>
                         <div class="col-xs-12 centerWithFlex">Error adding model</div>
                     </div>
-                    <div class="row" id="addModelKoIcon">
+                  <div class="row" id="addModelKoIcon">
                         <div class="col-xs-12 centerWithFlex"><i class="fa fa-thumbs-o-down" style="font-size:36px"></i></div>
                     </div>
-				</div> 	
-		       
+				
          		<div id="addModelModalFooter" class="modal-footer">
                   <button type="text" id="addNewModelCancelBtn" class="btn cancelBtn" data-dismiss="modal">Cancel</button>
+                  <button type="button" id="addNewModelOkBtn" class="btn cancelBtn" data-dismiss="modal" style="display:none">Ok</button>
                   <button type="text" id="addNewModelConfirmBtn" name="addNewModelConfirmBtn" class="btn confirmBtn internalLink">Confirm</button>	  
 				</div>
 				
@@ -605,6 +607,8 @@
                         <li><a data-toggle="tab" href="#editSchemaTabModel">Values</a></li>
 						
                     </ul>
+                    
+                    
                     
                     <div class="tab-content">
                        
@@ -744,28 +748,20 @@
 					<div class="modalFieldLabelCnt">Edge-Gateway Type</div>
 			                <div id="selectEdgeGatewayTypeMMsg" class="modalFieldMsgCnt">&nbsp;</div>
 		                </div>
-
-
-
-<div class="col-xs-12 col-md-6 modalCell">
-                                                                        <div class="modalFieldCnt">
-                                                                                        <input type="text" class="modalInputTxt" name="inputIdModelM" id="inputIdModelM" hidden>
-                                                                            <input type="text" class="modalInputTxt" name="inputOrganizationModelM" id="inputOrganizationModelM" hidden>
+                                 <div class="col-xs-12 col-md-6 modalCell">
+                                     <div class="modalFieldCnt">
+                                         <input type="text" class="modalInputTxt" name="inputIdModelM" id="inputIdModelM" hidden>
+                                         <input type="text" class="modalInputTxt" name="inputOrganizationModelM" id="inputOrganizationModelM" hidden>
                                     </div>
-                                                                        <div class="modalFieldLabelCnt"></div>
-                                                                        <div id="inputIdModelMMsg" class="modalFieldMsgCnt">&nbsp;</div>
+                                     <div class="modalFieldLabelCnt"></div>
+                                     
+                                     <div id="inputIdModelMMsg" class="modalFieldMsgCnt">&nbsp;</div>
                                 </div>
-
-
 							</div>
-						
-				
                         </div>
                         
                         <!-- IOT Broker tab -->
                         <div id="editIOTBrokerTabModel" class="tab-pane fade">
-                     
-						
 			              <div class="row">
 								<div class="col-xs-12 col-md-6 modalCell">
                                     <div class="modalFieldCnt">
@@ -863,7 +859,7 @@
 					
 						
                     </div>
-					
+					</div>
 					
 					<div class="row" id="editModelLoadingMsg">
                         <div class="col-xs-12 centerWithFlex">Updating model, please wait</div>
@@ -884,10 +880,11 @@
                         <div class="col-xs-12 centerWithFlex"><i class="fa fa-thumbs-o-down" style="font-size:36px"></i></div>
                     </div>
 		            
-                </div>
+                
 				<div id="editModelModalFooter" class="modal-footer">
                   <button type="button" id="editModelCancelBtn" class="btn cancelBtn" data-dismiss="modal">Cancel</button>
                   <button type="button" id="editModelConfirmBtn" class="btn confirmBtn internalLink" >Confirm</button>
+                  <button type="button" id="editModelOkBtn" class="btn cancelBtn" data-dismiss="modal" style="display:none;" >Ok</button>
                 </div>
 	
               </div>
@@ -908,7 +905,12 @@
                 <div class="modal-body">
 
                 </div>
+                  
+                  <div id="deleteModelModalInnerDiv1" class="modalBodyInnerDiv" style="display: none;"><h5>Model deletion in progress, please wait</h5></div>
+                    <div id="deleteModelModalInnerDiv2" class="modalBodyInnerDiv" style="display: none;"><i class="fa fa-circle-o-notch fa-spin" style="font-size:36px"></i></div>
+                  
                 <div class="modal-footer">
+                    <button type="button" id="deleteModelOkBtn" class="btn btn-primary" data-dismiss="modal" style="display: none;">Ok</button>
                   <button type="button" id="deleteModelCancelBtn" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
                   <button type="button" id="deleteModelConfirmBtn" class="btn btn-primary">Confirm</button>
                 </div>

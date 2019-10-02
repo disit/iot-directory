@@ -505,13 +505,22 @@ function format ( d ) {
                         $.each(data['content'], function() {
                             $dropdown.append($("<option />").val(this.name).text(this.name));        
                         });
+                                                
                         
-                        $("#addModelLoadingMsg").hide();
-                        $("#addModelLoadingIcon").hide();
-                        $("#addModelOkMsg").hide();
-                        $("#addModelOkIcon").hide();
-                        $("#addModelKoMsg").hide();
-                        $("#addModelKoIcon").hide();
+                        $("#addModelModalTabs").show();
+                        $('#addModelModalBody').show();
+			            $('#addModelModal div.modalCell').show();
+                        $('#addNewModelCancelBtn').show();
+                        $('#addNewModelConfirmBtn').show();
+                        $('#addNewModelOkBtn').hide();
+			             $('#addModelOkMsg').hide();
+			             $('#addModelOkIcon').hide();	
+			             $('#addModelKoMsg').hide();
+			             $('#addModelKoIcon').hide();	
+                         $('#addModelLoadingMsg').hide();
+                        $('#addModelLoadingIcon').hide();  
+
+                
 
 		                showAddModelModal();
 				
@@ -576,11 +585,21 @@ function format ( d ) {
 		
 		
             $("#addModelModalTabs").hide();
+            $('#addModelModalBody').hide();
 			$('#addModelModal div.modalCell').hide();
-            $("#addModelModalFooter").hide();
-			$("#addAttrBtn").hide();
-            $('#addModelLoadingMsg').show();
-            $('#addModelLoadingIcon').show();
+           //$("#addModelModalFooter").hide();
+			//$("#addAttrBtn").hide();
+            $('#addNewModelCancelBtn').hide();
+            $('#addNewModelConfirmBtn').hide();
+            $('#addNewModelOkBtn').hide();
+			$('#addModelOkMsg').hide();
+			$('#addModelOkIcon').hide();	
+			$('#addModelKoMsg').hide();
+			$('#addModelKoIcon').hide();	
+			$('#addModelLoadingMsg').show();
+            $('#addModelLoadingIcon').show();    
+           
+            
             console.log("XIEL" + JSON.stringify(mynewAttributes));
 			
              $.ajax({
@@ -621,47 +640,24 @@ function format ( d ) {
                     {
                         console.log("Error adding Model");
                         console.log(mydata);
-			            $('#addModelLoadingMsg').hide();
+			              
+                        $('#addModelModalTabs').hide();
+						$('#addModelModalBody').hide();	
+						$('#addModelModal div.modalCell').hide();
+						//$('#addContextBrokerModalFooter').hide();
+                        $('#addNewModelCancelBtn').hide();
+						$('#addNewModelConfirmBtn').hide();
+						$('#addNewModelOkBtn').show();
+						$('#addModelOkMsg').hide();
+						$('#addModelOkIcon').hide();	
+						$('#addModelLoadingMsg').hide();
                         $('#addModelLoadingIcon').hide();
-						$('#addModelKoMsg').show();
-						$('#addModelKoMsg div:first-child').html(mydata["msg"]);
+                        $('#addModelKoMsg').show();
+						$('#addModelKoMsg div:first-child').html(data["error_msg"]);
                         $('#addModelKoIcon').show();
                  
 				 
-				 	setTimeout(function(){
-                            $('#addModelModal').modal('hide');
-                          //  buildMainTable(true);
-
-                            setTimeout(function(){
- 							   
-							    $('#addModelKoMsg').hide();
-							    $('#addModelKoIcon').hide();
-								  
-								 
-								$('#inputNameModel').val("");
-								$('#inputDescriptionModel').val("");
-								$('#inputTypeModel').val("");
-								$('#selectKindModel').val("");
-								//$('#selectActiveModel').val("");
-								$('#selectHCModel').val("");
-								$('#inputHVModel').val("");
-								$('#selectContextBroker').val("");
-								$('#selectProtocolModel').val("");
-								$('#selectFormatModel').val("");
-								
-								$('#inputProducerModel').val("");
-								$('#inputFrequencyModel').val("");
-								//$('#inputPolicyModel').val("");
-								$('#selectKGeneratorModel').val("");
-								$('#addlistAttributes').html("");	
-	                          
-							  location.reload();                      								
-										
-								  $('#addModelModalTabs').show();
-                                  $('#addModelModal div.modalCell').show();
-                                  $('#addModelModalFooter').show();
-                            }, 1000);
-                        }, 3000);
+				 
 				 
 				 
                    
@@ -669,68 +665,53 @@ function format ( d ) {
 					else if (mydata["status"] === 'ok')
                     {
 						console.log("Added Model");
-						$('#addModelLoadingMsg').hide();
+						
+                        
+                        $('#addModelLoadingMsg').hide();
                         $('#addModelLoadingIcon').hide();
-                        $('#addModelKoMsg').hide();
-                        $('#addModelKoIcon').hide();
+						$('#addModelKoMsg').hide();
+						$('#addModelKoIcon').hide();
+						
+						$('#addModelModalTabs').hide();
+						$('#addModelModalBody').hide();	
+						$('#addModelModal div.modalCell').hide();
+						//$('#addContextBrokerModalFooter').hide();
+						$('#addNewModelCancelBtn').hide();
+						$('#addNewModelConfirmBtn').hide();
+                        $('#addNewModelOkBtn').show();
+						
                         $('#addModelOkMsg').show();
                         $('#addModelOkIcon').show();
-   
-						$('#dashboardTotNumberCnt .pageSingleDataCnt').html(parseInt($('#dashboardTotNumberCnt .pageSingleDataCnt').html()) + 1);
-             
 
-						setTimeout(function(){
-                            $('#addModelModal').modal('hide');
-							fetch_data();
-			
-                            setTimeout(function(){
- 							   
-								  $('#addModelOkMsg').hide();
-                                  $('#addModelOkIcon').hide();
-								  
-								$('#inputNameModel').val("");
-								$('#inputDescriptionModel').val("");
-								$('#inputTypeModel').val("");
-								$('#selectKindModel').val("");
-								//$('#selectActiveModel').val("");
-								$('#selectHCModel').val("");
-								$('#inputHVModel').val("");
-								$('#selectContextBroker').val("");
-								$('#selectProtocolModel').val("");
-								$('#selectFormatModel').val("");
-								
-								$('#inputProducerModel').val("");
-								$('#inputFrequencyModel').val("");
-								//$('#inputPolicyModel').val("");
-								$('#selectKGeneratorModel').val("");
-								$('#addlistAttributes').html("");	
-								
-		                           location.reload();
-								  $('#addModelModalTabs').show();
-                                  $('#addModelModal div.modalCell').show();
-                                  $('#addModelModalFooter').show();
-                            }, 1000);
-                        }, 3000);						
-						
+                                                
+						$('#dashboardTotNumberCnt .pageSingleDataCnt').html(parseInt($('#dashboardTotNumberCnt .pageSingleDataCnt').html()) + 1);
+                        
+                        $('#modelTable').DataTable().destroy();
+                        fetch_data(true);
+             						
                     } 
 					 
                  },
-                 error: function (mydata)
-                                        {
+                 error: function (mydata) {
 					   console.log("Error insert model");  
 					   console.log("Error status -- Ko result: " + JSON.stringify(mydata));
-                        $('#addModelLoadingMsg').hide();
-                        $('#addModelLoadingIcon').hide();
-                        $('#addModelKoMsg').show();
-                        $('#addModelKoIcon').show();
-                        setTimeout(function(){
-                            $('#addModelKoMsg').hide();
-                            $('#addModelKoIcon').hide();
-							$('#addModelModal').hide();
-                            // $('#addDeviceModalTabs').show();
-                            // $('#addDeviceModal div.modalCell').show();
-                            // $('#addDeviceModalFooter').show();
-                        }, 5000);
+                                            
+                     $("#addModelModal").modal('hide');
+					 
+					 $('#addModelModalTabs').hide();
+					 $('#addModelModalBody').hide();	
+					 $('#addModelModal div.modalCell').hide();
+					 $('#addModelModalFooter').hide();
+					 $('#addModelOkMsg').hide();
+					 $('#addModelOkIcon').hide();	
+                     $('#addModelKoMsg').show();
+					 $('#addModelKoIcon').show();
+                     $('#addNewModelCancelBtn').hide();
+                     $('#addNewModelConfirmBtn').hide();
+                     $('#addNewModelOkBtn').show();	
+                     $('#addModelLoadingMsg').hide();
+                     $('#addModelLoadingIcon').hide();                  
+                     
                  }
              });
             
@@ -773,12 +754,20 @@ function format ( d ) {
 			
 			//Sara2510 - for logging purpose
 			console.log("name "+name);
-            $("#deleteModelModal div.modal-body").html("");
+            /*$("#deleteModelModal div.modal-body").html("");
             $("#deleteModelCancelBtn").hide();
             $("#deleteModelConfirmBtn").hide();
             $("#deleteModelModal div.modal-body").append('<div id="deleteModelModalInnerDiv1" class="modalBodyInnerDiv"><h5>Model deletion in progress, please wait</h5></div>');
-            $("#deleteModelModal div.modal-body").append('<div id="deleteModelModalInnerDiv2" class="modalBodyInnerDiv"><i class="fa fa-circle-o-notch fa-spin" style="font-size:36px"></i></div>');
+            $("#deleteModelModal div.modal-body").append('<div id="deleteModelModalInnerDiv2" class="modalBodyInnerDiv"><i class="fa fa-circle-o-notch fa-spin" style="font-size:36px"></i></div>');*/
 
+            
+            $("#deleteModelModal div.modal-body").html("");
+		$("#deleteModelCancelBtn").hide();
+		$("#deleteModelConfirmBtn").hide();
+		$("#deleteModelOkBtn").hide();
+		$("#deleteModelModalInnerDiv1").show();
+		$("#deleteModelModalInnerDiv2").show();
+            
             
             $.ajax({
                 url: "../api/model.php",
@@ -798,48 +787,54 @@ function format ( d ) {
                 success: function (data) 
                 {
 					console.log(JSON.stringify(data));
+                    $("#deleteModelOkBtn").show();
+                    
                     if(data["status"] === 'ko')
                     {
-                        $("#deleteModelModalInnerDiv1").html(data["msg"]);
+                        
+                        $("#deleteModelModalInnerDiv1").html(data["error_msg"]);
                         $("#deleteModelModalInnerDiv2").html('<i class="fa fa-frown-o" style="font-size:42px"></i>');
                     
-					    setTimeout(function()
-                        {  $("#deleteModelModal").modal('hide');  
-                        }, 2000);
 					}
                     else if(data["status"] === 'ok')
                     {
-                        $("#deleteModelModalInnerDiv1").html('Model &nbsp; <b>' + id + '</b> &nbsp;deleted successfully');
-                        $("#deleteModelModalInnerDiv2").html('<i class="fa fa-check" style="font-size:42px"></i>');
 						
+                        $("#deleteModelModalInnerDiv1").html('Model &nbsp; deleted successfully');
+					    $("#deleteModelModalInnerDiv1").show();
+					    $("#deleteModelModalInnerDiv2").html('<i class="fa fa-check" style="font-size:42px"></i>');
+
 						 
 						$('#dashboardTotNumberCnt .pageSingleDataCnt').html(parseInt($('#dashboardTotNumberCnt .pageSingleDataCnt').html()) - 1);
                         
-						
-                        setTimeout(function()
-                        {
-							$('#modelTable').DataTable().destroy();
-                            fetch_data(true);
-                            $("#deleteModelModal").modal('hide');
-							
-                            setTimeout(function(){
-                                $("#deleteModelCancelBtn").show();
-                                $("#deleteModelConfirmBtn").show();
-                            }, 500);
-                        }, 2000);
+						$('#modelTable').DataTable().destroy();
+                        fetch_data(true);
+                       
                     }
                 },
                 error: function (data) 
                 {
 					console.log(JSON.stringify(data));
-                    $("#deleteModelModalInnerDiv1").html(data["msg"]);
-                    $("#deleteModelModalInnerDiv2").html('<i class="fa fa-frown-o" style="font-size:42px"></i>');
-					setTimeout(function()
-                        {  $("#deleteModelModal").modal('hide');  
-                        }, 2000);
+                   					
+                    $("#deleteModelOkBtn").show();
+                    $("#deleteModelModalInnerDiv1").html(data["error_msg"]);
+				    $("#deleteModelModalInnerDiv2").html('<i class="fa fa-frown-o" style="font-size:42px"></i>');
+
                 }
             });
         });
+        
+        
+        $("#deleteModelOkBtn").off("click");
+        $("#deleteModelOkBtn").click(function(){
+            $("#deleteModelModal div.modal-body").html("Do you want to confirm deletion of the following Model?");
+            $("#deleteModelOkBtn").hide();
+            $("#deleteModelCancelBtn").show();
+            $("#deleteModelConfirmBtn").show();
+            $("#deleteModelModalInnerDiv1").html('<h5>Model deletion in progress, please wait</h5>');
+            $("#deleteModelModalInnerDiv2").html('<i class="fa fa-circle-o-notch fa-spin" style="font-size:36px"></i>');
+            $("#deleteModelModalInnerDiv1").hide();
+            $("#deleteModelModalInnerDiv2").hide();
+        }); 
         
 // END DELETE MODEL
 		
@@ -859,19 +854,28 @@ function format ( d ) {
 	
 
 	$('#modelTable tbody').on('click', 'button.editDashBtn', function () {                         	
-		$("#editModelModalBody").show();
 		$('#editModelModalTabs').show();
-
-
-		  $("#editModelLoadingMsg").hide();
-		  $("#editModelLoadingIcon").hide();
-		  $("#editModelOkMsg").hide();
-		  $("#editModelOkIcon").hide();
-		  $("#editModelKoMsg").hide();
-		  $("#editModelKoIcon").hide(); 
-		  $("#editModelModalFooter").show();
-		  $("#editModelModal").modal('show');
-		  $("#editModelModalLabel").html("Edit Model - " + $(this).attr("data-name"));
+			$("#editModelModalBody").show();
+			//$('#editContextBrokerModalBody div.modalCell').show();
+			$("#editModelModalFooter").show();
+            $("#editModelCancelBtn").show();
+            $("#editModelConfirmBtn").show();
+			$("#editModelModal").modal('show');
+			$("#editModelModalLabel").html("Edit Model - " + $(this).attr("data-name"));
+            $('#editModelLoadingMsg').hide();
+            $('#editModelLoadingIcon').hide();
+            $('#editModelOkMsg').hide();		
+            $('#editModelOkIcon').hide();
+            $('#editModelKoMsg').hide();
+            $('#editModelKoIcon').hide();
+            $('#editModelOkBtn').hide();
+        
+            $('#editModelModal div.modalCell').show();
+		    $("#addAttrMBtn").show();
+        $('#editlistAttributes').html("");
+		
+        
+        
 		  
 		  var id = $(this).attr('data-id');
 		  var obj_organization = $(this).attr('data-organization');
@@ -954,6 +958,7 @@ function format ( d ) {
 		 data: {
 			  action: "get_value_attributes", 
 			   id: $(this).attr("data-id"),
+			   id: $(this).attr("data-id"),
               organization:organization
 			  },
 		type: "POST",
@@ -1021,7 +1026,7 @@ function format ( d ) {
 		
 		//MARCO: in case of model I do not have to distinguish between updated attributes and new inserted 
 		// attributes. I can use a single variable for keeping trace of both of them
-		// mynewAttributes = [];
+        //mynewAttributes = [];
 		myAttributes = [];
 		var regex=/[^a-z0-9_-]/gi;
         var someNameisWrong=false;
@@ -1042,7 +1047,7 @@ function format ( d ) {
 							
             if(newatt.value_name!=""&& !regex.test(newatt.value_name) && newatt.value_name.length>=3&& newatt.data_type!="" && newatt.value_type!="" && newatt.editable!="" && newatt.value_unit!="" && newatt.healthiness_criteria!="" &&  newatt.healthiness_value!="")
                 
-                    mynewAttributes.push(newatt);	
+                    myAttributes.push(newatt);	
             else
                 someNameisWrong=true;
 		}
@@ -1122,13 +1127,15 @@ function format ( d ) {
 		
 		$("#editModelModalTabs").hide();
 		$('#editModelModal div.modalCell').hide();
-		$("#editModelModalFooter").hide();
+		//$("#editModelModalFooter").hide();
 		$("#addAttrMBtn").hide();
-		
-		
 		$('#editModelLoadingMsg').show();
 		$('#editModelLoadingIcon').show();
 		// console.log(JSON.stringify(deviceJson));
+        $("#editModelCancelBtn").hide();
+		$("#editModelConfirmBtn").hide();
+		$("#editModelModalBody").hide();
+
 			
 		
 		 $.ajax({
@@ -1168,98 +1175,78 @@ function format ( d ) {
 				   if(data["status"] === 'ko')
 				{
 					console.log("Error editing Model type");
-					console.log(data);
-					$('#editModelLoadingMsg').hide();
-					$('#editModelLoadingIcon').hide();
-					$('#editModelLoadingIcon').hide();
-					$('#editModelKoMsg').show();
-					$('#editModelKoIcon').show();
-				 
-					setTimeout(function(){
-						$('#editModelKoMsg').hide();
-						$('#editModelKoIcon').hide();
-						$('#editModelModal').hide();
-						// $('#editModelModalTabs').show();
-						// $('#editModelModal div.modalCell').show();
-						// $('#editModelModalFooter').show();
-					}, 3000);
+					console.log(data);                
+                    ////////
+                    $('#editModelLoadingMsg').hide();        
+                    $('#editModelLoadingIcon').hide();
+                    $('#editModelOkMsg').hide();
+                    $('#editModelOkIcon').hide();
+                    $('#editModelKoMsg').show();
+                    $('#editModelKoIcon').show();
+                    $('#editModelOkBtn').show();
+                    ///////////
+                  
 				}
 				 
 				else if (data["status"] === 'ok')
 				{
 						
-					$('#editModelLoadingMsg').hide();
-					$('#editModelLoadingIcon').hide();
-					$('#editModelOkMsg').show();
-					$('#editModelOkIcon').show();
 								
-					$("#editModelModalInnerDiv1").html('Model &nbsp; successfully Updated');
-					$("#editModelModalInnerDiv2").html('<i class="fa fa-check" style="font-size:42px"></i>');
-				 
-					setTimeout(function(){
-						$('#editModelModal').modal('hide');
-						fetch_data(true);
-
-						setTimeout(function(){
-						   // $('#addDeviceOkMsg').hide();
-						   // $('#addDeviceOkIcon').hide();
-							  $('#editModelOkMsg').hide();
-							  $('#editModelOkIcon').hide();
-							
-								  $('#inputNameModelM').val("");
-								  $('#inputDescriptionModelM').val("");
-								  $('#inputTypeModelM').val("");
-								  $('#selectKindModelM').val("");
-								 //$('#selectActiveModel').val("");
-								  $('#selectHCModelM').val("");
-								  $('#inputHVModelM').val("");
-								  $('#selectContextBrokerM').val("");
-								  $('#selectProtocolModelM').val("");
-								  $('#selectFormatModelM').val("");
-								
-								  $('#inputProducerModelM').val("");
-								  $('#inputFrequencyModelM').val("");
-								 //$('#inputPolicyModel').val("");
-								  $('#selectKGeneratorModelM').val("");
-								  $('#selectEdgeGatewayTypeM').val("");
-								  $('#editlistAttributes').html("");	
-							   $('#editModelModal').hide();
-							   setTimeout(updateDeviceTimeout, 100);	  
-							  
-						}, 100);
-					}, 100);
+					//$("#editModelModalInnerDiv1").html('Model &nbsp; successfully Updated');
+					//$("#editModelModalInnerDiv2").html('<i class="fa fa-check" style="font-size:42px"></i>');
+                    
+                    $('#editModelLoadingMsg').hide();        
+                    $('#editModelLoadingIcon').hide();
+                    $('#editModelOkMsg').show();
+                    $('#editModelOkIcon').show();
+                    $('#editModelKoMsg').hide();
+                    $('#editModelKoIcon').hide();
+                    $('#editModelOkBtn').show();
+                    
+                    
+				
 					
 					
 		} else {console.log(data);}
 				 
+                 $('#modelTable').DataTable().destroy();
+                    fetch_data(true);
 			 },
 			 error: function (data) 
 			 {
 				 console.log("Ko result: " + JSON.stringify(data));
-				 $("#editModelKoModalInnerDiv1").html(data["msg"]);
-				 $("#editModelKoModal").modal('show');
-				 // $("#editModelModalUpdating").hide();
-				 $("#editModelModalBody").show();
-				 $("#editModelModalFooter").show();
 				 
-			  $('#inputNameModelM').val("");
-			  $('#inputDescriptionModelM').val("");
-			  $('#inputTypeModelM').val("");
-			  $('#selectKindModelM').val("");
-			 //$('#selectActiveModel').val("");
-			  $('#selectHCModelM').val("");
-			  $('#inputHVModelM').val("");
-			  $('#selectContextBrokerM').val("");
-			  $('#selectProtocolModelM').val("");
-			  $('#selectFormatModelM').val("");
+                 
+                 $('#editModelLoadingMsg').hide();
+                    $('#editModelLoadingIcon').hide();
+                    $('#editModelOkMsg').hide();
+                    $('#editModelOkIcon').hide();
+                    $('#editModelKoMsg').show();
+                    $('#editModelKoIcon').show();
+                    $('#editModelOkBtn').show();
+
+            
+                 $('#inputNameModelM').val("");
+                 $('#inputDescriptionModelM').val("");
+			     $('#inputTypeModelM').val("");
+			     $('#selectKindModelM').val("");
+			     //$('#selectActiveModel').val("");
+			     $('#selectHCModelM').val("");
+			     $('#inputHVModelM').val("");
+			     $('#selectContextBrokerM').val("");
+			     $('#selectProtocolModelM').val("");
+			     $('#selectFormatModelM').val("");
 			
-			  $('#inputProducerModelM').val("");
-			  $('#inputFrequencyModelM').val("");
-			 //$('#inputPolicyModel').val("");
-			  $('#selectKGeneratorModelM').val("");
-			  $('#editlistAttributes').html("");	
-			  $('#editModelModal').hide();				
-				   setTimeout(updateDeviceTimeout, 100);
+                 $('#inputProducerModelM').val("");
+			     $('#inputFrequencyModelM').val("");
+			     //$('#inputPolicyModel').val("");
+			     $('#selectKGeneratorModelM').val("");
+			     $('#editlistAttributes').html("");	
+                 
+                 $('#modelTable').DataTable().destroy();
+                    fetch_data(true);
+		
+				
 				  
 			 }
 		 });

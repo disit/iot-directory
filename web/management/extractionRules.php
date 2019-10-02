@@ -33,7 +33,7 @@ if (isset($_REQUEST['showFrame'])){
 //// SHOW FRAME PARAMETER  ////
    
 if (!isset($_GET['pageTitle'])){
-	$default_title = "IoT Directory: List of Devices";
+	$default_title = "IoT Directory: Extraction Rules";
 }else{
 	$default_title = "";
 }
@@ -162,7 +162,7 @@ else
          var sessionToken = "<?php  if (isset($_SESSION['refreshToken'])) echo $_SESSION['refreshToken']; else echo ""; ?>";		 
 		 var mypage = location.pathname.split("/").slice(-1)[0];
          var functionality = [];
-/*
+
           $.ajax({url: "../api/functionality.php",
 			 data: {action: 'get_functionality', page : mypage},
 			 type: "GET",
@@ -181,7 +181,7 @@ else
 			   console.log(JSON.stringify(mydata));
 			 }
 		 });
-		 */
+		 
 		</script>
  
         <!-- Custom scripts -->
@@ -327,7 +327,7 @@ else
                     </div>
                     <div class="row" id="title_row">
                         <div class="col-xs-10 col-md-12 centerWithFlex" id="headerTitleCnt">IoT Directory: Devices</div>
-                        <div class="col-xs-2 hidden-md hidden-lg centerWithFlex" id="headerMenuCnt"><?php include "mobMainMenu.php" ?></div> 
+                        <div class="col-xs-2 hidden-md hidden-lg centerWithFlex" id="headerMenuCnt"><!--?php include "mobMainMenu.php" ?--></div> 
                     </div>
 					
 							

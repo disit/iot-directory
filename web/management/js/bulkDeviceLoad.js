@@ -143,19 +143,22 @@ function sendJsonToDb(jsondata){
 									user_message="Device: "+content[i].device+" on context broker "+ content[i].cb +" correctly uploaded, "+content[i].duplicated + " attribute is duplicated, only one inserted;";									
 								}
 								else{
-								user_message="Device: "+content[i].device+" on context broker "+ content[i].cb +" correctly uploaded;";
+									user_message="Device: "+content[i].device+" on context broker "+ content[i].cb +" correctly uploaded;";
 								}							//Sara2210 end
 								user_message_old= document.getElementById('myModalBody').innerHTML;			
 							}
 							else if(content[i].inserted=='ko'){
-								user_message="Device: "+content[i].device+" on context broker "+ content[i].cb +" is invalid,  not inserted;";
-								user_message_old= document.getElementById('myModalBody').innerHTML;			
+								//user_message="Device: "+content[i].device+" on context broker "+ content[i].cb + " not inserted. ";
+								user_message = "</br>"+mydata["msg"] + "</br>";
+								user_message_old= "";//document.getElementById('myModalBody').innerHTML;			
+
 							}
 
 							document.getElementById('myModalBody').innerHTML= user_message_old+"<p>"+user_message+"</p>";
 
 							
 						}
+
 					}
 				}
 				else{

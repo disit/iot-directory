@@ -266,6 +266,38 @@ else if ($action=="delete")
 	   my_log($result);
 	  mysqli_close($link);
 }
+else if ($action=="check_if_last_value")
+{
+      $cb = mysqli_real_escape_string($link, $_REQUEST['contextbroker']);
+	  $device = mysqli_real_escape_string($link, $_REQUEST['device']);
+	  $username = mysqli_real_escape_string($link, $_REQUEST['username']);	  
+	  $organization = mysqli_real_escape_string($link, $_REQUEST['organization']);	  
+    
+	  
+      $q = "SELECT * FROM event_values WHERE cb = '$cb' and device='$device'";
+      $r = mysqli_query($link, $q);
+      if($r)
+	  {
+          $rowcount=mysqli_num_rows($r);
+          logAction($link,$username,'event_values','check_if_last_value',$device,$organization,'','success'); 	
+          $result["status"]="ok";
+          $result["content"]=$rowcount;
+	  }
+	  else
+	  {
+		//Sara2610 - for logging purpose
+		logAction($link,$username,'event_values','check_if_last_value',$device,$organization,'','faliure'); 
+		 $result["status"]='ko';
+		 $result["error_msg"] = 'Event_values ' . $device . ': check_if_last_value failed, ';
+		 $result["msg"] = 'event_values <b>' . $device . '</b> &nbsp; check_if_last_value failed, ' .
+         generateErrorMessage($link) .
+         ' Please enter again.';
+		 $result["log"] = '\n\r event_values ' . $device . ' check_if_last_value failed, ' .
+         generateErrorMessage($link);
+	  }
+	   my_log($result);
+	  mysqli_close($link);
+}
 else if($action == 'get_event_value') 
 {
 	$cb = mysqli_real_escape_string($link, $_REQUEST['contextbroker']);

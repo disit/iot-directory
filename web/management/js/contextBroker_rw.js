@@ -14,6 +14,7 @@ requiredHeaders=["name", "devicetype", "macaddress", "frequency", "kind", "proto
 var gb_datatypes ="";
 var gb_value_units ="";
 var gb_value_types = "";
+var gb_active_brokers_names=[];
 var defaultPolicyValue = [];
 var devicenamesArray = new Array();
 var valueNamesArray = new Array();
@@ -41,11 +42,7 @@ var gb_old_id="";
 var gb_old_cb="";
 
 var dataTable ="";
-//var _serviceIP = "http://localhost:3001";
-var _serviceIP = "../stubs";
- //var _serviceIP = "https://159.149.129.184:3001";
 
- //var _serviceIP = "https://iot-app.snap4city.org/iotdirectory";
 var timerID= undefined;
 var was_processing=0;
 
@@ -171,18 +168,20 @@ function activateStub(cb,ipa,protocol,user,accesslink,model,edge_type,edge_uri,p
 	}
 	var service = _serviceIP + "/api/"+protocol;
 	
-	console.log(data);
-	console.log(service);
+	console.log("data to be sent "+data);
+	console.log("service "+ service);
 	var xhr = ajaxRequest();
+			location.reload();
 
 	xhr.addEventListener("readystatechange", function () {
+		console.log("this.readyState "+this.readyState);
 	  if (this.readyState === 4 && this.status == 200) {
-		  return this.responseText;
+		
+			return this.responseText;
 
 
 		/*ù
-		        			refresh();
-			fetch_data(true);	if(resp.message.indexOf("**UPDATE**")==0){
+		        				if(resp.message.indexOf("**UPDATE**")==0){
 				    var progress_modal_w = document.getElementById('retrieveModalWait');
 		progress_modal_w.style.display = "none";
 		console.log("resp update");
@@ -196,6 +195,7 @@ function activateStub(cb,ipa,protocol,user,accesslink,model,edge_type,edge_uri,p
 
 	xhr.open("POST", service);
 	xhr.setRequestHeader("Content-Type", "application/x-www-form-urlencoded");
+	xhr.setRequestHeader('Cache-Control', 'no-cache');
 /*	xhr.setRequestHeader("Content-Type", "text/plain;charset=UTF-8");*/
     xhr.setRequestHeader("Access-Control-Allow-Origin", "*");
 	xhr.send(data);
@@ -409,8 +409,10 @@ function fetch_data(destroyOld, selected=null)
 
 	xhr.addEventListener("readystatechange", function () {
 	if (this.readyState === 4 && this.status == 200) {
+			console.log("USE STATUS "+ this.responseText);
 			useStatus(this.responseText);
 		}
+	
 	});
 
 	xhr.open("GET", service);
@@ -591,24 +593,37 @@ $(document).ready(function ()
 		var brokers = brokers.message;
 		var row = "";
 		console.log("nContextBroker "+ JSON.stringify(brokers));
-	
+	    $('#activeInactiveBrokes').html("");
+        $('#inactivateButton').show();
+        $('#stopAllBrokers').show();
+		
 		for(cb = 0; cb < nContextBroker; cb++){
-	
+		
 			var broker = document.getElementById('selectContextBrokerLD').item(cb).value;
+
 			if(brokers.includes(broker)){
 				activeBrokers[broker]="active";
 				row= $('<option value="'+broker+'" name ="active">'+broker+'</option>');
 				$("#activateButton").attr("disabled", true);
+				//$("#statusSelectedBroker").css("visibility", "visible");
 				$("#inactivateButton").attr("disabled", false);
+				gb_active_brokers_names.push(broker);
 			}
-			else{
+		/*	else{
 				activeBrokers[broker]= "inactive";
 				row= $('<option value="'+broker+'" name ="inactive">'+broker+'</option>');
 				$("#activateButton").attr("disabled", false);
+				 $("#statusSelectedBroker").css("visibility", "hidden");
 				$("#inactivateButton").attr("disabled", true);
-			}
+			}*/
 			$('#activeInactiveBrokes').append(row);
 		}
+		if(document.getElementById("activeInactiveBrokes").options.length==0){
+            var r= $('<option value="No active Broker" name ="inactive">'+"No active Broker"+'</option>');
+            $('#activeInactiveBrokes').append(r);
+            $('#inactivateButton').hide();
+            $('#stopAllBrokers').hide();
+        }
 	}	
 	
 			
@@ -618,9 +633,11 @@ $(document).ready(function ()
 			var status = $(this).find('option:selected').attr("name");
 			if(status =="active"){
 				$("#activateButton").attr("disabled",true);
+				//$("#statusSelectedBroker").css("visibility", "visible");
 				$("#inactivateButton").attr("disabled", false);
 			}else{
 				$("#activateButton").attr("disabled", false);
+			//	 $("#statusSelectedBroker").css("visibility", "hidden");
 				$("#inactivateButton").attr("disabled", true);
 			}
 		}
@@ -730,48 +747,43 @@ $(document).ready(function ()
 
 	$("#stopAllBrokers").off("click");
 	$('#stopAllBrokers').on('click',function(){
-		var nContextBroker = document.getElementById('activeInactiveBrokes').length;
-		var brokersToStop =[];
+		//var nContextBroker = document.getElementById('activeInactiveBrokes').length;
+		var nContextBroker = gb_active_brokers_names.length;
+
 		for(cb = 0; cb < nContextBroker; cb++){
 			
-			var broker = document.getElementById('activeInactiveBrokes').item(cb).value;
-			var status = document.getElementById('activeInactiveBrokes').item(cb).getAttribute("name");
 			$("#activateButton").attr("disabled", false);
 			$("#inactivateButton").attr("disabled", true);
 			$("#activeInactiveBrokes option").attr('name',"inactive");
-			if(status =="active"){
-				var data= "contextbroker=" + broker+ "&ip=kill"; 
-				var protocol="";
-				console.log("broker "+ broker );
-				$.ajax({
-					url: "../api/contextBrokerRetrieval_e.php",
-					data: {
-							action: "get_cb_details", 
-							cb: broker,
-							username: loggedUser,
-							organization:organization
-						},
-					type: "POST",
-					async: true,
-					datatype: 'json',
-					success: function (data)
-					{
-						console.log("success");
-						var content = data["content"];
-						content = content[0];
-						protocol = content["protocol"];
-						console.log("activate " + content["contextbroker"]);
-						activateStub( content["contextbroker"],"kill",protocol,"","","","","","","","");
-
-					},
-					error:function (data)
-					{
-						console.log("error retrieving protocol name");
-					}
-				});
-			}		
-			
 		}
+
+		$.ajax({
+			url: "../api/contextBrokerRetrieval_e.php",
+			data: {
+					action: "get_multiple_cb_details", 
+					cb: JSON.stringify(gb_active_brokers_names),
+					username: loggedUser,
+					organization:organization
+				},
+			type: "POST",
+			async: true,
+			datatype: 'json',
+			success: function (data)
+			{
+				var content = data["content"];
+				
+				for(var i = 0; i < content.length; i++){
+					console.log("cont2 "+ i+ " i"+ JSON.stringify(content[i]));
+					protocol = content[i].protocol;				
+					activateStub(content[i].contextbroker,"kill",protocol,"","","","","","","","");
+					//content[i].contextbroker
+				}
+			},
+			error:function (data)
+			{
+				console.log("error retrieving protocol name");
+			}
+		});
 
 	});
 		//end of detail control for device dataTable 
@@ -3445,13 +3457,16 @@ function verifyDevice(deviceToverify){
 	var msg="";
     var regexpMAC = /^([0-9A-F]{2}[:-]){5}([0-9A-F]{2})$/;
     var answer={"isvalid":true, "message":"Your device is valid"};
+    var regex_devName=/[^a-z0-9:._-]/gi;
+    var regex_valueName=/[^a-z0-9._-]/gi;
    
     
     console.log("First checking its properties validity");
     
     if(deviceToverify.name==undefined || deviceToverify.name.length<5 || deviceToverify.name == null){ msg+= "-name is mandatory, of 5 characters at least.";}
+    if(regex_devName.test(deviceToverify.name)){ msg+= "-name cannot contain special characters. ";}
     if(deviceToverify.devicetype==undefined || deviceToverify.devicetype=="" || deviceToverify.devicetype.indexOf(' ')>=0|| deviceToverify.devicetype == null){msg+="-devicetype is mandatory.";}
-    if(deviceToverify.macaddress!=undefined && !regexpMAC.test(deviceToverify.macaddress) || deviceToverify.macaddress == null){msg+="-macaddress is mandatory and Mac format should be Letter (A-F) and number (eg. 3D:F2:C9:A6:B3:4F).";}
+    if(deviceToverify.macaddress!=undefined && deviceToverify.macaddress!="" && !regexpMAC.test(deviceToverify.macaddress)){msg+="-Mac format should be Letter (A-F) and number (eg. 3D:F2:C9:A6:B3:4F).";}
     if(deviceToverify.frequency==undefined ||deviceToverify.frequency=="" || !isFinite(deviceToverify.frequency) || deviceToverify.frequency == null){msg+= "-frequency is mandatory, and should be numeric.";}
 	if(deviceToverify.kind==undefined || deviceToverify.kind=="" || deviceToverify.kind == null){msg+="-kind is mandatory.";}
     if(deviceToverify.protocol==undefined || deviceToverify.protocol=="" || deviceToverify.protocol == null){msg+="-protocol is mandatory.";}
@@ -3474,8 +3489,9 @@ function verifyDevice(deviceToverify){
         }
         
     console.log("Now we check the model conformity");
-    
-	if(deviceToverify.model!="custom"){
+    var model_not_found=true;
+	
+    if(deviceToverify.model!="custom"){
 		
 		console.log("The model is not custom, it is "+ deviceToverify.model);
         
@@ -3486,7 +3502,8 @@ function verifyDevice(deviceToverify){
                 continue;
 				}
             
-			var modelAttributes= JSON.parse(modelsdata[i].attributes);
+			model_not_found=false;
+            var modelAttributes= JSON.parse(modelsdata[i].attributes);
                 
             console.log("model attributes " + JSON.stringify(modelAttributes));
             console.log("deviceToVerify attributes " + JSON.stringify(deviceToverify.deviceValues));
@@ -3585,7 +3602,11 @@ function verifyDevice(deviceToverify){
             
         }
         
-        else{
+        if(deviceToverify.model=="custom" || model_not_found){
+            
+            if(model_not_found){
+                deviceToverify.model="custom";
+            }
             console.log("model is custom so we check the values details");
             var all_attr_msg="";
             var all_attr_status="true";
@@ -3603,11 +3624,16 @@ function verifyDevice(deviceToverify){
 				
 				//Sara3010
 				var empty_name = false;
+                var strangeChar_name = false;
 
                 if(v.value_name==undefined || v.value_name==""){
                    attr_status=false;
 				   empty_name = true;
                }
+                else if(regex_valueName.test(v.value_name)){
+                    attr_status=false;
+                    strangeChar_name=true;
+                }
                 //set default values
                 if(v.data_type==undefined || v.data_type==""|| gb_datatypes.indexOf(v.data_type)<0){
                         attr_status=false;
@@ -3646,6 +3672,12 @@ function verifyDevice(deviceToverify){
 							all_attr_msg= all_attr_msg+", other errors in: "+attr_msg;
 						}
 					}
+                    else if(strangeChar_name){
+                        all_attr_msg= "The attribute name "+v.value_name+" cannot contain strange characters. ";
+						if(attr_msg != ""){
+							all_attr_msg= all_attr_msg+", other errors in: "+attr_msg;
+						}
+                    }
 					else{
 						all_attr_msg= "For the attribute: "+ v.value_name+", error in: "+attr_msg;
 					}

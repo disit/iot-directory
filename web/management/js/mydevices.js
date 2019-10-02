@@ -1162,6 +1162,73 @@ var dataTable ="";
 					else
 						  $('#dashboardTotPrivateCn .pageSingleDataCnt').html(parseInt($('#dashboardTotPrivateCn .pageSingleDataCnt').html()) - 1);
                     
+                        $.ajax({
+                            url: "../api/value.php",
+                            data:{
+                                action: "check_if_last_value",
+                                device: device,
+                                username: loggedUser,
+                                organization : organization, 
+                                dev_organization : dev_organization, 	
+                                contextbroker : contextbroker,
+                                token : sessionToken
+                                },
+                            type: "POST",
+                            datatype: "json",
+                            async: true,
+                            success: function (data) 
+                            {
+                                    if(data["status"] === 'ok'){           
+                                        if (data["content"]==0)  {      
+                                                $.ajax({
+                                                        url: "../api/device.php",
+                                                        data:{
+                                                            action: "delete",
+                                                            username: loggedUser,	
+                                                            organization : organization, 
+                                                            dev_organization : dev_organization, 
+                                                            id: device, 
+                                                            uri : "", //it is not used in the api/php but I kept it just for consistensy
+                                                            contextbroker : contextbroker,
+                                                            token : sessionToken
+                                                            },
+                                                        type: "POST",
+                                                        datatype: "json",
+                                                        async: true,
+                                                        success: function (data) 
+                                                        {
+                                                            console.log(JSON.stringify(data));
+                                                            if(data["status"] === 'ko')
+                                                            {
+                                                               console.log("error deleting the device, eventhough it was the last value deleted "); 
+
+                                                            }
+                                                            else if(data["status"] === 'ok')
+                                                            {
+                                                               console.log("Success to delete the device itself"); 
+                                                            }
+                                                        },
+                                                        error: function (data) 
+                                                        {
+                                                            console.log("error in the call for deleting the device, eventhough it was the last value deleted "); 
+
+                                                        }
+                                                    });
+                                        }
+                                        else{
+                                            console.log("still other values exist for the same device");
+                                        }
+                                    }
+                                else{
+                                     console.log("ko error checking if other values exist for the same device");
+                                }
+                            },
+                            error: function(data)
+                            {
+                                console.log("error checking if other values exist for the same device ");
+                            }
+                        });
+                    
                     $('#devicesTable').DataTable().destroy();
 				    fetch_data(true);
 

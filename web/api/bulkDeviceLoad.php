@@ -253,7 +253,7 @@ if ($action=="insert"){
 			}
 			else{
 				$result["status"]='ko';
-				$result["msg"] .= "\n You alredy have a device named $id for $contextbroker context broker, not inserted."; 
+				$result["msg"] .= "\n You alredy have a device named $id for $contextbroker context broker, not inserted. </br>"; 
 				$result["log"] .= "\r\n Problem in inserting the device $id:  " .  generateErrorMessage($link); 
 			   logAction($link,$usernameNotHashed,'temporary_devices','insert',$deviceName,$organization,'Duplicated value','faliure');
 			

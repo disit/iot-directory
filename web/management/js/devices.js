@@ -851,7 +851,8 @@ function drawAttributeMenu
 				action: "get_device_attributes", 
                 id: $(this).attr("data-id"),
 				organization : organization, 
-				contextbroker: $(this).attr("data-contextBroker")
+				contextbroker: $(this).attr("data-contextBroker"),
+                token : sessionToken, 
 			},
 			type: "POST",
 			async: true,

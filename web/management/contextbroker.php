@@ -237,7 +237,7 @@
 					if (($hide_menu!="hide")) {?>
                     <div class="row" id="title_row">
                         <div class="col-xs-10 col-md-12 centerWithFlex" id="headerTitleCnt">IoT Directory: Context Brokers</div>
-                        <div class="col-xs-2 hidden-md hidden-lg centerWithFlex" id="headerMenuCnt"><?php include "mobMainMenu.php" ?></div>
+                        <div class="col-xs-2 hidden-md hidden-lg centerWithFlex" id="headerMenuCnt"><!--?php include "mobMainMenu.php" ?--></div>
                     </div>
 					<?php } //MM201218 FINE ?>
 					

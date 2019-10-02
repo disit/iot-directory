@@ -334,7 +334,8 @@ function create_datatable_data($link,$request,$query,$where){
 
 
 function my_log($result) {  
-  $fp=fopen("../../../log/log.txt","a") or die("Unable to open file!");;
+ // $fp=fopen("../../../log/log.txt","a") or die("Unable to open file!");;
+  $fp=fopen($GLOBALS["pathLog"],"a") or die("Unable to open file!");;
   flock($fp,LOCK_EX);
   $output = date("Y-m-d h:i:sa") . ": ". $result["log"] . "\r\n";
   fwrite($fp,$output);
@@ -646,10 +647,10 @@ function registerOwnerShipObject($msg, $token, $object, &$result) {
 		}
 		else
 		{
-			$result["status"]='ko';
+			$result["status"]='ok';
 			$result["error_msg"] .= "The registration is NOT possible. Reached limit of IoT Devices. ";
 			$result["msg"] .= "\n The registration is NOT possible. Reached limit of IoT Devices (".$local_result.")";
-            $result["log"] .= "\n The registration is NOT possible. Reached limit of IoT Devices (".json_decode($local_result)->limit.")";		
+            $result["log"] .= "\n The registration is NOT possible. Reached limit of IoT Devices ";//(".json_decode($local_result)->limit.")";		
 		}	 
 	} 
 	catch (Exception $ex)

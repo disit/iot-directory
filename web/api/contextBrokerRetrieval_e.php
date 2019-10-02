@@ -131,7 +131,8 @@ if ($action=="get_cb_details"){
 	 my_log($result);
      mysqli_close($link);
 }
-
+/*
+*/
 else if ($action=="get_count_temporary_devices"){
 	$username = mysqli_real_escape_string($link,$_REQUEST['username']);
 	$organization = mysqli_real_escape_string($link,$_REQUEST['organization']);
@@ -161,6 +162,50 @@ else if ($action=="get_count_temporary_devices"){
 	//Sara2510
 	//logAction($link,$username,'temporary_devices','get_count_temporary_devices','','','faliure');
 	 }
+	 my_log($result);
+     mysqli_close($link);
+}
+else if($action=="get_multiple_cb_details"){
+	$contextbrokers = json_decode($_REQUEST['cb']);
+	$username = mysqli_real_escape_string($link,$_REQUEST['username']);
+	$organization = mysqli_real_escape_string($link,$_REQUEST['organization']);
+
+	$i = 0;
+	$context = array();
+
+	while($i < count($contextbrokers)){
+		$cb = $contextbrokers[$i];
+		$q = "SELECT * FROM contextbroker WHERE name= '$cb';";
+		$r = mysqli_query($link, $q);
+	
+		if($r){
+			while($row = mysqli_fetch_assoc($r)) 
+			{
+				$rec= array();
+				$rec["contextbroker"]= $row["name"];
+				$rec["protocol"]=$row["protocol"];
+				$rec["ip"]=$row["ip"];
+				$rec["accessLink"]=$row["accesslink"];
+				$rec["port"]=$row["port"];
+				$rec["protocol"]=$row["protocol"];
+				$rec["username"]=md5($username);
+				$rec["apikey"]=$row["apikey"];
+				$rec["kind"]=$row["kind"];
+				$rec["path"]=$row["path"];
+
+				array_push($context, $rec);         
+			}	
+			$i++;
+		}
+		else{
+		  $result["status"]='ko';
+		  $result["msg"] .= "failure"; 
+		  $result["log"] .= "\n Problem in get count temporary devices". generateErrorMessage($link); 
+		}
+		$result['status'] = 'ok';
+		$result['content'] = $context;		
+	}
+	
 	 my_log($result);
      mysqli_close($link);
 }

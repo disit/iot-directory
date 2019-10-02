@@ -58,8 +58,8 @@ use Jumbojett\OpenIDConnectClient;
 
 
  if (isset($_SESSION['refreshToken'])) {
-   $oidc = new OpenIDConnectClient('https://www.snap4city.org', $clientId, $clientSecret);
-   $oidc->providerConfigParam(array('token_endpoint' => 'https://www.snap4city.org/auth/realms/master/protocol/openid-connect/token'));
+   $oidc = new OpenIDConnectClient($keycloakHostUri, $clientId, $clientSecret);
+   $oidc->providerConfigParam(array('token_endpoint' => $keycloakHostUri.'/auth/realms/master/protocol/openid-connect/token'));
    $tkn = $oidc->refreshToken($_SESSION['refreshToken']);
    $accessToken = $tkn->access_token;
    $_SESSION['refreshToken'] = $tkn->refresh_token;
@@ -146,23 +146,23 @@ else
         
         <!-- Custom CSS -->
         <link href="../css/dashboard.css" rel="stylesheet">
-        <link href="../css/bulkDeviceLoad.css" rel="stylesheet">
-
+		<link href="../css/bulkDeviceLoad.css" rel="stylesheet">
 	
 		<script>
 		 var loggedRole = "<?php echo $_SESSION['loggedRole']; ?>";
 		 var loggedUser = "<?php echo $_SESSION['loggedUsername']; ?>";
          var admin = "<?php echo $_SESSION['loggedRole']; ?>";
+		 
          var organization = "<?php echo $_SESSION['organization']; ?>";
                  var kbUrl = "<?php echo $_SESSION['kbUrl']; ?>";
                  var gpsCentreLatLng = "<?php echo $_SESSION['gpsCentreLatLng']; ?>";
-                 var zoomLevel = "<?php echo $_SESSION['zoomLevel']; ?>";    
-		 var titolo_default = "<?php echo $default_title; ?>";	
+                 var zoomLevel = "<?php echo $_SESSION['zoomLevel']; ?>";
+            
+         var titolo_default = "<?php echo $default_title; ?>";	
 		 var access_denied = "<?php echo $access_denied; ?>";
 		 var nascondi= "<?php echo $hide_menu; ?>";
 		 var sessionEndTime = "<?php echo $_SESSION['sessionEndTime']; ?>";
-         var sessionToken = "<?php  if (isset($_SESSION['refreshToken'])) echo $_SESSION['refreshToken']; else echo ""; ?>";
-		 var _serviceIP = "<?php echo $_serviceIP; ?>"
+         var sessionToken = "<?php  if (isset($_SESSION['refreshToken'])) echo $_SESSION['refreshToken']; else echo ""; ?>";		 
 		 var mypage = location.pathname.split("/").slice(-1)[0];
          var functionality = [];
 /*
@@ -189,8 +189,8 @@ else
  
         <!-- Custom scripts -->
 		<!--
-		<script  src="js/devices.js"></script>	-->
-		<script  src="js/devicesManagement.js"></script>	
+		<script  src="js/devices.js"></script>-->
+		<script  src="js/devicesManagement.js"></script>
 		<script  src="js/devicesEditManagement.js"></script>
         <script  src="../js/dashboard_mng.js"></script>
 
@@ -330,7 +330,7 @@ else
                     </div>
                     <div class="row" id="title_row">
                         <div class="col-xs-10 col-md-12 centerWithFlex" id="headerTitleCnt">IoT Directory: Devices</div>
-                        <div class="col-xs-2 hidden-md hidden-lg centerWithFlex" id="headerMenuCnt"><!--?php include "mobMainMenu.php" ?--></div> 
+                        <div class="col-xs-2 hidden-md hidden-lg centerWithFlex" id="headerMenuCnt"><!--php include "mobMainMenu.php" ?--></div> 
                     </div>
 					
 							
@@ -340,13 +340,13 @@ else
 						<!--the statistics bar section -->
                         
                             
-				           <div id="synthesis" class="row hidden-xs hidden-sm mainContentRow">
+				             <div id="synthesis" class="row hidden-xs hidden-sm mainContentRow">
                              <!--   <div  class="col-xs-12 mainContentRowDesc"></div> -->
                                 <div id="dashboardTotActiveCnt" class="col-md-4 mainContentCellCnt">
                                     <div class="col-md-12 centerWithFlex pageSingleDataCnt">
-                                         <?php
+                                        <?php
                                             $u= md5($_SESSION['loggedUsername']);
-											$query = "SELECT count(*) AS qt FROM temporary_devices WHERE status='valid' AND username ='".$u."' AND should_be_registered= 'no' AND deleted IS null";
+											$query = "SELECT count(*) AS qt FROM temporary_devices WHERE status='valid' AND username ='".$u."' AND deleted IS null";
                                             $result = mysqli_query($link, $query);
                                             
                                             if($result)
@@ -357,16 +357,17 @@ else
                                             }
                                             else
                                             {
-												echo '- valid devices';
+												echo '-' . ' valid devices';
                                             }
-                                        ?>  
+                                        ?>
                                     </div>
+                                 
                                 </div>
-                              <div id="dashboardTotPermCnt" class="col-md-4 mainContentCellCnt">
+                                <div id="dashboardTotPermCnt" class="col-md-4 mainContentCellCnt">
                                     <div class="col-md-12 centerWithFlex pageSingleDataCnt">
-                                       		<?php //MM
+                                        <?php //MM
                                             $u= md5($_SESSION['loggedUsername']);
-											$query = "SELECT count(*) AS qt FROM temporary_devices WHERE status='invalid' AND should_be_registered= 'no' AND username ='".$u."' AND deleted IS null";
+											$query = "SELECT count(*) AS qt FROM temporary_devices WHERE status='invalid' AND username ='".$u."' AND deleted IS null";
                                             $result = mysqli_query($link, $query);
                                             
                                             if($result)
@@ -376,11 +377,10 @@ else
                                             }
                                             else
                                             {
-                                                echo '- invalid devices';
+                                                echo '-' . ' invalid devices';
                                             }
-                                        ?> 
-                                    </div>
-
+                                        ?>
+                                 
                                 </div>
                                  
 
@@ -396,16 +396,29 @@ else
 											<!-- <div class="col-xs-12 mainContentRowDesc">My Devices Menu </div>-->
                                 
                                 <div id="uploadFileBoard" class="row mainContentRow">			
+                                    <div class="col-xs-12 mainContentCellCntWhiteLines">
+                                        <div class="col-xs-12 col-md-6">
+                                        
+                                            <label class="btn btn-primary" id="#bb"> Enter Your File
+                                                <input type="file" id="dealCsv"   size="30" >
+                                                </label> 
+                                        </div>
+                                        <div class="col-xs-12 col-md-6">
+                                            <input type="text"  class="modalInputTxt"  id="labelinputFile"  value="no file is selected yet" disabled="disabled">  
+                                        </div>
+                                       <!-- <label class="btn btn-primary"> <input type="file" class="inputfile inputfile-6"  id="dealCsv"/>choose a file </label>
+                                    </div>-->
+                                </div>
                                 <!-------context broker row--------------------->
-                                    
-                                <div class="col-xs-12 mainContentCellCntWhiteLines">	
+                                  <div class="row">    
+                                <div class="col-xs-12 col-md-6 mainContentCellCntWhiteLines">	
                                     <div class="col-xs-12 col-md-6">
-                                         <div class="paddingTop"> Context broker </div>
+                                         <div class="paddingTop"> IOT Broker </div>
                                     </div>
                                     <div class="col-xs-12 col-md-6">
                                     <div class="modalFieldCnt">
                                         <select id="selectContextBrokerLD" name="selectContextBrokerLD" class="modalInputTxt">
-										<?php
+										<!--?php
                                             $query = "SELECT name FROM contextbroker";
                                             $result = mysqli_query($link, $query);
 
@@ -420,10 +433,11 @@ else
                                             }
                                             else
                                             {
+
                                                 $nameCB="ERROR";
                                                 echo "<option value=\"$nameCB\">$nameCB</option>";
                                             }
-                                        ?>
+                                        ?-->
 									</select>
                                     </div>
                                     <!--<div class="modalFieldLabelCnt">ContextBroker</div>-->
@@ -432,20 +446,20 @@ else
                                     
                                 </div>
                                     <!-------model row--------------------->
-                                    <div class="col-xs-12 mainContentCellCntWhiteLines">	
+                                    <div class="col-xs-12 col-md-6  mainContentCellCntWhiteLines">	
                                     <div class="col-xs-12 col-md-6 ">
-                                        <div class="paddingTop"> Model</div>
+                                        <div class="paddingTop"> Device Model</div>
                                     </div>
                                     <div class="col-xs-12 col-md-6">
                                     <div class="modalFieldCnt">
                                         <select id="selectModelLD" name="selectModelLD" class="modalInputTxt">
-										<?php
+										<!--?php
                                             $query = "SELECT name FROM model";
                                             $result = mysqli_query($link, $query);
 
                                             if($result)
                                             {
-                                               echo "<option value=\"$nameM\">  </option>";
+                                               echo "<option value=\"\">  </option>";
                                                 while($row = $result->fetch_assoc())
                                                {
                                                  $nameM=$row["name"];
@@ -459,7 +473,7 @@ else
                                                 $nameM="ERROR";
                                                 echo "<option value=\"$nameM\">$nameM</option>";
                                             }
-                                        ?>
+                                        ?-->
 									</select>
                                     </div>
                                     <!--<div class="modalFieldLabelCnt">ContextBroker</div>-->
@@ -467,10 +481,10 @@ else
                                 </div>
                                     
                                 </div>
-                                    
-                                    
+                                </div>    
+                                   <div class="row"> 
                                     <!-------gateway type row--------------------->
-                                    <div class="col-xs-12 mainContentCellCntWhiteLines">	
+                                    <div class="col-xs-12 col-md-6 mainContentCellCntWhiteLines">	
                                     <div class="col-xs-12 col-md-6 ">
                                          <div class="paddingTop">Edge-Gateway Type</div>
                                     </div>
@@ -483,7 +497,7 @@ else
 
                                             if($result)
                                             {
-                                               echo "<option value=\"$nameGT\">  </option>";
+                                               echo "<option value=\"\">  </option>";
                                                 while($row = $result->fetch_assoc())
                                                {
                                                  $nameGT=$row["name"];
@@ -507,7 +521,7 @@ else
                                     
                                 </div>
                                     <!-------gateway uri row--------------------->
-                                    <div class="col-xs-12 mainContentCellCntWhiteLines">	
+                                    <div class="col-xs-12 col-md-6 mainContentCellCntWhiteLines">	
                                     <div class="col-xs-12 col-md-6 ">
                                          <div class="paddingTop">Edge-Gateway URI</div>
                                     </div>
@@ -519,15 +533,15 @@ else
                                 
                                     
                                 </div>
+								
+								</div>
                                     <!-------upload button row--------------------->
                                     
                                     <div class="col-xs-12 mainContentCellCnt">
                                       <div class="col-xs-12 col-md-6 modalFirstLbl">
                                      </div>
                                       <div class="uploadBulkLoad pull-right">
-                                        <button type="text" id="activeBrokers" name="activeBrokers" class="btn btn-info">Show active brokers</button>
-
-                                         <button type="text" id="retrieveButton" name="myDevice"class="btn btn-primary">Retrieves devices</button>
+                                         <button type="text" id="uploadbutton" name="myDevice"class="btn btn-primary">upload</button>
                                      </div>
                                  </div>
                             </div>
@@ -544,7 +558,7 @@ else
 									 <thead>
 									  <tr>
 										<th></th>	
-									    <th data-cellTitle="name">IoT Device</th>
+									    <th data-cellTitle="name">IOT Device</th>
 										<th data-cellTitle="contextbroker">IOT Broker</th>
 										<th data-cellTitle="protocol">Protocol</th>
 										<th data-cellTitle="format">Format</th>
@@ -557,11 +571,12 @@ else
 									 </thead>
 									</table>
 
-									<button type="text" id="deleteAllBtn" name="myDevice" class="btn btn-primary">Delete All</button>
+                                    <button type="text" id="deleteAllBtn" name="myDevice" class="btn btn-primary">Delete All</button>
                                     <button type="text" id="updateMultipleModalBtn" name="updateMultipleModalBtn" class="btn btn-info">Update Devices</button>
                                     <button type="text" id="updateMultipleValueBtn" name="updateMultipleValueBtn" class="btn btn-info">Update Values</button>
-									<!--Sara2210 start -->
+                                         									<!--Sara2210 start -->
 									 <button type="text" id="insertValidBtn" name="myDevice"class="btn btn-primary pull-right">Insert Valid Devices</button>
+                                    <button type="text" id="nodeJsTest" name="myDevice"class="btn btn-primary" style="display: none;">Test nodeJS</button>
 									<!--Sara2210 end -->
                                 </div>
                             </div>
@@ -571,44 +586,6 @@ else
             </div>
         </div>
         
-        <!-- window to show active brokers -->
-
-        <div class="modal fade" id="activeBrokersModal" tabindex="-1" role="dialog" aria-hidden="true">
-            <div class="modal-dialog" role="document">
-              <div class="modal-content">
-              <div class="modalHeader centerWithFlex">
-                Active brokers
-                </div>
-                <div id="displayAllBrokers" class="row mainContentRow">
-                    <div class="modal-body">
-
-                        <div id="selectBroker" class="col-xs-12 mainContentRowDesc" >
-                            <div id="selectBrokersActive" class="col-xs-12 col-md-6">
-                                <select id="activeInactiveBrokes"></select>
-                            </div>
-							<div class="col-xs-12 col-md-6">
-								<button type="button" id="activateButton" class="btn btn-success" style="display: none;">Activate</button>
-								<button type="button" id="inactivateButton" class="btn btn-danger"  >Inactivate</button>
-							</div>
-                        </div>
-					<!--	<div id="statusSelectedBroker" class="col-xs-12 col-md-6" style=" visibility:hidden; color:green; padding-left:30px;" >This Broker is active</div>-->
-
-                    </div>
-                </div>
-
-                <div class="modal-footer">
-                    <button type="button" id="stopAllBrokers" class="btn btn-primary">Stop all</button>
-                    <button type="button" id="successRegisterUserDeviceCancelBtn" class="btn btn-secondary" data-dismiss="modal">Close</button>
-                </div>
-              </div>
-            </div>
-        </div>
-            
-
-
-
-
-
 		<!-- the window that appears as message after clicking submit on adding new device, success or failure (I guess)-->
 		
         <div class="modal fade" id="successRegisterUserDeviceModal" tabindex="-1" role="dialog" aria-labelledby="successRegisterUserDeviceModalLabel" aria-hidden="true">
@@ -648,7 +625,28 @@ else
             </div>
         </div>
 		
-        	        <!-- Start of Update Multiple devices -->
+		            <!-- the window that appears as message after clicking delete all button -->
+     
+        <div class="modal fade" id="deleteAllDevModal" tabindex="-1" role="dialog" aria-labelledby="deleteAllDevModalLabel" aria-hidden="true">
+            <div class="modal-dialog" role="document">
+              <div class="modal-content">
+                <div class="modal-header">
+                  <h5 class="modal-title" id="deleteAllDevModalLabel">Devices deletion</h5>
+                </div>
+                <div class="modal-body">
+					Do you want to confirm deletion of all devices?
+                </div>
+                <div class="modal-footer">
+                  <button type="button" id="deleteAllDevCancelBtn" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+                  <button type="button" id="deleteAllDevConfirmBtn" class="btn btn-primary">Confirm</button>
+                </div>
+              </div>
+            </div>
+        </div>
+		
+		
+		
+		        <!-- Start of Update Multiple devices -->
 				
 		<div class="modal fade" id="updateMultipleDeviceModal" tabindex="-1" role="dialog" aria-hidden="true">
 			<div class="modal-dialog modal-lg" role="document">
@@ -863,25 +861,6 @@ else
 
 	<!-- End of Update Multiple devices -->
 		
-		            <!-- the window that appears as message after clicking delete all button -->
-     
-        <div class="modal fade" id="deleteAllDevModal" tabindex="-1" role="dialog" aria-labelledby="deleteAllDevModalLabel" aria-hidden="true">
-            <div class="modal-dialog" role="document">
-              <div class="modal-content">
-                <div class="modal-header">
-                  <h5 class="modal-title" id="deleteAllDevModalLabel">Devices deletion</h5>
-                </div>
-                <div class="modal-body">
-					Do you want to confirm deletion of all devices?
-                </div>
-                <div class="modal-footer">
-                  <button type="button" id="deleteAllDevCancelBtn" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
-                  <button type="button" id="deleteAllDevConfirmBtn" class="btn btn-primary">Confirm</button>
-                </div>
-              </div>
-            </div>
-        </div>
-
         <!-- Success  Ownership-->
         <div class="modal fade" id="changeOwnershipOkModal" tabindex="-1" role="dialog" aria-hidden="true">
             <div class="modal-dialog" role="document">
@@ -907,7 +886,32 @@ else
         </div>
 		
 		
-       
+        <!-- fail -->
+        <div class="modal fade" id="addDeviceKoModal" tabindex="-1" role="dialog" aria-hidden="true">
+            <div class="modal-dialog" role="document">
+              <div class="modal-content">
+                <div class="modalHeader centerWithFlex">
+                  Add new device
+                </div>
+                <input type="hidden" id="deviceNameToDelete" />
+                <div id="deleteDeviceModalBody" class="modal-body modalBody">
+                    <div class="row">
+                        <div class="col-xs-12 modalCell">
+                            <div id="addDeviceKoModalInnerDiv1" class="modalDelMsg col-xs-12 centerWithFlex">
+                                
+                            </div>
+                            <div class="modalDelObjName col-xs-12 centerWithFlex" id="addDeviceKoModalInnerDiv2"><i class="fa fa-frown-o" style="font-size:36px"></i></div> 
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                  <button type="button" id="addDeviceKoBackBtn" class="btn cancelBtn">Go back to new user form</button>
+                  <button type="button" id="addDeviceKoConfirmBtn" class="btn confirmBtn">Go back to users page</button>
+                </div>
+              </div>
+            </div>
+        </div>
+
         <!-- Update -->
         <!-- the edit window, when you click on "edit" from a device row-->
         <div class="modal fade" id="editDeviceModal" tabindex="-1" role="dialog" aria-hidden="true">
@@ -920,8 +924,8 @@ else
                 <div id="editDeviceModalBody" class="modal-body modalBody">
                     
                      <ul id="editDeviceModalTabs" class="nav nav-tabs nav-justified">
-                        <li class="active"><a data-toggle="tab" href="#editIOTBrokerTabDevice">IoT Broker</a></li>
-						<li><a data-toggle="tab" href="#editInfoTabDevice">Info</a></li>
+						<li class="active"><a data-toggle="tab" href="#editIOTBrokerTabDevice">IoT Broker</a></li>
+                        <li><a data-toggle="tab" href="#editInfoTabDevice">Info</a></li>
                         <li><a data-toggle="tab" href="#editGeoPositionTabDevice">Position</a></li>
                         <li><a data-toggle="tab" href="#editSchemaTabDevice">Values</a></li>
 						<!--<li><a data-toggle="tab" href="#editStatusTabDevice">Status</a></li>-->
@@ -929,244 +933,9 @@ else
                     </ul>
                     
                     <div class="tab-content">
+                       
+                       
                         
-                        <!-- IOT Broker tab -->
-                        <div id="editIOTBrokerTabDevice" class="tab-pane fade in active">
-                     
-							<div class="row">
-							
-							   <div class="col-xs-12 col-md-6 modalCell">
-                                    <div class="modalFieldCnt">
-                                        <select id="selectContextBrokerM" name="selectContextBrokerM" class="modalInputTxt">
-										<?php
-                                            $query = "SELECT name FROM contextbroker";
-                                            $result = mysqli_query($link, $query);
-
-                                            if($result)
-                                            {
-                                               while($row = $result->fetch_assoc())
-                                               {
-                                                 $nameCB=$row["name"];
-                                                 echo "<option value=\"$nameCB\">$nameCB</option>";
-                                               }
-
-                                            }
-                                            else
-                                            {
-
-                                                $nameCB="ERROR";
-                                                echo "<option value=\"$nameCB\">$nameCB</option>";
-                                            }
-                                        ?>
-									</select>
-                                    </div>
-                                    <div class="modalFieldLabelCnt">ContextBroker</div>
-									<div id="selectContextBrokerMMsg" class="modalFieldMsgCnt">&nbsp;</div>
-                                </div>
-						
-                                 <div class="col-xs-12 col-md-6 modalCell">
-                                    <div class="modalFieldCnt">
-                                        <select id="selectKindDeviceM" name="selectKindDeviceM" class="modalInputTxt">
-                                                                                        <option value="sensor">sensor</option>
-                                                                                        <option value="actuator">actuator</option>
-                                                                                </select>
-                                    </div>
-                                    <div class="modalFieldLabelCnt">Kind</div>
-									<div id="selectKindDeviceMMsg" class="modalFieldMsgCnt">&nbsp;</div>
-                                </div>
-								
-							</div>
-						
-							<div class="row">
-							
-							  <div class="col-xs-12 col-md-6 modalCell">
-                                    <div class="modalFieldCnt">
-                                        <select id="selectProtocolDeviceM" name="selectProtocolDeviceM" class="modalInputTxt">
-											<option value="amqp">amqp</option>
-											<option value="coap">coap</option>
-											<option value="mqtt">mqtt</option>
-											<option value="ngsi">ngsi</option>
-										</select>
-                                    </div>
-                                    <div class="modalFieldLabelCnt">Protocol</div>
-									<div id="selectProtocolDeviceMMsg" class="modalFieldMsgCnt">&nbsp;</div>
-                                </div>
-                                <div class="col-xs-12 col-md-6 modalCell">
-                                    <div class="modalFieldCnt">
-                                        <select id="selectFormatDeviceM" name="selectFormatDeviceM" class="modalInputTxt">
-											<option value="csv">csv</option>
-											<option value="json">json</option>
-											<option value="xml">xml</option>
-										</select>
-                                    </div>
-                                    <div class="modalFieldLabelCnt">Format</div>
-									<div id="selectFormatDeviceMMsg" class="modalFieldMsgCnt">&nbsp;</div>
-                                </div>
-                               
-							</div>
-				 
-                        </div>
-                          <!-- Info tab -->
-                        <div id="editInfoTabDevice" class="tab-pane fade">
-						
-                            <div class="row">
-							
-                                <div class="col-xs-12 col-md-6 modalCell">
-                                    <div class="modalFieldCnt">
-                                        <input type="text" class="modalInputTxt" name="inputNameDeviceM" id="inputNameDeviceM" required> 
-                                    </div>
-                                    <div class="modalFieldLabelCnt">Name</div>
-									<div id="inputNameDeviceMMsg" class="modalFieldMsgCnt">&nbsp;</div>
-                                </div>
-								
-								 <div class="col-xs-12 col-md-6 modalCell">
-                                    <div class="modalFieldCnt">
-										<!--
-										<select name="selectModelDevice" id="selectModelDevice" class="modalInputTxt">
-										    <option data_key="normal" value="custom">custom</option>    
-										</select>
-										-->
-										
-										<input id="selectModelDeviceM" name="selectModelDeviceM" class="modalInputTxt" readonly>	
-                                    </div>
-                                    <div class="modalFieldLabelCnt">Model</div>
-									<div id="inputModelDeviceMsg" class="modalFieldMsgCnt">&nbsp;</div>
-                                </div>
-                               
-							</div>
-								
-							<div class="row">
-						
-						
-								<div class="col-xs-12 col-md-6 modalCell">
-                                    <div class="modalFieldCnt">
-                                        <input type="text" class="modalInputTxt" name="inputTypeDeviceM" id="inputTypeDeviceM"> 
-                                    </div>
-                                    <div class="modalFieldLabelCnt">Device Type</div>
-									<div id="inputTypeDeviceMMsg" class="modalFieldMsgCnt">&nbsp;</div>
-                                </div>
-						
-								<div class="col-xs-12 col-md-6 modalCell">
-                                    <div class="modalFieldCnt">
-                                        <input type="text" class="modalInputTxt" name="inputMacDeviceM" id="inputMacDeviceM"> 
-                                    </div>
-                                    <div class="modalFieldLabelCnt">Mac Address</div>
-									<div id="inputMacDeviceMMsg" class="modalFieldMsgCnt">&nbsp;</div>
-                                </div>
-								</div>
-								<div class="row">
-								<div class="col-xs-12 col-md-6 modalCell">
-                                    <div class="modalFieldCnt">
-                                        <select name="selectEdgeGatewayTypeM" id="selectEdgeGatewayTypeM" class="modalInputTxt">
-											<option value=""></option>    
-											<?php
-                                            $query = "SELECT name FROM edgegatewaytype";
-                                            $result = mysqli_query($link, $query);
-
-                                            if($result)
-                                            {
-                                               while($row = $result->fetch_assoc())
-                                               { 
-                                                 $name=$row["name"];
-												 echo "<option value=\"$name\">$name</option>";
-                                               }
-
-                                            }
-                                            else
-                                            {
-                                                $name="ERROR";
-                                                echo "<option value=\"$name\">$name</option>";
-                                            }
-                                        ?>
-										</select>
-                                    </div>
-                                    <div class="modalFieldLabelCnt">Edge-Gateway Type</div>
-									<div id="selectEdgeGatewayTypeMMsg" class="modalFieldMsgCnt">&nbsp;</div>
-                                </div>
-								<div class="col-xs-12 col-md-6 modalCell">
-                                    <div class="modalFieldCnt">
-                                        <input type="text" class="modalInputTxt" name="inputEdgeGatewayUriM" id="inputEdgeGatewayUriM"> 
-                                    </div>
-                                    <div class="modalFieldLabelCnt">Edge-Gateway URI</div>
-									<div id="inputEdgeGatewayUriMMsg" class="modalFieldMsgCnt">&nbsp;</div>
-                                </div>
-								
-							</div>
-							
-							<div class="row">
-							
-								<div class="col-xs-12 col-md-6 modalCell">
-                                    <div class="modalFieldCnt">
-                                        <input type="text" class="modalInputTxt" name="inputProducerDeviceM" id="inputProducerDeviceM"> 
-                                    </div>
-                                    <div class="modalFieldLabelCnt">Producer</div>
-									<div id="inputProducerDeviceMMsg" class="modalFieldMsgCnt">&nbsp;</div>
-                                </div>
-								
-								
-	      						 <div class="col-xs-12 col-md-6 modalCell">
-                                    <div class="modalFieldCnt">
-									<!--
-                                        <select id="selectVisibilityDeviceM" name="selectVisibilityDeviceM" class="modalInputTxt">								
-											<option></option>
-										</select>
-										-->
-										<input id="selectVisibilityDeviceM" name="selectVisibilityDeviceM" class="modalInputTxt" readonly>																
-                                    </div>
-                                    <div class="modalFieldLabelCnt">Ownership</div>
-									<div id="selectVisibilityDeviceMMsg" class="modalFieldMsgCnt">&nbsp;</div>
-                                </div>
-								
-							</div>
-								
-							<div class="row">
-							
-								<div class="col-xs-12 col-md-6 modalCell">
-										<div class="modalFieldCnt" >
-												<div class="input-group unity-input"> <input type="text" class="modalInputTxt" name="inputFrequencyDeviceM" id="inputFrequencyDeviceM"> <span class="input-group-addon" id="basic-addon2">sec</span></div>
-										</div>
-											<div class="modalFieldLabelCnt">Frequency</div>
-											<div id="inputFrequencyDeviceMMsg" class="modalFieldMsgCnt">&nbsp;</div>
-                                </div>
-								
-								  <div class="col-xs-12 col-md-6 modalCell">
-                                    <div class="modalFieldCnt">
-                                        <input type="text" class="modalInputTxt" name="inputUriDeviceM" id="inputUriDeviceM" readonly> 
-                                    </div>
-                                    <div class="modalFieldLabelCnt">Service URI</div>
-									<div id="inputUriDeviceMMsg" class="modalFieldMsgCnt">&nbsp;</div>
-                                </div> 
-                 
-                            </div>
-                            
-                            <!--Fatima4-->
-                            <div class="row">
-                            <div class="modalFieldCnt">
-                                    <button type="text" id="editDeviceGenerateKeyBtn" class="btn confirmBtn internalLink" onclick="editGenerateKeysCLicked()" style="display: none;">Generate Keys</button>
-                                    </div>
-                            </div>
-							
-							<div class="row">
-							
-									<div class="col-xs-12 col-md-6 modalCell">
-										<div class="modalFieldCnt">
-											<input type="text" class="modalInputTxt" name="KeyOneDeviceUserM" id="KeyOneDeviceUserM"> 
-										</div>
-										<div class="modalFieldLabelCnt">KEY 1</div>
-										<div id="KeyOneDeviceUserMMsg" class="modalFieldMsgCnt">&nbsp;</div>
-									</div>
-									<div class="col-xs-12 col-md-6 modalCell">
-										<div class="modalFieldCnt">
-											<input type="text" class="modalInputTxt" name="KeyTwoDeviceUserM" id="KeyTwoDeviceUserM"> 
-										</div>
-										<div class="modalFieldLabelCnt">KEY 2</div>
-										<div id="KeyTwoDeviceUserMMsg" class="modalFieldMsgCnt">&nbsp;</div>
-									</div>
-								</div>
-								
-								<div id="sigFoxDeviceUserMMsg" class="modalFieldMsgCnt">&nbsp;</div>
-				
-                        </div>                       
                         <!-- Geo-Position tab -->
                         <div id="editGeoPositionTabDevice" class="tab-pane fade">
                             <div class="row">
@@ -1195,9 +964,226 @@ else
 							
 							
                         </div>
+                          <!-- Info tab -->
+                          <div id="editInfoTabDevice" class="tab-pane fade">
+						
+						
+                        <div class="row">
                         
+                            <div class="col-xs-12 col-md-6 modalCell">
+                                <div class="modalFieldCnt">
+                                    <input type="text" class="modalInputTxt" name="inputNameDeviceM" id="inputNameDeviceM" required> 
+                                </div>
+                                <div class="modalFieldLabelCnt">Name</div>
+                                <div id="inputNameDeviceMMsg" class="modalFieldMsgCnt">&nbsp;</div>
+                            </div>
+                            
+                             <div class="col-xs-12 col-md-6 modalCell">
+                                <div class="modalFieldCnt">
+                                    <!--
+                                    <select name="selectModelDevice" id="selectModelDevice" class="modalInputTxt">
+                                        <option data_key="normal" value="custom">custom</option>    
+                                    </select>
+                                    -->
+                                    
+                                    <input id="selectModelDeviceM" name="selectModelDeviceM" class="modalInputTxt" readonly>	
+                                </div>
+                                <div class="modalFieldLabelCnt">Model</div>
+                                <div id="inputModelDeviceMsg" class="modalFieldMsgCnt">&nbsp;</div>
+                            </div>
+                           
+                        </div>
+                            
+                        <div class="row">
+                    
+                    
+                            <div class="col-xs-12 col-md-6 modalCell">
+                                <div class="modalFieldCnt">
+                                    <input type="text" class="modalInputTxt" name="inputTypeDeviceM" id="inputTypeDeviceM"> 
+                                </div>
+                                <div class="modalFieldLabelCnt">Device Type</div>
+                                <div id="inputTypeDeviceMMsg" class="modalFieldMsgCnt">&nbsp;</div>
+                            </div>
+                    
+                            <div class="col-xs-12 col-md-6 modalCell">
+                                <div class="modalFieldCnt">
+                                    <input type="text" class="modalInputTxt" name="inputMacDeviceM" id="inputMacDeviceM"> 
+                                </div>
+                                <div class="modalFieldLabelCnt">Mac Address</div>
+                                <div id="inputMacDeviceMMsg" class="modalFieldMsgCnt">&nbsp;</div>
+                            </div>
+                            </div>
+                            <div class="row">
+                            <div class="col-xs-12 col-md-6 modalCell">
+                                <div class="modalFieldCnt">
+                                    <select name="selectEdgeGatewayTypeM" id="selectEdgeGatewayTypeM" class="modalInputTxt">
+                                        <option value=""></option>    
+                                        <?php
+                                        $query = "SELECT name FROM edgegatewaytype";
+                                        $result = mysqli_query($link, $query);
+
+                                        if($result)
+                                        {
+                                           while($row = $result->fetch_assoc())
+                                           { 
+                                             $name=$row["name"];
+                                             echo "<option value=\"$name\">$name</option>";
+                                           }
+
+                                        }
+                                        else
+                                        {
+                                            $name="ERROR";
+                                            echo "<option value=\"$name\">$name</option>";
+                                        }
+                                    ?>
+                                    </select>
+                                </div>
+                                <div class="modalFieldLabelCnt">Edge-Gateway Type</div>
+                                <div id="selectEdgeGatewayTypeMMsg" class="modalFieldMsgCnt">&nbsp;</div>
+                            </div>
+                            <div class="col-xs-12 col-md-6 modalCell">
+                                <div class="modalFieldCnt">
+                                    <input type="text" class="modalInputTxt" name="inputEdgeGatewayUriM" id="inputEdgeGatewayUriM"> 
+                                </div>
+                                <div class="modalFieldLabelCnt">Edge-Gateway URI</div>
+                                <div id="inputEdgeGatewayUriMMsg" class="modalFieldMsgCnt">&nbsp;</div>
+                            </div>
+                            
+                        </div>
+                        
+                        <div class="row">
+                        
+                            <div class="col-xs-12 col-md-6 modalCell">
+                                <div class="modalFieldCnt">
+                                    <input type="text" class="modalInputTxt" name="inputProducerDeviceM" id="inputProducerDeviceM"> 
+                                </div>
+                                <div class="modalFieldLabelCnt">Producer</div>
+                                <div id="inputProducerDeviceMMsg" class="modalFieldMsgCnt">&nbsp;</div>
+                            </div>
+                            
+                            
+                               <div class="col-xs-12 col-md-6 modalCell">
+                                <div class="modalFieldCnt">
+                                <!--
+                                    <select id="selectVisibilityDeviceM" name="selectVisibilityDeviceM" class="modalInputTxt">								
+                                        <option></option>
+                                    </select>
+                                    -->
+                                    <input id="selectVisibilityDeviceM" name="selectVisibilityDeviceM" class="modalInputTxt" readonly>																
+                                </div>
+                                <div class="modalFieldLabelCnt">Ownership</div>
+                                <div id="selectVisibilityDeviceMMsg" class="modalFieldMsgCnt">&nbsp;</div>
+                            </div>
+                            
+                        </div>
+                            
+                        <div class="row">
+                        
+                            <div class="col-xs-12 col-md-6 modalCell">
+                                    <div class="modalFieldCnt" >
+                                            <div class="input-group unity-input"> <input type="text" class="modalInputTxt" name="inputFrequencyDeviceM" id="inputFrequencyDeviceM"> <span class="input-group-addon" id="basic-addon2">sec</span></div>
+                                    </div>
+                                        <div class="modalFieldLabelCnt">Frequency</div>
+                                        <div id="inputFrequencyDeviceMMsg" class="modalFieldMsgCnt">&nbsp;</div>
+                            </div>
+                            
+                              <div class="col-xs-12 col-md-6 modalCell">
+                                <div class="modalFieldCnt">
+                                    <input type="text" class="modalInputTxt" name="inputUriDeviceM" id="inputUriDeviceM" readonly> 
+                                </div>
+                                <div class="modalFieldLabelCnt">Service URI</div>
+                                <div id="inputUriDeviceMMsg" class="modalFieldMsgCnt">&nbsp;</div>
+                            </div> 
+             
+                        </div>
+                        
+                        <!--Fatima4-->
+                        <div class="row">
+                        <div class="modalFieldCnt">
+                          <button type="text" id="editDeviceGenerateKeyBtn" class="btn confirmBtn internalLink" onclick="editGenerateKeysCLicked()">Generate Keys</button>
+                                </div>
+                        </div>
+                        
+                        <div class="row">
+                        
+                                <div class="col-xs-12 col-md-6 modalCell">
+                                    <div class="modalFieldCnt">
+                                        <input type="text" class="modalInputTxt" name="KeyOneDeviceUserM" id="KeyOneDeviceUserM"> 
+                                    </div>
+                                    <div class="modalFieldLabelCnt">KEY 1</div>
+                                    <div id="KeyOneDeviceUserMMsg" class="modalFieldMsgCnt">&nbsp;</div>
+                                </div>
+                                <div class="col-xs-12 col-md-6 modalCell">
+                                    <div class="modalFieldCnt">
+                                        <input type="text" class="modalInputTxt" name="KeyTwoDeviceUserM" id="KeyTwoDeviceUserM"> 
+                                    </div>
+                                    <div class="modalFieldLabelCnt">KEY 2</div>
+                                    <div id="KeyTwoDeviceUserMMsg" class="modalFieldMsgCnt">&nbsp;</div>
+                                </div>
+                            </div>
+                            
+                            <div id="sigFoxDeviceUserMMsg" class="modalFieldMsgCnt">&nbsp;</div>
+            
+                    </div>
+                    
+                    <!-- IOT Broker tab -->
+                    <div id="editIOTBrokerTabDevice" class="tab-pane fade in active">
+                 
+                        <div class="row">
+                        
+                           <div class="col-xs-12 col-md-6 modalCell">
+                                <div class="modalFieldCnt">
+                                    <select id="selectContextBrokerM" name="selectContextBrokerM" class="modalInputTxt"> </select>
+                                </div>
+                                <div class="modalFieldLabelCnt">ContextBroker</div>
+                                <div id="selectContextBrokerMMsg" class="modalFieldMsgCnt">&nbsp;</div>
+                            </div>
+                    
+                             <div class="col-xs-12 col-md-6 modalCell">
+                                <div class="modalFieldCnt">
+                                    <select id="selectKindDeviceM" name="selectKindDeviceM" class="modalInputTxt">
+                                                                                    <option value="sensor">sensor</option>
+                                                                                    <option value="actuator">actuator</option>
+                                                                            </select>
+                                </div>
+                                <div class="modalFieldLabelCnt">Kind</div>
+                                <div id="selectKindDeviceMMsg" class="modalFieldMsgCnt">&nbsp;</div>
+                            </div>
+                            
+                        </div>
+                    
+                        <div class="row">
+                        
+                          <div class="col-xs-12 col-md-6 modalCell">
+                                <div class="modalFieldCnt">
+                                    <select id="selectProtocolDeviceM" name="selectProtocolDeviceM" class="modalInputTxt">
+                                        <option value="amqp">amqp</option>
+                                        <option value="coap">coap</option>
+                                        <option value="mqtt">mqtt</option>
+                                        <option value="ngsi">ngsi</option>
+                                    </select>
+                                </div>
+                                <div class="modalFieldLabelCnt">Protocol</div>
+                                <div id="selectProtocolDeviceMMsg" class="modalFieldMsgCnt">&nbsp;</div>
+                            </div>
+                            <div class="col-xs-12 col-md-6 modalCell">
+                                <div class="modalFieldCnt">
+                                    <select id="selectFormatDeviceM" name="selectFormatDeviceM" class="modalInputTxt">
+                                        <option value="csv">csv</option>
+                                        <option value="json">json</option>
+                                        <option value="xml">xml</option>
+                                    </select>
+                                </div>
+                                <div class="modalFieldLabelCnt">Format</div>
+                                <div id="selectFormatDeviceMMsg" class="modalFieldMsgCnt">&nbsp;</div>
+                            </div>
+                           
+                        </div>
+             
+                    </div>
                         <!-- Attribute tab -->
-                        <div id="editSchemaTabDevice" class="tab-pane fade">
+                    <div id="editSchemaTabDevice" class="tab-pane fade">
                            
 							<div id="editlistAttributes"></div>
 							<div id="addlistAttributesM"></div>
@@ -1228,32 +1214,36 @@ else
                         </div>
 						
 						
-                    </div>
-					
-					
-					<div class="row" id="editDeviceLoadingMsg">
-                        <div class="col-xs-12 centerWithFlex">Updating device, please wait</div>
-                    </div>
-                    <div class="row" id="editDeviceLoadingIcon">
-                        <div class="col-xs-12 centerWithFlex"><i class="fa fa-circle-o-notch fa-spin" style="font-size:36px;"></i></div>
-                    </div>
-                    <div class="row" id="editDeviceOkMsg">
-                        <div class="col-xs-12 centerWithFlex">Device updated successfully</div>
-                    </div>
-                    <div class="row" id="editDeviceOkIcon">
-                        <div class="col-xs-12 centerWithFlex"><i class="fa fa-thumbs-o-up" style="font-size:36px"></i></div>
-                    </div>
-                    <div class="row" id="editDeviceKoMsg">
-                        <div class="col-xs-12 centerWithFlex">Error updating device</div>
-                    </div>
-                    <div class="row" id="editDeviceKoIcon">
-                        <div class="col-xs-12 centerWithFlex"><i class="fa fa-thumbs-o-down" style="font-size:36px"></i></div>
-                    </div>
+                   </div>
 		            
                 </div>
+				
+				<div class="row" id="editDeviceLoadingMsg">
+                        <div class="col-xs-12 centerWithFlex">Updating device, please wait</div>
+				</div>
+				<div class="row" id="editDeviceLoadingIcon">
+                        <div class="col-xs-12 centerWithFlex"><i class="fa fa-circle-o-notch fa-spin" style="font-size:36px;"></i></div>
+				</div>
+				<div class="row" id="editDeviceOkMsg">
+                        <div class="col-xs-12 centerWithFlex">Device updated successfully</div>
+				</div>
+				<div class="row" id="editDeviceOkIcon">
+                        <div class="col-xs-12 centerWithFlex"><i class="fa fa-thumbs-o-up" style="font-size:36px"></i></div>
+				</div>
+				<div class="row" id="editDeviceKoMsg">
+						<div class="col-xs-12 centerWithFlex">Error updating device</div>
+						   <div id="editDeviceOkModalInnerDiv1" class="modalDelMsg col-xs-12 centerWithFlex">
+                                
+                            </div>
+				</div>
+				<div class="row" id="editDeviceKoIcon">
+                        <div class="col-xs-12 centerWithFlex"><i class="fa fa-thumbs-o-down" style="font-size:36px"></i></div>
+				</div>
+					
 				<div id="editDeviceModalFooter" class="modal-footer">
                   <button type="button" id="editDeviceCancelBtn" class="btn cancelBtn" data-dismiss="modal">Cancel</button>
                   <button type="button" id="editDeviceConfirmBtn" class="btn confirmBtn internalLink" >Confirm</button>
+                  <button type="button" id="editDeviceOkBtn" class="btn cancelBtn" data-dismiss="modal" style="display:none;" >Ok</button>
                 </div>
 				
 				<!-- </form>--> 	
@@ -1299,9 +1289,7 @@ else
                             <div id="editDeviceKoModalInnerDiv1" class="modalDelMsg col-xs-12 centerWithFlex">
                                 
                             </div>
-                            <div class="modalDelObjName col-xs-12 centerWithFlex" id="editDeviceKoModalInnerDiv2">
-							<i class="fa fa-frown-o" style="font-size:36px">
-							</i>You entered some invalid values, the update has failed. Adjust the data and try again.</div>
+                            <div class="modalDelObjName col-xs-12 centerWithFlex" id="editDeviceKoModalInnerDiv2"><i class="fa fa-frown-o" style="font-size:36px"></i>You entered some invalid values, the update has failed. Adjust the data and try again.</div>
                         </div>
                     </div>
                 </div>
@@ -1312,11 +1300,10 @@ else
               </div>
             </div>
         </div>
-<!-- used for progress showing-------->
-  	
+		
 
 <!-- bulk update modal --->
-<div class="modal fade" id="bulkUpdateModal" tabindex="-1" role="dialog" aria-hidden="true">
+         <div class="modal fade" id="bulkUpdateModal" tabindex="-1" role="dialog" aria-hidden="true">
             <div class="modal-dialog" role="document">
               <div class="modal-content">
                 <div class="modalHeader centerWithFlex">
@@ -1363,7 +1350,7 @@ else
             </div>
         </div>
 		<!-- used for progress showing-------->
-                      
+            
          <div id="myModal" class="modal">
 
         <!-- Modal content -->
@@ -1382,25 +1369,52 @@ else
           </div>
 
         </div>
-        
-		<div id="retrieveModalWait" class="modal">
+            
+        <div id="myModal_forbulkstatus" class="modal">
 
         <!-- Modal content -->
           <div class="progress-modal-content">
             <div class="progress-modal-header">
-              <span id="progress_spanW" class="close">&times;</span>
-              <h2>Your data are being retrieved...</h2>
+              <span id="progress_span_forbulkstatus" class="close">&times;</span>
+              <h2>Your valid devices are being processed...</h2>
             </div>
-            <div id="loader_spinW" class="loader" style="margin: 0 auto;"></div>
-           <div class="modal-body" id="myModalBodyW" style="height: 200px;width:100%; overflow:scroll;"> 
+            <div id="loader_spin_forbulkstatus" class="loader" style="margin: 0 auto;"></div>
+           <div class="modal-body" id="myModalBody_forbulkstatus" style="height: 200px;width:100%; overflow:scroll;"> 
             </div>
-            <div class="modal-footerW">
+            <div class="modal-footer">
               <h3></h3>
-                <button type="button" id="progress_ok_wait" class="btn confirmBtn" style="position: absolute; right:50%; bottom: 0; padding: 10px; margin: 10px; display: none" onclick="refresh()" >Ok</button>
+                <button type="button" id="progress_ok_forbulkstatus" class="btn confirmBtn" style="position: absolute; right:30%; bottom: 0; padding: 10px; margin: 10px; display: none" onclick="dismiss_dialog()" >Ok</button>
+                <button type="button" id="progress_stop_forbulkstatus" class="btn confirmBtn" style="position: absolute; right:60%; bottom: 0; padding: 10px; margin: 10px; display: none" onclick="stop_progress()" >Stop the Process</button>
+
             </div>
           </div>
 
-        </div>		
+        </div>
+
+
+
+
+		<!-- used for progress showing-------->
+            
+         <div id="myModal" class="modal">
+
+        <!-- Modal content -->
+          <div class="progress-modal-content">
+            <div class="progress-modal-header">
+              <span id="progress_span" class="close">&times;</span>
+              <h2>Your file is being uploaded...</h2>
+            </div>
+            <div id="loader_spin" class="loader" style="margin: 0 auto;"></div>
+           <div class="modal-body" id="myModalBody" style="height: 200px;width:100%; overflow:scroll;"> 
+            </div>
+            <div class="modal-footer">
+              <h3></h3>
+                <button type="button" id="progress_ok" class="btn confirmBtn" style="position: absolute; right:50%; bottom: 0; padding: 10px; margin: 10px; display: none" onclick="refresh()" >Ok</button>
+            </div>
+          </div>
+
+        </div>
+            
         <div id="myModal_forbulkstatus" class="modal">
 
         <!-- Modal content -->
@@ -1422,7 +1436,7 @@ else
 
         </div>
             
-                      
+            
             <div class="modal fade" id="progress-update" tabindex="-1" role="dialog" aria-hidden="true">
             <div class="modal-dialog" role="document">
               <div class="modal-content">
@@ -1481,15 +1495,7 @@ else
             </div>
         </div>  
 
-			
-        <div id="dialog" title="Please Enter the New Owner">
-				<input type="text" name="addNewOwner" id="addNewOwner">	
-        </div>
-			
-			
 	
-		
-		
 		<!-- Modal for Ownership Visibility and Delegations -->
 		<div class="modal fade" id="delegationsModal" tabindex="-1" role="dialog" aria-labelledby="modalAddWidgetTypeLabel" aria-hidden="true">
 			<div class="modal-dialog" role="document">
@@ -1570,11 +1576,7 @@ else
 		</div>
 		
         </div>
-		<script  src="js/contextBroker_rw.js"></script>
-		
+        <script  src="js/bulkDeviceUpdate.js"></script>
+
     </body>
 </html>		
-
-
-
-

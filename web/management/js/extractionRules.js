@@ -198,7 +198,7 @@ function fetch_data(destroyOld, selected=null)
 			
 			if (selected==null)
 			{
-			  mydata = {action: "get_rules", username: loggedUser, organization:organization, no_columns: ["position","edit","delete"]}; 
+			  mydata = {action: "get_rules", username: loggedUser, organization:organization,loggedrole:loggedRole, no_columns: ["position","edit","delete"]}; 
 			  console.log("logged user" + loggedUser +  " organization "+ organization);
 			}
 			

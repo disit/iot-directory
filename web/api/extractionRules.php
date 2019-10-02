@@ -181,13 +181,20 @@ else if ($action=="get_cb_details"){
 else if ($action=="get_rules"){
 	$username = mysqli_real_escape_string($link,$_REQUEST['username']);
 	$organization = mysqli_real_escape_string($link,$_REQUEST['organization']);
+	$loggedrole = mysqli_real_escape_string($link,$_REQUEST['loggedrole']);
 	$username = md5($username);
 
 	$q = "SELECT contextbroker, id, selector, kind, format, data_type, value_type,value_unit, structure_flag
 	FROM extractionRules"; // WHERE username = '$username' AND deleted IS null;";
 	//$r = mysqli_query($link, $q);	
-	$r=create_datatable_data($link,$_REQUEST,$q, "username = '$username' AND organization='$organization'");
-
+	if($loggedrole == 'Root' || $loggedrole == 'RootAdmin'){
+		$r=create_datatable_data($link,$_REQUEST,$q,"");
+	}
+	else{
+		$r=create_datatable_data($link,$_REQUEST,$q, "username = '$username' AND organization='$organization'");
+	}
+	
+	
 	$selectedrows=-1;
 	if($_REQUEST["length"] != -1)
 	{
