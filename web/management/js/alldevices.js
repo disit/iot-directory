@@ -1598,7 +1598,8 @@ var gb_old_cb="";
 			data: {
 				action: "get_device_attributes", 
 				id: $(this).attr("data-id"),
-				organization : organization, 
+				organization : organization,
+				token : sessionToken, 
 				contextbroker: $(this).attr("data-contextBroker")
 			},
 			type: "POST",

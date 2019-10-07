@@ -627,15 +627,18 @@ var dataTable ="";
 
 	//$('#inputPropertiesDeviceM').val($(this).parents('tr').attr('data-properties'));
 
-	//	$('#inputAttributesDeviceM').val($(this).parents('tr').attr('data-attributes'));
+	//	$('#inputAttri:butesDeviceM').val($(this).parents('tr').attr('data-attributes'));
 	showEditDeviceModal();
+
+	console.log("editing?");
 
 	$.ajax({
 		url: "../api/device.php",
 		 data: {
 			  action: "get_device_attributes", 
 			   id: $(this).parents('tr').attr("data-id"),
-			   organization : organization, 
+			   organization : organization,
+ 			token : sessionToken,
 			   contextbroker: $(this).parents('tr').attr("data-contextBroker")
 			  },
 		type: "POST",
