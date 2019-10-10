@@ -557,6 +557,7 @@ function format ( d ) {
 		    mynewAttributes = [];
             var regex=/[^a-z0-9_-]/gi;
             var someNameisWrong=false;
+            var msg_whatiswrong="";
 			num1 = document.getElementById('addlistAttributes').childElementCount;
             for (var m=0; m< num1; m++)
 			{
@@ -568,15 +569,49 @@ function format ( d ) {
 		  	       healthiness_criteria: document.getElementById('addlistAttributes').childNodes[m].childNodes[5].childNodes[0].childNodes[0].value.trim(),
 				  healthiness_value: document.getElementById('addlistAttributes').childNodes[m].childNodes[6].childNodes[0].childNodes[0].value.trim()};
 				
-				if (newatt.value_name!="" && newatt.data_type!="" && newatt.value_type!="" && newatt.editable!="" && newatt.value_unit!="" && newatt.healthiness_criteria!="" && newatt.healthiness_value!="") 
+				//if (newatt.value_name!="" && newatt.data_type!="" && newatt.value_type!="" && newatt.editable!="" && newatt.value_unit!="" && newatt.healthiness_criteria!="" && newatt.healthiness_value!="") 
                     
                 
-                if (newatt.value_name!=""&& !regex.test(newatt.value_name) && newatt.value_name.length>=3 &&newatt.data_type!="" && newatt.value_type!="" && newatt.editable!="" && newatt.value_unit!="" && newatt.healthiness_criteria!="" && newatt.healthiness_value!="") 
+                /*if (newatt.value_name!=""&& !regex.test(newatt.value_name) && newatt.value_name.length>=3 &&newatt.data_type!="" && newatt.value_type!="" && newatt.editable!="" && newatt.value_unit!="" && newatt.healthiness_criteria!="" && newatt.healthiness_value!="") 
            
                     mynewAttributes.push(newatt);
         
                 else
+                    someNameisWrong=true;*/
+                
+                if (newatt.value_name==""||regex.test(newatt.value_name) || newatt.value_name.length<3){
                     someNameisWrong=true;
+                    msg_whatiswrong +="The Value name must be at least 3 characters. No special characters are allowed. "
+                }
+                if(newatt.data_type==""){
+                     someNameisWrong=true;
+                    msg_whatiswrong +="The data type cannot be empty. ";
+                }
+                 if(newatt.value_type==""){
+                     someNameisWrong=true;
+                    msg_whatiswrong +="The value type cannot be empty. ";
+                }
+                if(newatt.editable==""){
+                     someNameisWrong=true;
+                    msg_whatiswrong +="The field 'Editable' must be specified. ";
+                }
+                if(newatt.value_unit==""){
+                     someNameisWrong=true;
+                    msg_whatiswrong +="The field 'value unit' must be specified. ";
+                }
+                if(newatt.healthiness_criteria==""){
+                     someNameisWrong=true;
+                    msg_whatiswrong +="The field 'healthiness criteria' must be specified. ";
+                }
+                if(newatt.healthiness_value==""){
+                     someNameisWrong=true;
+                    msg_whatiswrong +="The field 'healthiness value' must be specified. ";
+                }
+                if(!someNameisWrong){
+                    mynewAttributes.push(newatt);
+                }
+                
+                
 			}
             
             if(!someNameisWrong){
@@ -717,7 +752,7 @@ function format ( d ) {
             
         }
             else{
-                 alert("Check the values of your device, make sure that data you entered are valid");
+                 alert("Check the values of your device, make sure that data you entered are valid. "+ msg_whatiswrong);
             }
                                           
         });

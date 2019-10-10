@@ -85,7 +85,6 @@ function checkEditCbName()
 function checkEditCbIp()
 {
     var message = null;
-    var pattern = /^(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)|^(https?:\/\/(?:www\.|(?!www))[a-zA-Z0-9][a-zA-Z0-9-]+[a-zA-Z0-9]\.[^\s]{2,}|www\.[a-zA-Z0-9][a-zA-Z0-9-]+[a-zA-Z0-9]\.[^\s]{2,}|https?:\/\/(?:www\.|(?!www))[a-zA-Z0-9]\.[^\s]{2,}|www\.[a-zA-Z0-9]\.[^\s]{2,})$/;  /* /^(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?).){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?) */
     var value = document.getElementById("inputIpCBM").value;
 	 
     if(value === '')
@@ -94,13 +93,7 @@ function checkEditCbIp()
         editCbConditionsArray['inputIpCBM'] = false;
         $("#inputIpCBMMsg").css("color", "red");
     }
-    else if(!pattern.test(value))
-    {
-        message = 'IP format is not correct (xxx.xxx.xxx.xxx) or URL like http://www.example.it';
-        editCbConditionsArray['inputIpCBM'] = false;
-        $("#inputIpCBMMsg").css("color", "red");
-    }
-    else if(pattern.test(value))
+    else 
     {
         message = 'Ok';
         editCbConditionsArray['inputIpCBM'] = true;
