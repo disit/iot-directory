@@ -38,7 +38,7 @@
 
     $ds = ldap_connect($ldapServer, $ldapPort);
     ldap_set_option($ds, LDAP_OPT_PROTOCOL_VERSION, 3);
-    $bind = ldap_bind($ds);
+    $bind = ldap_bind($ds, $ldapAdminName, $ldapAdminPwd);
 
 
 
