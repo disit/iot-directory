@@ -1520,71 +1520,56 @@ $visibility, $frequency, $listnewAttributes, &$result)
 	   return true;
 	}
 	
-	function registerKB($link, $name, $type, $contextbroker, $kind, $protocol, $format, $macaddress, $model, $producer, $latitude, 
-$longitude, $visibility, $frequency, $listnewAttributes,&$result, $shouldbeRegistered, $organization, $kbUrl="")
-    {
-	  //$result=array();
-      $result["status"]='ok';
-      // $result["msg"]='';
-      // $result["log"]='';
-	
-		  if (canBeRegistered($name, $type, $contextbroker, $kind, $protocol, $format, $macaddress, $model, $producer, $latitude, $longitude, 
-			$visibility, $frequency, $listnewAttributes, $result))
-		  {
-			  $query="SELECT * from contextbroker WHERE name = '$contextbroker'";
-			  
-			  $r = mysqli_query($link, $query);
-			  
-			  if (!$r) {
+	function registerKB($link, $name, $type, $contextbroker, $kind, $protocol, $format, $macaddress, $model, $producer, $latitude,
+			$longitude, $visibility, $frequency, $listnewAttributes,&$result, $shouldbeRegistered, $organization, $kbUrl="")
+	{
+		$result["status"]='ok';
+		
+		if (canBeRegistered($name, $type, $contextbroker, $kind, $protocol, $format, $macaddress, $model, $producer, $latitude, $longitude, $visibility, $frequency, $listnewAttributes, $result))
+		{
+			$query="SELECT * from contextbroker WHERE name = '$contextbroker'";
+			$r = mysqli_query($link, $query);
+			if (!$r) {
 				$result["status"]='ko';
 				$result["error_msg"] .="Error in reading data from context broker.";
-                $result["msg"] .= ' error in reading data from context broker ' . mysqli_error($link);
+				$result["msg"] .= ' error in reading data from context broker ' . mysqli_error($link);
 				$result["log"] .= ' error in reading data from context broker ' . mysqli_error($link) . $query;
 				return 1;
-			  }
-			  $rowCB = mysqli_fetch_assoc($r);
+			}
+			$rowCB = mysqli_fetch_assoc($r);
+			if($rowCB["kind"]=='external')
+				$shouldbeRegistered='no';
+			$ip=$rowCB["ip"];
+			$port=$rowCB["port"];
 			  
-               if($rowCB["kind"]=='external')
-                  $shouldbeRegistered='no';
-              
-              $ip=$rowCB["ip"];
-			  $port=$rowCB["port"];
-            
+			$msg=array();
+			$msg["id"]= $name;
+			$msg["type"]= $type;
+			$msg["kind"]= $kind;
+			$msg["protocol"]= $protocol;
+			$msg["format"]= $format;
+			$msg["macaddress"]= $macaddress;
+			$msg["model"]= $model;
+			$msg["producer"]= $producer;
+			$msg["latitude"]= $latitude;
+			$msg["longitude"]= $longitude;
+			$msg["frequency"]= $frequency;
+			$msg["organization"]= $organization;
+              		$msg["ownership"]= $visibility;
+			$msg["broker"]=array();
+			$msg["broker"]["name"]=$contextbroker;
+			$msg["broker"]["type"]=$rowCB["protocol"];
+			$msg["broker"]["ip"]=$rowCB["ip"];
+			$msg["broker"]["port"]=$rowCB["port"];
+			$msg["broker"]["login"]=($rowCB["login"]==null)?"":$rowCB["login"];
+			$msg["broker"]["password"]=($rowCB["password"]==null)?"":$rowCB["password"];
+			$msg["broker"]["latitude"]=$rowCB["latitude"];
+			$msg["broker"]["longitude"]=$rowCB["longitude"];
+			$msg["broker"]["created"]=$rowCB["created"];
 			  
-			  $msg=array();
-			  $msg["id"]= $name;
-			  $msg["type"]= $type;
-			  $msg["kind"]= $kind;
-			  $msg["protocol"]= $protocol;
-			  $msg["format"]= $format;
-			  $msg["macaddress"]= $macaddress;
-			  $msg["model"]= $model;
-			  $msg["producer"]= $producer;
-			  $msg["latitude"]= $latitude;
-			  $msg["longitude"]= $longitude;
-			  $msg["frequency"]= $frequency;
-              $msg["organization"]= $organization;
-              
-			 // $msg["visibility"]= $visibility;
-			  // if ($msg["visibility"]=='private') $msg["owner"]=$owner;
-			  $msg["ownership"]= $visibility;
-			  $msg["broker"]=array();
-			  $msg["broker"]["name"]=$contextbroker;
-			  $msg["broker"]["type"]=$rowCB["protocol"];
-			  $msg["broker"]["ip"]=$rowCB["ip"];
-			  $msg["broker"]["port"]=$rowCB["port"];
-			  $msg["broker"]["login"]=($rowCB["login"]==null)?"":$rowCB["login"];
-			  $msg["broker"]["password"]=($rowCB["password"]==null)?"":$rowCB["password"];
-			  $msg["broker"]["latitude"]=$rowCB["latitude"];
-			  $msg["broker"]["longitude"]=$rowCB["longitude"];
-			  $msg["broker"]["created"]=$rowCB["created"];
-			   // $msg["attributes"]=array();
-			  
-			  $myAttrs=array();
-			  $i=1;
-			  foreach($listnewAttributes as $att)
-			  {
-							// print_r($att);
+			$myAttrs=array();
+			$i=1;
+			foreach($listnewAttributes as $att) {
 				$myatt = array();
 				$myatt["value_name"] =$att->value_name;
 				$myatt["data_type"] =$att->data_type;
@@ -1592,124 +1577,103 @@ $longitude, $visibility, $frequency, $listnewAttributes,&$result, $shouldbeRegis
 				$myatt["value_unit"]=$att->value_unit;
 				$myatt["healthiness_criteria"]=$att->healthiness_criteria;
 				if ($att->healthiness_criteria=="refresh_rate")
-								  $myatt["value_refresh_rate"]=$att->healthiness_value;
-				// to be fixed
-							//else if ($att["healthiness_criteria"]=="different_values")
-							// $myatt["different_values"]=$att["different_values"];
-				//else $myatt["value_bounds"]=$att["value_bounds"];
+					$myatt["value_refresh_rate"]=$att->healthiness_value;
+					// to be fixed
+					//else if ($att["healthiness_criteria"]=="different_values")
+					// $myatt["different_values"]=$att["different_values"];
+					//else $myatt["value_bounds"]=$att["value_bounds"];
 				$myatt["order"]=$i++;
 				$myAttrs[]=$myatt;
-				
-			  }	 
-			  $msg["attributes"]=$myAttrs;
-			  
-			  // echo json_encode($msg);
-			  
-			  try
-			   {
-				 //$url= $GLOBALS["knowledgeBaseURI"] . "api/v1/iot/insert";
-                if($kbUrl==""){
-                    $url= $_SESSION['kbUrl']."iot/insert";
-                }
-                  else{
-                      $url= $kbUrl."iot/insert";
-                  }
-                  
+			}	 
+			$msg["attributes"]=$myAttrs;
 
+			try {
+				if($kbUrl=="") 
+					$url= $_SESSION['kbUrl']."iot/insert";
+				else 
+					$url= $kbUrl."iot/insert";
+				$options = array(
+					'http' => array(
+						'header' => "Content-Type: application/json;charset=utf-8",
+						'header' => "Access-Control-Allow-Origin: *",
+						'method' => 'POST',
+						'content' => json_encode($msg),
+						'timeout' => 30
+					)
+				);
+				$context = stream_context_create($options);
+				$local_result = @file_get_contents($url, false, $context);
+				if (($local_result!="errore")&&(strlen($local_result)>0)) {
+					$result["status"]='ok';
+					$result["content"]=$local_result;
+					$result["msg"] .= "\n an URI has been generated by the KB: " . $local_result." ".$url." xxx ".$organization; 
+					$result["log"] .= "\n an URI has been generated by the KB: " . $local_result." ".$url;
+				}
+				else {
+					$result["status"]='ko';
+					$result["content"]="";
+					$result["msg"] .= "\n no URI has been generated by the KB" . $local_result;
+					$result["log"] .= "\n no URI has been generated by the KB" . $local_result;
+				}
+				// registration of the device in the corresponding context broker
+				if (($local_result!="errore")&&(strlen($local_result)>0)) {
+					if (!isset($shouldbeRegistered) || (isset($shouldbeRegistered)&& $shouldbeRegistered=='yes')) {
+						switch ($protocol) {
+							case "ngsi":
+								$res = insert_ngsi($name, $type, $contextbroker, $kind, $protocol, $format, $model, $latitude, $longitude, 
+										$visibility, $frequency, $listnewAttributes, $ip, $port, $result);
+								break;
+							case "mqtt":
+								$res = insert_mqtt($name, $type, $contextbroker, $kind, $protocol, $format, $latitude, $longitude, 
+										$visibility, $frequency, $listnewAttributes, $ip, $port, $result);
+								break;
+							case "amqp":
+								$res = insert_amqp($name, $type, $contextbroker, $kind, $protocol, $format, $latitude, $longitude, 
+										$visibility, $frequency, $listnewAttributes, $ip, $port, $result);
+								break;
+						}
+					}
+					else {
+						$res='no';//should not be registered
+					}
+				}
+				else {
+					$res='ko';//uri has not been generated
+				}
+			} catch (Exception $ex) {
+				$result["status"]='ko';
+				$result["error_msg"] .= 'Error in connecting with KB. ';
+				$result["msg"] .= '\n error in connecting with KB ';
+				$result["log"] .= '\n error in connecting with KB ' . $ex;
+			} 
 
-				 $options = array(
-						  'http' => array(
-								  'header' => "Content-Type: application/json;charset=utf-8",
-								  'header' => "Access-Control-Allow-Origin: *",
-								  'method' => 'POST',
-					  'content' => json_encode($msg),
-								  'timeout' => 30
-						  )
-					);
-				 $context = stream_context_create($options);
-				 $local_result = @file_get_contents($url, false, $context);
-			 if ($local_result!="errore" )
-			 {
-			   $result["status"]='ok';
-			   $result["content"]=$local_result;
-			   $result["msg"] .= "\n an URI has been generated by the KB: " . $local_result." ".$url." xxx ".$organization; // . json_encode($msg);
-			   $result["log"] .= "\n an URI has been generated by the KB: " . $local_result." ".$url; // . json_encode($msg);
-			 }
-			 else
-			 {
-			   $result["status"]='ok';
-			   $result["content"]="";
-			   $result["msg"] .= "\n no URI has been generated by the KB" . $local_result; //  . json_encode($msg);
-			   $result["log"] .= "\n no URI has been generated by the KB" . $local_result; // . json_encode($msg);
-			 }
-			 if ($local_result!="errore")
-			 {
-                 if (!isset($shouldbeRegistered) || (isset($shouldbeRegistered)&& $shouldbeRegistered=='yes'))
-                 {
-				 switch ($protocol)
-				 {
-				   case "ngsi":
-					$res = insert_ngsi($name, $type, $contextbroker, $kind, $protocol, $format, $model, $latitude, $longitude, 
-	$visibility, $frequency, $listnewAttributes, $ip, $port, $result);
-						 break;
-				   case "mqtt":
-						$res = insert_mqtt($name, $type, $contextbroker, $kind, $protocol, $format, $latitude, $longitude, 
-	$visibility, $frequency, $listnewAttributes, $ip, $port, $result);
-						 break;
-					case "amqp":
-						$res = insert_amqp($name, $type, $contextbroker, $kind, $protocol, $format, $latitude, $longitude, 
-	$visibility, $frequency, $listnewAttributes, $ip, $port, $result);
-						 break;
-				 }
-                 }
-                 else
-                 {$res='no';}
-			 }
-			 
-			 } 
-			 catch (Exception $ex)
-			  {
-			   $result["status"]='ko';
-			   $result["error_msg"] .= 'Error in connecting with KB. ';
-			   $result["msg"] .= '\n error in connecting with KB ';
-			   $result["log"] .= '\n error in connecting with KB ' . $ex;
-			 } 
-			/* registration of the device in the corresponding context broker */
-					 
-			// echo "dopo protocol" . $res . " " . $local_result;
-			if ($res=="ok")
-			{
-			 $result["msg"] .= "\n ok registration in the context broker";
-			 $result["log"] .= "\n ok registration in the context broker";
+			if ($res=="ok") {
+				$result["msg"] .= "\n ok registration in the context broker";
+				$result["log"] .= "\n ok registration in the context broker";
 			}
-			elseif ($res=="ko")
-			{
-			  $result["status"]='ko';
-			  $result["error_msg"] .= "No registration in the context broker. ";
-			  $result["msg"] .= "\n no registration in the context broker";
-			  $result["log"] .= "\n no registration in the context broker";
+			elseif ($res=="ko") {
+				$result["status"]='ko';
+				$result["error_msg"] .= "No registration in the context broker. ";
+				$result["msg"] .= "\n no registration in the context broker";
+				$result["log"] .= "\n no registration in the context broker";
 			}
-            else // the value is no -- no registration in the context broker
-            {
-			  $result["status"]='ok';
-			  $result["msg"] .= "\n no registration in the context broker is required";
-			  $result["log"] .= "\n no registration in the context broker is required";
+			else {// the value is no -- no registration in the context broker
+				$result["status"]='ok';
+				$result["msg"] .= "\n no registration in the context broker is required";
+				$result["log"] .= "\n no registration in the context broker is required";
 			}    
 			return 1;
 		}
-		else
-		{
-		  $result["error_msg"].="Error in the validation w.r.t. the KB. ";
-		  $result["msg"].="\n error in the validation w.r.t. the KB";
-		  $result["log"].="\n error in the validation w.r.t. the KB";
-		  $result["status"]='ko';
-		  return 1;
+		else {
+			$result["error_msg"].="Error in the validation w.r.t. the KB. ";
+			$result["msg"].="\n error in the validation w.r.t. the KB";
+			$result["log"].="\n error in the validation w.r.t. the KB";
+			$result["status"]='ko';
+			return 1;
 		}
-   } // end of function registerKB
-    
+	} // end of function registerKB
                 
-	/* ****FUNCTIONS FOR THE MODIFICATION OF THE REGISTRATION OF A DEVICE IN THE KNOWLEDGE BASE AND IN THE CONTEXT BROKER ****************** 
-*/
+	// ****FUNCTIONS FOR THE MODIFICATION OF THE REGISTRATION OF A DEVICE IN THE KNOWLEDGE BASE AND IN THE CONTEXT BROKER ****************** 
 				
 	function update_ngsi($name, $type, $contextbroker, $kind, $protocol, $format, $model, $latitude, $longitude, $visibility, $frequency, 
 $listnewAttributes, $ip, $port,$uri, &$result)
@@ -2366,7 +2330,7 @@ $visibility, $frequency, $listnewAttributes, $result))
 			   switch ($protocol)
 			   {
 				case "ngsi":
-					$res = update_ngsi($device, $type, $contextbroker, $kind, $protocol, $format, $model, $latitude, 
+					$res = update_ngsi($device, $type, $contextbroker, $kind, $protocol, $format, $model, $latitude,
 $longitude, $visibility, $frequency, $listnewAttributes, $ip, $port,$uri, $result);
 					break;
 				case "mqtt":
