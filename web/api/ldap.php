@@ -80,6 +80,8 @@ if (isset($_REQUEST['username'])) {
 if($action == 'get_all_ou')
 {
 	$connection = ldap_connect($ldapServer, $ldapPort);
+	ldap_set_option($ds, LDAP_OPT_PROTOCOL_VERSION, 3);
+	$bind = ldap_bind($ds, $ldapAdminName, $ldapAdminPwd);
 	$resultldap = ldap_search($connection, $ldapBaseName, '(objectClass=organizationalUnit)');
 	$entries = ldap_get_entries($connection, $resultldap);
 
@@ -103,6 +105,8 @@ if($action == 'get_all_ou')
 else if($action == 'get_logged_ou')
 {
 	$connection = ldap_connect($ldapServer, $ldapPort);
+	ldap_set_option($ds, LDAP_OPT_PROTOCOL_VERSION, 3);
+	$bind = ldap_bind($ds, $ldapAdminName, $ldapAdminPwd);
 	$userDN="cn=". $currentUser .",".$ldapBaseName;
 	$resultldap = ldap_search($connection, $ldapBaseName, '(&(objectClass=organizationalUnit)(l=' . $userDN . '))');
         $entries = ldap_get_entries($connection, $resultldap);
@@ -124,6 +128,8 @@ else if($action == 'get_logged_ou')
 else if($action == 'get_group_for_ou')
 {
         $connection = ldap_connect($ldapServer, $ldapPort);
+	ldap_set_option($ds, LDAP_OPT_PROTOCOL_VERSION, 3);
+	$bind = ldap_bind($ds, $ldapAdminName, $ldapAdminPwd);
 	$resultldap = ldap_search($connection, $ldapBaseName, '(&(objectClass=groupOfNames)(ou='.$_REQUEST['ou'].'))');
         $entries = ldap_get_entries($connection, $resultldap);
 
