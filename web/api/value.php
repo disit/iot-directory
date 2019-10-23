@@ -104,7 +104,7 @@ if ($action=="insert")
 	if($r)
 	{
 	    $result["log"] .= "\r\n Value $cb/$device/$value_name correctly inserted \r\n";
-		modify_valueKB($link, $device, $cb, $result);
+		modify_valueKB($link, $device, $cb, $organization, $result);
         $result["editable"]=$editable;		
         if($result["content"]==null) $result["active"]=false;  else $result["active"]=true;
 		$result["msg"] .= '\n insertion in the db of the value was ok';
@@ -172,7 +172,7 @@ if ($action=="update")
 
 	if($r)
 	{
-		modify_valueKB($link, $device, $cb,$result);	   
+		modify_valueKB($link, $device, $cb, $organization, $result);	   
 		$result["editable"]=$editable;
 		if($result["content"]==null) $result["active"]=false;  else $result["active"]=true;
 		$result["msg"] .= '\n update in the db of the value was ok';
@@ -225,7 +225,7 @@ else if ($action=="delete")
       $r = mysqli_query($link, $q);
       if($r)
 	  {
-		modify_valueKB($link, $device, $cb, $result);	   
+		modify_valueKB($link, $device, $cb, $organization, $result);	   
         $result["editable"]=$editable;		
         if($result["content"]==null) $result["active"]=false;  else $result["active"]=true;
 		$result["msg"] .= '\n delete in the db of the value was ok';

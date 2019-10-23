@@ -2209,7 +2209,7 @@ $visibility, $frequency, $listnewAttributes, $result))
 
 /* functions for insert/update/delete values from a specific device in the KB and context brokers */
 
-function modify_valueKB($link, $device, $contextbroker, &$result) {
+function modify_valueKB($link, $device, $contextbroker, $organization, &$result) {
     $result["status"]='ok';
     
 	$listnewAttributes=generateAttributes($link, $device, $contextbroker);
@@ -2280,6 +2280,7 @@ $visibility, $frequency, $listnewAttributes, $result))
 		  $msg["broker"]["latitude"]=$row["cblatitude"];
 		  $msg["broker"]["longitude"]=$row["cblongitude"];
 		  $msg["broker"]["created"]=$row["created"];
+		  $msg["organization"]= $organization;
 		   // $msg["attributes"]=array();
 		  
 		  $myAttrs=array();

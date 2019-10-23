@@ -3458,6 +3458,8 @@ function insertValidDevices(){
 	spin_b.style.display="none";
 	progress_ok_b.style.display="block";
 	progress_stop_b.style.display="block";
+
+	was_processing=1;
 	
 	checkBulkStatus();
  
@@ -3530,6 +3532,8 @@ if (timerID!= undefined){
 }
 
 timerID = setInterval(function() {
+	
+	console.log("was processing"+was_processing);
 
 	if(is_processing==0){
 		clearInterval(timerID);

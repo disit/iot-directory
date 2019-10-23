@@ -524,7 +524,7 @@ else if ($action =='change_visibility')
 		
 		// information to be passed to the interface
 		$result["visibility"] = $visibility;
-		modify_valueKB($link, $id, $contextbroker, $result);
+		modify_valueKB($link, $id, $contextbroker, $organization, $result);
 		//update delegation informations
 
 		//retrieve any values of this this device
