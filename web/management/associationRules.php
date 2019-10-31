@@ -146,6 +146,8 @@ else
         
         <!-- Custom CSS -->
         <link href="../css/dashboard.css" rel="stylesheet">
+        <link href="../css/bulkDeviceLoad.css" rel="stylesheet">
+
 	
 		<script>
 		 var loggedRole = "<?php echo $_SESSION['loggedRole']; ?>";
@@ -159,7 +161,8 @@ else
 		 var access_denied = "<?php echo $access_denied; ?>";
 		 var nascondi= "<?php echo $hide_menu; ?>";
 		 var sessionEndTime = "<?php echo $_SESSION['sessionEndTime']; ?>";
-         var sessionToken = "<?php  if (isset($_SESSION['refreshToken'])) echo $_SESSION['refreshToken']; else echo ""; ?>";		 
+         var sessionToken = "<?php  if (isset($_SESSION['refreshToken'])) echo $_SESSION['refreshToken']; else echo ""; ?>";
+		 var _serviceIP = "<?php echo $_serviceIP; ?>"
 		 var mypage = location.pathname.split("/").slice(-1)[0];
          var functionality = [];
 /*
@@ -327,7 +330,7 @@ else
                     </div>
                     <div class="row" id="title_row">
                         <div class="col-xs-10 col-md-12 centerWithFlex" id="headerTitleCnt">IoT Directory: Devices</div>
-                        <div class="col-xs-2 hidden-md hidden-lg centerWithFlex" id="headerMenuCnt"><?php include "mobMainMenu.php" ?></div> 
+                        <div class="col-xs-2 hidden-md hidden-lg centerWithFlex" id="headerMenuCnt"><!--?php include "mobMainMenu.php" ?--></div> 
                     </div>
 					
 							
@@ -337,11 +340,11 @@ else
 						<!--the statistics bar section -->
                         
                             
-				             <div id="synthesis" class="row hidden-xs hidden-sm mainContentRow">
+				           <div id="synthesis" class="row hidden-xs hidden-sm mainContentRow">
                              <!--   <div  class="col-xs-12 mainContentRowDesc"></div> -->
-                                <div id="dashboardTotActiveCnt" class="col-md-2 mainContentCellCnt">
+                                <div id="dashboardTotActiveCnt" class="col-md-4 mainContentCellCnt">
                                     <div class="col-md-12 centerWithFlex pageSingleDataCnt">
-                                        <?php
+                                         <?php
                                             $u= md5($_SESSION['loggedUsername']);
 											$query = "SELECT count(*) AS qt FROM temporary_devices WHERE status='valid' AND username ='".$u."' AND should_be_registered= 'no' AND deleted IS null";
                                             $result = mysqli_query($link, $query);
@@ -350,21 +353,18 @@ else
                                             {
                                                $row = $result->fetch_assoc();
 												//echo $_SESSION['loggedUsername'];
-												echo $row['qt'];
+												echo $row['qt'] . ' valid devices';
                                             }
                                             else
                                             {
-												echo '-';
+												echo '- valid devices';
                                             }
-                                        ?>
-                                    </div>
-                                    <div class="col-md-12 centerWithFlex pageSingleDataLabel">
-                                        <p>valid <br>devices</p> 
+                                        ?>  
                                     </div>
                                 </div>
-                                <div id="dashboardTotPermCnt" class="col-md-2 mainContentCellCnt">
+                              <div id="dashboardTotPermCnt" class="col-md-4 mainContentCellCnt">
                                     <div class="col-md-12 centerWithFlex pageSingleDataCnt">
-                                        <?php //MM
+                                       		<?php //MM
                                             $u= md5($_SESSION['loggedUsername']);
 											$query = "SELECT count(*) AS qt FROM temporary_devices WHERE status='invalid' AND should_be_registered= 'no' AND username ='".$u."' AND deleted IS null";
                                             $result = mysqli_query($link, $query);
@@ -372,17 +372,15 @@ else
                                             if($result)
                                             {
                                                $row = $result->fetch_assoc();
-                                               echo $row['qt'];
+                                               echo $row['qt'] . ' invalid devices';
                                             }
                                             else
                                             {
-                                                echo '-';
+                                                echo '- invalid devices';
                                             }
-                                        ?>
+                                        ?> 
                                     </div>
-                                    <div class="col-md-12 centerWithFlex pageSingleDataLabel">
-                                        <p>invalid <br>devices</p>
-                                    </div>
+
                                 </div>
                                  
 
@@ -522,14 +520,17 @@ else
                                     
                                 </div>
                                     <!-------upload button row--------------------->
-                                    
-                                    <div class="col-xs-12 mainContentCellCnt">
-                                      <div class="col-xs-12 col-md-6 modalFirstLbl">
+
+
+                                     <div class="uploadBulkLoad pull-left">
+                                        <button type="text" id="suggestionsButton" name="suggestionsButton" class="btn btn-info">Suggest Modifications</button>
                                      </div>
                                       <div class="uploadBulkLoad pull-right">
+                                        <button type="text" id="activeBrokers" name="activeBrokers" class="btn btn-info">Show active brokers</button>
+
                                          <button type="text" id="retrieveButton" name="myDevice"class="btn btn-primary">Retrieves devices</button>
                                      </div>
-                                 </div>
+                                 
                             </div>
 		
                     
@@ -544,7 +545,7 @@ else
 									 <thead>
 									  <tr>
 										<th></th>	
-									    <th data-cellTitle="name">Name</th>
+									    <th data-cellTitle="name">IoT Device</th>
 										<th data-cellTitle="contextbroker">IOT Broker</th>
 										<th data-cellTitle="protocol">Protocol</th>
 										<th data-cellTitle="format">Format</th>
@@ -558,6 +559,8 @@ else
 									</table>
 
 									<button type="text" id="deleteAllBtn" name="myDevice" class="btn btn-primary">Delete All</button>
+                                    <button type="text" id="updateMultipleModalBtn" name="updateMultipleModalBtn" class="btn btn-info">Update Devices</button>
+                                    <button type="text" id="updateMultipleValueBtn" name="updateMultipleValueBtn" class="btn btn-info">Update Values</button>
 									<!--Sara2210 start -->
 									 <button type="text" id="insertValidBtn" name="myDevice"class="btn btn-primary pull-right">Insert Valid Devices</button>
 									<!--Sara2210 end -->
@@ -569,6 +572,44 @@ else
             </div>
         </div>
         
+        <!-- window to show active brokers -->
+
+        <div class="modal fade" id="activeBrokersModal" tabindex="-1" role="dialog" aria-hidden="true">
+            <div class="modal-dialog" role="document">
+              <div class="modal-content">
+              <div class="modalHeader centerWithFlex">
+                Active brokers
+                </div>
+                <div id="displayAllBrokers" class="row mainContentRow">
+                    <div class="modal-body">
+
+                        <div id="selectBroker" class="col-xs-12 mainContentRowDesc" >
+                            <div id="selectBrokersActive" class="col-xs-12 col-md-6">
+                                <select id="activeInactiveBrokes"></select>
+                            </div>
+							<div class="col-xs-12 col-md-6">
+								<button type="button" id="activateButton" class="btn btn-success" style="display: none;">Activate</button>
+								<button type="button" id="inactivateButton" class="btn btn-danger"  >Inactivate</button>
+							</div>
+                        </div>
+					<!--	<div id="statusSelectedBroker" class="col-xs-12 col-md-6" style=" visibility:hidden; color:green; padding-left:30px;" >This Broker is active</div>-->
+
+                    </div>
+                </div>
+
+                <div class="modal-footer">
+                    <button type="button" id="stopAllBrokers" class="btn btn-primary">Stop all</button>
+                    <button type="button" id="successRegisterUserDeviceCancelBtn" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                </div>
+              </div>
+            </div>
+        </div>
+            
+
+
+
+
+
 		<!-- the window that appears as message after clicking submit on adding new device, success or failure (I guess)-->
 		
         <div class="modal fade" id="successRegisterUserDeviceModal" tabindex="-1" role="dialog" aria-labelledby="successRegisterUserDeviceModalLabel" aria-hidden="true">
@@ -607,6 +648,338 @@ else
               </div>
             </div>
         </div>
+	</div>
+	
+
+       <!-- Start of Update Multiple devices -->
+				
+		<div class="modal fade" id="updateMultipleDeviceModal" tabindex="-1" role="dialog" aria-hidden="true">
+			<div class="modal-dialog modal-lg" role="document">
+				<div class="modal-content">
+					<div class="modalHeader centerWithFlex">
+						Bulk Update Rule - Devices
+					</div>
+
+					<div id="addContextBrokerModalBody" class="modal-body modalBody">     
+                    
+						<div class="tab-content">
+						   
+							<!-- Info tab -->
+							<div id="infoTabCB" class="tab-pane fade in active">
+								<div class="row">
+								   <div class="col-xs-12 modalCell">
+										<div class="modalFieldCnt">
+											 <h3 align="center">IF STATEMENT</h3>
+											<table id="ifBlockTable" class="ifBlockBulk">
+												<thead>
+												<th width="11%"></th>
+													<th width="29%">Fields</th>
+													<th width="30%">Operator</th>
+													<th width="28%">Value</th>
+													<th width="5%"><i id="addifBlockBtn" class="fa fa-plus"></i></th>
+												</thead>
+												<tbody></tbody>
+											</table> 
+										</div>
+										<input type="hidden" id="authorizedPagesJson" name="authorizedPagesJson" />
+									</div>
+								</div>	
+								 <div class="row">
+								   <div class="col-xs-12 modalCell">
+										<div class="modalFieldCnt">
+										<h3 align="center">UPDATE STATEMENT</h3>
+											<table id="decisionBlockTable" class = "decisionBlockBulk">
+												<thead>
+													<th width ="15%"></th>
+													<th width="40%">Fields</th>
+													<th width="40%">Predicted Value</th>
+													<th width="5%"><i id="addDecisionBlockBtn" class="fa fa-plus"></i></th>
+												</thead>
+												<tbody>
+								
+											</tbody>
+											</table> 
+										</div>
+										<input type="hidden" id="authorizedPagesJson" name="authorizedPagesJson" />
+									</div>
+								</div>	
+								<div class="row">
+									
+								  <div class="col-xs-12 modalCell">
+										<div class="modalFieldCnt">
+											<table id="resultBlockTable" class="resultBlockBulk">
+												<thead>
+													<th></th>
+													 <th>Result</th>
+													<th></th>
+													<th></th>
+												</thead>
+												<tbody>
+													<tr>
+														<td><h3><span class="label label-warning">AFFECTED</span></h3></td>
+														<td><div id="devicesFound" style="border:0px; background-color:rgb(230, 249, 255)" >0 devices founded</div></td>
+														<td> 
+															<button type="text" id="updateAllConfirmBtn" name="updateAllConfirmBtn" class="btn confirmBtn internalLink">Update All</button> 
+														</td>
+														<td> <button type="text" id="addNewDeviceCancelBtn" class="btn cancelBtn" data-dismiss="modal">Cancel</button> 
+															
+														</td>
+													</tr>
+												</tbody>
+											</table>
+                                            
+                                            <div id="displayAllDevicePreview" class="row mainContentRow">
+												<div class="col-xs-12 mainContentRowDesc" >
+
+												</div>
+												<div class="col-xs-12 mainContentCellCnt">
+													<table id="devicePreviewTable" class="table" cellspacing="0" width="100%">
+														<thead>
+															<tr>
+																<th data-cellTitle="name">IOT Device</th>
+																<th data-cellTitle="contextbroker">IOT Broker</th>
+																<th data-cellTitle="protocol">Protocol</th>
+																<th data-cellTitle="format">Format</th>
+																<th data-cellTitle="devicetype">Device Type</th>
+															</tr>
+														</thead>
+													</table>
+												</div>
+											</div>
+										</div>
+										<input type="hidden" id="authorizedPagesJson" name="authorizedPagesJson" />
+									</div>
+								</div>	
+							</div>   
+						</div>          
+					</div>				
+				</div>
+            </div>          
+        </div>
+	</div>
+	
+	
+	
+	<!-- Option 2 --> 
+
+	 <div class="modal fade" id="updateMultipleDeviceModal1" tabindex="-1" role="dialog" aria-hidden="true">
+            <div class="modal-dialog modal-lg" role="document">
+              <div class="modal-content">
+                <div class="modalHeader centerWithFlex">
+                Bulk Update Rule - Values
+                </div>
+                <div id="addContextBrokerModalBody1" class="modal-body modalBody">     
+                    
+                    <div class="tab-content">	
+                        <div id="infoTabCB1" class="tab-pane fade in active">
+                            <div class="row">
+                               <div class="col-xs-12 modalCell">
+                                    <div class="modalFieldCnt">
+                                        <h3 align="center">IF STATEMENT</h3>
+                                            <table id="ifBlockTableValue"  class="ifBlockBulk">
+                                                <thead>
+                                                    <th width="11%"></th>
+                                                    <th width="29%">Fields</th>
+                                                    <th width="30%">Operator</th>
+                                                    <th width="28%">Value</th>
+                                                    <th width="5%"><i id="addifBlockBtnValue" class="fa fa-plus"></i></th>
+                                                </thead>
+                                                <tbody></tbody>
+                                            </table> 
+                                        </div>
+                                    <input type="hidden" id="authorizedPagesJson" name="authorizedPagesJson" />
+                                </div>
+        					</div>
+							 <div class="row">
+                               <div class="col-xs-12 modalCell">
+                                    <div class="modalFieldCnt">
+                                    <h3 align="center">UPDATE STATEMENT</h3>
+                                        <table id="decisionBlockTableValue" class = "decisionBlockBulk">
+                                        <thead>
+												<th width ="15%"></th>
+												<th width="40%">Fields</th>
+                                                <th width="40%">Predicted Value</th>
+                                                <th width="5%"><i id="addDecisionBlockBtnValue" class="fa fa-plus"></i></th>
+                                            </thead>
+                                            <tbody></tbody>
+                                        </table> 
+                                    </div>
+                                    <input type="hidden" id="authorizedPagesJson" name="authorizedPagesJson" />
+                                </div>
+  						</div>	
+							 <div class="row">
+	                          <div class="col-xs-12 modalCell">
+                                    <div class="modalFieldCnt">
+                                        <table id="resultBlockTableValue" class="resultBlockBulk">
+                                            <thead>
+												<th></th>
+												 <th>Result</th>
+                                                <th></th>
+                                                <th></th>
+                                            </thead>
+                                            <tbody>
+												<tr>
+                                                <td><h3><span class="label label-warning">AFFECTED</span></h3></td>
+                                                    <td><div id="valueFound" style="border:0px; background-color:rgb(230, 249, 255)" >0 values founded</div></td>
+													<td> 
+														<button type="text" id="updateAllValuesConfirmBtn" name="updateAllValuesConfirmBtn" class="btn confirmBtn internalLink">Update All</button> 
+													</td>
+													<td> <button type="text" id="addNewDeviceCancelBtn" class="btn cancelBtn" data-dismiss="modal">Cancel</button> 
+													</td>
+												</tr>
+											</tbody>
+                                        </table> 
+                                                                                    
+                                        <div id="displayAllDevicePreview" class="row mainContentRow">
+												<div class="col-xs-12 mainContentRowDesc" >
+
+												</div>
+												<div class="col-xs-12 mainContentCellCnt">
+													<table id="valuesPreviewTable" class="table" cellspacing="0" width="100%">
+														<thead>
+															<tr>
+																<th data-cellTitle="name">IOT Device</th>
+																<th data-cellTitle="contextbroker">IOT Broker</th>
+																<th data-cellTitle="value_name">Value Name</th>
+																<th data-cellTitle="data_type">Data Type</th>
+                                                                <th data-cellTitle="value_type">Value Type</th>
+																<th data-cellTitle="value_unit">Value Unit</th>
+                                                                <th data-cellTitle="healthiness_criteria">Healthiness Criteria</th>
+																<!--<th data-cellTitle="healthiness_value">Healthiness Value</th>-->
+
+															</tr>
+														</thead>
+													</table>
+												</div>
+											</div>
+                                    </div>
+                                    <input type="hidden" id="authorizedPagesJson" name="authorizedPagesJson" />
+                                </div>
+    						</div>	
+	                </div>              
+                    </div>				
+				</div>
+            </div>          
+        </div>
+	</div>
+
+	<!--  SUGGESTIONS MODAL  -->
+     
+	 <div class="modal fade" id="suggestModifications" tabindex="-1" role="dialog" aria-hidden="true">
+            <div class="modal-dialog modal-lg" role="document">
+              <div class="modal-content">
+                <div class="modalHeader centerWithFlex">
+                Suggest Updates
+                </div>
+
+                <div  id="numRulesFound" style="margin-top:5px; margin-left:5px; font-size: 17px;">   0 rules found</div>                              
+
+                <div id="suggestModificationsModal" class="modal-body modalBody">     
+                    
+                    <div class="tab-content">	
+                        <div id="infoTabCB1" class="tab-pane fade in active">
+                            <div class="row">
+                               <div class="col-xs-12 modalCell">
+                                    <div class="modalFieldCnt">
+                                        <h3 align="center">IF STATEMENT</h3>
+                                            <table id="ifBlockSuggestions"  class="ifBlockBulk" >
+                                                <thead>
+                                                    <th width="11%"></th>
+                                                    <th width="29%">Fields</th>
+                                                    <th width="30%">Operator</th>
+                                                    <th width="28%">Value</th>
+                                                    <th width="5%"></th><!--<i id="addifBlockBtnValue" class="fa fa-plus"></i></th>-->
+                                                </thead>
+                                                <tbody></tbody>
+                                            </table> 
+                                        </div>
+                                    <input type="hidden" id="authorizedPagesJson" name="authorizedPagesJson" />
+                                </div>
+        					</div>
+							 <div class="row">
+                               <div class="col-xs-12 modalCell">
+                                    <div class="modalFieldCnt">
+                                    <h3 align="center">UPDATE STATEMENT</h3>
+                                        <table id="decisionBlockSuggestions" class = "decisionBlockBulk">
+                                        <thead>
+												<th width ="15%"></th>
+												<th width="40%">Fields</th>
+                                                <th width="40%">Predicted Value</th>
+                                               <th width="5%"></td><!--<i id="addDecisionBlockBtnSuggestions" class="fa fa-plus"></i></th>-->
+                                            </thead>
+                                            <tbody></tbody>
+                                        </table> 
+                                    </div>
+                                    <input type="hidden" id="authorizedPagesJson" name="authorizedPagesJson" />
+                                </div>
+  						</div>	
+							 <div class="row">
+	                          <div class="col-xs-12 modalCell">
+                                    <div class="modalFieldCnt">
+                                        <table id="resultBlockTableSuggestions" class="resultBlockBulk">
+                                            <thead>
+												<th></th>
+												 <th>Result</th>
+                                                <th> <br></th>
+                                                <th></th>
+                                            </thead>
+                                            <tbody>
+                                                <tr>
+                                                    <td  style="border:0px; background-color:rgb(230, 249, 255)"><h3><span class="label label-warning">AFFECTED</span></h3></td>
+                                                    <td><div id="rulesMatchFound">0 values founded</div></td>
+                                                    <td><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</td>
+                                                    <td><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</td>
+
+                                                </tr>
+                                                <tr>
+                                                    <td><div id="applySuggestionMessage" >Do you want to apply this suggestion?</div></td>
+                                                    <td> 
+                                                        <button type="text" id="suggestionConfirm" name="suggestionConfirm" class="btn confirmBtn internalLink">Apply</button> 
+                                                    </td>
+                                                    <td> <button type="text" id="skipSuggestion" class="btn confirmBtn internalLink" >Skip</button> 
+                                                        
+                                                    </td>
+                                                    <td> <button type="text" id="skipAll" class="btn confirmBtn internalLink">Skip all</button> 
+                                                        
+                                                    </td>
+                                            
+                                                </tr>
+											</tbody>
+                                        </table> 
+                                                                                    
+                                        <div id="displayAllDevicePreviewSuggestions" class="row mainContentRow">
+												<div class="col-xs-12 mainContentRowDesc" >
+
+												</div>
+												<div class="col-xs-12 mainContentCellCnt">
+													<table id="devicesSuggestionsTable" class="table" cellspacing="0" width="100%">
+														<thead>
+															<tr>
+																<th data-cellTitle="name">IOT Device</th>
+																<th data-cellTitle="contextbroker">IOT Broker</th>
+																<th data-cellTitle="value_name">Value Name</th>
+																<th data-cellTitle="data_type">Data Type</th>
+                                                                <th data-cellTitle="value_type">Value Type</th>
+																<th data-cellTitle="value_unit">Value Unit</th>
+                                                                <th data-cellTitle="healthiness_criteria">Healthiness Criteria</th>
+																<!--<th data-cellTitle="healthiness_value">Healthiness Value</th>-->
+
+															</tr>
+														</thead>
+													</table>
+												</div>
+											</div>
+                                    </div>
+                                    <input type="hidden" id="authorizedPagesJson" name="authorizedPagesJson" />
+                                </div>
+    						</div>	
+	                </div>              
+                    </div>				
+				</div>
+            </div>          
+        </div>
+	</div>
+	<!-- End of Update Multiple devices -->
 		
 		            <!-- the window that appears as message after clicking delete all button -->
      
@@ -665,8 +1038,8 @@ else
                 <div id="editDeviceModalBody" class="modal-body modalBody">
                     
                      <ul id="editDeviceModalTabs" class="nav nav-tabs nav-justified">
-						<li class="active"><a data-toggle="tab" href="#editInfoTabDevice">Info</a></li>
-                        <li><a data-toggle="tab" href="#editIOTBrokerTabDevice">IoT Broker</a></li>
+                        <li class="active"><a data-toggle="tab" href="#editIOTBrokerTabDevice">IoT Broker</a></li>
+						<li><a data-toggle="tab" href="#editInfoTabDevice">Info</a></li>
                         <li><a data-toggle="tab" href="#editGeoPositionTabDevice">Position</a></li>
                         <li><a data-toggle="tab" href="#editSchemaTabDevice">Values</a></li>
 						<!--<li><a data-toggle="tab" href="#editStatusTabDevice">Status</a></li>-->
@@ -674,10 +1047,85 @@ else
                     </ul>
                     
                     <div class="tab-content">
-                       
-                         <!-- Info tab -->
-                        <div id="editInfoTabDevice" class="tab-pane fade in active">
+                        
+                        <!-- IOT Broker tab -->
+                        <div id="editIOTBrokerTabDevice" class="tab-pane fade in active">
+                     
+							<div class="row">
+							
+							   <div class="col-xs-12 col-md-6 modalCell">
+                                    <div class="modalFieldCnt">
+                                        <select id="selectContextBrokerM" name="selectContextBrokerM" class="modalInputTxt">
+										<?php
+                                            $query = "SELECT name FROM contextbroker";
+                                            $result = mysqli_query($link, $query);
+
+                                            if($result)
+                                            {
+                                               while($row = $result->fetch_assoc())
+                                               {
+                                                 $nameCB=$row["name"];
+                                                 echo "<option value=\"$nameCB\">$nameCB</option>";
+                                               }
+
+                                            }
+                                            else
+                                            {
+
+                                                $nameCB="ERROR";
+                                                echo "<option value=\"$nameCB\">$nameCB</option>";
+                                            }
+                                        ?>
+									</select>
+                                    </div>
+                                    <div class="modalFieldLabelCnt">ContextBroker</div>
+									<div id="selectContextBrokerMMsg" class="modalFieldMsgCnt">&nbsp;</div>
+                                </div>
 						
+                                 <div class="col-xs-12 col-md-6 modalCell">
+                                    <div class="modalFieldCnt">
+                                        <select id="selectKindDeviceM" name="selectKindDeviceM" class="modalInputTxt">
+                                                                                        <option value="sensor">sensor</option>
+                                                                                        <option value="actuator">actuator</option>
+                                                                                </select>
+                                    </div>
+                                    <div class="modalFieldLabelCnt">Kind</div>
+									<div id="selectKindDeviceMMsg" class="modalFieldMsgCnt">&nbsp;</div>
+                                </div>
+								
+							</div>
+						
+							<div class="row">
+							
+							  <div class="col-xs-12 col-md-6 modalCell">
+                                    <div class="modalFieldCnt">
+                                        <select id="selectProtocolDeviceM" name="selectProtocolDeviceM" class="modalInputTxt">
+											<option value="amqp">amqp</option>
+											<option value="coap">coap</option>
+											<option value="mqtt">mqtt</option>
+											<option value="ngsi">ngsi</option>
+										</select>
+                                    </div>
+                                    <div class="modalFieldLabelCnt">Protocol</div>
+									<div id="selectProtocolDeviceMMsg" class="modalFieldMsgCnt">&nbsp;</div>
+                                </div>
+                                <div class="col-xs-12 col-md-6 modalCell">
+                                    <div class="modalFieldCnt">
+                                        <select id="selectFormatDeviceM" name="selectFormatDeviceM" class="modalInputTxt">
+											<option value="csv">csv</option>
+											<option value="json">json</option>
+											<option value="xml">xml</option>
+										</select>
+                                    </div>
+                                    <div class="modalFieldLabelCnt">Format</div>
+									<div id="selectFormatDeviceMMsg" class="modalFieldMsgCnt">&nbsp;</div>
+                                </div>
+                               
+							</div>
+				 
+                        </div>
+                          <!-- Info tab -->
+                        <div id="editInfoTabDevice" class="tab-pane fade">
 						
                             <div class="row">
 							
@@ -836,85 +1284,7 @@ else
 								
 								<div id="sigFoxDeviceUserMMsg" class="modalFieldMsgCnt">&nbsp;</div>
 				
-                        </div>
-                        
-                        <!-- IOT Broker tab -->
-                        <div id="editIOTBrokerTabDevice" class="tab-pane fade">
-                     
-							<div class="row">
-							
-							   <div class="col-xs-12 col-md-6 modalCell">
-                                    <div class="modalFieldCnt">
-                                        <select id="selectContextBrokerM" name="selectContextBrokerM" class="modalInputTxt">
-										<?php
-                                            $query = "SELECT name FROM contextbroker";
-                                            $result = mysqli_query($link, $query);
-
-                                            if($result)
-                                            {
-                                               while($row = $result->fetch_assoc())
-                                               {
-                                                 $nameCB=$row["name"];
-                                                 echo "<option value=\"$nameCB\">$nameCB</option>";
-                                               }
-
-                                            }
-                                            else
-                                            {
-
-                                                $nameCB="ERROR";
-                                                echo "<option value=\"$nameCB\">$nameCB</option>";
-                                            }
-                                        ?>
-									</select>
-                                    </div>
-                                    <div class="modalFieldLabelCnt">ContextBroker</div>
-									<div id="selectContextBrokerMMsg" class="modalFieldMsgCnt">&nbsp;</div>
-                                </div>
-						
-                                 <div class="col-xs-12 col-md-6 modalCell">
-                                    <div class="modalFieldCnt">
-                                        <select id="selectKindDeviceM" name="selectKindDeviceM" class="modalInputTxt">
-                                                                                        <option value="sensor">sensor</option>
-                                                                                        <option value="actuator">actuator</option>
-                                                                                </select>
-                                    </div>
-                                    <div class="modalFieldLabelCnt">Kind</div>
-									<div id="selectKindDeviceMMsg" class="modalFieldMsgCnt">&nbsp;</div>
-                                </div>
-								
-							</div>
-						
-							<div class="row">
-							
-							  <div class="col-xs-12 col-md-6 modalCell">
-                                    <div class="modalFieldCnt">
-                                        <select id="selectProtocolDeviceM" name="selectProtocolDeviceM" class="modalInputTxt">
-											<option value="amqp">amqp</option>
-											<option value="coap">coap</option>
-											<option value="mqtt">mqtt</option>
-											<option value="ngsi">ngsi</option>
-										</select>
-                                    </div>
-                                    <div class="modalFieldLabelCnt">Protocol</div>
-									<div id="selectProtocolDeviceMMsg" class="modalFieldMsgCnt">&nbsp;</div>
-                                </div>
-                                <div class="col-xs-12 col-md-6 modalCell">
-                                    <div class="modalFieldCnt">
-                                        <select id="selectFormatDeviceM" name="selectFormatDeviceM" class="modalInputTxt">
-											<option value="csv">csv</option>
-											<option value="json">json</option>
-											<option value="xml">xml</option>
-										</select>
-                                    </div>
-                                    <div class="modalFieldLabelCnt">Format</div>
-									<div id="selectFormatDeviceMMsg" class="modalFieldMsgCnt">&nbsp;</div>
-                                </div>
-                               
-							</div>
-				 
-                        </div>
-                        
+                        </div>                       
                         <!-- Geo-Position tab -->
                         <div id="editGeoPositionTabDevice" class="tab-pane fade">
                             <div class="row">
@@ -1061,7 +1431,57 @@ else
             </div>
         </div>
 <!-- used for progress showing-------->
-            
+  	
+
+<!-- bulk update modal --->
+<div class="modal fade" id="bulkUpdateModal" tabindex="-1" role="dialog" aria-hidden="true">
+            <div class="modal-dialog" role="document">
+              <div class="modal-content">
+                <div class="modalHeader centerWithFlex">
+                  Update device
+                </div>
+                <div class="modal-body modalBody">
+                    <div class="row">
+                        <div class="col-xs-12 modalCell">
+                            <div id="bulkUpdateModalInnerDiv" class="modalDelMsg col-xs-12 centerWithFlex">
+                                Your devices has been correctly updated.
+                            </div>
+                            <div class="modalDelObjName col-xs-12 centerWithFlex" id="bulkUpdateModalInnerDiv2"><i class="fa fa-check" style="font-size:36px"></i></div> 
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                  <button type="button" id="editDeviceOkModalDoneBtn" class="btn btn-secondary" data-dismiss="modal">DONE</button>
+                </div>
+              </div>
+            </div>
+        </div>
+        
+        <!-- Fail -->
+        <div class="modal fade" id="bulkUpdateFaliure" tabindex="-1" role="dialog" aria-hidden="true">
+            <div class="modal-dialog" role="document">
+              <div class="modal-content">
+                <div class="modalHeader centerWithFlex">
+                  Update device
+                </div>
+                <div id="deleteDeviceModalBody" class="modal-body modalBody">
+                    <div class="row">
+                        <div class="col-xs-12 modalCell">
+                            <div id="bulkUpdateModalInnerDivFaliure" class="modalDelMsg col-xs-12 centerWithFlex">
+                                An error has occurred during the update.
+                            </div>
+                            <div class="modalDelObjName col-xs-12 centerWithFlex" id="bulkUpdateModalInnerDivFaliure2"><i class="fa fa-frown-o" style="font-size:36px"></i>You entered some invalid values, the update has failed. Adjust the data and try again.</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                  <button type="button" id="addDeviceKoModalCancelBtn" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+                </div>
+              </div>
+            </div>
+        </div>
+		<!-- used for progress showing-------->
+                      
          <div id="myModal" class="modal">
 
         <!-- Modal content -->
@@ -1080,7 +1500,25 @@ else
           </div>
 
         </div>
-            
+        
+		<div id="retrieveModalWait" class="modal">
+
+        <!-- Modal content -->
+          <div class="progress-modal-content">
+            <div class="progress-modal-header">
+              <span id="progress_spanW" class="close">&times;</span>
+              <h2>Your data are being retrieved...</h2>
+            </div>
+            <div id="loader_spinW" class="loader" style="margin: 0 auto;"></div>
+           <div class="modal-body" id="myModalBodyW" style="height: 200px;width:100%; overflow:scroll;"> 
+            </div>
+            <div class="modal-footerW">
+              <h3></h3>
+                <button type="button" id="progress_ok_wait" class="btn confirmBtn" style="position: absolute; right:50%; bottom: 0; padding: 10px; margin: 10px; display: none" onclick="refresh()" >Ok</button>
+            </div>
+          </div>
+
+        </div>		
         <div id="myModal_forbulkstatus" class="modal">
 
         <!-- Modal content -->
@@ -1250,7 +1688,7 @@ else
 		</div>
 		
         </div>
-		<script  src="js/contextBrokerRetrieval_e.js"></script>
+		<script  src="js/associationRules.js"></script>
 		
     </body>
 </html>		

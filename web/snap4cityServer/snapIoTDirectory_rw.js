@@ -8,7 +8,9 @@ var request = require('request');
 var bodyParser = require('body-parser');
 var mysql = require('mysql');
 const spawn = require('child_process').spawn;
-var registeredStub = [];
+//var registeredStub = [];
+var registeredStub = new Map();
+
 var Promise = require('promise');
 
 
@@ -47,28 +49,37 @@ app.use('/api', router);
 
 router.route('/ngsi')
  .post(function(req, res) {
-	console.log("path "+ req.body.path);
     var args = [];
-
-	console.log("context "+ req.body.contextbroker);
-	var keys = Object.keys(registeredStub);
-
-	if(keys.indexOf(req.body.contextbroker)>=0)
+	
+	if(registeredStub.get(req.body.contextbroker) != undefined)
 	{
 		if(req.body.ip == "kill"){
-			console.log('kill');
-			registeredStub[req.body.contextbroker].kill();	
-			delete registeredStub[req.body.contextbroker];
-			console.log('kill'+JSON.stringify(registeredStub));
+			registeredStub.get(req.body.contextbroker).kill();
+			registeredStub.delete(req.body.contextbroker);
+			
+			var brokerActive = 'killing ' + req.body.contextbroker;
+			if(registeredStub.size == 0){
+				brokerActive += '. There are no active brokers left.';
+			}
+			else{
+				brokerActive += '. Broker still active: ';
+				
+				for (var key of registeredStub.keys()) {
+					brokerActive += key +"; ";
+				}
+			}
+			console.log(brokerActive);
 
 		}else{
+			console.log("Broker "+ req.body.contextbroker + " is already active.");
 			res.json({ message: 'stub already active for ORION context broker ' + req.body.contextbroker});
 		}
 	}
 	else
 	{
-		console.log("ciao "+ Object.keys(registeredStub))
-		//args = ['./snap4cityBroker/ngsi2IoTDirectory_testing.js',
+		console.log("Retrieval from "+ req.body.contextbroker + " activated.");
+		//registeredStub.push(req.body.contextbroker);
+
 		args= ['./snap4cityBroker/ngsi2IoTDirectory_rw.js',
 			req.body.contextbroker,
 			req.body.ip,
@@ -83,40 +94,18 @@ router.route('/ngsi')
 			req.body.apikey
 		];
 
-
-	    console.log("args: "+args);
-		console.log("port: "+ req.body.port + "apiker "+ req.body.apikey);
-	   //const spawn = require('child_process').spawn;
-/*
-	   const child_ngsi = spawn('node',args);
-	
-		child_ngsi.stdout.on('data', (data) => {
-			var str = data.toString();
-			var str2 = "";
-			for(var i = 0; i < str.length; i++){
-				var c = str.charAt(i);
-				if(c.match(/[a-z]/i)){
-					str2 = str2+c;
-				}
-			}
-
-			if(str2.localeCompare("fatto")==0){
-				request.state
-				console.log("finalmente");
-				res.status(200).send();
-			}
-		});
-	*/
-	   res.json({ message: 'activated stub for ORION'});
-
-
 	 const child_ngsi = spawn('node',args, {
 		//  detached: true,
 		 stdio: 'inherit'
  	});
- 	   registeredStub[req.body.contextbroker]=child_ngsi;
-	   console.log("registeredStud "+ registeredStub[req.body.contextbroker]);
+	
+	registeredStub.set(req.body.contextbroker, child_ngsi);
 
+	var regBroker = "Broker registered: ";
+	for (var key of registeredStub.keys()) {
+	  regBroker += key + "; ";
+	}
+	console.log(regBroker);
 	   // child.unref();
 	}  
 });
@@ -124,8 +113,8 @@ router.route('/ngsi')
 
 router.route('/nodered-ngsi')
  .post(function(req, res) {
-	console.log("node red, contextbroker "+ req.body.contextbroker);
-	console.log("node red, selectedAttributes "+ req.body.selectedAttributes);
+	//console.log("node red, contextbroker "+ req.body.contextbroker);
+	//console.log("node red, selectedAttributes "+ req.body.selectedAttributes);
     var args = [];
 		registeredStub.push(req.body.contextbroker);
 		args= ['./snap4cityBroker/nodeRed-ngsi.js',
@@ -138,9 +127,6 @@ router.route('/nodered-ngsi')
                
 		];
 
-
-	    console.log("args: "+args);
-
 	   //res.json({ message: 'activated stub for ORION from node red'});
 	   const child_ngsi = spawn('node',args, {
 			   stdio: 'pipe'
@@ -149,35 +135,22 @@ router.route('/nodered-ngsi')
         var promiseResNodeRed = new Promise(function(resolve, reject){	
 			child_ngsi.stdout.on('data', function(data) {
 				let result = data.toString();
-				console.log("result "+result);
                 resolve(result);
 			});
 					
 		})
 		promiseResNodeRed.then(function(msg){
-			console.log("msg "+ msg);
 			res.json({ message: msg, note:'activated stub for ORION from node red' });
 		});
-		
-		/*child_ngsi.stderr.on('data', (data) => {
-			console.log(`stderr: ${data}`);
-		});
 
-		child_ngsi.on('close', (code) => {
-			console.log(`child process exited with code ${code}`);
-	});*/
 });
 
 router.route('/extract')
  .post(function(req, res) {
     var args = [];
-	//console.log("Snap kind : "+req.body.kind);
 
-	/*if (registeredStub[req.body.contextbroker] !== undefined || registeredStub[req.body.contextbroker] !== "")  res.json({ message: 'stub already active for ORION context broker ' + req.body.contextbroker});
-	else
-	{*/
 		registeredStub.push(req.body.contextbroker);
-		//args = ['./snap4cityBroker/ngsi2IoTDirectory_testing.js',
+
 		args= ['./snap4cityBroker/externalBroker.js',
 			req.body.contextbroker,
 			req.body.device_name,
@@ -193,15 +166,11 @@ router.route('/extract')
 			req.body.apikey
 		];
 		
-	  //  console.log("args: "+args);
-
 		const child_ngsi = spawn('node',args, {stdio: 'pipe' });
 		var promiseRes2 = new Promise(function(resolve, reject){	
 			child_ngsi.stdout.on('data', function(data) {
 				let result = data.toString();
-				console.log("reeult "+result);
 				if(result.startsWith("{") || result.localeCompare("not found\n") == 0){
-					console.log("msg2" + result);
 					resolve(result);
 
 				}
@@ -209,7 +178,6 @@ router.route('/extract')
 					
 		})
 		promiseRes2.then(function(msg){
-			console.log("msg "+ msg);
 			res.json({ message: msg});
 		});
 		
@@ -227,15 +195,9 @@ router.route('/extract')
 //Do not put this part in production
 router.route('/rawdata')
  .post(function(req, res) {
-	console.log("path "+ req.body.path);
     var args = [];
-//	console.log("Snap kind : "+ req.body.model + " gateway "+ req.body.edge_gateway_type + " uri "+ req.body.edge_gateway_uri);
 
-	/*if (registeredStub[req.body.contextbroker] !== undefined || registeredStub[req.body.contextbroker] !== "")  res.json({ message: 'stub already active for ORION context broker ' + req.body.contextbroker});
-	else
-	{*/
-		registeredStub.push(req.body.contextbroker);
-		//args = ['./snap4cityBroker/ngsi2IoTDirectory_testing.js',
+		//registeredStub.push(req.body.contextbroker);
 		args= ['./snap4cityBroker/retrieval_json_from_cb.js',
 			req.body.contextbroker,
 			req.body.ip,
@@ -250,16 +212,13 @@ router.route('/rawdata')
 
 			child_ngsi.stdout.on('data', function(data) {
 				let result = data.toString();
-				console.log("reeult "+result);
 				if(result.startsWith("{") || result.localeCompare("not found\n") == 0){
-					console.log("msg2" + result);
 					resolve(result);
 				}
 			});
 					
 		})
 		promiseRes.then(function(msg){
-			console.log("msg "+ msg);
 			res.json({ message: msg});
 		});
 		
@@ -275,26 +234,37 @@ router.route('/rawdata')
 
 router.route('/amqp')
  .post(function(req, res) {
-    console.log("entrato amqp");
 
 		// console.log(req.body.contextbroker + " " +req.body.ip + " " +req.body.port);
 		var args = [];
-		var keys = Object.keys(registeredStub);
-
-		if(keys.indexOf(req.body.contextbroker)>=0)
+	
+		if(registeredStub.get(req.body.contextbroker) != undefined)
 		{
 			if(req.body.ip == "kill"){
-				console.log('kill');
-				registeredStub[req.body.contextbroker].kill();	
-				delete registeredStub[req.body.contextbroker];
-	
+				registeredStub.get(req.body.contextbroker).kill();
+				registeredStub.delete(req.body.contextbroker);
+				
+				var brokerActive = 'killing ' + req.body.contextbroker;
+				if(registeredStub.size == 0){
+					brokerActive += '. There are no active brokers left.';
+				}
+				else{
+					brokerActive += '. Broker still active: ';
+					
+					for (var key of registeredStub.keys()) {
+						brokerActive += key +"; ";
+					}
+				}
+				console.log(brokerActive);
+
 			}else{
-				res.json({ message: 'stub already active for AMQP context broker ' + req.body.contextbroker});
+				console.log("Broker "+ req.body.contextbroker + " is already active.");
+				res.json({ message: 'stub already active for ORION context broker ' + req.body.contextbroker});
 			}
 		}
 		else
 		{
-		registeredStub.push(req.body.contextbroker);
+		console.log("Retrieval from "+ req.body.contextbroker + " activated.");
 
 		args= ['./snap4cityBroker/amqp2IoTDirectory_cbRetrieval.js',
 			req.body.contextbroker,
@@ -306,42 +276,55 @@ router.route('/amqp')
 			req.body.edge_gateway_type,
 			req.body.edge_gateway_uri
 		];
-	   // console.log(args);
-//	   const spawn = require('child_process').spawn;
 
 	   const child_amqp = spawn('node',args, {
 			  //  detached: true,
 			   stdio: 'inherit'
 	   });
-	   registeredStub[req.body.contextbroker]=child_ngsi;
+	   
+		registeredStub.set(req.body.contextbroker, child_amqp);
 
-	   // child.unref();
-
-	 res.json({ message: 'activated stub for AMQP'});
+		var regBroker = "Broker registered: ";
+		for (var key of registeredStub.keys()) {
+		  regBroker += key + "; ";
+		}
+		console.log(regBroker);
+	//	res.json({ message: 'activated stub for AMQP'});
 	 
 	}
 });
 
 router.route('/mqtt')
  .post(function(req, res) {
-	var keys = Object.keys(registeredStub);
 
-	if(keys.indexOf(req.body.contextbroker)>=0)
-	{
-		if(req.body.ip == "kill"){
-			console.log('kill');
-			registeredStub[req.body.contextbroker].kill();	
-			delete registeredStub[req.body.contextbroker];
-	
-		}else{
-			res.json({ message: 'stub already active for ORION context broker ' + req.body.contextbroker});
+	if(registeredStub.get(req.body.contextbroker) != undefined)
+		{
+			if(req.body.ip == "kill"){
+				registeredStub.get(req.body.contextbroker).kill();
+				registeredStub.delete(req.body.contextbroker);
+				
+				var brokerActive = 'killing ' + req.body.contextbroker;
+				if(registeredStub.size == 0){
+					brokerActive += '. There are no active brokers left.';
+				}
+				else{
+					brokerActive += '. Broker still active: ';
+					
+					for (var key of registeredStub.keys()) {
+						brokerActive += key +"; ";
+					}
+				}
+				console.log(brokerActive);
+
+			}else{
+				console.log("Broker "+ req.body.contextbroker + " is already active.");
+				res.json({ message: 'stub already active for ORION context broker ' + req.body.contextbroker});
+			}
 		}
-	}
 	else
 	{
-		registeredStub.push(req.body.contextbroker);
+		console.log("Retrieval from "+ req.body.contextbroker + " activated.");
 
-		console.log("edge gateway "+req.body.edge_gateway_type+ " " +req.body.ip + " " +req.body.port);
 			var args = [];
 			args= ['./snap4cityBroker/mqtt2IoTDirectory_cbRetrieval.js',
 				req.body.contextbroker, 
@@ -353,23 +336,32 @@ router.route('/mqtt')
 				req.body.edge_gateway_type,
 				req.body.edge_gateway_uri
 				];
-		   // console.log(args);
-		   // const spawn = require('child_process').spawn;
 
 		   const child_mqtt = spawn('node',args, {
 			  //     detached: true,
 				   stdio: 'inherit'
 		   });
-		   registeredStub[req.body.contextbroker]=child_ngsi;
+		   //registeredStub[req.body.contextbroker]=child_mqtt;
+	   
+			registeredStub.set(req.body.contextbroker, child_mqtt);
 
+			var regBroker = "Broker registered: ";
+			for (var key of registeredStub.keys()) {
+			  regBroker += key + "; ";
+			}
+			console.log(regBroker);
 		   // child.unref();
-		   res.json({ message: 'activated stub for MQTT'});
+		  // res.json({ message: 'activated stub for MQTT'});
 		}	   
 });
 router.route('/status')
  .get(function(req, res) {
- console.log("entrato status"+Object.keys(registeredStub)+ "keys");
- 
- res.json({ message: Object.keys(registeredStub)});
+	var brokers = [];
+ 	for (var key of registeredStub.keys()) {
+	  brokers.push(key);
+	}
+	res.json({ message: JSON.stringify(brokers)});
+
+ //res.json({ message: JSON.stringify(registeredStub)});
 });
 

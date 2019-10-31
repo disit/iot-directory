@@ -4,14 +4,37 @@ fileData=[];
 editDeviceConditionsArray=[];
 modelsdata=[];
 receivedData=[];
+var dataPreviewTable ="";
+var previewFirstLoad=false;
+var previewValuesFirstLoad=false;
+var previewRulesFirstLoad=false;
+
 var dataTable ="";
 requiredHeaders=["name", "devicetype", "macaddress", "frequency", "kind", "protocol", "format", "producer", /*"edge_gateway_type", "edge_gateway_uri",  commented by Sara*/ "latitude", "longitude", "value_name", "data_type", "value_type", "editable", "value_unit", "healthiness_criteria", "healthiness_value", "k1", "k2"];
+
+var _serviceIP = "../stubs";
 
 var gb_datatypes ="";
 var gb_value_units ="";
 var gb_value_types = "";
+var gb_active_brokers_names=[];
 var defaultPolicyValue = [];
+var devicenamesArray = new Array();
+var valueNamesArray = new Array();
+var gb_rulesCounter = 0;
+var gb_association_rules = [];
+var gb_first_opening=0;
+
+devicenamesArray['if'] = 0;
+devicenamesArray['then'] = 0;
+valueNamesArray['if']=0;
+valueNamesArray['then']=0;
+var indexHealthinessIf = [];
+var idCounterThen=0;
+var idCounterIf=0;
 // var mynewAttributes = [];
+
+var ifPages = [];
 
 var gb_options = [];
 
@@ -23,12 +46,9 @@ var gb_key2;
 
 var gb_old_id="";
 var gb_old_cb="";
-var dataTable ="";
-//var _serviceIP = "http://localhost:3001";
-var _serviceIP = "../stubs";
- //var _serviceIP = "https://159.149.129.184:3001";
 
- //var _serviceIP = "https://iot-app.snap4city.org/iotdirectory";
+var dataTable ="";
+
 var timerID= undefined;
 var was_processing=0;
 
@@ -49,7 +69,9 @@ $.ajax({
                 //data: mydata,
 				data: {
 					  action: "get_all_models", 
-                      organization:organization
+					  organization:organization,
+					  username: loggedUser,
+					  loggedrole: loggedRole
 				  },
                 type: "POST",
                 async: true,
@@ -100,7 +122,7 @@ $.ajax({url: "../api/contextBrokerRetrieval_e.php",
 		datatype: 'json',
 		success: function (data)
 		{
-			console.log("success");
+			console.log("success returned from cbr");
 			var content = data["content"];
 			content = content[0];
 			ip = content["ip"];
@@ -120,8 +142,18 @@ $.ajax({url: "../api/contextBrokerRetrieval_e.php",
 			if($('#selectModelLD').val() === undefined || $('#selectModelLD').val().length<1){
                model="custom";
             }
-			console.log("ACTIVATE STUD "+ kind);
-			console.log("full link "+ accesslink+path);
+			console.log("ACTIVATE STUB "+ kind);
+	//		console.log("MODEL " + model + " gateway " + edge_gateway_type +  " url " + edge_gateway_uri);
+
+		//	var retrieveModalWait = document.getElementById('retrieveModalWait');
+			//var span_b = document.getElementsByClassName("close")[0];
+		//	var spin_w = document.getElementById("loader_spinW");
+		//	var progress_ok_w=document.getElementById('progress_ok_wait');
+		//	document.getElementById('retrieveModalWait').innerHTML= "<p>Your data are being retrieved..</p> Click 'ok' to close this message.";
+		//	retrieveModalWait.style.display = "block";
+		//	spin_w.style.display="none";
+		//	progress_ok_w.style.display="block";
+    
 			activateStub(contextbroker,ipa,protocol,user,accesslink,model,edge_gateway_type,edge_gateway_uri,path,apikey,kind);			
 
 			},
@@ -144,25 +176,34 @@ function activateStub(cb,ipa,protocol,user,accesslink,model,edge_type,edge_uri,p
 	}
 	var service = _serviceIP + "/api/"+protocol;
 	
-	console.log(data);
-	console.log(service);
+	console.log("data to be sent "+data);
+	console.log("service "+ service);
 	var xhr = ajaxRequest();
+			location.reload();
 
 	xhr.addEventListener("readystatechange", function () {
+		console.log("this.readyState "+this.readyState);
 	  if (this.readyState === 4 && this.status == 200) {
-		console.log("RESPONSE TEXT"+this.responseText);
-		var resp= JSON.parse(this.responseText)
-        console.log(resp);
-        console.log(resp.message);
 		
-		refresh();
-        fetch_data(true);	
-	}
+			return this.responseText;
+
+
+		/*ù
+		        				if(resp.message.indexOf("**UPDATE**")==0){
+				    var progress_modal_w = document.getElementById('retrieveModalWait');
+		progress_modal_w.style.display = "none";
+		console.log("resp update");
+			refresh();
+			fetch_data(true);	
+		}*/
+
+		}
 	});
 
 
 	xhr.open("POST", service);
 	xhr.setRequestHeader("Content-Type", "application/x-www-form-urlencoded");
+	xhr.setRequestHeader('Cache-Control', 'no-cache');
 /*	xhr.setRequestHeader("Content-Type", "text/plain;charset=UTF-8");*/
     xhr.setRequestHeader("Access-Control-Allow-Origin", "*");
 	xhr.send(data);
@@ -369,8 +410,223 @@ function fetch_data(destroyOld, selected=null)
   }	 
 
  //end of fetch function 
+ function getStatus(useStatus){
+
+	var service = _serviceIP + "/api/status";
+	var xhr = ajaxRequest();
+
+	xhr.addEventListener("readystatechange", function () {
+	if (this.readyState === 4 && this.status == 200) {
+			console.log("USE STATUS "+ this.responseText);
+			useStatus(this.responseText);
+		}
 	
-     
+	});
+
+	xhr.open("GET", service);
+	xhr.setRequestHeader("Content-Type", "application/x-www-form-urlencoded");
+	xhr.setRequestHeader("Access-Control-Allow-Origin", "*");
+	xhr.send("");
+	
+
+}							
+
+
+	 
+function buildPreview(attributesIf, destroyOld, selected=null)
+{
+	if(destroyOld)
+	{
+		$('#devicePreviewTable').DataTable().destroy();
+	}  
+	
+	if (selected==null)
+	{
+	mydata = {action: "get_affected_devices", username: loggedUser,organization:organization, attributes: attributesIf, no_columns: [""]}; 
+	}
+		
+	dataPreviewTable = $('#devicePreviewTable').DataTable({
+		"processing" : true,
+		"serverSide" : true,
+		"lengthMenu" :[[5,25,50,100,-1],[5,25,50,100,"All"]],
+		"pageLength":5,
+		//"responsive" : true,
+		"responsive": {
+		details: false
+		},
+	"paging": true,
+	"ajax" : {
+		 url:"../api/bulkDeviceUpdate.php",
+		 data: mydata,
+		//token : sessionToken,
+		 datatype: 'json',
+		 type: "POST",                
+	},
+	"columns": [
+	{"name": "id", "data": function ( row, type, val, meta ) {
+		console.log("Name buildtable "+ row.name);
+		return row.name;
+		} 
+	},			
+	{"name": "contextbroker", "data": function ( row, type, val, meta ) {
+		return row.contextbroker;
+		} 
+	},	
+	{"name": "protocol", "data": function ( row, type, val, meta ) {
+		return row.protocol;
+		} 
+	},
+	{"name": "format", "data": function ( row, type, val, meta ) {
+		return row.format;
+		}
+	},
+	{"name": "devicetype", "data": function ( row, type, val, meta ) {
+		return row.devicetype;
+		}
+	}
+],  
+"order" : [] 
+});
+ 
+}
+
+	 
+function buildPreviewValues(attributesIf, destroyOld, selected=null)
+{
+	if(destroyOld)
+	{
+		$('#valuesPreviewTable').DataTable().destroy();
+	}  
+	
+	if (selected==null)
+	{
+	mydata = {action: "get_affected_values", username: loggedUser,organization:organization, attributes: attributesIf, no_columns: [""]}; 
+	}
+		
+	dataPreviewTable = $('#valuesPreviewTable').DataTable({
+		"processing" : true,
+		"serverSide" : true,
+		"lengthMenu" :[[5,25,50,100,-1],[5,25,50,100,"All"]],
+		"pageLength":5,
+		//"responsive" : true,
+		"responsive": {
+		details: false
+		},
+	"paging": true,
+	"ajax" : {
+		 url:"../api/bulkDeviceUpdate.php",
+		 data: mydata,
+		//token : sessionToken,
+		 datatype: 'json',
+		 type: "POST",                
+	},
+	"columns": [
+	{"name": "id", "data": function ( row, type, val, meta ) {
+		return row.name;
+		} 
+	},			
+	{"name": "contextbroker", "data": function ( row, type, val, meta ) {
+		return row.contextbroker;
+		} 
+	},	
+	{"name": "value_name", "data": function ( row, type, val, meta ) {
+		return row.value_name;
+		} 
+	},
+	{"name": "data_type", "data": function ( row, type, val, meta ) {
+		return row.data_type;
+		}
+	},
+	{"name": "value_type", "data": function ( row, type, val, meta ) {
+		return row.value_type;
+		}
+	},
+	{"name": "value_unit", "data": function ( row, type, val, meta ) {
+		return row.value_unit;
+		}
+	},
+	{"name": "healthiness_criteria", "data": function ( row, type, val, meta ) {
+		return row.healthiness_criteria;
+		}
+	}/*,
+	{"name": "healthiness_value", "data": function ( row, type, val, meta ) {
+		return row.healthiness_value;
+		}
+	}*/
+],  
+"order" : [] 
+});
+ 
+}
+
+function buildPreviewAssociationRules(attributesIf, destroyOld, selected=null)
+{
+	if(destroyOld)
+	{
+		$('#devicesSuggestionsTable').DataTable().destroy();
+	}  
+	
+	if (selected==null)
+	{
+	mydata = {action: "get_rules_affecting_data", username: loggedUser,organization:organization, attributes: attributesIf, value:"value_type",no_columns: [""]}; 
+	}
+		
+	dataPreviewTable = $('#devicesSuggestionsTable').DataTable({
+		"processing" : true,
+		"serverSide" : true,
+		"lengthMenu" :[[5,25,50,100,-1],[5,25,50,100,"All"]],
+		"pageLength":5,
+		//"responsive" : true,
+		"responsive": {
+		details: false
+		},
+	"paging": true,
+	"ajax" : {
+		 url:"../api/associationRulesApi.php",
+		 data: mydata,
+		//token : sessionToken,
+		 datatype: 'json',
+		 type: "POST",                
+	},
+	"columns": [
+	{"name": "id", "data": function ( row, type, val, meta ) {
+		return row.name;
+		} 
+	},			
+	{"name": "contextbroker", "data": function ( row, type, val, meta ) {
+		return row.contextbroker;
+		} 
+	},	
+	{"name": "value_name", "data": function ( row, type, val, meta ) {
+		return row.value_name;
+		} 
+	},
+	{"name": "data_type", "data": function ( row, type, val, meta ) {
+		return row.data_type;
+		}
+	},
+	{"name": "value_type", "data": function ( row, type, val, meta ) {
+		return row.value_type;
+		}
+	},
+	{"name": "value_unit", "data": function ( row, type, val, meta ) {
+		return row.value_unit;
+		}
+	},
+	{"name": "healthiness_criteria", "data": function ( row, type, val, meta ) {
+		return row.healthiness_criteria;
+		}
+	}/*,
+	{"name": "healthiness_value", "data": function ( row, type, val, meta ) {
+		return row.healthiness_value;
+		}
+	}*/
+],  
+"order" : [] 
+});
+ 
+}
+
 
 $(document).ready(function () 
     {
@@ -404,9 +660,209 @@ $(document).ready(function ()
 	});
 
 
-//end of detail control for device dataTable 
+	function useStatus(statusText){
+		console.log("chiamo activate stub");
+		var activeBrokers = [];
+		var nContextBroker = document.getElementById('selectContextBrokerLD').length;
+	
+		var brokers= JSON.parse(statusText);
+		var brokers = brokers.message;
+		var row = "";
+		console.log("nContextBroker "+ JSON.stringify(brokers));
+	    $('#activeInactiveBrokes').html("");
+        $('#inactivateButton').show();
+        $('#stopAllBrokers').show();
+		
+		for(cb = 0; cb < nContextBroker; cb++){
+		
+			var broker = document.getElementById('selectContextBrokerLD').item(cb).value;
 
-  
+			if(brokers.includes(broker)){
+				activeBrokers[broker]="active";
+				row= $('<option value="'+broker+'" name ="active">'+broker+'</option>');
+				$("#activateButton").attr("disabled", true);
+				//$("#statusSelectedBroker").css("visibility", "visible");
+				$("#inactivateButton").attr("disabled", false);
+				gb_active_brokers_names.push(broker);
+			}
+		/*	else{
+				activeBrokers[broker]= "inactive";
+				row= $('<option value="'+broker+'" name ="inactive">'+broker+'</option>');
+				$("#activateButton").attr("disabled", false);
+				 $("#statusSelectedBroker").css("visibility", "hidden");
+				$("#inactivateButton").attr("disabled", true);
+			}*/
+			$('#activeInactiveBrokes').append(row);
+		}
+		if(document.getElementById("activeInactiveBrokes").options.length==0){
+            var r= $('<option value="No active Broker" name ="inactive">'+"No active Broker"+'</option>');
+            $('#activeInactiveBrokes').append(r);
+            $('#inactivateButton').hide();
+            $('#stopAllBrokers').hide();
+        }
+	}	
+	
+			
+	$(document).on({
+		change: function () {
+			var selectedBroker = document.getElementById('activeInactiveBrokes').value;
+			var status = $(this).find('option:selected').attr("name");
+			if(status =="active"){
+				$("#activateButton").attr("disabled",true);
+				//$("#statusSelectedBroker").css("visibility", "visible");
+				$("#inactivateButton").attr("disabled", false);
+			}else{
+				$("#activateButton").attr("disabled", false);
+			//	 $("#statusSelectedBroker").css("visibility", "hidden");
+				$("#inactivateButton").attr("disabled", true);
+			}
+		}
+	}, '#selectBrokersActive select');
+
+	$("#inactivateButton").off("click");
+	$('#inactivateButton').on('click',function(){
+		var contextbroker= document.getElementById('activeInactiveBrokes').value;
+		var data= "contextbroker=" + contextbroker+ "&ip=kill"; 
+		var protocol="";
+		$.ajax({
+			url: "../api/contextBrokerRetrieval_e.php",
+			data: {
+					action: "get_cb_details", 
+					cb: contextbroker,
+					username: loggedUser,
+					organization:organization
+				},
+			type: "POST",
+			async: true,
+			datatype: 'json',
+			success: function (data)
+			{
+				console.log("success");
+				var content = data["content"];
+				content = content[0];
+				protocol = content["protocol"];
+				
+				activateStub(contextbroker,"kill", protocol,"","","","","","","","");
+				$("#activateButton").attr("disabled", false);
+				$("#inactivateButton").attr("disabled", true);
+				$("#activeInactiveBrokes option:selected").attr('name',"inactive");
+
+			},
+			error:function (data)
+			{
+				console.log("error retrieving protocol name");
+			}
+		});
+
+		/*$("#activeInactiveBrokes").removeClass("active");
+		$("#activeInactiveBrokes").addClass("inactive");*/
+
+
+	});
+
+	$("#activateButton").off("click");
+	$('#activateButton').on('click',function(){
+		console.log("activate called");
+		var contextbroker= document.getElementById('activeInactiveBrokes').value;
+		var ip, port, protocol,user, accessLink, model, apikey, fiwareservice,kind;
+		$.ajax({
+		url: "../api/contextBrokerRetrieval_e.php",
+		data: {
+			  action: "get_cb_details", 
+			  cb: contextbroker,
+			  username: loggedUser,
+			  organization:organization
+		  },
+		type: "POST",
+		async: true,
+		datatype: 'json',
+		success: function (data)
+		{
+			$("#activateButton").attr("disabled", true);
+			$("#inactivateButton").attr("disabled", false);
+			$("#activeInactiveBrokes option:selected").attr('name',"active");
+			/*$("#activeInactiveBrokes option:selected").removeClass("inactive");
+			$("#activeInactiveBrokes option:selected").addClass("active");*/
+			console.log("success");
+			var content = data["content"];
+			content = content[0];
+			ip = content["ip"];
+			protocol = content["protocol"];
+			port= content["port"];
+			user = content["username"];
+			accesslink= content["accessLink"];
+			model = "custom";
+			edge_gateway_type = "";
+			edge_gateway_uri = "";
+			apikey=content["apikey"];
+			path=content["path"];
+			kind = content["kind"];
+			console.log("apikey "+apikey);
+
+			var ipa = ip + ':'+port;
+			console.log("ACTIVATE STUB "+ kind);
+	//		console.log("MODEL " + model + " gateway " + edge_gateway_type +  " url " + edge_gateway_uri);
+
+			//var retrieveModalWait = document.getElementById('retrieveModalWait');
+			//var span_b = document.getElementsByClassName("close")[0];
+		//	var spin_w = document.getElementById("loader_spinW");
+		//	var progress_ok_w=document.getElementById('progress_ok_wait');
+		//	document.getElementById('retrieveModalWait').innerHTML= "<p>Your data are being retrieved..</p> Click 'ok' to close this message.";
+		//	retrieveModalWait.style.display = "block";
+		//	spin_w.style.display="none";
+		//	progress_ok_w.style.display="block";
+    
+			activateStub(contextbroker,ipa,protocol,user,accesslink,model,edge_gateway_type,edge_gateway_uri,path,apikey,kind);			
+
+			},
+		error:function(data){
+			console.log("faliure" +  JSON.stringify(data));
+		}
+		});
+	});
+
+	$("#stopAllBrokers").off("click");
+	$('#stopAllBrokers').on('click',function(){
+		//var nContextBroker = document.getElementById('activeInactiveBrokes').length;
+		var nContextBroker = gb_active_brokers_names.length;
+
+		for(cb = 0; cb < nContextBroker; cb++){
+			
+			$("#activateButton").attr("disabled", false);
+			$("#inactivateButton").attr("disabled", true);
+			$("#activeInactiveBrokes option").attr('name',"inactive");
+		}
+
+		$.ajax({
+			url: "../api/contextBrokerRetrieval_e.php",
+			data: {
+					action: "get_multiple_cb_details", 
+					cb: JSON.stringify(gb_active_brokers_names),
+					username: loggedUser,
+					organization:organization
+				},
+			type: "POST",
+			async: true,
+			datatype: 'json',
+			success: function (data)
+			{
+				var content = data["content"];
+				
+				for(var i = 0; i < content.length; i++){
+					console.log("cont2 "+ i+ " i"+ JSON.stringify(content[i]));
+					protocol = content[i].protocol;				
+					activateStub(content[i].contextbroker,"kill",protocol,"","","","","","","","");
+					//content[i].contextbroker
+				}
+			},
+			error:function (data)
+			{
+				console.log("error retrieving protocol name");
+			}
+		});
+
+	});
+		//end of detail control for device dataTable 
   
 //Start Related to Delete Device
 	
@@ -418,6 +874,11 @@ $(document).ready(function ()
 		});	
 		
 		//Delete device button 
+	$("#progress_ok_wait").off("click");
+	$("#progress_ok_wait").on("click", function(){
+	    var progress_modal_w = document.getElementById('retrieveModalWait');
+		progress_modal_w.style.display = "none";
+		});			
 		
 	$('#devicesTable tbody').on('click', 'button.delDashBtn', function () {
 				console.log($(this));
@@ -445,8 +906,7 @@ $(document).ready(function ()
 	});
 								
 								
-								
-	
+
 //End Related to Delete Device
   
 
@@ -475,8 +935,14 @@ $(document).ready(function ()
 	/*$('#devicesTable tbody').on( 'click', 'tr', function () {
 		alert( 'Row index: '+dataTable.row( this ).index() );
 	});*/
-
+	$('#activeBrokers').off('click');
+	$('#activeBrokers').click(function(){
+		$('#activeBrokersModal').modal('show');
 	
+			getStatus(useStatus);
+	});
+
+ 
 //Display devices on the map 
 	$('#displayDevicesMap').off('click');
 	$('#displayDevicesMap').click(function(){
@@ -1616,8 +2082,7 @@ $('#devicesTable tbody').on('click', 'button.editDashBtn', function () {
 	  
 	console.log('edge_gateway_type');  
 	console.log(edge_gateway_type);  
-	//showEditDeviceModal();  
-	//sara -> could be a problem
+
 	$('#editDeviceModal').show();	
 
 	$.ajax({
@@ -1641,14 +2106,18 @@ $('#devicesTable tbody').on('click', 'button.editDashBtn', function () {
 				k=0;
 				while (k < myattributes.length)
 				{
-				console.log("data type "+myattributes[k].data_type);
-				console.log(k); 
-				content += drawAttributeMenu(myattributes[k].value_name, 
-				myattributes[k].data_type, myattributes[k].value_type, myattributes[k].editable, myattributes[k].value_unit, myattributes[k].healthiness_criteria, 
-				myattributes[k].healthiness_value,myattributes[k].old_value_name, 'editlistAttributes');
-				k++;
+					// console.log(k); 
+					content = drawAttributeMenu(myattributes[k].value_name, 
+					myattributes[k].data_type, myattributes[k].value_type, myattributes[k].editable, myattributes[k].value_unit, myattributes[k].healthiness_criteria, 
+					myattributes[k].healthiness_value, myattributes[k].value_name, 'editlistAttributes');
+					k++;
+                    $('#editlistAttributes').append(content);
+					$("#editSchemaTabDevice #editlistAttributes .row input").on('input', checkValueName);
+					$("#editSchemaTabDevice #editlistAttributes .row input").on('input', checkAddDeviceConditions);
+					// $("#addSchemaTabDevice #addlistAttributes .row input:even").each(function(){checkValueName();});
+ 
+					checkEditDeviceConditions();
 				}
-				$('#editlistAttributes').html(content);
 			},
 			error: function (data)
 			{
@@ -2047,7 +2516,1106 @@ error messages returned by verifyDevice are longer.
 	$('#devicesTable thead').css("color", "white");
 	$('#devicesTable thead').css("font-size", "1em"); 
 	   
-	   
+
+	// Update Multiple Fields 	 		
+	$("#updateMultipleModalBtn").off("click");
+	$("#updateMultipleModalBtn").click(function(){
+	   $('#updateMultipleDeviceModal').modal('show');
+	   $('#updateMultipleDeviceModal1').modal('hide');
+
+	   checkUpdateButton();
+
+	}); 
+
+
+	$("#suggestionsButton").off("click");
+	$("#suggestionsButton").click(function(){
+	   $('#suggestModifications').modal('show');
+	   if(gb_first_opening == 0){
+			findAssociationRules(useAssociationRules);
+			gb_first_opening = 1;
+	   }	
+	});
+
+	$("#skipSuggestion").click(function(){
+		viewRules();
+		getAffectedRulesValues();
+		
+	}); 
+		
+
+	$('#suggestionConfirm').off("click");
+	$('#suggestionConfirm').on("click",function(){
+
+		var num1 = document.getElementById('ifBlockSuggestions').tBodies[0].childElementCount;
+		var num2 = document.getElementById('decisionBlockSuggestions').tBodies[0].childElementCount;
+
+		if(num1 != 0 & num2 != 0){
+			var attributesIf = [];
+			for (var m=0; m< num1; m++)
+			{
+			//var attribute= document.getElementById('ifBlockTable').rows[m].cells[1].selectedIndex;
+			var fieldIf= document.getElementById('ifBlockSuggestions').tBodies[0].rows.item(m).cells.item(1).childNodes[0].value;
+			var operatorIf= document.getElementById('ifBlockSuggestions').tBodies[0].rows.item(m).cells.item(2).childNodes[0].value;			
+			var valueIf=document.getElementById('ifBlockSuggestions').tBodies[0].childNodes[m].childNodes[3].childNodes[0].textContent;
+
+				if(valueIf.localeCompare("Empty")==0){
+					valueIf = "";
+				}
+						
+				var newIf={"field": fieldIf, "operator" : operatorIf, "value": valueIf};
+				attributesIf.push(newIf);
+
+			}	
+			var attributesThen = [];
+
+			for (var m=0; m< num2; m++)
+			{
+				var fieldsThen= document.getElementById('decisionBlockSuggestions').tBodies[0].rows.item(m).cells.item(1).childNodes[0].value;
+				var valueThen= document.getElementById('decisionBlockSuggestions').tBodies[0].childNodes[m].childNodes[2].childNodes[0].textContent;
+
+				if(valueThen.localeCompare("Empty")==0){
+					valueThen = "";
+				}
+				var newThen = {"field": fieldsThen, "valueThen": valueThen};
+				//console.log("newThen "+ JSON.stringify(newThen));
+				attributesThen.push(newThen);
+			}
+		
+			console.log("");
+			$.ajax({
+				url: "../api/associationRulesApi.php",
+				data:{
+					action: "apply_rules", 
+					username: loggedUser,
+					organization:organization,
+					attributesIf: JSON.stringify(attributesIf),
+					attributesThen: JSON.stringify(attributesThen)	    
+				},
+				dataType: 'json',
+				type: "POST",
+				async: true,
+				success: function (myData) 
+				{
+					console.log("suggestion apply suiccess "+ JSON.stringify(mydata));	
+
+					if(myData['status']== 'ok'){
+							
+						let mex= "Devices has been correctly updated.";
+						$('#bulkUpdateModalInnerDiv').html(mex);
+						$("#bulkUpdateModal").modal('show');
+						$('#updateMultipleDeviceModal').hide();
+
+					}
+					else if(myData['status']== 'ko'){
+						$("#bulkUpdateFaliure").modal('show');
+						$('#updateMultipleDeviceModal').hide();
+
+					}
+				},
+				error: function (myData) 
+				{	
+					console.log("suggestion apply error "+ JSON.stringify(mydata));	
+					$("#bulkUpdateFaliure").modal('show');
+					$('#updateMultipleDeviceModal').hide();
+
+					$('#bulkUpdateFaliure').html(myData["msg"]);
+			
+				}
+			});
+		}		
+	});
+	/************ update all devices  */
+	
+	$('#addifBlockBtn').off("click");
+	$('#addifBlockBtn').click(function(){
+
+		if ($('#ifBlockTable tbody tr').length == 0){
+			var row = $('<tr class="ifrow"><td><h3><span class="label label-danger">If</span></h3></td><td class="fieldTd"><select class="fieldIf"><option value="empty">--Select an option--</option><option value="contextBroker">Contextbroker</option><option value="id">Device name</option><option value="deviceType">Device Type</option><option value="model">Model</option><option value="producer">Producer</option><option value="frequency">Frequency</option><option value="kind">Kind</option><option value="protocol">Protocol</option><option value="format">Format</option><option value="latitude">Latitude</option><option value="longitude">Longitude</option><option value="macaddress">Mac address</option><option value="k1">Key1</option><option value="k2">Key2</option></select></td><td class="fieldEqual"><select class="fieldSelectEqual"><option value="IsEqual">Is Equal</option><option value="IsNotEqual">Is Not Equal</option><option value="IsNull">Is NULL</option></select></td><td class="fieldName"> </td><td class="minusDevice"><i class="fa fa-minus"></i></td></tr>');
+		 }
+		 else {
+			 var row = $('<tr class="ifrow"><td><h3><span class="label label-danger">AND</span></h3></td><td class="fieldTd"><select class="fieldIf"><option value="empty">--Select an option--</option><option value="contextBroker">Contextbroker</option><option value="id">Device name</option><option value="deviceType">Device Type</option><option value="model">Model</option><option value="producer">Producer</option><option value="frequency">Frequency</option><option value="kind">Kind</option><option value="protocol">Protocol</option><option value="format">Format</option><option value="latitude">Latitude</option><option value="longitude">Longitude</option><option value="macaddress">Mac address</option><option value="k1">Key1</option><option value="k2">Key2</option></select></td><td class="fieldEqual"><select class="fieldSelectEqual"><option value="IsEqual">Is Equal</option><option value="IsNotEqual">Is Not Equal</option><option value="IsNull">Is NULL</option></select></td><td class="fieldName"> </td><td class="minusDevice"><i class="fa fa-minus"></i></td></tr>');
+			 }
+			
+		 $('#ifBlockTable tbody').append(row);
+
+		 devicenamesArray['if'] = devicenamesArray['if']+1;
+		 checkUpdateButton();	 
+
+		 var rowIndex = row.index();
+		 
+		 row.find('a').editable({
+			emptytext: "Empty",
+			display: function(value, response){
+				if(value.length > 35)
+				{
+					$(this).html(value.substring(0, 32) + "...");
+				}
+				else
+				{
+				   $(this).html(value); 
+				}
+			}
+		});
+		
+		ifPages[rowIndex] = null;
+		$('#authorizedPagesJson').val(JSON.stringify(ifPages));
+		
+		row.find('i.fa-minus').off("click");
+		row.find('i.fa-minus').click(function(){
+			var rowIndex = $(this).parents('tr').index();
+			$('#ifBlockTable tbody tr').eq(rowIndex).remove();
+
+			if(rowIndex == 0 && document.getElementById('ifBlockTable').tBodies[0].rows.item(0) != null){
+				document.getElementById('ifBlockTable').tBodies[0].rows.item(0).childNodes[0].childNodes[0].innerHTML="<span class=\"label label-danger\">If</span>";
+			}
+
+			devicenamesArray['if'] = devicenamesArray['if']-1;
+			checkUpdateButton();
+			getAffectedRows();	
+
+			ifPages.splice(rowIndex, 1);
+			$('#authorizedPagesJson').val(JSON.stringify(ifPages));
+		});
+		
+		row.find('a.toBeEdited').off("save");
+		row.find('a.toBeEdited').on('save', function(e, params){
+			var rowIndex = $(this).parents('tr').index();
+			ifPages[rowIndex] = params.newValue;
+			$('#authorizedPagesJson').val(JSON.stringify(ifPages));
+		});	
+	//	updateConditions();
+
+	});
+	
+
+	$('#addDecisionBlockBtn').off("click");
+	$('#addDecisionBlockBtn').click(function(){
+		 var row = $('<tr><td><h3><span class="label label-success">Then</span></h3></td><td class="thenTd"><select class="thenSelect"><option value="empty">--Select an option--</option><option value="contextbroker">Contextbroker</option><option value="deviceType">Device Type</option><option value="model">Model</option><option value="producer">Producer</option><option value="frequency">Frequency</option><option value="kind">Kind</option><option value="protocol">Protocol</option><option value="format">Format</option><option value="latitude">Latitude</option><option value="longitude">Longitude</option><option value="macaddress">Mac address</option><option value="k1">Key1</option><option value="k2">Key2</option></select></td><td></td><td><i class="fa fa-minus"></i></td></tr>');
+		 $('#decisionBlockTable tbody').append(row);
+
+		 devicenamesArray['then'] = devicenamesArray['then']+1;
+		 checkUpdateButton();
+
+		 var rowIndex = row.index();
+		 
+		 row.find('a').editable({
+			emptytext: "Empty",
+			display: function(value, response){
+				if(value.length > 35)
+				{
+					$(this).html(value.substring(0, 32) + "...");
+				}
+				else
+				{
+				   $(this).html(value); 
+				}
+			}
+		});
+
+		ifPages[rowIndex] = null;
+		$('#authorizedPagesJson').val(JSON.stringify(ifPages));
+		
+		row.find('i.fa-minus').off("click");
+		row.find('i.fa-minus').click(function(){
+
+			var rowIndex = $(this).parents('tr').index();
+			$('#decisionBlockTable tbody tr').eq(rowIndex).remove();
+
+			devicenamesArray['then'] = devicenamesArray['then']-1;
+
+			checkUpdateButton();
+
+			ifPages.splice(rowIndex, 1);
+			$('#authorizedPagesJson').val(JSON.stringify(ifPages));
+		});
+		
+		row.find('a.toBeEdited').off("save");
+		row.find('a.toBeEdited').on('save', function(e, params){
+			var rowIndex = $(this).parents('tr').index();
+			ifPages[rowIndex] = params.newValue;
+			$('#authorizedPagesJson').val(JSON.stringify(ifPages));
+		});
+	});	
+
+	function checkUpdateButton(){
+
+		var totIf = document.getElementById('ifBlockTable').tBodies[0].childElementCount;
+		var totThen = document.getElementById('decisionBlockTable').tBodies[0].childElementCount;
+		if(devicenamesArray['if']>0 & devicenamesArray['then']>0){
+			for(var i = 0; i < totIf; i++){
+				let valueIf = document.getElementById('ifBlockTable').tBodies[0].rows.item(i).cells.item(1).childNodes[0].value;
+				if(valueIf != "empty"){
+					for(j=0 ; j< totThen; j++){
+						let valueThen = document.getElementById('decisionBlockTable').tBodies[0].rows.item(j).cells.item(1).childNodes[0].value;
+						if(valueThen != "empty"){
+							$("#updateAllConfirmBtn").attr("disabled", false);
+							break;
+						}
+					}
+
+				}
+			}
+		}
+		else{
+			$("#updateAllConfirmBtn").attr("disabled", true);
+		}
+	}
+
+	
+$(document).on({
+	change: function () {
+	
+		var rowIndex = $(this).parents('tr').index();
+		console.log("row index" + rowIndex);
+		var fieldIf= document.getElementById('ifBlockTable').tBodies[0].rows.item(rowIndex).cells.item(1).childNodes[0].value;
+		getFields(fieldIf,rowIndex,'ifBlockTable',0);
+		checkUpdateButton();
+
+	}
+  }, '.fieldTd select');
+
+  	
+	$(document).on({
+		change: function () {
+			var rowIndex = $(this).parents('tr').index();
+			var fieldsThen= document.getElementById('decisionBlockTable').tBodies[0].rows.item(rowIndex).cells.item(1).childNodes[0].value;
+			getFields(fieldsThen,rowIndex,"decisionBlockTable",0);
+			checkUpdateButton();
+
+		}
+	}, '.thenTd select');
+	
+	$(document).on({
+		input: function () {
+			getAffectedRows();
+
+		},
+	}, '.fieldName input');
+
+	$(document).on({
+		change: function () {
+			getAffectedRows();
+		},
+	}, '.fieldName select');
+
+	$(document).on({
+		change: function () {
+			getAffectedRows();
+		},
+	}, '.fieldEqual select');
+
+
+	
+	function getAffectedRows(){
+		var num1 = document.getElementById('ifBlockTable').tBodies[0].childElementCount;
+		var attributesIf = [];
+
+		for (var m=0; m< num1; m++)
+		{
+		//var attribute= document.getElementById('ifBlockTable').rows[m].cells[1].selectedIndex;
+			
+			var fieldIf= document.getElementById('ifBlockTable').tBodies[0].rows.item(m).cells.item(1).childNodes[0].value;
+			var operatorIf= document.getElementById('ifBlockTable').tBodies[0].rows.item(m).cells.item(2).childNodes[0].value			
+			var valueIf=document.getElementById('ifBlockTable').tBodies[0].childNodes[m].childNodes[3].childNodes[0].value;
+			 
+			//params.newValue
+			if(valueIf != undefined && valueIf.localeCompare("Empty")==0){
+				valueIf = "";
+			}
+
+			var newIf={"field": fieldIf, "operator" : operatorIf, "value": valueIf};
+			console.log("newIf "+ JSON.stringify(newIf));
+			attributesIf.push(newIf);
+		}
+		
+		var attributesThen = [];
+		var num2 = document.getElementById('decisionBlockTable').tBodies[0].childElementCount;
+		for (var m=0; m< num2; m++)
+		{
+			var fieldsThen= document.getElementById('decisionBlockTable').tBodies[0].rows.item(m).cells.item(1).childNodes[0].value;
+			if(fieldsThen != "empty"){
+				var operatorThen= document.getElementById('decisionBlockTable').tBodies[0].rows.item(m).cells.item(2).childNodes[0].innerHTML;
+
+				var newThen = {"field": fieldsThen, "operator": operatorThen};
+				attributesThen.push(newThen);
+			}
+		}
+
+		      	   
+		$.ajax({
+            url: "../api/bulkDeviceUpdate.php",
+            data:{
+				action: "get_affected_devices_count", 
+				username: loggedUser,
+				organization:organization,
+				attributesIf: JSON.stringify(attributesIf)
+				//attributesThen: JSON.stringify(attributesThen)	    
+			},
+			dataType: 'json',
+            type: "POST",
+            async: true,
+            success: function (myData) 
+            {
+
+				console.log("data success "+ myData['content']);
+				$("#devicesFound").html( myData['content'] + " devices founded");
+				
+				if(attributesIf.length==0){
+					buildPreview( JSON.stringify(attributesIf), true);
+				}
+				else{
+					buildPreview( JSON.stringify(attributesIf), previewValuesFirstLoad);
+					previewValuesFirstLoad = true;
+				}
+				buildPreview( JSON.stringify(attributesIf), previewFirstLoad);
+				previewFirstLoad = true;
+
+			//	document.getElementById('devicesFound').value = myData['content'] + " devices found";
+			 },
+			 error: function (myData) 
+			 {		
+				console.log(JSON.stringify(myData));
+				$("#devicesFound").html("0 devices founded");
+				console.log("data faliure"+ myData['msg']);
+			}
+		});//end of ajax get_affected
+	}
+	
+	function healthinessValueIsPresent(id){
+		var num1 = document.getElementById(id).tBodies[0].childElementCount;
+
+		for(let i = 0; i < num1-1; i++){
+			var fieldIf= document.getElementById(id).tBodies[0].rows.item(i).cells.item(1).childNodes[0].value;
+			if(fieldIf.localeCompare("healthiness_crieria")==0){
+				return 1;
+			}
+		}
+		return 0;
+		
+	}
+
+
+	function getFields(fieldIf, pos, id,value){
+		$.ajax({
+			url: "../api/bulkDeviceUpdate.php",
+			data:{
+				action: "get_fields", 
+				fieldIf: fieldIf
+			},
+			dataType: 'json',
+			type: "POST",
+			async: true,
+			success: function (myData) 
+			{
+				let myDataP = myData['content'];
+				console.log(JSON.stringify(myDataP));
+				console.log("INDICE "+ pos + " field if "+ fieldIf);
+
+				if(fieldIf.localeCompare("healthiness_value")==0 && healthinessValueIsPresent(id)==0){
+					var num1 = document.getElementById(id).tBodies[0].childElementCount;
+					var idToPut = document.getElementById(id).tBodies[0].rows.item(pos).id;
+
+					if(id.localeCompare("decisionBlockTableValue")==0){
+						var row = $('<tr id="'+idToPut+'criteria"><td><h3><span class="label label-success">Then</span></h3></td><td class="fieldTdThenValue"><select><option value="healthiness_criteria">Healthiness Criteria</option></select></td></td><td class="fieldNameValue"><input type="text" class="fieldNameIfValue" value="Empty"><td></td></tr>');			
+						devicenamesArray['then'] = devicenamesArray['then']+1;
+
+					}
+					else{
+						var row = $('<tr id="'+idToPut+'criteria"><td><h3><span class="label label-danger">AND</span></h3></td><td class="fieldTdValue"><select><option value="healthiness_criteria">Healthiness Criteria</option></select></td><td class="fieldEqualValue"><select class="fieldSelectEqualValue"><option value="IsEqual">Is Equal</option><option value="IsNotEqual">Is Not Equal</option><option value="IsNull">Is NULL</option></select></td><td class="fieldNameIfValue"></td><td></td></tr>');
+						devicenamesArray['if'] = devicenamesArray['if']+1;
+					}
+					
+					var idTemp = "#"+id + " tbody ";
+					//$(idTemp).eq(pos+1).append(row);
+					$(idTemp).append(row);
+
+		 				   
+				   $('#authorizedPagesJson').val(JSON.stringify(ifPages));	
+
+					getFields("healthiness_criteria",num1,id,value);   
+														
+					if(id.localeCompare("decisionBlockTable")==0 || id.localeCompare("decisionBlockTableValue")==0){
+						document.getElementById(id).tBodies[0].rows.item(pos).cells.item(2).innerHTML= myDataP[0].fieldsHtml;					
+					}
+					else{
+						document.getElementById(id).tBodies[0].childNodes[pos].childNodes[3].innerHTML= myDataP[0].fieldsHtml;
+					}
+				}
+				else{
+									
+					if(id.localeCompare("decisionBlockTable")==0 || id.localeCompare("decisionBlockTableValue")==0){
+						document.getElementById(id).tBodies[0].rows.item(pos).cells.item(2).innerHTML= myDataP[0].fieldsHtml;					
+					}
+					else{
+						document.getElementById(id).tBodies[0].childNodes[pos].childNodes[3].innerHTML= myDataP[0].fieldsHtml;
+						
+
+						if(value == 1){
+							getAffectedRowsValue();
+						}
+						else{
+							getAffectedRows();
+						}
+					}
+				}
+
+				/*if(myDataP[0].autocomplete != null){
+
+					$( ".tags" ).autocomplete({
+						source: myDataP[0].autocomplete
+					  });
+				}*/
+
+			},
+			 error: function (myData) 
+			 {		
+				console.log("error" +JSON.stringify(myData));
+				if(id.localeCompare("decisionBlockTable")==0){
+					document.getElementById(id).tBodies[0].rows.item(pos).cells.item(2).innerHTML=  "<input type=\"text\" class=\"fieldNameThen\" value=\"Empty\">";				
+				}
+				else{
+					document.getElementById(id).tBodies[0].childNodes[pos].childNodes[3].innerHTML= "<input type=\"text\" class=\"fieldNameIf\" value=\"Empty\">";
+				}
+
+			}
+		});//end of ajax get_affected
+	}
+	$("#updateAllConfirmBtn").off("click");
+	$("#updateAllConfirmBtn").on("click",function(){
+		var num1 = document.getElementById('ifBlockTable').tBodies[0].childElementCount;
+		var num2 = document.getElementById('decisionBlockTable').tBodies[0].childElementCount;
+
+		if(num1 != 0 & num2 != 0){
+			var attributesIf = [];
+			for (var m=0; m< num1; m++)
+			{
+			//var attribute= document.getElementById('ifBlockTable').rows[m].cells[1].selectedIndex;
+			var fieldIf= document.getElementById('ifBlockTable').tBodies[0].rows.item(m).cells.item(1).childNodes[0].value;
+			var operatorIf= document.getElementById('ifBlockTable').tBodies[0].rows.item(m).cells.item(2).childNodes[0].value			
+			var valueIf=document.getElementById('ifBlockTable').tBodies[0].childNodes[m].childNodes[3].childNodes[0].value;
+
+				if(valueIf.localeCompare("Empty")==0){
+					valueIf = "";
+				}
+						
+				var newIf={"field": fieldIf, "operator" : operatorIf, "value": valueIf};
+				attributesIf.push(newIf);
+			}	
+			var attributesThen = [];
+
+			for (var m=0; m< num2; m++)
+			{
+				var fieldsThen= document.getElementById('decisionBlockTable').tBodies[0].rows.item(m).cells.item(1).childNodes[0].value;
+				var valueThen= document.getElementById('decisionBlockTable').tBodies[0].childNodes[m+1].childNodes[2].childNodes[0].value;
+
+				if(valueThen.localeCompare("Empty")==0){
+					valueThen = "";
+				}
+				var newThen = {"field": fieldsThen, "valueThen": valueThen};
+				//console.log("newThen "+ JSON.stringify(newThen));
+				attributesThen.push(newThen);
+			}
+		
+		         
+			$.ajax({
+				url: "../api/bulkDeviceUpdate.php",
+				data:{
+					action: "update_all_devices", 
+					username: loggedUser,
+					organization:organization,
+					attributesIf: JSON.stringify(attributesIf),
+					attributesThen: JSON.stringify(attributesThen)	    
+				},
+				dataType: 'json',
+				type: "POST",
+				async: true,
+				success: function (myData) 
+				{
+					if(myData['status']== 'ok'){
+							
+						let mex= "Devices has been correctly updated.";
+						$('#bulkUpdateModalInnerDiv').html(mex);
+						$("#bulkUpdateModal").modal('show');
+						$('#updateMultipleDeviceModal').hide();
+
+					}
+					else if(myData['status']== 'ko'){
+						$("#bulkUpdateFaliure").modal('show');
+						$('#updateMultipleDeviceModal').hide();
+
+					}
+				},
+				error: function (myData) 
+				{		
+					$("#bulkUpdateFaliure").modal('show');
+					$('#updateMultipleDeviceModal').hide();
+
+					$('#bulkUpdateFaliure').html(myData["msg"]);
+			
+				}
+			});
+		}	
+	});
+	$("#attrNameDelbtn").off("click");
+	$("#attrNameDelbtn").on("click", function(){
+		console.log("#attrNameDelbtn");	
+		$(this).parent('tr').remove();
+	});	
+	$("#editDeviceOkModalDoneBtn").off("click");
+	$("#editDeviceOkModalDoneBtn").on("click", function(){
+		setTimeout(function(){
+			fetch_data(true);
+			setTimeout(function(){
+				location.reload();
+				},100);
+		}, 100);
+	});	
+	$("#addDeviceKoModalCancelBtn").off("click");
+	$("#addDeviceKoModalCancelBtn").on("click", function(){
+		setTimeout(function(){
+			fetch_data(true);
+			setTimeout(function(){
+				location.reload();
+				}, 1000);
+		}, 100);
+	});	
+
+
+//*************UPDATE VALUES ********************/
+$("#updateMultipleValueBtn").off("click");
+$("#updateMultipleValueBtn").click(function(){
+   $('#updateMultipleDeviceModal1').modal('show');
+   $('#updateMultipleDeviceModal').modal('hide');
+
+   checkUpdateButtonValue();
+
+}); 
+	
+
+$('#addifBlockBtnValue').off("click");
+$('#addifBlockBtnValue').click(function(){
+		
+	if ($('#ifBlockTableValue tbody tr').length == 0){
+		var row = $('<tr id="ifHV'+idCounterIf+'" class="ifrow"><td><h3><span class="label label-danger">If</span></h3></td><td class="fieldTdValue"><select class="fieldIfValue"><option value="empty">--Select an option--</option><option value="cb">Contextbroker</option><option value="device">Device name</option><option value="value_name">Value Name</option><option value="data_type">Data type</option><option value="model">Model</option><option value="producer">Producer</option><option value="frequency">Frequency</option><option value="kind">Kind</option><option value="protocol">Protocol</option><option value="format">Format</option><option value="latitude">Latitude</option><option value="longitude">Longitude</option><option value="macaddress">Mac address</option><option value="k1">Key1</option><option value="k2">Key2</option><option value="value_type">Value type</option><option value="value_unit">Value unit</option><option value="editable">Editable</option><option value="healthiness_criteria">Healthiness criteria</option><option value="healthiness_value">Healthiness value</option></select></td><td class="fieldEqualValue"><select class="fieldSelectEqualValue"><option value="IsEqual">Is Equal</option><option value="IsNotEqual">Is Not Equal</option><option value="IsNull">Is NULL</option></select></td><td class="fieldNameIfValue"><input type="hidden"></td><td><i class="fa fa-minus"></i></td></tr>');
+	}
+	 else {
+		var row = $('<tr id="ifHV'+idCounterIf+'" class="ifrow"><td><h3><span class="label label-danger">AND</span></h3></td><td class="fieldTdValue"><select class="fieldIfValue"><option value="empty">--Select an option--</option><option value="cb">Contextbroker</option><option value="device">Device name</option><option value="value_name">Value Name</option><option value="data_type">Data type</option><option value="model">Model</option><option value="producer">Producer</option><option value="frequency">Frequency</option><option value="kind">Kind</option><option value="protocol">Protocol</option><option value="format">Format</option><option value="latitude">Latitude</option><option value="longitude">Longitude</option><option value="macaddress">Mac address</option><option value="k1">Key1</option><option value="k2">Key2</option><option value="value_type">Value type</option><option value="value_unit">Value unit</option><option value="editable">Editable</option><option value="healthiness_criteria">Healthiness criteria</option><option value="healthiness_value">Healthiness value</option></select></td><td class="fieldEqualValue"><select class="fieldSelectEqualValue"><option value="IsEqual">Is Equal</option><option value="IsNotEqual">Is Not Equal</option><option value="IsNull">Is NULL</option></select></td><td class="fieldNameIfValue"><input type="hidden"></td><td><i class="fa fa-minus"></i></td></tr>');
+	}
+	idCounterIf++;
+	 $('#ifBlockTableValue tbody').append(row);
+
+	 valueNamesArray['if'] = valueNamesArray['if']+1;
+	 checkUpdateButtonValue();	 
+	// updateConditionsValue();
+
+	 var rowIndex = row.index();
+	 
+	 row.find('a').editable({
+		emptytext: "Empty",
+		display: function(value, response){
+			if(value.length > 35)
+			{
+				$(this).html(value.substring(0, 32) + "...");
+			}
+			else
+			{
+			   $(this).html(value); 
+			}
+		}
+	});
+	
+	ifPages[rowIndex] = null;
+	$('#authorizedPagesJson').val(JSON.stringify(ifPages));
+	
+	row.find('i.fa-minus').off("click");
+	row.find('i.fa-minus').click(function(){
+
+		var rowIndex = $(this).parents('tr').index();
+		var health = document.getElementById('ifBlockTableValue').tBodies[0].rows.item(rowIndex).cells.item(1).childNodes[0].value;
+
+		if(health.localeCompare("healthiness_value")==0){
+			var idRow = document.getElementById('ifBlockTableValue').tBodies[0].rows.item(rowIndex).id;
+			
+			idRow = '#ifBlockTableValue tr#'+ idRow+"criteria";
+			$(idRow).remove();
+			valueNamesArray['if'] = valueNamesArray['if']-1;
+		}
+		$('#ifBlockTableValue tbody tr').eq(rowIndex).remove();
+		valueNamesArray['if'] = valueNamesArray['if']-1;
+
+		if(rowIndex == 0 && document.getElementById('ifBlockTableValue').tBodies[0].rows.item(0) != null){
+			document.getElementById('ifBlockTableValue').tBodies[0].rows.item(0).childNodes[0].childNodes[0].innerHTML="<span class=\"label label-danger\">If</span>";
+		}
+
+		checkUpdateButtonValue();
+		getAffectedRowsValue();	
+
+		ifPages.splice(rowIndex, 1);
+		$('#authorizedPagesJson').val(JSON.stringify(ifPages));
+	});
+	
+	row.find('a.toBeEdited').off("save");
+	row.find('a.toBeEdited').on('save', function(e, params){
+		var rowIndex = $(this).parents('tr').index();
+		ifPages[rowIndex] = params.newValue;
+		$('#authorizedPagesJson').val(JSON.stringify(ifPages));
+	});	
+//	updateConditionsValue();
+
+});
+
+$(document).on({
+	change: function () {
+		var rowIndex = $(this).parents('tr').index();
+		console.log("row index" + rowIndex);
+		var fieldIf= document.getElementById('ifBlockTableValue').tBodies[0].rows.item(rowIndex).cells.item(1).childNodes[0].value;
+		console.log("fieldIf" + fieldIf);
+		switch(fieldIf){
+			case "cb":
+				fieldIf = "contextBroker";
+				break;
+			case "id":
+				fieldIf = "device";
+				break;
+			}
+		
+		getFields(fieldIf,rowIndex,'ifBlockTableValue',1);
+		checkUpdateButtonValue();
+
+	}
+  }, '.fieldTdValue select');
+
+  $(document).on({
+	change: function () {
+		var rowIndex = $(this).parents('tr').index();
+		var fieldsThen= document.getElementById('decisionBlockTableValue').tBodies[0].rows.item(rowIndex).cells.item(1).childNodes[0].value;
+		getFields(fieldsThen,rowIndex,"decisionBlockTableValue",0);
+		checkUpdateButtonValue();
+
+	}
+
+}, '.fieldTdThenValue select');
+
+  $(document).on({
+	change: function () {
+		getAffectedRowsValue();
+
+	}
+  }, '.fieldEqualValue select');
+
+  $(document).on({
+	input: function () {
+		getAffectedRowsValue();
+
+		}
+	}, '.fieldNameIfValue input');
+	
+	$(document).on({
+		change: function () {
+			getAffectedRowsValue();
+		}
+	}, '.fieldNameIfValue select');
+ 
+	/*function updateConditionsValue(){
+		$('#ifBlockTableValue .fieldTdValue .fieldIfValue').on('input',function (e) {
+		
+			var rowIndex = $(this).parents('tr').index();
+			console.log("row index" + rowIndex);
+			var fieldIf= document.getElementById('ifBlockTableValue').tBodies[0].rows.item(rowIndex).cells.item(1).childNodes[0].value;
+			getFields(fieldIf,rowIndex,'ifBlockTableValue');
+		})
+
+
+		$('#ifBlockTableValue .fieldNameIfValue').on('input', getAffectedRowsValue);
+		getAffectedRowsValue();
+
+	}*/
+
+	$('#addDecisionBlockBtnValue').off("click");
+	$('#addDecisionBlockBtnValue').click(function(){
+		console.log("update value");
+
+		var row = $('<tr id="thenHV'+idCounterThen+'"><td><h3><span class="label label-success">Then</span></h3></td><td class="fieldTdThenValue"><select class="fieldThenValue"><option value="empty">--Select an option--</option><option value="data_type">Data type</option><option value="value_type">Value type</option><option value="value_unit">Value unit</option><option value="editable">Editable</option>	<option value="healthiness_criteria">Healthiness criteria</option><option value="healthiness_value">Healthiness value</option></select></td></td><td class="fieldNameValue"><input type="text" class="fieldNameIfValue" value="Empty"><td><i class="fa fa-minus"></i></td></tr>');
+		$('#decisionBlockTableValue tbody').append(row);
+		idCounterThen++;
+
+		valueNamesArray['then'] = valueNamesArray['then']+1;
+		checkUpdateButtonValue();
+
+		var rowIndex = row.index();
+		
+		row.find('a').editable({
+			emptytext: "Empty",
+			display: function(value, response){
+				if(value.length > 35)
+				{
+					$(this).html(value.substring(0, 32) + "...");
+				}
+				else
+				{
+					$(this).html(value); 
+				}
+			}
+		});
+
+		ifPages[rowIndex] = null;
+		$('#authorizedPagesJson').val(JSON.stringify(ifPages));
+		
+		row.find('i.fa-minus').off("click");
+		row.find('i.fa-minus').click(function(){
+			var rowIndex = $(this).parents('tr').index();
+			var health = document.getElementById('decisionBlockTableValue').tBodies[0].rows.item(rowIndex).cells.item(1).childNodes[0].value;
+
+			if(health.localeCompare("healthiness_value")==0){
+				var idRow = document.getElementById('decisionBlockTableValue').tBodies[0].rows.item(rowIndex).id;
+				
+				idRow = '#decisionBlockTableValue tr#'+ idRow+"criteria";
+				$(idRow).remove();
+
+				//$('#decisionBlockTableValue tbody tr').eq(toDelete).remove();
+				devicenamesArray['then'] = devicenamesArray['then']-1;
+			}
+			$('#decisionBlockTableValue tbody tr').eq(rowIndex).remove();
+			devicenamesArray['then'] = devicenamesArray['then']-1;
+			checkUpdateButtonValue();
+			
+			ifPages.splice(rowIndex, 1);
+			$('#authorizedPagesJson').val(JSON.stringify(ifPages));
+		});
+		
+		row.find('a.toBeEdited').off("save");
+		row.find('a.toBeEdited').on('save', function(e, params){
+			var rowIndex = $(this).parents('tr').index();
+			ifPages[rowIndex] = params.newValue;
+			$('#authorizedPagesJson').val(JSON.stringify(ifPages));
+		});
+	});	
+
+	function checkUpdateButtonValue(){
+
+		var totIf = document.getElementById('ifBlockTableValue').tBodies[0].childElementCount;
+		var totThen = document.getElementById('decisionBlockTableValue').tBodies[0].childElementCount;
+		if(valueNamesArray['if']>0 & valueNamesArray['then']>0){
+			for(i = 0; i < totIf; i++){
+				let valueIf = document.getElementById('ifBlockTableValue').tBodies[0].rows.item(i).cells.item(1).childNodes[0].value;
+
+				if(valueIf != "empty")
+				{
+					for(j = 0; j < totThen; j++){
+						let valueThen = document.getElementById('decisionBlockTableValue').tBodies[0].rows.item(j).cells.item(1).childNodes[0].value;
+
+						if(valueThen != "empty"){
+							$("#updateAllValuesConfirmBtn").attr("disabled", false);
+							break;
+						}
+					}
+
+				}
+			}
+		}
+		else{
+			$("#updateAllValuesConfirmBtn").attr("disabled", true);
+		}
+	}
+
+	function getAffectedRowsValue(){
+		
+		var num1 = document.getElementById('ifBlockTableValue').tBodies[0].childElementCount;
+		var attributesIfValues = [];
+		for (var m=0; m< num1; m++)
+		{
+		//var attribute= document.getElementById('ifBlockTable').rows[m].cells[1].selectedIndex;
+
+			var fieldIf= document.getElementById('ifBlockTableValue').tBodies[0].rows.item(m).cells.item(1).childNodes[0].value;
+			var operatorIf= document.getElementById('ifBlockTableValue').tBodies[0].rows.item(m).cells.item(2).childNodes[0].value;
+			var valueIf= document.getElementById('ifBlockTableValue').tBodies[0].childNodes[m].childNodes[3].childNodes[0].value;
+			//params.newValue
+			if(valueIf.localeCompare("Empty")==0){
+				valueIf = "";
+			}
+			if(fieldIf == undefined || fieldIf == null || fieldIf == ""){
+				fieldIf= "healthiness_criteria";
+			}
+
+			var newIf={"field": fieldIf, "operator" : operatorIf, "value": valueIf};
+			attributesIfValues.push(newIf);
+		}
+		if(num1 != 0){
+			$.ajax({
+				url: "../api/bulkDeviceUpdate.php",
+				data:{
+					action: "get_affected_values_count", 
+					username: loggedUser,
+					organization:organization,
+					attributesIf: JSON.stringify(attributesIfValues)
+					//attributesThen: JSON.stringify(attributesThen)	    
+				},
+				dataType: 'json',
+				type: "POST",
+				async: true,
+				success: function (myData) 
+				{
+					console.log("data success "+ myData['content']);
+					$("#valueFound").html( myData['content'] + " values founded");
+				//	document.getElementById('devicesFound').value = myData['content'] + " devices found";
+					
+					if(attributesIfValues.length==0){
+						buildPreviewValues( JSON.stringify(attributesIfValues), true);
+					}
+					else{
+						buildPreviewValues( JSON.stringify(attributesIfValues), previewValuesFirstLoad);
+						previewValuesFirstLoad = true;
+					}
+
+				},
+				error: function (myData) 
+				{		
+					console.log(JSON.stringify(myData));
+					$("#valueFound").html(  "0 values founded");
+					console.log("data faliure"+ myData['msg']);
+				}
+			});//end of ajax get_affected*/
+		}
+		else{
+			$("#valueFound").html("0 values founded");
+
+		}
+	}
+	function findAssociationRules(useAssociationRules){
+		$.ajax({
+			url: "../api/associationRulesApi.php",
+			data:{
+				action: "suggest_associations",
+				username: loggedUser,
+				organization: organization,
+				value: "value_type"
+			},
+			dataType: 'json',
+			type: "POST",
+			async: true,
+			success: function (myData) 
+			{
+				console.log("JSON.st "+ JSON.stringify(myData['content']));
+				useAssociationRules( myData['content']);
+
+			},
+			error: function (myData) 
+			{		
+				console.log("Error" + JSON.stringify(myData));	
+			}
+		});
+	}
+
+	function useAssociationRules(content){
+		while(content.length >0){
+			var rule = content.pop();
+			gb_association_rules.push(rule);
+		}
+		viewRules();		
+	}
+
+	function viewRules(){
+		if(gb_association_rules.length >0){
+			var rule = gb_association_rules[gb_rulesCounter];
+			var htmlIf="";
+			var htmlElse="";
+			var rulesPrinted=0;
+			for(var i in rule){
+				
+				var key = i;
+				var val = rule[i];
+				if(rule !== 'lift' && rule !== 'support'){
+					if(key.search("output_") > -1){
+						console.log("output");
+						var keySplitted = key.split("output_");
+						if(val != ""){
+							htmlElse += "<tr class=\"ifrow\"><td><h3><span class=\"label label-success\">THEN</span></h3></td><td class=\"thenTd\"><select class=\"thenSelect\"><option value=\""+ keySplitted[1]+"\">"+keySplitted[1]+"</option></select></td><td class=\"fieldName\">"+val+"</td><td><i class=\"fa fa-minus\"></i></td></tr>";
+						}
+					}
+					else if(key.search("input_")>-1){
+						console.log("input")
+						var keySplitted = key.split("input_");
+						if(val != ""){
+							if (rulesPrinted == 0){
+								htmlIf +=  "<tr class=\"ifrow\"><td><h3><span class=\"label label-danger\">If</span></h3></td><td class=\"fieldTd\"><select class=\"fieldIf\"><option value=\""+ keySplitted[1] +"\">"+keySplitted[1]+"</option></select></td><td class=\"fieldEqual\"><select class=\"fieldSelectEqual\"><option value=\"IsEqual\">Is Equal</option></select><td class=\"fieldName\">"+val+"</td><td><i class=\"fa fa-minus\"></i></td></tr>";
+								rulesPrinted++;
+							}
+							else{
+								htmlIf +=  "<tr class=\"ifrow\"><td><h3><span class=\"label label-danger\">AND</span></h3></td><td class=\"fieldTd\"><select class=\"fieldIf\"><option value=\""+ keySplitted[1] +"\">"+keySplitted[1]+"</option></select></td><td class=\"fieldEqual\"><select class=\"fieldSelectEqual\"><option value=\"IsEqual\">Is Equal</option></select><td class=\"fieldName\">"+val+"</td><td><i class=\"fa fa-minus\"></i></td></tr>";
+								rulesPrinted++;
+							}
+						}
+					}
+
+				}				
+			}
+			
+			console.log("html if "+ htmlIf + " htmlElse "+ htmlElse);
+			
+			document.getElementById('ifBlockSuggestions').tBodies[0].innerHTML= htmlIf;
+			document.getElementById('decisionBlockSuggestions').tBodies[0].innerHTML= htmlElse;
+			document.getElementById('numRulesFound').innerHTML = "Rule "+ (gb_rulesCounter+1) + " of " + (gb_association_rules.length) + " founded";
+			gb_rulesCounter = (gb_rulesCounter+1)%gb_association_rules.length;
+
+			getAffectedRulesValues();
+		}
+		else{
+			document.getElementById('numRulesFound').innerHTML = "No rules available";
+			document.getElementById('ifBlockSuggestions').tBodies[0].innerHTML= "";
+			document.getElementById('decisionBlockSuggestions').tBodies[0].innerHTML= "";
+		}
+	}
+	function getAffectedRulesValues(){
+		
+		var num1 = document.getElementById('ifBlockSuggestions').tBodies[0].childElementCount;
+		var attributesIfValues = [];
+		for (var m=0; m< num1; m++)
+		{
+		//var attribute= document.getElementById('ifBlockTable').rows[m].cells[1].selectedIndex;
+
+		var num1 = document.getElementById('ifBlockSuggestions').tBodies[0].childElementCount;
+			var fieldIf= document.getElementById('ifBlockSuggestions').tBodies[0].rows.item(m).cells.item(1).childNodes[0].value;
+			var operatorIf= document.getElementById('ifBlockSuggestions').tBodies[0].rows.item(m).cells.item(2).childNodes[0].value;
+			var valueIf= document.getElementById('ifBlockSuggestions').tBodies[0].childNodes[m].childNodes[3].childNodes[0].textContent;
+			//params.newValue
+		/*	if(valueIf.localeCompare("Empty")==0){
+				valueIf = "";
+			}
+			if(fieldIf == undefined || fieldIf == null || fieldIf == ""){
+				fieldIf= "healthiness_criteria";
+			}*/
+
+			var newIf={"field": fieldIf, "operator" : operatorIf, "value": valueIf};
+			attributesIfValues.push(newIf);
+		}
+
+		if(num1 != 0){
+			$.ajax({
+				url: "../api/associationRulesApi.php",
+				data:{
+					action: "get_rules_affecting_count", 
+					username: loggedUser,
+					organization:organization,
+					value: "value_type",
+					attributesIf: JSON.stringify(attributesIfValues)
+					//attributesThen: JSON.stringify(attributesThen)	    
+				},
+				dataType: 'json',
+				type: "POST",
+				async: true,
+				success: function (myData) 
+				{
+					console.log("data success "+ myData['content']);
+					$("#rulesMatchFound").html( myData['content'] + " values founded");
+				//	document.getElementById('devicesFound').value = myData['content'] + " devices found";
+					
+					if(attributesIfValues.length==0){
+						buildPreviewAssociationRules( JSON.stringify(attributesIfValues), true);
+					}
+					else{
+						buildPreviewAssociationRules( JSON.stringify(attributesIfValues), previewRulesFirstLoad);
+						previewRulesFirstLoad = true;
+					}
+					console.log("buildPreview called");
+
+				},
+				error: function (myData) 
+				{		
+					//console.log(JSON.stringify(myData));
+					$("#rulesMatchFound").html(  "0 values founded");
+					//console.log("data faliure"+ myData['msg']);
+				}
+			});//end of ajax get_affected*/
+		}
+		else{
+			$("#valueFound").html("0 values founded");
+
+		}
+	}
+
+	$("#updateAllValuesConfirmBtn").off("click");
+	$("#updateAllValuesConfirmBtn").on("click",function(){
+		var num1 = document.getElementById('ifBlockTableValue').tBodies[0].childElementCount;
+		var num2 = document.getElementById('decisionBlockTableValue').tBodies[0].childElementCount;
+
+		if(num1 != 0 & num2 != 0){
+			var attributesIfValues = [];
+			for (var m=0; m< num1; m++)
+			{
+			//var attribute= document.getElementById('ifBlockTable').rows[m].cells[1].selectedIndex;
+
+				var fieldIf= document.getElementById('ifBlockTableValue').tBodies[0].rows.item(m).cells.item(1).childNodes[0].value;
+				var operatorIf= document.getElementById('ifBlockTableValue').tBodies[0].rows.item(m).cells.item(2).childNodes[0].value;
+				var valueIf= document.getElementById('ifBlockTableValue').tBodies[0].childNodes[m].childNodes[3].childNodes[0].value;
+
+				if(valueIf.localeCompare("Empty")==0){
+					valueIf = "";
+				}
+						
+				var newIf={"field": fieldIf, "operator" : operatorIf, "value": valueIf};
+				attributesIfValues.push(newIf);
+			}	
+			var attributesThenValues = [];
+
+			for (var m=0; m< num2; m++)
+			{
+				var fieldsThen= document.getElementById('decisionBlockTableValue').tBodies[0].rows.item(m).cells.item(1).childNodes[0].value;
+			
+				if(fieldsThen != "empty"){	
+					var valueThen= document.getElementById('decisionBlockTableValue').tBodies[0].childNodes[m].childNodes[2].childNodes[0].value;
+				
+					if(valueThen.localeCompare("Empty")==0){
+						valueThen = "";
+					}
+					var newThen = {"field": fieldsThen, "valueThen": valueThen};
+					//console.log("newThen "+ JSON.stringify(newThen));
+					attributesThenValues.push(newThen);
+				}
+			}
+
+			
+			$.ajax({
+				url: "../api/bulkDeviceUpdate.php",
+				data:{
+					action: "update_all_values", 
+					username: loggedUser,
+					organization:organization,
+					attributesIf: JSON.stringify(attributesIfValues),
+					attributesThen: JSON.stringify(attributesThenValues)	    
+				},
+				dataType: 'json',
+				type: "POST",
+				async: true,
+				success: function (myData) 
+				{
+					if(myData['status']== 'ok'){
+						$('#updateMultipleDeviceModal1').hide();
+
+						let mex= "Values has been correctly updated."
+						$('#bulkUpdateModalInnerDiv').html(mex);
+						
+						$("#bulkUpdateModal").modal('show');
+					}
+					else if(myData['status']== 'ko'){
+						$('#updateMultipleDeviceModal1').hide();
+						$("#bulkUpdateFaliure").modal('show');
+					}
+				},
+				error: function (myData) 
+				{		
+					$('#updateMultipleDeviceModal1').hide();
+					$("#bulkUpdateFaliure").modal('show');
+		
+				}
+			});
+		}	
+	});
+	$("#attrNameDelbtn").off("click");
+	$("#attrNameDelbtn").on("click", function(){
+		console.log("#attrNameDelbtn");	
+		$(this).parent('tr').remove();
+	});	
 });  // end of ready-state
 
 
@@ -2207,13 +3775,16 @@ function verifyDevice(deviceToverify){
 	var msg="";
     var regexpMAC = /^([0-9A-F]{2}[:-]){5}([0-9A-F]{2})$/;
     var answer={"isvalid":true, "message":"Your device is valid"};
+    var regex_devName=/[^a-z0-9:._-]/gi;
+    var regex_valueName=/[^a-z0-9._-]/gi;
    
     
     console.log("First checking its properties validity");
     
     if(deviceToverify.name==undefined || deviceToverify.name.length<5 || deviceToverify.name == null){ msg+= "-name is mandatory, of 5 characters at least.";}
+    if(regex_devName.test(deviceToverify.name)){ msg+= "-name cannot contain special characters. ";}
     if(deviceToverify.devicetype==undefined || deviceToverify.devicetype=="" || deviceToverify.devicetype.indexOf(' ')>=0|| deviceToverify.devicetype == null){msg+="-devicetype is mandatory.";}
-    if(deviceToverify.macaddress!=undefined && !regexpMAC.test(deviceToverify.macaddress) || deviceToverify.macaddress == null){msg+="-macaddress is mandatory and Mac format should be Letter (A-F) and number (eg. 3D:F2:C9:A6:B3:4F).";}
+    if(deviceToverify.macaddress!=undefined && deviceToverify.macaddress!="" && !regexpMAC.test(deviceToverify.macaddress)){msg+="-Mac format should be Letter (A-F) and number (eg. 3D:F2:C9:A6:B3:4F).";}
     if(deviceToverify.frequency==undefined ||deviceToverify.frequency=="" || !isFinite(deviceToverify.frequency) || deviceToverify.frequency == null){msg+= "-frequency is mandatory, and should be numeric.";}
 	if(deviceToverify.kind==undefined || deviceToverify.kind=="" || deviceToverify.kind == null){msg+="-kind is mandatory.";}
     if(deviceToverify.protocol==undefined || deviceToverify.protocol=="" || deviceToverify.protocol == null){msg+="-protocol is mandatory.";}
@@ -2236,8 +3807,9 @@ function verifyDevice(deviceToverify){
         }
         
     console.log("Now we check the model conformity");
-    
-	if(deviceToverify.model!="custom"){
+    var model_not_found=true;
+	
+    if(deviceToverify.model!="custom"){
 		
 		console.log("The model is not custom, it is "+ deviceToverify.model);
         
@@ -2248,7 +3820,8 @@ function verifyDevice(deviceToverify){
                 continue;
 				}
             
-			var modelAttributes= JSON.parse(modelsdata[i].attributes);
+			model_not_found=false;
+            var modelAttributes= JSON.parse(modelsdata[i].attributes);
                 
             console.log("model attributes " + JSON.stringify(modelAttributes));
             console.log("deviceToVerify attributes " + JSON.stringify(deviceToverify.deviceValues));
@@ -2347,7 +3920,11 @@ function verifyDevice(deviceToverify){
             
         }
         
-        else{
+        if(deviceToverify.model=="custom" || model_not_found){
+            
+            if(model_not_found){
+                deviceToverify.model="custom";
+            }
             console.log("model is custom so we check the values details");
             var all_attr_msg="";
             var all_attr_status="true";
@@ -2365,11 +3942,16 @@ function verifyDevice(deviceToverify){
 				
 				//Sara3010
 				var empty_name = false;
+                var strangeChar_name = false;
 
                 if(v.value_name==undefined || v.value_name==""){
                    attr_status=false;
 				   empty_name = true;
                }
+                else if(regex_valueName.test(v.value_name)){
+                    attr_status=false;
+                    strangeChar_name=true;
+                }
                 //set default values
                 if(v.data_type==undefined || v.data_type==""|| gb_datatypes.indexOf(v.data_type)<0){
                         attr_status=false;
@@ -2408,6 +3990,12 @@ function verifyDevice(deviceToverify){
 							all_attr_msg= all_attr_msg+", other errors in: "+attr_msg;
 						}
 					}
+                    else if(strangeChar_name){
+                        all_attr_msg= "The attribute name "+v.value_name+" cannot contain strange characters. ";
+						if(attr_msg != ""){
+							all_attr_msg= all_attr_msg+", other errors in: "+attr_msg;
+						}
+                    }
 					else{
 						all_attr_msg= "For the attribute: "+ v.value_name+", error in: "+attr_msg;
 					}
@@ -2929,7 +4517,7 @@ function insertValidDevicesByPieces_parallel(start_index,end_index,totalDevices,
 function insertValidDevicesByPieces(start_index,end_index,totalDevices,bulk_offset){
     
     $.ajax({
-			 url: "../api/contextBrokerRetrieval_e.php",
+			 url: "../api/associationRulesApi.php",
 			 data:{
 				  action: "bulkload", 
 				  username: loggedUser,
@@ -3026,7 +4614,7 @@ function insertValidDevicesByPieces(start_index,end_index,totalDevices,bulk_offs
                         end_index=totalDevices+1; 
                         
                         $.ajax({
-                            url: "../api/contextBrokerRetrieval_e.php",
+                            url: "../api/associationRulesApi.php",
                             data:{
                                 action: "delete_after_insert",
                                 username: loggedUser, 

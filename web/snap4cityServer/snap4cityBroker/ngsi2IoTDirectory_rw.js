@@ -45,6 +45,15 @@ var Promise = require('promise');
 const fs = require('fs');
 var FileSaver = require('file-saver');
 var Blob = require('blob');
+const ini = require('ini');
+const config = ini.parse(fs.readFileSync('./snap4cityBroker/db_config.ini', 'utf-8'));
+const c_host = config.database.host;
+const c_user = config.database.user;
+const c_port = config.database.port;
+const c_password = config.database.password;
+const c_database = config.database.database;
+
+
 
 /* ORION setup */ 
 var http = require("http");
@@ -53,11 +62,11 @@ var Parser = require('./Parser/Classes/Parser');
 var XMLHttpRequest = require("xmlhttprequest").XMLHttpRequest;
 
 var cid = mysql.createConnection({
-    host: "localhost",
-    port: 3306,
-    user: "root",
-    password: "!!orion__",
-    database: "iotdb"
+    host: c_host,
+    port: c_port,
+    user: c_user,
+    password: c_password,
+    database: c_database
   });
   
 
@@ -111,18 +120,16 @@ function retrieveData(xtp, link, limit, offset){
 		link = linkNoLimit[0];
 
 		link= link+"?limit="+limit+"&offset="+offset;
-		console.log("Link split "+link);
+		//console.log("Link split "+link);
 			
 		if(APIKEY !== null || APIKEY !== undefined){
-			//console.log("apikey not null" + ORION_CB + APIKEY);		
-			//console.log("link"+ link);
+
 			xhttp.open("GET", link, true);
 			xhttp.setRequestHeader("apikey",APIKEY);
 			xhttp.send(); 
 		}//end if APIKEY != NULL
 		else
 		{ //if apikey is not defined
-			//console.log("apikey null");
 			xhttp.open("GET", link, true);
 			xhttp.send(); 
 		}
@@ -132,7 +139,6 @@ function retrieveData(xtp, link, limit, offset){
 			//console.log("readyState " + this.readyState + " status " + this.status + this.responseText );
 
 			if (this.readyState == 4 && this.status == 200) {
-				console.log("ready");
 				//function that manages the output in order to create the data
 			var responseText = this.responseText;
 			//variable initialization
@@ -146,27 +152,21 @@ function retrieveData(xtp, link, limit, offset){
 			if (obj instanceof Array)
 			{
 
-			console.log("length obj "+obj.length);
-			//console.log("obj "+obj);
+			//console.log("length obj "+obj.length);
 				for (i=0; i < obj.length; i++) {
-				//	console.log("obkid: " + obj[i].id);
 					let index= obj[i].id;
-					//console.log("index "+ index);
 					
 					orionDevices.push(index);
 
 					//orionDevicesSchema[obj[i].id]= obj[i];
 					orionDevicesSchema[index]= obj[i];
 					orionDevicesType[index]= obj[i].type;
-					//console.log("oriod2"+JSON.stringify(orionDevicesSchema[obj[i].id])); qui i dati ci sono
 
-				//console.log("orionDevices id "+obj[i].id);
 				}
 			
 			}
 			else
 			{ 
-				console.log("not an array, id "+ obj.id);
 				orionDevices.push(obj.id);			
 				orionDevicesSchema[obj.id]= obj;
 				orionDevicesType[obj.id]= obj.type;
@@ -183,9 +183,8 @@ function retrieveData(xtp, link, limit, offset){
 				if(gb_value_types === undefined || gb_value_types.length <= 0){
 					cid.query(valueType, function (err, result, fields) {
 										
-						// console.log(sql);
 						if (err) {console.log("sql "+valueType); throw err;}
-					//	console.log("result qye")
+
 						for (i = 0; i < result.length; i++) {
 							gb_value_types.push(result[i].value_type);
 						}
@@ -204,7 +203,6 @@ function retrieveData(xtp, link, limit, offset){
 						if(gb_datatypes === undefined || gb_datatypes.length <= 0){
 							cid.query(dataType, function (err, result, fields) {
 
-								// console.log(sql);
 								if (err) {console.log("sql "+dataType); throw err;}
 								
 								for (i = 0; i < result.length; i++) {
@@ -225,7 +223,6 @@ function retrieveData(xtp, link, limit, offset){
 						if(gb_value_units === undefined || gb_value_units.length <= 0){
 							cid.query(valueUnit, function (err, result, fields) {
 
-							// console.log(sql);
 								if (err) {console.log("sql "+valueUnit); throw err;}
 								for (i = 0; i < result.length; i++) {
 								  gb_value_units.push(result[i].value_unit_default);
@@ -248,10 +245,9 @@ function retrieveData(xtp, link, limit, offset){
 						}
 						
 						//checking if the devices already exist in the platform
-						console.log("registeredDevices " +registeredDevices.length + " orion length "+ orionDevices.length);
+						//console.log("registeredDevices " +registeredDevices.length + " orion length "+ orionDevices.length);
 						var newDevices=orionDevices.diff(registeredDevices);
-						console.log("diff " +newDevices.length);
-						console.log("newDevices " +newDevices);
+						console.log("There are " +newDevices.length +" new devices for the broker " + ORION_CB);
 
 						newDevices = removeDuplicates(newDevices);
 						//Checking duplicates into the same array
@@ -259,11 +255,11 @@ function retrieveData(xtp, link, limit, offset){
 						var extractionRulesDev=new Object();
 						var promiseExtractionRules = new Promise(function (resolveExtraction, rejectExtraction){
 							var query  = "SELECT * FROM extractionRules where contextbroker='"+ORION_CB+"';";
-							console.log("rules");
+							//console.log("rules");
 							cid.query(query, function (err, resultRules, fields) {
 													
 							if (err) {console.log("sql "+query); throw err;}
-							console.log("extraction rules");
+							//console.log("extraction rules");
 								for(var x = 0; x < resultRules.length; x++){
 									if(resultRules[x]["kind"].localeCompare("property") == 0){
 										extractionRulesDev[resultRules[x]["id"]]=resultRules[x];
@@ -306,11 +302,11 @@ function retrieveData(xtp, link, limit, offset){
 								var topic= newDevices[i];
 							//	console.log("topic");	
 								if(orionDevicesSchema[topic] == undefined){
-									console.log("topic undefined " + topic);
+									//console.log("topic undefined " + topic);
 									continue;
 								}
 								//console.log("topic " + topic);
-
+								console.log("extract "+ JSON.stringify(extractionRulesAtt));
 								for(var j in extractionRulesAtt){
 
 									rule= extractionRulesAtt[j]["selector"];
@@ -321,13 +317,13 @@ function retrieveData(xtp, link, limit, offset){
 									
 									rule = rule.replace("PM2,5","PM2x5");
 									rule = rule.replace("PM2.5","PM2y5");
-									console.log("rule "+ rule);
+									//console.log("rule "+ rule);
 									rule = rule.slice(1,rule.length-1);
 									let jsonRules = JSON.parse(rule);
 
 									parser = new Parser();
 									let typeData = (jsonRules.type).toUpperCase();
-									console.log("jsonRules parse "+ jsonRules.param.s);
+								//	console.log("jsonRules parse "+ jsonRules.param.s);
 
 																		
 									parser.addObjRule(jsonRules,typeData);	
@@ -335,20 +331,20 @@ function retrieveData(xtp, link, limit, offset){
 									v = JSON.stringify(v);
 									v = v.replace("PM2,5","PM2x5");
 									v = v.replace("PM2.5","PM2y5");
-									console.log("v "+ v);
-									console.log("rulePre apl "+ rule);
+									//console.log("v "+ v);
+									//console.log("rulePre apl "+ rule);
 									let parserApply = parser.applyRules(v);	
-									console.log("rule " + rule +" parserApply " + JSON.stringify(parserApply));
+								//	console.log("rule " + rule +" parserApply " + JSON.stringify(parserApply));
 									var attName, value_type, data_type;
-									console.log("length" + parserApply.length);
+									//console.log("length" + parserApply.length);
 									for(var p = 0; p < parserApply.length; p++){
 									//	console.log("parserApply "+ JSON.stringify(parserApply)+ " pasr "+ parserApply[0].type);
 										if(extractionRulesAtt[j]["value_type"].startsWith("{")){
-											console.log("startsWith");
+											//console.log("startsWith");
 											let parserValue = new Parser();
 											let ruleValue = extractionRulesAtt[j]["value_type"];
 											ruleValue =JSON.stringify(ruleValue);
-											console.log("ruleValue "+ ruleValue);
+										//	console.log("ruleValue "+ ruleValue);
 											ruleValue = ruleValue.replace(/\\/g, "");
 											ruleValue = ruleValue.slice(1,rule.length-1);
 											let jsonRuleValue = JSON.parse(ruleValue);
@@ -374,13 +370,13 @@ function retrieveData(xtp, link, limit, offset){
 											if(parserApply[p].id !== undefined){
 												attName = parserApply[p].id;
 											}
-											else if(parserApply[p].id !== undefined){
-												attName = parserApply[p].id;
+											else if(parserApply[p] !== undefined){
+												attName = parserApply[p];
 											}
 											else{
 												attName = id;
 											}
-											console.log("attName "+ attName);
+											//console.log("attName "+ attName);
 										}
 										if(extractionRulesAtt[j]["data_type"] == null ||extractionRulesAtt[j]["data_type"].length == 0){
 											data_type = parserApply[p].type;
@@ -393,7 +389,7 @@ function retrieveData(xtp, link, limit, offset){
 			
 
 										let objProp = {"value_name": attName, "value_type": value_type, "data_type": data_type, "value_unit": extractionRulesAtt[j]["value_unit"], "editable": false, "healthiness_criteria" : "refresh_rate", "healthiness_value":300};
-										//console.log("objProp "+ JSON.stringify(objProp));
+										console.log("objProp "+ JSON.stringify(objProp));
 										attProperty.push(objProp);
 										sesc.push(storeAttribute(topic, objProp.value_name, objProp.data_type, objProp.value_type, objProp.value_unit, objProp.healthiness_criteria, objProp.healthiness_value, objProp.value_name));
 
@@ -441,7 +437,6 @@ function retrieveData(xtp, link, limit, offset){
 							devAttr["longitude"],devAttr["mac"],validity,verify.message,"no",ORGANIZATION, EDGE_GATEWAY_TYPE,EDGE_GATEWAY_URI,devAttr["k1"],devAttr["k2"]));
 							//console.log("Se "+ JSON.stringify(se));							   
 							
-						    // var value_type = getValueType(obj1.arr);
 
 							}//end for i 
 
@@ -456,15 +451,15 @@ function retrieveData(xtp, link, limit, offset){
 								//if there are devices to be inserted
 									var promise1 = new Promise(function(resolve, reject) {
 										insertDevices(cid, se,(res)=>{
-											console.log("resolve 1");
+											//console.log("resolve 1");
 											resolve();
 										});
 									});
 								//	console.log("sesc "+ sesc);
 									promise1.then(function(resolve){
-									//	console.log("SESC BEF "+ JSON.stringify(sesc)+ " SE "+ JSON.stringify(se));
+										//console.log("SESC BEF "+ JSON.stringify(sesc)+ " SE "+ JSON.stringify(se));
 										insertValues(cid, sesc);
-										console.log("vales");
+										//console.log("vales");
 											resolve2();					
 									});
 								
@@ -479,7 +474,7 @@ function retrieveData(xtp, link, limit, offset){
 				
 			}//end readystate == 4
 			if (this.readyState == 4 && this.status == 500) {
-				console.log("reject");			
+				//console.log("reject");			
 
 				reject();
 			}
@@ -487,17 +482,17 @@ function retrieveData(xtp, link, limit, offset){
 	});//end promiseAcquisition
 		
 	promiseAcquisition.then(function(resolve2) { 
-		console.log("result " + limit + " off ty" + offset);
+		//console.log("result " + limit + " off ty" + offset);
 		
 		if(!smallSearch){
 			offset2 = offset2+100;
 
-			console.log("promise then ok3 " + offset2);
+			//console.log("promise then ok3 " + offset2);
 			
 			xhttp = new XMLHttpRequest();  
 
 			retrieveData(xhttp, link, 100, offset2);
-			  console.log("**UPDATE**");
+			console.log("**UPDATE**");
 		}
 		else{
 			offset2 = offset2+1;
@@ -507,7 +502,7 @@ function retrieveData(xtp, link, limit, offset){
 		}
 	  },
 	  function(error) {
-			console.log("promise then error");
+			//console.log("promise then error");
 
 		if(!smallSearch){
 			smallSearch=1;
@@ -582,9 +577,8 @@ function getParam(cid)
 
 	var dataType= "SELECT data_type FROM data_types order by data_type";
 	cid.query(dataType, function (err, result, fields) {
-							console.log("result length dataType "+result.length);
+							//console.log("result length dataType "+result.length);
 
-		// console.log(sql);
 		if (err) {console.log("sql "+sql); throw err;}
 		for (i = 0; i < result.length; i++) {
 		  gb_datatypes.push(result[i].data_type);
@@ -592,9 +586,8 @@ function getParam(cid)
 	}); //query
 	var valueUnit= "SELECT DISTINCT value_unit_default FROM value_types ORDER BY value_unit_default";
 	cid.query(valueUnit, function (err, result, fields) {
-							console.log("result length valueunit "+result.length);
+						//	console.log("result length valueunit "+result.length);
 
-		// console.log(sql);
 		if (err) {console.log("sql "+sql); throw err;}
 		for (i = 0; i < result.length; i++) {
 		  gb_value_units.push(result[i].value_unit_default);
@@ -633,377 +626,11 @@ function storeDevice(user,deviceID,model,kind,type, protocol,frequency, format, 
 function storeAttribute(topic, name, data_type, value_type, value_unit, healthiness_criteria, healthiness_value){
 	return [topic, ORION_CB, name, data_type, value_type, value_unit, healthiness_criteria, healthiness_value, name];
 }
-function getAttributes(topic, extractionRulesAtt, resApply){
-	var arr = [];
 
-	/*for(var key in resApply){
-		arr.push([topic,resApply[key]["contextbroker"],res])
-			 arr.push([deviceID,cb,att.id,data_type,value_type,value_unit,"refresh_rate",300,att.id]);		
-
-	}*/
-}
-/* extract the attributes from the device value and store them in the db*/
-function storeDeviceSchema(cb, attributes, deviceSchema,deviceID){
-	var arr =[];
-	var longitude="";
-	var latitude="";
-	var ob = deviceSchema[deviceID];
-	var value_type= ""; 
-	
-	console.log("storeDeviceSchema deviceSchema[deviceID] "+ JSON.stringify(ob));
-	
-//	console.log("gb_value_units length "+ gb_value_units.length);
-
-	if(cb == 'Antwerp' && flagAntwerp){	
-		for (i=0; i < ob.length; i++){
-		att= ob[i];
-		var split = (att.id).split(".");
-	
-	if(gb_value_units.indexOf(split[1])>=0){
-		value_type = split[1];
-	}
-	else{
-	 value_type = getValueType(att.id,att.type,att.value);
-	 }
-	 var data_type = getDataType(att.id,att.type,att.value);
-	 var value_unit = getValueUnit(value_type);
-	// console.log("push "+deviceID + att.id + "value_type "+ value_type);
-	 if(value_type === null || value_type === undefined || value_type == '' || value_type == ' '){
-		value_type = 'rain';
-	 }
-	 if(data_type === null || data_type === undefined){
-		data_type = 'float';
-	 }
-	 
-	 latitude = "51.219890";
-	 longitude = "4.4034600";
-	// console.log("Device id "+ deviceID + " cb "+ cb + " att.id " + att.id + " data type "+ data_type);
-	 arr.push([deviceID,cb,att.id,data_type,value_type,value_unit,"refresh_rate",300,att.id]);		
-	}
-  }
-  else{
-	  //console.log("storeDeviceSchema" + JSON.stringify(ob));
-	  for (i=0; i < attributes.length; i++)
-	  {	
-		//console.log("for "+JSON.stringify(attributes));
-		att= attributes[i];
-		//console.log("ATT" + JSON.stringify(att));
-		if (att.name=="latitude"){
-			latitude = deviceSchema[deviceID].latitude.value;
-		}
-		else if(att.name=="geolocalization_lat"){
-			latitude=deviceSchema[deviceID].geolocalization_lat.value;
-		}	
-		//	latitude=deviceSchema[deviceID].latitude.value;
-		else if (att.name=="longitude"){
-			longitude=deviceSchema[deviceID].longitude.value;
-		}
-		else if(att.name=="geolocalization_lon"){
-			longitude = deviceSchema[deviceID].geolocalization_lon.value;
-		}
-		//	longitude=deviceSchema[deviceID].longitude.value;
-		else if (att.name=="location" && flagAntwerp){
-			longitude = deviceSchema[deviceID].location.value.coordinates[0];
-			latitude = deviceSchema[deviceID].location.value.coordinates[1];
-		}
-		else if(att.name=="location"){
-			longitude = deviceSchema[deviceID].location.value.coordinates[1].toFixed(4);
-			latitude = deviceSchema[deviceID].location.value.coordinates[0].toFixed(4);		
-		}
-
-
-		// arr.push([deviceID,cb,att.name,att.type,att.value,att.position]);
-		 value_type = getValueType(att.name,att.type,att.value);
-		 var data_type = getDataType(att.name,att.type,att.value);
-		 var value_unit = getValueUnit(value_type);
-		 //	 console.log("Device id "+ deviceID + " cb "+ cb + " att.id " + att.id + " data type "+ data_type);
-
-		 arr.push([deviceID,cb,att.name,data_type,value_type,value_unit,"refresh_rate",300,att.name]);
-	  }
-	}
-  //console.log("latitude: "+latitude + " longitude: "+ longitude);
-  return {"arr": arr, "latitude": latitude, "longitude": longitude};
-}
 
 /* extract the device schema from the NGSI-9/10 representation adopted by Orion  
 */
 
-function extractSchema(value)
-{
-	//console.log("Extract schema valueType "+ gb_value_types.length + " units " + gb_value_units.length + "data type " + gb_datatypes.length);
-
-	var attributes = [];
-	var f = ""; // identified format
-//	console.log("valore processato " + value);
-	
-	if(ORION_CB == 'Antwerp' && flagAntwerp ){
-	//console.log("extract antw");
-		attributes= parseAntwerpJSON(value);
-	}
-	else{
-	//console.log("extractorion");
-		attributes = parseOrionJSON(value);
-	}
-	// console.log("attributes "+JSON.stringify(attributes));
-	return {"format": "json", "attr": attributes};
-}
-
-function isTest(deviceSchema)
-{
-  if (deviceSchema.attr.length==1 && deviceSchema.attr[0].name=="test")
-  return true;
-  else return false;
-}
-function parseAntwerpJSON(obj)
-{
-	var attributes = [];
-  // {"id":"ARDUINO_ST_4201_1516802097","type":"Temperature","Temperature":{"type":"float","value":"20.0","metadata":{}},"geolocalization":{"type":"string","value":"45.453701,9.214914","metadata":{}},"measure_units":{"type":"string","value":"Celsius","metadata":{}},"timestamp":{"type":"integer","value":"1516802097","metadata":{}}}
-  var pos=1;
-  for (var prop in obj)
-  {
-          //console.log(obj[prop].type);
-         // console.log(obj[prop].value); 
-	if(obj[prop].type == null){
-		 attributes.push({"name": prop, "type": obj[prop].type, /* uncommented by sara 2711*/"value": obj[prop].value, 
-	 "position":pos});
-	}
-	else{
-	 attributes.push({"name": prop, "type": obj[prop].type, /* uncommented by sara 2711*/"value": obj[prop].value, 
-	 "position":pos});
-	 }
-	 pos++;
-	}
-  return attributes;
-}
-
-function parseOrionJSON(obj)
-{
-	console.log("ParseOrionJSON" + JSON.stringify(obj));
-  var attributes = [];
-  // {"id":"ARDUINO_ST_4201_1516802097","type":"Temperature","Temperature":{"type":"float","value":"20.0","metadata":{}},"geolocalization":{"type":"string","value":"45.453701,9.214914","metadata":{}},"measure_units":{"type":"string","value":"Celsius","metadata":{}},"timestamp":{"type":"integer","value":"1516802097","metadata":{}}}
-  var pos=1;
-  for (var prop in obj)
-  {
-
-    if (prop != "id" && prop != "type")
-	{
-		console.log("prop parseOrionJSON "+ prop);
-         // console.log(prop);
-         // console.log(obj[prop].type);
-         // console.logconsole.log(obj[prop].value);
-	//console.log("name:"+prop+"; type:"+obj[prop].type.toLowerCase()+"; value: "+obj[prop].value + ";position: "+pos);
-	 attributes.push({"name": prop, "type": obj[prop].type, "value": obj[prop].value, 
-	 "position":pos});
-	 
-	 pos++;
-	}
-  }
-  return attributes;
-}
-
-function getValueType(valuename,type,value){
-//deviceID, cb, att.name, att.type
-if(type != null && type != undefined){
-
-	type = returnString(type.toString());
-	type = type.toLowerCase();
-	
-	if(valuename === undefined || gb_value_units === undefined || gb_value_units.length <= 0)
-		return null;
-	
-	var name = returnString(valuename.toString());
-	name = name.toLowerCase();
-	
-		//console.log("NAME "+name);
-	//console.log("gb_value_units "+gb_value_units);
-	if(gb_value_units.indexOf(name)>=0){
-		//console.log("if name units");
-		return name;
-	}
-	if(regexTimeZone0.test(value) || regexTimeZone1.test(value) || name.localeCompare("dateobserved")==0)
-		return "timestamp";
-	if(name.localeCompare("lamax") ==0 || name.localeCompare("laeq")==0)
-		return "sound_lv";
-	
-	if(name.localeCompare("sonometerclass")==0)
-		return "audio";
-
-	if(name.localeCompare("location")==0 )
-		return "latitude_longitude";	
-		
-	if(name.localeCompare("geolocalization_lat")==0)
-		return "latitude";
-	
-	if(name.localeCompare("geolocalization_lon")==0)
-		return "longitude";
-	
-	if(name.localeCompare("description")==0 || name.localeCompare("refairqualityobservedmodel")==0 ||name.localeCompare("nome")==0 ||name.localeCompare("stazione")==0 )
-		return "entity_desc";
-		
-	if(type === undefined)
-		return null;
-	
-	if(type.localeCompare("binary")==0)
-		return "button";
-	
-	if(name.localeCompare("model")==0)
-		return "status";
-	
-	if(name.localeCompare("no")==0 || name.localeCompare("no2")==0)
-		return "NO2_concentration";
-
-	if(name.localeCompare("pm25")==0 || name.localeCompare("pm2.5")==0 )
-		return "PM2.5_concentration";		
-	
-	if(name.localeCompare("pm10")==0 )
-		return "PM10_concentration";		
-	
-	if(name.localeCompare("bc")==0)
-		return "benzene_concentration";
-	
-	if(name.localeCompare("temperature")==0 || name.localeCompare("temperatura")==0)
-		return "temperature";
-	
-	if(name.localeCompare("stato")==0 || name.localeCompare("quota")==0)
-		return "status";
-		
-	
-	if(type.localeCompare("structuredvalue")==0 && typeof(value) !== 'object' && name.localeCompare("refdevice")!=0){		
-		var splitVar = (value.toString()).split("|");
-		splitVar[0] = returnString(splitVar[0].toString());
-		
-		/*To remove blank spaces
-		for(var i = 0; i < splitVar.length; i++){
-			splitVar[i] = splitVar[i].split(' ').join('');
-			console.log("splitVar "+splitVar[i]);
-		}*/
-		if(splitVar[0].localeCompare("lamax") ==0 || splitVar[0].localeCompare("laeq")==0){
-			//console.log("sound_lv");
-			return "sound_lv";
-		}
-		/*else{
-			var vector = [];
-			//get the vector 
-			for(var i = 1; i < splitVar.length; i++){
-				vector.push(splitVar[i]);
-			}
-			var res;	
-			res = getValueType(splitVar[i],type, vector);
-			if(res != null)
-				return res;
-		}*/
-	}
-	if(typeof(value) === 'object')
-		return "latitude_longitude";
-	return null;
-	}// end if(type != null && type != undefined
-	return null;
-}
-
-function getDataType(valuename,type,value){
-//deviceID, cb, att.name, att.type
-if(type != null && type != undefined){
-
-	type = returnString(type.toString());
-	type = type.toLowerCase();
-
-	if(valuename === undefined || gb_datatypes === undefined || gb_datatypes.length <= 0)
-		return null;
-	
-	var name = returnString(valuename.toString());
-	name = name.toLowerCase();
-	
-	//If the data type is in the list
-	if(gb_datatypes.indexOf(type)>=0){
-		return type;
-	}
-	if(regexTimeZone0.test(value) || regexTimeZone1.test(value))
-		return "time";
-	
-	if(type.localeCompare("text")==0)
-		return "string";
-	
-	if(type.localeCompare("number")==0){
-			if(isInt(value))
-				return "integer";
-			if(isFloat(value))
-				return "float";
-		}
-	
-	if(type.localeCompare("structuredvalue")==0 && typeof(value)!== 'object'){		
-			console.log("value"+ value);
-		var splitVar = (value.toString()).split("|");
-		
-		splitVar[1] = returnString(splitVar[1].toString());
-		splitVar[1] = returnString(splitVar[1]);
-		//To remove blank spaces
-		/*for(var i = 0; i < splitVar.length; i++){
-			splitVar[i] = splitVar[i].split(' ').join('');
-			console.log("splitVar "+splitVar[i]);
-		}*/
-		if(isInt(splitVar[1]))
-			return "integer";
-		if(isFloat(splitVar[1]))
-			return "float";
-		
-		/*else{
-			var vector = [];
-			//get the vector 
-			for(var i = 1; i < splitVar.length; i++){
-				vector.push(splitVar[i]);
-			}
-			var res;	
-			res = getValueType(splitVar[i],type, vector);
-			if(res != null)
-				return res;
-		}*/
-	}
-	if(typeof(value) === 'object')
-		return "float";
-	return null;
-	}// end if(type != null && type != undefined
-	return null;
-}
-function getValueUnit(value){
-	//console.log("value switch "+value);
-	switch(value){
-		case "temperature": return "°C";
-		case "speed": return "km/h";
-		case "humidity": return "%";
-		case "power": return "W";
-		case "status": return "#";
-		case "pressure": return "hPa";
-		case "orientation": return "deg";
-		case "timestamp": return "s";
-		case "string": return "#";
-		case "integer":return "#";
-		case "float":return "#";
-		case "benzene_concentration": return "ppm";
-		case "NO_concentration": return "ppm";
-		case "NO2_concentration": return "ppm";
-		case "PM10_concentration": return "ppm";
-		case "PM2.5_concentration": return "ppm";
-		default: return "#";
-	}
-	
-	return null;
-}
-function returnString(str){
-	var str2 = "";
-	for(var i = 0; i < str.length; i++){
-		var c = str.charAt(i);
-		if(c.match(/^[a-zA-Z0-9_.-]*$/)){
-			str2 = str2+c;
-		}
-	}
-	return str2;
-}
-function isInt(n){
-    return Number(n) == n && n % 1 === 0;
-}
-function isFloat(n){
-    return Number(n) == n && n % 1 !== 0;
-}
 
 function verifyDevice(deviceToverify){
 	
