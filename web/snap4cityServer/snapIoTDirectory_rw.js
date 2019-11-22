@@ -149,7 +149,7 @@ router.route('/extract')
  .post(function(req, res) {
     var args = [];
 
-		registeredStub.push(req.body.contextbroker);
+		//registeredStub.push(req.body.contextbroker);
 
 		args= ['./snap4cityBroker/externalBroker.js',
 			req.body.contextbroker,
@@ -157,39 +157,52 @@ router.route('/extract')
 			req.body.ip,
 			req.body.user,
 			req.body.al,
+			req.body.ap,
 			req.body.model,
-			req.body.edge_gateway_type,
-			req.body.edge_gateway_uri,
+			"null",
+			"null",
+			//req.body.edge_gateway_type, never used
+			//req.body.edge_gateway_uri, never used
 			req.body.organization,
 			req.body.path,
 			req.body.kind,
 			req.body.apikey
 		];
-		
+	
+		console.log("invoking extract");
+	
 		const child_ngsi = spawn('node',args, {stdio: 'pipe' });
-		var promiseRes2 = new Promise(function(resolve, reject){	
+	
+		registeredStub.set(req.body.contextbroker, child_ngsi);	
+
+		//TODO how to uniform these two following Promise and function/then?
+		//correct returning
+		var promiseRes_stdout = new Promise(function(resolve, reject){	
 			child_ngsi.stdout.on('data', function(data) {
 				let result = data.toString();
 				if(result.startsWith("{") || result.localeCompare("not found\n") == 0){
 					resolve(result);
-
 				}
 			});
-					
-		})
-		promiseRes2.then(function(msg){
+		});
+		promiseRes_stdout.then(function(msg){
+			console.log("returing stdout:"+msg);
 			res.json({ message: msg});
-		});
-		
-		child_ngsi.stderr.on('data', (data) => {
-			console.log(`stderr: ${data}`);
+			child_ngsi.kill();
 		});
 
-		child_ngsi.on('close', (code) => {
-			console.log(`child process exited with code ${code}`);
-	});
-   // child.unref();
-
+		//error mngt	
+                var promiseRes_stderr = new Promise(function(resolve, reject){
+			child_ngsi.stderr.on('data', (data) => {
+                        	console.log(`stderr: ${data}`);
+				resolve(data.toString());
+	                });
+                });
+                promiseRes_stderr.then(function(msg){
+                        console.log("returing stderr:"+msg);
+                        res.json({ message: msg});
+			child_ngsi.kill();
+                });
 });
 
 //Do not put this part in production

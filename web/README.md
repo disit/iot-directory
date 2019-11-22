@@ -47,8 +47,12 @@ This component is a PHP web application
 >-gidNumber=503  
 - Edit /conf/ldap.ini
 >-ldapBaseName[prod] = "dc=ldap,dc=organization,dc=com"  
-- The “snap4cityServer” directory contains the node.js code. The service should be started with the command “node snapIoTDirectory_rw.js” 
->TODO  
+- The "snap4cityServer" directory contains the nodejs code used for IoTDirectory Server  
+>-From snap4cityServer folder, digit "npm install" to download locally the dependencies  
+>-Configure the information in snap4cityServer/snap4cityBroker/db_config.ini  
+>-TODO: Map the folder stub in apache  
+>-TODO: Copy the Parser folder snap4cityServer/snap4cityBroker  
+>-Digit "nodejs snapIoTDirectory_rw.js & > log.txt" to launch the server in background modality and to log the output in a log.txt named file  
 - Update table "limits" (in schema "profiled") and table "Organizations" (in schema "Dashboard")
 >In table limits add entry for brokerid, iotid, modelid  
 >In table Organization update entry for kb url  

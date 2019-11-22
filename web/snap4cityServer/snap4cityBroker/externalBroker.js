@@ -1,16 +1,19 @@
+console.log('entered');
+
 //values retrieved from snapIoTDirectory_cbRetrieval_c 
 var ORION_CB = process.argv[2]; 
 var DEVICE_NAME = process.argv[3];
 var ORION_ADDR = process.argv[4];
 var USER = process.argv[5];
 var ACCESS_LINK = process.argv[6];
-var MODEL = process.argv[7];
-var EDGE_GATEWAY_TYPE = process.argv[8];
-var EDGE_GATEWAY_URI = process.argv[9];
-var ORGANIZATION=process.argv[10];
-var PATH = process.argv[11];
-var KINDBROKER = process.argv[12];
-var APIKEY = process.argv[13];
+var ACCESS_PORT = process.argv[7];
+var MODEL = process.argv[8];
+var EDGE_GATEWAY_TYPE = process.argv[9];
+var EDGE_GATEWAY_URI = process.argv[10];
+var ORGANIZATION=process.argv[11];
+var PATH = process.argv[12];
+var KINDBROKER = process.argv[13];
+var APIKEY = process.argv[14];
 
 //Static values
 var ORION_PROTOCOL = "ngsi";
@@ -55,12 +58,24 @@ var http = require("http");
 
 var XMLHttpRequest = require("xmlhttprequest").XMLHttpRequest;
 
+console.log('db?');
+
+
+const ini = require('ini');
+const config = ini.parse(fs.readFileSync('./snap4cityBroker/db_config.ini', 'utf-8'));
+const c_host = config.database.host;
+const c_user = config.database.user;
+const c_port = config.database.port;
+const c_password = config.database.password;
+const c_database = config.database.database;
+
+
 var cid = mysql.createConnection({
-    host: "localhost",
-    port: 3306,
-    user: "root",
-    password: "!!orion__",
-    database: "iotdb"
+    host: c_host,
+    port: c_port,
+    user: c_user,
+    password: c_password,
+    database: c_database
   });
   
 
@@ -82,6 +97,9 @@ var offset2 = 900;
 var offset = 0;
 var smallSearch=0;
 
+if(ACCESS_PORT !== undefined && ACCESS_PORT.localeCompare("null")!==0 && ACCESS_PORT.localeCompare("")!==0  ){
+        ACCESS_LINK = ACCESS_LINK+":"+ACCESS_PORT;
+}
 
 //console.log("localeCompare if external");
 if(PATH == undefined || PATH.localeCompare("null")==0 || PATH.localeCompare("")==0  ){
@@ -107,27 +125,32 @@ function retrieveData(xtp, link){
 	var promiseAcquisition = new Promise(function(resolve2, reject){	
 		xhttp = new XMLHttpRequest();  
 
-		if(APIKEY !== null || APIKEY !== undefined){
+		if(APIKEY !== null && APIKEY !== undefined && APIKEY.localeCompare("null")!==0){
 			//console.log("apikey not null" + ORION_CB + APIKEY);		
-		//	console.log("link ss"+ link);
+			console.log("link ss"+ link);
 			xhttp.open("GET", link, true);
 			xhttp.setRequestHeader("apikey",APIKEY);
 			xhttp.send(); 
 		}//end if APIKEY != NULL
 		else
 		{ //if apikey is not defined
-		//	console.log("apikey null");
+			console.log("apikey null");
 			xhttp.open("GET", link, true);
 			xhttp.send(); 
 		}
-		
 
 		xhttp.onreadystatechange = function() {
-			//console.log("readyState " + this.readyState + " status " + this.status + this.responseText );
-			if(this.status == 404) {
-				console.log("not found");
+			console.log("readyState " + this.readyState + " status " + this.status + this.responseText );
+                        if (this.readyState == 4 && this.status == 0) {
+                                console.error("not reacheable");
+                        }
+			else if (this.readyState == 4 && this.status == 400) {
+                                console.error("path malformed");
+                        }
+			else if (this.readyState == 4 && this.status == 404) {
+				console.error("not found");
 			}
-			if (this.readyState == 4 && this.status == 200) {
+			else if (this.readyState == 4 && this.status == 200) {
 				console.log("ready");
 				//function that manages the output in order to create the data
 			var responseText = this.responseText;
@@ -256,15 +279,17 @@ function retrieveData(xtp, link){
 
 								}
 							if(resultRules.length==0){
+								console.log("extraction rules are empty");
 								rejectExtraction();
 							}
 							else{
+								console.log("extraction rules are NOT empty");
 								resolveExtraction();	
 							}
 							}); //query
 
 						});
-						
+
 						var se = [];
 						var sesc = [];
 						//console.log("nodup "+ newDevices.length);
@@ -417,7 +442,11 @@ function retrieveData(xtp, link){
 
 							}//end for i 
 
-							});//end then extraction rules
+							})//end then extraction rules
+							.catch(error => {
+								console.log("no extraction rules found, returning error msg");
+								console.error("extraction rules not found");
+							});
 					});//promise unit then 
 				});//end then promise data type
 
@@ -1137,6 +1166,7 @@ function removeDuplicates(arr){
     return unique_array
 }
 
+//this is needed???
 Array.prototype.removeDuplicatesSchema = function( arr ) {
 	//console.log ("diff");
   return this.filter( function( val ) {

@@ -2523,6 +2523,7 @@ $("#addNewDeviceCheckExternalBtn").on('click', function(){
 		url: "../api/value.php",
 		data: {
 			  action: "get_cb", 
+			  token : sessionToken,
 			  cb: contextbroker,
 			  username: loggedUser,
 			  organization:organization,
@@ -2542,6 +2543,7 @@ $("#addNewDeviceCheckExternalBtn").on('click', function(){
 					var port= content[i].port;
 					var user = loggedUser;
 					var accesslink= content[i].accesslink;
+					var accessport= content[i].accessport;
 					var model = $('#selectModelDevice').val();
 					var edge_gateway_type = $('#selectEdgeGatewayType').val();
 					var edge_gateway_uri = $('#inputEdgeGatewayUri').val();
@@ -2550,12 +2552,14 @@ $("#addNewDeviceCheckExternalBtn").on('click', function(){
 					var kind = content[i].kind;
 					var device_name = $.trim($('#inputNameDevice').val());
 					var ipa = ip + ':'+port;
+					var latid=content[i].latitude;
+					var longi=content[i].longitude;
 					if($('#selectModelDevice').val() === undefined || $('#selectModelDevice').val().length<1){
 					   model="custom";
 					}
 					console.log("ACTIVATE STUD "+ kind);
 					console.log("full link "+ accesslink+path);
-					activateStub(contextbroker,device_name,ipa,"extract",user,accesslink,model,edge_gateway_type,edge_gateway_uri,path,apikey,kind);			
+					activateStub(contextbroker,device_name,ipa,"extract",user,accesslink,accessport,model,edge_gateway_type,edge_gateway_uri,path,apikey,kind, latid, longi);			
 				}
 			}
 			
@@ -2569,15 +2573,15 @@ $("#addNewDeviceCheckExternalBtn").on('click', function(){
 	});
 	   
 });  // end of ready-state
-function activateStub(cb,deviceName, ipa,protocol,user,accesslink,model,edge_type,edge_uri,path, apikey,kind)
+function activateStub(cb,deviceName, ipa,protocol,user,accesslink,accessport,model,edge_type,edge_uri,path, apikey,kind, latid, longi)
 {
-	console.log("log "+ cb + " "+ipa+" "+accesslink+" "+model+ " api "+ apikey + " organization "+ organization + " kind "+kind);
+	console.log("log "+ cb + " "+ipa+" "+accesslink+" "+accessport+" "+model+ " api "+ apikey + " organization "+ organization + " kind "+kind);
 	var data;
 	if(apikey !== null || apikey !== undefined){
-		data = "contextbroker=" + cb + "&device_name="+ deviceName +"&ip=" + ipa + "&user=" +user+ "&al="+accesslink + "&model="+model+ "&edge_gateway_type="+edge_type+"&edge_gateway_uri="+edge_uri+"&organization="+organization+"&path="+path+"&kind="+kind+"&apikey="+apikey;
+		data = "contextbroker=" + cb + "&device_name="+ deviceName +"&ip=" + ipa + "&user=" +user+ "&al="+accesslink + "&ap="+accessport+"&model="+model+ "&edge_gateway_type="+edge_type+"&edge_gateway_uri="+edge_uri+"&organization="+organization+"&path="+path+"&kind="+kind+"&apikey="+apikey;
     }
 	else{
-		data = "contextbroker=" + cb + "&device_name="+ deviceName + "&ip=" + ipa + "&user=" +user+ "&al="+accesslink + "&model="+model+ "&edge_gateway_type="+edge_type+"&edge_gateway_uri="+edge_uri+"&organization="+organization+"&path="+path+"&kind="+kind;		
+		data = "contextbroker=" + cb + "&device_name="+ deviceName + "&ip=" + ipa + "&user=" +user+ "&al="+accesslink + "&ap="+accessport+"&model="+model+ "&edge_gateway_type="+edge_type+"&edge_gateway_uri="+edge_uri+"&organization="+organization+"&path="+path+"&kind="+kind;		
 	}
 	var service = _serviceIP + "/api/"+protocol;
 	
@@ -2596,6 +2600,15 @@ function activateStub(cb,deviceName, ipa,protocol,user,accesslink,model,edge_typ
           
         if(resp.message.indexOf("not found")==0){
             confirm("The device you entered does not exist on the Context Broker "+ cb+", modify the device's name and try again");
+        }
+	else if(resp.message.indexOf("not reacheable")==0){
+            confirm("The Context Broker "+ cb+" is not reacheable");
+        }
+	else if(resp.message.indexOf("path malformed")==0){
+            confirm("The Context Broker "+ cb+" contains an access path malformed");
+        }
+	else if(resp.message.indexOf("extraction rules not found")==0){
+            confirm("No extraction rules have been defined for the Context Broker "+ cb);
         }
         else{  
             var msg= JSON.parse(resp.message);
@@ -2624,9 +2637,23 @@ function activateStub(cb,deviceName, ipa,protocol,user,accesslink,model,edge_typ
             $("#KeyOneDeviceUser").attr("disabled", false);
 			$('#KeyTwoDeviceUser').val("");
             $("#KeyTwoDeviceUser").attr("disabled", false);
-			$('#inputLatitudeDevice').val(msg.latitude);
-            $("#inputLatitudeDevice").attr("disabled", false);
-			$('#inputLongitudeDevice').val(msg.longitude);
+			console.log(msg.latitude);
+			if (msg.latitude!==undefined)
+				$('#inputLatitudeDevice').val(msg.latitude);
+			else{ 
+				$('#inputLatitudeDevice').val(latid);
+				msg.latitude=latid;
+			}
+			console.log(latid);
+		            $("#inputLatitudeDevice").attr("disabled", false);
+			console.log(msg.longitude);
+			if (msg.longitude!==undefined)
+				$('#inputLongitudeDevice').val(msg.longitude);
+			else {
+				$('#inputLongitudeDevice').val(longi);
+				msg.longitude=longi;
+			}
+			console.log(longi);
             $("#inputLongitudeDevice").attr("disabled", false);
             drawMap1(msg.latitude, msg.longitude, 2);
             

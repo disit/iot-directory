@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+	<head>
+	    <meta charset="utf-8">
+	    <title></title>
+	</head>
+	<body>
+		<form action="/sensor">
+		    <label for="sensor_id">Sensor id</label>
+		    <input type="text" id="sensor_id" name="id_sensore" value="19020"><br/>
+
+		    <label for="start_date">Start date</label>
+		    <input type="datetime-local" id="start_date" name="start_date" value = "2018-01-01T00:00"/><br/>
+
+		    <label for="end_date">End date</label>
+		    <input type="datetime-local" id="end_date" name="end_date" value = "2020-01-01T00:00"/><br/>
+
+		    <button type="submit" name="button">Get data</button>
+		</form>
+	</body>
+</html>
