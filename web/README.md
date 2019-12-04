@@ -51,7 +51,6 @@ This component is a PHP web application
 >-From snap4cityServer folder, digit "npm install" to download locally the dependencies  
 >-Configure the information in snap4cityServer/snap4cityBroker/db_config.ini  
 >-TODO: Map the folder stub in apache  
->-TODO: Copy the Parser folder snap4cityServer/snap4cityBroker  
 >-Digit "nodejs snapIoTDirectory_rw.js & > log.txt" to launch the server in background modality and to log the output in a log.txt named file  
 - Update table "limits" (in schema "profiled") and table "Organizations" (in schema "Dashboard")
 >In table limits add entry for brokerid, iotid, modelid  
