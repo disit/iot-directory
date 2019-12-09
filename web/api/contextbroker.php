@@ -18,13 +18,11 @@ header("Content-type: application/json");
 header("Access-Control-Allow-Origin: *\r\n");
 include ('../config.php');
 include ('common.php');
-// session_start();
 $link = mysqli_connect($host, $username, $password) or die("failed to connect to server !!");
 mysqli_select_db($link, $dbname);
 
 //Altrimenti restituisce in output le warning
 error_reporting(E_ERROR | E_NOTICE);
-
 
 if(!$link->set_charset("utf8")) 
 {
@@ -32,9 +30,9 @@ if(!$link->set_charset("utf8"))
 }
 
 if(isset($_REQUEST['action']) && !empty($_REQUEST['action'])) 
-    {
+{
         $action = $_REQUEST['action'];
-    }
+}
 else
 {
     exit();
@@ -42,7 +40,6 @@ else
 
 require '../sso/autoload.php';
 use Jumbojett\OpenIDConnectClient;
-
 
 if (isset($_REQUEST['nodered']))
 {
@@ -90,14 +87,15 @@ if ($action=="insert")
 	$path = mysqli_real_escape_string($link, $_REQUEST['path']);
 	$visibility = mysqli_real_escape_string($link, $_REQUEST['visibility']);
 	$sha = mysqli_real_escape_string($link, $_REQUEST['sha']);
+	$urlnificallback = mysqli_real_escape_string($link, $_REQUEST['urlnificallback']);
 	$organization = mysqli_real_escape_string($link, $_REQUEST['organization']);
 	$username = mysqli_real_escape_string($link, $_REQUEST['username']);
  
  if($accessToken!=""){   
     checkRegisterOwnerShipObject($accessToken, 'BrokerID',$result);
     if ($result["status"]=='ok'){ 
-        $q = "INSERT INTO contextbroker(name, ip, kind, protocol, version, port, latitude, longitude, login, password, accesslink, accessport, path, visibility, sha, organization) " .
-		 "VALUES('$name', '$ip', '$kind', '$protocol', '$version', '$port', '$latitude', '$longitude', '$login', '$password', '$accesslink','$accessport', '$path', '$visibility', '$sha', '$organization')";
+        $q = "INSERT INTO contextbroker(name, ip, kind, protocol, version, port, latitude, longitude, login, password, accesslink, accessport, path, visibility, sha, organization, urlnificallback) " .
+		 "VALUES('$name', '$ip', '$kind', '$protocol', '$version', '$port', '$latitude', '$longitude', '$login', '$password', '$accesslink','$accessport', '$path', '$visibility', '$sha', '$organization', '$urlnificallback')";
 	   $r = mysqli_query($link, $q);
     }
 
@@ -105,7 +103,7 @@ if ($action=="insert")
 	{
 		logAction($link,$username,'contextbroker','insert',$name,$organization,'insertion CB into database','success');
 
-        $result["status"]='ok';
+        	$result["status"]='ok';
 		$result["log"].='\n\r action: insert ok. ' . $q;
 		    $ownmsg = array();
 			$ownmsg["elementId"]=$organization . ':' . $name; // I am using the new identifier
@@ -117,6 +115,31 @@ if ($action=="insert")
             registerOwnerShipObject($ownmsg, $accessToken, 'BrokerID',$result);
             if($result["status"]=='ok'){
                 logAction($link,$username,'contextbroker','insert',$name,$organization,'Registering the ownership of CB','success');
+
+		//if internal and ngsi, try to subscribe
+		if ($kind === "internal" && $protocol ==="ngsi")
+		{
+			nificallback_create($ip, $port, $name, $urlnificallback, $result);//TODO uniform with below (update scenario), same code is there
+			//save subscription_id
+	                $q = "UPDATE contextbroker SET subscription_id='".$result["content"]."' WHERE name='$name';";
+	                $r = mysqli_query($link, $q);
+        	        if($r)
+                	{
+                                logAction($link,$username,'contextbroker','insert',$name,$organization,'Subscribe URL NIFI CALLBACK','success');
+                                $result["status"]='ok';
+                                $result["log"].='\n\r action: subscribe ok. ' . $q;
+	                }
+        	        else
+                	{
+                                logAction($link,$username,'contextbroker','insert',$name,$organization,'Subscribe URL NIFI CALLBACK','failure');
+                                $result["status"]='ko';
+                                $result["error_msg"] = "Error occurred when registering the subscription" ;
+                                $result["log"] = "\n\r Error: An error occurred when subscription <br/>" .
+                                $result["msg"] = "Error: An error occurred when subscribe $name. <br/>" .
+                                                   mysqli_error($link) .
+                                                   ' Please enter again the context broker';
+	                }
+		}
             }
             else{
                 logAction($link,$username,'contextbroker','insert',$name,$organization,'Registering the ownership of CB','failure');
@@ -164,87 +187,169 @@ if ($action=="update")
 	$organization = mysqli_real_escape_string($link, $_REQUEST['organization']);
 	$obj_organization = mysqli_real_escape_string($link, $_REQUEST['obj_organization']);
 	$username = mysqli_real_escape_string($link, $_REQUEST['username']);
-	
-	$q = "UPDATE contextbroker SET name = '$name', kind = '$kind', ip = '$ip', port = '$port', protocol = '$protocol', version = '$version', latitude = '$latitude', longitude = '$longitude', login = '$login', password = '$password', accesslink = '$accesslink', accessport = '$accessport', path = '$path', visibility = '$visibility', sha = '$sha', organization='$organization' WHERE name = '$name' and organization='$organization';";
-	$r = mysqli_query($link, $q);
+	$urlnificallback = mysqli_real_escape_string($link, $_REQUEST['urlnificallback']);
 
+	//get the old urlnificallback info to eventually update
+	$q ="SELECT ip, port, urlnificallback, subscription_id FROM iotdb.contextbroker where name='$name'";
+	$r = mysqli_query($link, $q);
 	if($r)
-	{
+        {
+		while($row = mysqli_fetch_assoc($r))
+                {
+			$old_ip=$row["ip"];
+			$old_port=$row["port"];
+			$old_urlnificallback=$row["urlnificallback"];
+			$old_subscription_id=$row["subscription_id"];
+		}
+	
+		$q = "UPDATE contextbroker SET name = '$name', kind = '$kind', ip = '$ip', port = '$port', protocol = '$protocol', version = '$version', latitude = '$latitude', longitude = '$longitude', login = '$login', password = '$password', accesslink = '$accesslink', accessport = '$accessport', path = '$path', visibility = '$visibility', sha = '$sha', organization='$organization', urlnificallback='$urlnificallback'  WHERE name = '$name' and organization='$organization';";
+		$r = mysqli_query($link, $q);
+
+		if($r)
+		{
+		        $ownmsg = array();
+		        $ownmsg["elementId"]=$obj_organization . ':' . $name; // I am using the new identifier	
+		        $ownmsg["elementName"]=$obj_organization . ':' . $name;				    
+		        $ownmsg["elementUrl"]=$accesslink;
+		        $ownmsg["elementType"]="BrokerID";
+		        registerOwnerShipObject($ownmsg, $accessToken, 'BrokerID',$result);
 		
-        $ownmsg = array();
-        $ownmsg["elementId"]=$obj_organization . ':' . $name; // I am using the new identifier	
-        $ownmsg["elementName"]=$obj_organization . ':' . $name;				    
-        $ownmsg["elementUrl"]=$accesslink;
-        $ownmsg["elementType"]="BrokerID";
-        registerOwnerShipObject($ownmsg, $accessToken, 'BrokerID',$result);
+		        if($result["status"]=='ok')
+			{
+				$result["log"].='\n\r action: update ok. ' . $q;  
+				logAction($link,$username,'contextbroker','update',$name,$organization,'','success');
+
+				//update subscription if different urlnificallback
+				if (($old_urlnificallback !== $urlnificallback || $old_ip !== $ip || $old_port != $port)&&($urlnificallback!=='null'))
+				{
+					$result["log"] .= '\n\r urlnificallback is changed to: '.$urlnificallback.' from '.$old_urlnificallback;
+					if ($old_subscription_id!=='undefined' && $old_subscription_id!=='' && $old_subscription_id!=='FAILED')
+					{
+						nificallback_delete($old_ip, $old_port, $old_subscription_id, $name, $result);
+					}
+					nificallback_create($ip, $port, $name, $urlnificallback, $result);//TODO uniform with above (insert scenario), same code is there
+                        		//save subscription_id
+			                $q = "UPDATE contextbroker SET subscription_id='".$result["content"]."' WHERE name='$name';";
+                        		$r = mysqli_query($link, $q);
+			                if($r)
+                        		{
+			               		logAction($link,$username,'contextbroker','insert',$name,$organization,'Subscribe URL NIFI CALLBACK','success');
+                        			$result["status"]='ok';
+			                        $result["log"].='\n\r action: subscribe ok. ' . $q;
+			                }
+                        		else
+			                {
+                        			logAction($link,$username,'contextbroker','insert',$name,$organization,'Subscribe URL NIFI CALLBACK','failure');
+			                        $result["status"]='ko';
+                        			$result["error_msg"] = "Error occurred when registering the subscription" ;
+			                        $result["log"] = "\n\r Error: An error occurred when subscription <br/>" .
+                        			$result["msg"] = "Error: An error occurred when subscribe $name. <br/>" .
+                                                	   mysqli_error($link) .
+	                                                   ' Please enter again the context broker';
+					}
+				}
+		        }
+		        else
+			{
+				logAction($link,$username,'contextbroker','update',$name,$organization,'in register ownership','failure');
+        		}
+		}
+		else
+		{
+			logAction($link,$username,'contextbroker','update',$name,$organization,'','failure');
 		
-        if($result["status"]=='ok'){
-          $result["log"].='\n\r action: update ok. ' . $q;  
-          logAction($link,$username,'contextbroker','update',$name,$organization,'','success');
-		
-        }
-        else{
-            logAction($link,$username,'contextbroker','update',$name,$organization,'in register ownership','failure');
-		
-        }
-		//
-	}
-	else
-	{
-		logAction($link,$username,'contextbroker','update',$name,$organization,'','failure');
-		
-		 $result["status"]='ko';
-		 $result["error_msg"] = "Error occurred when updating the context broker $name. <br/>. " ;
-		 $result["msg"] = "Error: An error occurred when updating the context broker $name. <br/>" .
+			 $result["status"]='ko';
+			 $result["error_msg"] = "Error occurred when updating the context broker $name. <br/>. " ;
+			 $result["msg"] = "Error: An error occurred when updating the context broker $name. <br/>" .
 						   mysqli_error($link) .
 						   ' Please enter again the context broker';
-		 $result["log"] = "\n\r Error: An error occurred when updating the context broker $name. <br/>" .
+			 $result["log"] = "\n\r Error: An error occurred when updating the context broker $name. <br/>" .
 						   mysqli_error($link);				   
+		}
+	}
+	else 
+	{
+		logAction($link,$username,'contextbroker','update',$name,$organization,'','failure');
+
+                $result["status"]='ko';
+                $result["error_msg"] = "Error occurred when reading-updating the context broker $name. <br/>. " ;
+                $result["msg"] = "Error: An error occurred when reading-updating the context broker $name. <br/>" .
+                                                   mysqli_error($link) .
+                                                   ' Please enter again the context broker';
+                $result["log"] = "\n\r Error: An error occurred when reading-updating the context broker $name. <br/>" .
+                                                   mysqli_error($link);
 	}
 	my_log($result);
 	mysqli_close($link);
 }
 else if ($action=="delete")
 {
-      $name = mysqli_real_escape_string($link, $_REQUEST['name']);      
-      $organization = mysqli_real_escape_string($link, $_REQUEST['organization']);      
-	  $username = mysqli_real_escape_string($link, $_REQUEST['username']);
+	$name = mysqli_real_escape_string($link, $_REQUEST['name']);      
+	$organization = mysqli_real_escape_string($link, $_REQUEST['organization']);      
+	$username = mysqli_real_escape_string($link, $_REQUEST['username']);
 
-      $q = "DELETE FROM contextbroker WHERE name = '$name' and organization='$organization';";
+	//firstly retrieve data to invoke the unsubscription 
+	$q = "SELECT * FROM contextbroker WHERE name='$name'";
+	$r = mysqli_query($link, $q);
+	if($r)
+	{
+		//if internal and ngsi, try to unsubscribe
+		while($row = mysqli_fetch_assoc($r))
+		{
+		        if ($row["kind"] === "internal" && $row["protocol"] === "ngsi")
+        		{
+				nificallback_delete($row["ip"], $row["port"], $row["subscription_id"], $name, $result);
+			}
+		}
+	
+	      $q = "DELETE FROM contextbroker WHERE name = '$name' and organization='$organization';";
 	  
-      $r = mysqli_query($link, $q);
+	      $r = mysqli_query($link, $q);
 
-      if($r)
-	  {
-          $result["status"]='ok';
+	      if($r)
+		  {
+	          $result["status"]='ok';
           
-          if($accessToken!=""){
-              $elementId=$organization . ':' . $name;
-              removeOwnerShipObject($elementId,$accessToken,"BrokerID",$result);
-          }
-          if($result["status"]='ok'){
-              $result["log"].='\n\r action: delete ok. ' . $q;
-              logAction($link,$username,'contextbroker','delete',$name,$organization,'','success');
-          }
-          else{
-              $result["log"].='\n\r action: delete ok from database, delete Ownership failed. ';
-              logAction($link,$username,'contextbroker','delete',$name,$organization,'delete ok from database, delete Ownership failed.','failure');
-          }
+        	  if($accessToken!=""){
+	              $elementId=$organization . ':' . $name;
+        	      removeOwnerShipObject($elementId,$accessToken,"BrokerID",$result);
+	          }
+        	  if($result["status"]='ok'){
+	              $result["log"].='\n\r action: delete ok. ' . $q;
+        	      logAction($link,$username,'contextbroker','delete',$name,$organization,'','success');
+	          }
+        	  else{
+	              $result["log"].='\n\r action: delete ok from database, delete Ownership failed. ';
+        	      logAction($link,$username,'contextbroker','delete',$name,$organization,'delete ok from database, delete Ownership failed.','failure');
+	          }
 		
-	  }
-	  else
-	  {
-		logAction($link,$username,'contextbroker','delete',$name,$organization,'','faliure');
-		 $result["status"]='ko';
-		 $result["error_msg"] = 'Context broker ' . $name . ' &nbsp; deletion failed. ';
-		 $result["msg"] = 'Context broker <b>' . $name . '</b> &nbsp; deletion failed, ' .
+		  }
+		  else
+		  {
+			logAction($link,$username,'contextbroker','delete',$name,$organization,'','faliure');
+			 $result["status"]='ko';
+			 $result["error_msg"] = 'Context broker ' . $name . ' &nbsp; deletion failed. ';
+			 $result["msg"] = 'Context broker <b>' . $name . '</b> &nbsp; deletion failed, ' .
 						   mysqli_error($link) . 
 						   ' Please enter again.';
-		 $result["log"] = '\n\r Context broker <b>' . $name . '</b> &nbsp; deletion failed, ' .
-						   mysqli_error($link) . $q;				   
-	  }
-	  my_log($result);
-	  mysqli_close($link);
+			 $result["log"] = '\n\r Context broker <b>' . $name . '</b> &nbsp; deletion failed, ' .
+							   mysqli_error($link) . $q;				   
+		  }
+	}
+	else {
+		logAction($link,$username,'contextbroker','delete',$name,$organization,'','failure');
+                $result["status"]='ko';
+                $result["error_msg"] = 'Context broker ' . $name . ' &nbsp; deletion failed. Not found. ';
+                $result["msg"] = 'Context broker <b>' . $name . '</b> &nbsp; deletion failed, Not Found' .
+                                                   mysqli_error($link) .
+                                                   ' Please enter again.';
+                $result["log"] = '\n\r Context broker <b>' . $name . '</b> &nbsp; deletion failed, Not found' .
+                                                           mysqli_error($link) . $q;
+
+	}
+	
+	my_log($result);
+	mysqli_close($link);
 }
 else if($action == 'get_all_contextbroker')
 {

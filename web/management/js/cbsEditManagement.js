@@ -8,79 +8,37 @@ function showEditCbModal()
     cbnamesArray = new Array();
     editCbConditionsArray['inputIpCBM'] = false;
     editCbConditionsArray['inputPortCBM'] = false;
-    //editCbConditionsArray['selectProtocolCB'] = false;
     editCbConditionsArray['inputLatitudeCBM'] = false;
     editCbConditionsArray['inputLongitudeCBM'] = false;
-   // editCbConditionsArray['inputLoginCBM'] = true;
-    //editCbConditionsArray['inputPasswordCBM'] = true;
-
-     //$("#editContextBrokerConfirmBtn").attr("disabled", true);
-	 
-	 
+    editCbConditionsArray['inputUrlOrionCallbackM'] = false;
 	
 	$("#editInfoTabCB #inputIpCBM").on('input', checkEditCbIp);
 	$("#editInfoTabCB #inputIpCBM").on('input', checkEditCbConditions);
 	
 	$("#editInfoTabCB #inputPortCBM").on('input', checkEditCbPort);
 	$("#editInfoTabCB #inputPortCBM").on('input', checkEditCbConditions);
-	
+
+	$("#editInfoTabCB #selectProtocolCBM").on('change', checkEditCbUrlOrionCallback);
+        $("#editInfoTabCB #selectProtocolCBM").on('change', checkEditCbConditions);
+
+        $("#editInfoTabCB #selectKindCBM").on('change', checkEditCbUrlOrionCallback);
+        $("#editInfoTabCB #selectKindCBM").on('change', checkEditCbConditions);
 	
 	$("#editGeoPositionTabCB #inputLatitudeCBM").on('input', checkEditCbLatitude);
 	$("#editGeoPositionTabCB #inputLatitudeCBM").on('input', checkEditCbConditions);
 	
 	$("#editGeoPositionTabCB #inputLongitudeCBM").on('input', checkEditCbLongitude);
 	$("#editGeoPositionTabCB #inputLongitudeCBM").on('input', checkEditCbConditions);
-	
-	/* 
-	$("#editSecurityTabCB #inputLoginCBM").on('input', checkEditCbLogin);
-	$("#editSecurityTabCB #inputLoginCBM").on('input', checkEditCbConditions);
-	
-	$("#editSecurityTabCB #inputPasswordCBM").on('input', checkEditCbpassword);
-	$("#editSecurityTabCB #inputPasswordCBM").on('input', checkEditCbConditions);
 
- */
-
+        $("#editSubscriptionTabCB #inputUrlOrionCallbackM").on('input', checkEditCbUrlOrionCallback);
+        $("#editSubscriptionTabCB #inputUrlOrionCallbackM").on('input', checkEditCbConditions);
+	
 	checkEditCbIp();
 	checkEditCbPort();
 	checkEditCbLatitude();
 	checkEditCbLongitude();
-	//checkEditCbLogin();
-	//checkEditCbpassword();
-
-
-     
+	checkEditCbUrlOrionCallback();
 }
-
-/* 
-function checkEditCbName()
-{
-    var message = null;
-    
-    if($("#editInfoTabCB #inputNameCBM").val().length === 0)
-    {
-        $("#inputNameCBMMsg").css("color", "red");
-        message = 'Context Broker name is mandatory';
-        editCbConditionsArray['inputNameCBM'] = false;
-    }
-    else if($("#editInfoTabCB #inputNameCBM").val().length < 5)
-    {
-        $("#inputNameCBMMsg").css("color", "red");
-        message = 'Context Broker (at least 5 chars long)';
-        editCbConditionsArray['inputNameCBM'] = false;
-    }
-    else
-    {
-		   $("#inputNameCBMMsg").css("color", "#337ab7");
-            message = 'Ok';
-            editCbConditionsArray['inputNameCBM'] = true;
-        
-    }
-    
-    $("#inputNameCBMMsg").html(message);
-}
-
- */
-
 
 function checkEditCbIp()
 {
@@ -269,3 +227,39 @@ function checkEditCbConditions()
         $("#editContextBrokerConfirmBtn").attr("disabled", true);
     }
 }
+
+function checkEditCbUrlOrionCallback()
+{
+    var message = null;
+    var pattern = /^(http:\/\/www\.|https:\/\/www\.|http:\/\/|https:\/\/)?[a-z0-9./:]+$/
+    var kind = document.getElementById("selectKindCBM").value;
+    var protocol = document.getElementById("selectProtocolCBM").value;
+    var url = document.getElementById("inputUrlOrionCallbackM").value;
+
+    console.log("kind:"+kind+" protocol:"+protocol+" value:"+url);
+
+    if ((kind === 'internal')&&(protocol === 'ngsi')){
+        if(url === '')
+        {
+                message = 'Url Orion Callback is mandatory';
+                editCbConditionsArray['inputUrlOrionCallbackM'] = false;
+                $("#selectUrlOrionCallbackMsgM").css("color", "red");
+        }
+        else if(!pattern.test(url))
+        {
+                message = 'Url Orion Callback is malformed';
+                editCbConditionsArray['inputUrlOrionCallbackM'] = false;
+                $("#selectUrlOrionCallbackMsgM").css("color", "red");
+        }
+        else
+        {
+                message = 'Ok';
+                editCbConditionsArray['inputUrlOrionCallbackM'] = true;
+                $("#selectUrlOrionCallbackMsgM").css("color", "#337ab7");
+        }
+    }
+    //else is not considered because this tab is not showed
+
+    $("#selectUrlOrionCallbackMsgM").html(message);
+}
+

@@ -5,19 +5,15 @@ var addCbConditionsArray = new Array();
 function showAddCbModal()
 {
     cbnamesArray = new Array();
-    //addCbConditionsArray = new Array();
     addCbConditionsArray['inputNameCB'] = false;
     addCbConditionsArray['inputIpCB'] = false;
     addCbConditionsArray['inputPortCB'] = false;
-    //addCbConditionsArray['selectProtocolCB'] = false;
     addCbConditionsArray['inputLatitudeCB'] = false;
     addCbConditionsArray['inputLongitudeCB'] = false;
-    // addCbConditionsArray['inputLoginCB'] = true;
-    // addCbConditionsArray['inputPasswordCB'] = true;
+    addCbConditionsArray['inputUrlOrionCallback'] = false;
 
-     $("#addContextBrokerConfirmBtn").attr("disabled", true);
+	$("#addContextBrokerConfirmBtn").attr("disabled", true);
 
-	
 	$("#infoTabCB #inputNameCB").on('input', checkCbName); 
 	$("#infoTabCB #inputNameCB").on('input', checkAddCbConditions);
 	
@@ -26,7 +22,12 @@ function showAddCbModal()
 	
 	$("#infoTabCB #inputPortCB").on('input', checkCbPort);
 	$("#infoTabCB #inputPortCB").on('input', checkAddCbConditions);
+
+	$("#infoTabCB #selectProtocolCB").on('change', checkCbUrlOrionCallback);
+	$("#infoTabCB #selectProtocolCB").on('change', checkAddCbConditions);
 	
+	$("#infoTabCB #selectKindCB").on('change', checkCbUrlOrionCallback);
+	$("#infoTabCB #selectKindCB").on('change', checkAddCbConditions);
 	
 	$("#geoPositionTabCB #inputLatitudeCB").on('input', checkCbLatitude);
 	$("#geoPositionTabCB #inputLatitudeCB").on('input', checkAddCbConditions);
@@ -34,25 +35,18 @@ function showAddCbModal()
 	$("#geoPositionTabCB #inputLongitudeCB").on('input', checkCbLongitude);
 	$("#geoPositionTabCB #inputLongitudeCB").on('input', checkAddCbConditions);
 	
-	// $("#securityTabCB #inputLoginCB").on('input', checkCbLogin);
-	// $("#securityTabCB #inputLoginCB").on('input', checkAddCbConditions);
-	
-	// $("#securityTabCB #inputPasswordCB").on('input', checkCbpassword);
-	// $("#securityTabCB #inputPasswordCB").on('input', checkAddCbConditions);
-	
+	$("#subscriptionTabCB #inputUrlOrionCallback").on('input', checkCbUrlOrionCallback);
+	$("#subscriptionTabCB #inputUrlOrionCallback").on('input', checkAddCbConditions);
 	
 	checkCbName();
 	checkCbIp();
 	checkCbPort();
 	checkCbLatitude();
 	checkCbLongitude();
-	// checkCbLogin();
-	// checkCbpassword();
+	checkCbUrlOrionCallback();
 	
-	 $("#addContextBrokerModal").modal('show');
-     
+	$("#addContextBrokerModal").modal('show');
 }
-
 
 function checkCbName()
 {
@@ -286,4 +280,41 @@ function checkAddCbConditions()
     {
         $("#addContextBrokerConfirmBtn").attr("disabled", true);
     }
+}
+
+function checkCbUrlOrionCallback()
+{
+    var message = null;
+    var pattern = /^(http:\/\/www\.|https:\/\/www\.|http:\/\/|https:\/\/)?[a-z0-9./:]+$/
+    var kind = document.getElementById("selectKindCB").value;
+    var protocol = document.getElementById("selectProtocolCB").value;
+    var url = document.getElementById("inputUrlOrionCallback").value;
+
+    console.log("kind:"+kind+" protocol:"+protocol+" value:"+url);
+
+    if ((kind === 'internal')&&(protocol === 'ngsi')){
+	if(url === '')
+	{
+		message = 'Url Orion Callback is mandatory';
+	        addCbConditionsArray['inputUrlOrionCallback'] = false;
+	        $("#selectUrlOrionCallbackMsg").css("color", "red");
+	}
+	else if(!pattern.test(url))
+	{
+		message = 'Url Orion Callback is malformed';
+		addCbConditionsArray['inputUrlOrionCallback'] = false;
+		$("#selectUrlOrionCallbackMsg").css("color", "red");
+	}
+	else
+	{
+        	message = 'Ok';
+	        addCbConditionsArray['inputUrlOrionCallback'] = true;
+	        $("#selectUrlOrionCallbackMsg").css("color", "#337ab7");
+	}
+    }
+    else
+	addCbConditionsArray['inputUrlOrionCallback'] = true;
+    //else is not considered because this tab is not showed
+
+    $("#selectUrlOrionCallbackMsg").html(message);
 }

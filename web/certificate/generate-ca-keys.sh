@@ -36,4 +36,4 @@ chown www-data:www-data certsdb
 chown www-data:www-data newcerts
 
 openssl req -config ca.cnf -new -newkey rsa:4096 -keyout private/ca-key.pem -out certreqs/ca-csr.pem -passout $IOTDIR_CA_PASSWORD
-openssl ca -batch -create_serial -config ca.cnf -days 9999 -selfsign -extensions v3_ca_has_san -out ca-crt.pem -keyfile private/ca-key.pem -passin $IOTDIR_CA_PASSWORD -cert ca-crt.pem -infiles certreqs/ca-csr.pem
+openssl ca -batch -create_serial -config ca.cnf -days 9999 -selfsign -extensions v3_ca_has_san -out ca-crt.pem -keyfile private/ca-key.pem -passin $IOTDIR_CA_PASSWORD -infiles certreqs/ca-csr.pem

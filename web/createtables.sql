@@ -90,6 +90,8 @@ CREATE TABLE `contextbroker` (
   `version` varchar(50) DEFAULT NULL,
   `path` varchar(100) DEFAULT NULL,
   `kind` set('external','internal') DEFAULT NULL,
+  `subscription_id` varchar(40) DEFAULT NULL,
+  `urlnificallback` varchar(100) DEFAULT NULL,
   PRIMARY KEY (`name`),
   UNIQUE KEY `ip` (`ip`,`port`),
   UNIQUE KEY `uri` (`uri`),

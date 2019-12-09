@@ -76,7 +76,7 @@ To be executed for any new Orion Broker you want to add:
 - configure information for the new Orion Broker, editing exporting variable. Note, the Common name has to be different from the CA Common Name
 >root@debian:/home/debian/iot-directory/certificate# vi generate-server-keys.sh  
 - generate Orion Broker information
->root@debian:/home/debian/iot-directory/certificate# ./generate-ca-keys.sh  
+>root@debian:/home/debian/iot-directory/certificate# ./generate-server-keys.sh  
 - take note of the specified IOTDIR_SERVER_PK12_PASSWORD and backup the private/server-IOTDIR_SERVER_COMMON_NAME-key.pem, certsdb/server-$IOTDIR_SERVER_COMMON_NAME-crt.pem, server-$IOTDIR_SERVER_COMMON_NAME-crt.p12 in a safe storage
 - copy the ca-crt.pem and server-$IOTDIR_SERVER_COMMON_NAME-crt.p12 in the Orion Broker VM (usually /opt/tomcat/conf)
 
@@ -87,8 +87,8 @@ In the Orion Broker VM
 >root@iotobsf:/opt/tomcat/conf# ./generate-server-conf.sh
 - configure tomcat conf/server.xml with proper password you insert before
 >root@iotobsf:/opt/tomcat/conf# vi server.xml 
-><Connector allowHostHeaderMismatch="true" SSLEnabled="true" clientAuth="want" truststoreFile="conf/caCerts.jks" truststorePass="<IOTDIR_SERVER_TRUSTSTORE_PASSWORD>" keystoreFile="conf/tomcat.keystore" keystorePass="<IOTDIR_SERVER_PK12_PASSWORD>" maxThreads="200" port="8443" protocol="org.apache.coyote.http11.Http11NioProtocol" scheme="https" secure="true" sslProtocol="TLS" sslEnabledProtocols="TLSv1.3,TLSv1.2,TLSv1.1" ciphers="TLS_RSA_WITH_AES_128_CBC_SHA, TLS_RSA_WITH_AES_256_CBC_SHA"/>  
--restart tomcat  
+> <Connector allowHostHeaderMismatch="true" SSLEnabled="true" clientAuth="want" truststoreFile="conf/caCerts.jks" truststorePass="<IOTDIR_SERVER_TRUSTSTORE_PASSWORD>" keystoreFile="conf/tomcat.keystore" keystorePass="<IOTDIR_SERVER_PK12_PASSWORD>" maxThreads="200" port="8443" protocol="org.apache.coyote.http11.Http11NioProtocol" scheme="https" secure="true" sslProtocol="TLS" sslEnabledProtocols="TLSv1.3,TLSv1.2,TLSv1.1" ciphers="TLS_RSA_WITH_AES_128_CBC_SHA, TLS_RSA_WITH_AES_256_CBC_SHA"/>  
+- restart tomcat  
 
 ## License
 

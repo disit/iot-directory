@@ -227,7 +227,10 @@ function format ( d ) {
 				'data-accessport="'+d.accessport+'" ' +
 				'data-apikey="'+d.apikey+'" ' +
 				'data-path="'+d.path+'" ' +
-				'data-sha="'+d.sha+'">Edit</button>';	
+				'data-sha="'+d.sha+'" '+
+				'data-urlnificallback="'+d.urlnificallback+'" '+
+				'data-subscription_id="'+d.subscription_id+'">Edit</button>';
+	
 				}
             },
 			{
@@ -277,7 +280,10 @@ function format ( d ) {
 
     $(document).ready(function () 
     {
-		
+	
+//default hide Subscription tab
+//TODO
+	
 //fetch_data function will load the contextbroker table 	
 		fetch_data(false);	
 		//aggiornaStub();
@@ -457,7 +463,7 @@ function format ( d ) {
 					action: "insert",
 					//Sara2610 - for logging purpose
 					username: loggedUser,
-                    token : sessionToken,
+			                token : sessionToken,
 					organization : organization, 
 					name: $('#inputNameCB').val(),
 					kind: $('#selectKindCB').val(),
@@ -473,7 +479,8 @@ function format ( d ) {
 					longitude: $('#inputLongitudeCB').val(),
 					accesslink: accesslink,
 					accessport: $('#inputAccessPortCB').val(),
-					sha: $('#inputSHACB').val()
+					sha: $('#inputSHACB').val(),
+					urlnificallback: $('#inputUrlOrionCallback').val()					
 										 
 				 },
                  type: "POST",
@@ -599,7 +606,7 @@ function format ( d ) {
                 error: function(data)
                 {
 					
-					console.log("Ko result: " + data);
+					console.log("Ko result: " + JSON.stringify(data));
                      $("#addContextBrokerModal").modal('hide');
 					 
 					 $('#addContextBrokerModalTabs').hide();
@@ -671,6 +678,7 @@ function format ( d ) {
 			url: "../api/contextbroker.php",
 			data:{
 				action: "delete",
+				token : sessionToken,
 				//Sara2610 - for logging purpose
 				username: loggedUser,
 				organization : organization, 
@@ -773,27 +781,10 @@ function format ( d ) {
             $('#editContextBrokerKoMsg').hide();
             $('#editContextBrokerKoIcon').hide();
             $('#editContextBrokerOkBtn').hide();
-			
-        /*$("#editContextBrokerModalUpdating").hide();
-		$("#editCBModalLoading").hide();
-		$("#editContextBrokerModalBody").show();
-		//$('#editContextBrokerModalBody div.modalCell').show();
-        $("#editContextBrokerModalFooter").show();
-        $("#editCBModalLabel").html("Edit Context Broker - " + $(this).attr("data-name"));
-        $("#editContextBrokerModalTabs").show();
-		$('#editContextBrokerModal div.modalCell').show();
-		$("#editContextBrokerCancelBtn").show();
-		$("#editContextBrokerConfirmBtn").show();
-		$('#editContextBrokerLoadingMsg').hide();
-		$('#editContextBrokerLoadingIcon').hide();
-        $('#editContextBrokerOkMsg').hide();		
-        $('#editContextBrokerOkIcon').hide();
-        $('#editContextBrokerKoMsg').hide();
-        $('#editContextBrokerKoIcon').hide();
-        $('#editContextBrokerOkBtn').hide();
-        $("#editContextBrokerModal").modal('show');*/
-        
-		
+		$("#inputUrlOrionCallbackM").show();
+                $("#urlOrionCallbackLabelM").show();
+                $("#selectUrlOrionCallbackMsgM").show();
+
 			$("#inputNameCBM").val($(this).attr("data-name"));
 			$("#inputOrganizationCBM").val($(this).attr("data-organization"));
 			$("#selectKindCBM").val($(this).attr("data-kind"));
@@ -813,70 +804,31 @@ function format ( d ) {
 			$("#inputAccessPortCBM").val($(this).attr("data-accessport"));
 			$("#inputApiKeyCBM").val($(this).attr("data-apikey"));
 			$("#inputSHACBM").val($(this).attr("data-sha"));
-					showEditCbModal();
-			
-
-			/*
-
-		$.ajax({
-			url: "../api/contextbroker.php",
-			data: {
-					action: "get_contextbroker", 
-					name: $(this).parents('tr').attr("data-name")
-					},
-			type: "GET",
-			async: true,
-			dataType: 'json',
-			success: function (data) 
+			//subscription tab
+			if (($(this).attr("data-subscription_id")=="undefined")||($(this).attr("data-subscription_id")=="null"))
 			{
-			  
-			   if(data.result === 'ok')
+				$("#substatusCBMMsg").text("The automatic subscription is disabled");
+				//disable the uri
+				$("#inputUrlOrionCallbackM").hide();
+				$("#urlOrionCallbackLabelM").hide();
+				$("#selectUrlOrionCallbackMsgM").hide();
+			}
+			else if ($(this).attr("data-subscription_id")=="FAILED")
 			{
-				
-			   $("#inputNameCBM").val($(this).parents('tr').attr("data-name"));
-			   $("#inputIpCBM").val($(this).parents('tr').attr("data-ip"));
-			   $("#inputPortCBM").val($(this).parents('tr').attr("data-port"));
-			   $("#selectProtocolCBM").val($(this).parents('tr').attr("data-protocol"));
-			   $("#inputUriCBM").val($(this).parents('tr').attr("data-uri"));
-			   $("#createdDateCBM").val($(this).parents('tr').attr("data-created"));
-			   $("#inputLatitudeCBM").val($(this).parents('tr').attr("data-latitude"));
-			   $("#inputLongitudeCBM").val($(this).parents('tr').attr("data-longitude"));
-			   $("#inputLoginCBM").val($(this).parents('tr').attr("data-login"));
-			   $("#inputPasswordCBM").val($(this).parents('tr').attr("data-password"));
-				
-			
-			
-				$('#inputNameCBM').val(data.contextBrokerData.name);
-				$('#inputIpCBM').val(data.contextBrokerData.ip);
-				$('#selectProtocolCBM').val(data.contextBrokerData.protocol);
-				$('#inputUriCBM').val(data.contextBrokerData.uri);
-				$('#createdDateCBM').val(data.contextBrokerData.created);
-				$('#inputLatitudeCBM').val(data.contextBrokerData.latitude);
-				$('#inputLongitudeCBM').val(data.contextBrokerData.longitude);
-				$('#inputLoginCBM').val(data.contextBrokerData.login);
-				$('#inputPasswordCBM').val(data.contextBrokerData.password);
-			
-				$('#inputNameCBM').val(inputNameCBM);
-				$('#editContextBrokerModal').modal('show');
+				$("#substatusCBMMsg").text("The automatic subscription failed");
 			}
 			else
+				$("#substatusCBMMsg").text("The subscription id is:"+$(this).attr("data-subscription_id"));
+			$("#inputUrlOrionCallbackM").val($(this).attr("data-urlnificallback"));
+			if ($(this).attr("data-kind") === "internal" && $(this).attr("data-protocol"))
 			{
-				console.log("Error retrieving  data");
-				console.log(JSON.stringify(data));
-			  //  alert("Error retrieving  data");
+				$("#tab-editCB-4").show();
 			}
-
-
-			  // showEditUserModalBody();
-			},
-			error: function (data)
+			else 
 			{
-			   console.log("KO");
-			   console.log(data);
+				$("#tab-editCB-4").hide();
 			}
-		});
-		
-		*/
+			showEditCbModal();
 	});
 
 	
@@ -909,24 +861,18 @@ function format ( d ) {
 		
  $('#editContextBrokerConfirmBtn').off("click");
  $("#editContextBrokerConfirmBtn").click(function(){
-            /*$("#editContextBrokerModalBody").hide();
-            $("#editContextBrokerModalFooter").hide();
-		
-            $("#editContextBrokerModalUpdating").show();*/
      
      
-		//$('#editContextBrokerModal div.modalCell').hide();
-		//$("#editDeviceModalFooter").hide();
 		$("#editContextBrokerCancelBtn").hide();
 		$("#editContextBrokerConfirmBtn").hide();
 		$("#editContextBrokerModalBody").hide();
 		$('#editContextBrokerLoadingMsg').show();
 		$('#editContextBrokerLoadingIcon').show();
-		// console.log(JSON.stringify(deviceJson));
 
              $.ajax({
                  url: "../api/contextbroker.php",
                  data:{
+					token : sessionToken,
 					action: "update",
 					//Sara2610 - For logging purpose
 					username: loggedUser,
@@ -949,21 +895,15 @@ function format ( d ) {
 					accesslink: $('#inputAccessLinkCBM').val(),
 					accessport: $('#inputAccessPortCBM').val(),
 					apikey: $('#inputApiKeyCBM').val(),
-					sha: $('#inputSHACBM').val()
-				 
+					sha: $('#inputSHACBM').val(),
+					urlnificallback: $('#inputUrlOrionCallbackM').val()
 				 },
                  type: "POST",
                  async: true,
                  success: function (data) 
                  {
-                     if(data["status"] === 'ko')
-						{
-							/* $("#editContextBrokerModal").modal('hide');
-							 $("#editContextBrokerKoModalInnerDiv1").html(data["msg"]);
-							 $("#editContextBrokerKoModal").modal('show');
-							 $("#editContextBrokerModalUpdating").hide();
-							 $("#editContextBrokerModalBody").show();
-							 $("#editContextBrokerModalFooter").show();*/
+			if(data["status"] === 'ko')
+			{
                             
                             $('#editContextBrokerLoadingMsg').hide();
                             $('#editContextBrokerLoadingIcon').hide();
@@ -972,11 +912,9 @@ function format ( d ) {
                             $('#editContextBrokerKoMsg').show();
                             $('#editContextBrokerKoIcon').show();
                             $('#editContextBrokerOkBtn').show();
-						}
-
-					 else (data["status"] === 'ok')
-						{
-                             
+			}
+			else (data["status"] === 'ok')
+			{
                             $('#inputNameCBM').val("");
                             $('#inputIpCBM').val("");
                             $('#inputPortCBM').val("");
@@ -991,6 +929,12 @@ function format ( d ) {
                             $('#inputPasswordCBM').val("");
                             $('#inputSHACBM').val("");         
 
+				//if a subscription is failed, it return OK, but the data[content] is FAILED -> show a message
+				if (data["content"]=== "FAILED")
+					$('#additionInfoOKedit').html('&nbsp;Warning: the automatic subscription for NIFI support FAILED. Please contact the Administrator');
+				else
+					$('#additionInfoOKedit').html('&nbsp;');
+
                             $('#editContextBrokerLoadingMsg').hide();
                             $('#editContextBrokerLoadingIcon').hide();
                             $('#editContextBrokerOkMsg').show();
@@ -1000,20 +944,7 @@ function format ( d ) {
                             $('#editContextBrokerOkBtn').show();
 
                             $('#contextBrokerTable').DataTable().destroy();
-				            fetch_data(true);
-                            
-                            /*$("#editContextBrokerModal").modal('hide');
-                             $("#editCBOkModalInnerDiv1").html('<h5>Context Broker successfully updated</h5>');
-                             $("#editCBOkModal").modal('show');
-                            // setTimeout(updateCBTimeout, 500);
-							setTimeout (function(){
-								// $('#contextBrokerTable').bootstrapTable("load");
-								   // buildMainTable(true);
-								   $('#contextBrokerTable').DataTable().destroy();
-									fetch_data(true);
-									location.reload();
-									}, 500);*/
-                          
+			    fetch_data(true);
                      }
                  },
                  error: function (data) 
@@ -1068,7 +999,9 @@ function format ( d ) {
 
 	$('#addContextBrokerBtn').off('click');
 	$('#addContextBrokerBtn').click(function (){
-		
+	
+		$("#tab-addCB-4").hide();
+	
 		$('#addContextBrokerModalTabs').show();
 		$('#addContextBrokerModalBody').show();	
 		$('#addContextBrokerModal div.modalCell').show();
@@ -1153,17 +1086,31 @@ function format ( d ) {
 
 	});
 	
-        
-	
-	
 	//CONTEXTBROKER AND PROTOCOL RELATION FOR EDIT DEVICE -SELECTOR 
- 	
-	$("#selectKindCB").change(function() {
+	$("#selectProtocolCB").change(function() { 
+		 var value = document.getElementById("selectProtocolCB").value;
 	
+		//related to subscription tab
+                var kind_value = document.getElementById("selectKindCB").value;
+
+		console.log("prot value="+value+" kind value="+kind_value);
+
+                if(kind_value ==='internal' && value==='ngsi')
+                {
+                        $("#tab-addCB-4").show();
+                }
+                else
+                {
+                        $("#tab-addCB-4").hide();
+                }
+
+	});
+
+	
+	$("#selectKindCB").change(function() {
+
 		var value = document.getElementById("selectKindCB").value;
 	
-		 console.log("Value" + value);
-		
 		if(value ==='internal')
 		{
 
@@ -1197,9 +1144,67 @@ function format ( d ) {
 			document.getElementById("inputPasswordCB").value = '';
 			
 		} 
-		
+	
+		//related to subscription tab
+		var protocol_value = document.getElementById("selectProtocolCB").value;
+
+		console.log("prot value="+protocol_value+" kind value="+value);
+
+
+		if(value ==='internal' && protocol_value==='ngsi')	
+		{
+			$("#tab-addCB-4").show();
+		}
+		else 
+		{
+			$("#tab-addCB-4").hide();
+		}
 	
 	});
+
+	$("#selectProtocolCBM").change(function() {
+                 var value = document.getElementById("selectProtocolCBM").value;
+
+                //related to subscription tab
+                var kind_value = document.getElementById("selectKindCBM").value;
+
+                console.log("Mprot value="+value+" kind value="+kind_value);
+
+                if(kind_value ==='internal' && value==='ngsi')
+                {
+                        $("#tab-editCB-4").show();
+                }
+                else
+                {
+                        $("#tab-editCB-4").hide();
+                }
+
+        });
+
+	$("#selectKindCBM").change(function() {
+
+                var value = document.getElementById("selectKindCBM").value;
+
+		//TO CHECK: do you need here the same code as depicted above? dinamically update something on base of this edit???
+
+                //related to subscription tab
+                var protocol_value = document.getElementById("selectProtocolCBM").value;
+
+                console.log("Mprot value="+protocol_value+" kind value="+value);
+
+                if(value ==='internal' && protocol_value==='ngsi')
+                {
+                        $("#tab-editCB-4").show();
+                }
+                else
+                {
+                        $("#tab-editCB-4").hide();
+                }
+
+        });
+
+
+
 	//Validation of the name of the new owner during typing
 	$('#newOwner').on('input',function(e)
 	{

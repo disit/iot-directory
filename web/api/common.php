@@ -539,6 +539,7 @@ function removeOwnerShipDevice($elementId,$token,&$result) {
 function removeOwnerShipObject($elementId,$token,$object,&$result) {
 	try
 	{
+		$result["log"] .= "\n\r Deletion of the ownership invoked on $elementId $object";
 		$url=$GLOBALS["ownershipURI"] . "ownership-api/v1/delete/?type=".$object."&elementId=" . $elementId . "&accessToken=" . $token;
 		$options = array(
 			  'http' => array(
@@ -622,7 +623,6 @@ function registerOwnerShipDevice($elementId, $msg, $token, &$result) { //	$msg["
 }
 
 function registerOwnerShipObject($msg, $token, $object, &$result) { 
-	//$msg["elementType"]="IOTID";
 	try
 	{
 		$url= $GLOBALS["ownershipURI"] . "ownership-api/v1/register/?accessToken=" . $token;
@@ -632,7 +632,7 @@ function registerOwnerShipObject($msg, $token, $object, &$result) {
 					  'header' => "Access-Control-Allow-Origin: *",
 					  'method' => 'POST',
 	   	                          'content' => json_encode($msg),
-                      'ignore_errors' => true,
+                      			  'ignore_errors' => true,
 					  'timeout' => 30
 			  )
 		);
@@ -643,14 +643,14 @@ function registerOwnerShipObject($msg, $token, $object, &$result) {
 		{
 		   $result["status"]='ok';
 		   $result["msg"] .= "\n the registration of the ownership succeded";
-		    $result["log"] .= "\n the registration of the ownership succeded" . $local_result;
+		   $result["log"] .= "\n the registration of the ownership succeded" . $local_result;
 		}
 		else
 		{
 			$result["status"]='ok';
 			$result["error_msg"] .= "The registration is NOT possible. Reached limit of IoT Devices. ";
 			$result["msg"] .= "\n The registration is NOT possible. Reached limit of IoT Devices (".$local_result.")";
-            $result["log"] .= "\n The registration is NOT possible. Reached limit of IoT Devices ";//(".json_decode($local_result)->limit.")";		
+			$result["log"] .= "\n The registration is NOT possible. Reached limit of IoT Devices ";//(".json_decode($local_result)->limit.")";		
 		}	 
 	} 
 	catch (Exception $ex)
@@ -863,10 +863,10 @@ function getDelegatedDevice($token, $user, &$result) {
 			{
                       
 			  $a = $lists[$i]->elementId;
-
-                               if (isset($lists[$i]->delegationDetails) && isset($lists[$i]->delegationDetails->k1))
+                               if (isset($lists[$i]->delegationDetails))
                                {
-                                   $mykeys[$a]= array("usernameDelegator" => $lists[$i]->usernameDelegator, "delegationId" => $lists[$i]->id, "kind" => 'specific', "k1" => $lists[$i]->delegationDetails->k1, "k2" => $lists[$i]->delegationDetails->k2);
+				   $delegationDetails=json_decode($lists[$i]->delegationDetails);
+                                   $mykeys[$a]= array("usernameDelegator" => $lists[$i]->usernameDelegator, "delegationId" => $lists[$i]->id, "kind" => 'specific', "k1" => $delegationDetails->k1, "k2" => $delegationDetails->k2);
                                }
                                else
                                {
@@ -2392,6 +2392,104 @@ function get_organization_info($organizationApiURI, $ou_tmp){
                 return null;
         }
 }
+
+
+//return subscription_id. can be FAILED
+//returning ok also if subscribe failed (beside try and catch)
+function nificallback_create($ip, $port, $name, $urlnificallback, &$result){
+	$result["status"]='ok';
+	$result["content"]='FAILED';
+	$result["log"] .= "\n Received request of nificallback_create for ip:$ip port:$port cbname:$name";
+
+	try
+        {
+		$msg = "{\"description\": \"$name nifi\",\"subject\": {	\"entities\": [{ \"idPattern\": \".*\",	\"typePattern\": \".*\"	}],\"condition\": {\"attrs\": []}},\"notification\": {	\"http\": {\"url\": \"$urlnificallback\" }},\"expires\": \"2030-01-01T00:00:00.00Z\"}";
+
+                $url="http://".$ip.":".$port."/v2/subscriptions";
+
+		$result["log"] .= "\n Payload to send is:".$msg;
+		$result["log"] .= "\n Post url is:".$url;
+
+                $options = array(
+                          'http' => array(
+                                          'header' => "Content-Type: application/json;charset=utf-8",
+                                          'method' => 'POST',
+		                          'ignore_errors' => true,
+                                          'timeout' => 30,
+					  'content' => $msg
+                          )
+                );
+                $context = stream_context_create($options);
+                $local_result = @file_get_contents($url, false, $context);
+
+		$result["log"] .= "\n Response is:".$local_result;
+
+                if(isset($http_response_header) && is_array($http_response_header) && strpos($http_response_header[0], '201') !== false)
+		{
+			$result["content"]=extract_subscription_id($http_response_header);
+			$result["log"] .= "\n Response subscription_id is:".$result["content"];
+                }
+		else 
+		{
+			$result["log"] .= "\n Error returned or not reachable";
+		}
+		//return status==ok even if the subscription failed
+        }
+        catch (Exception $ex)
+        {
+                $result["status"]='ko';
+                $result["error_msg"] .= 'Error in creating the subscription for NIFI. ';
+                $result["msg"] .= '\n Error in creating the subscription for NIFI ';
+                $result["log"] .= '\n Error in creating the subscription for NIFI ' . $ex;
+        }
+}
+
+function extract_subscription_id($headers)
+{
+	foreach ($headers as $header)
+	{
+		if (strpos($header, 'Location')!== false){
+			return substr($header, 28);
+		}
+        }
+	return "FAILED";
+}
+
+//returning ok also if unsubscribe failed (beside try and catch)
+function nificallback_delete($ip, $port, $subscription_id, $name, &$result){
+	$result["status"]='ok';
+        $result["log"] .= " Received request of nificallback_delete for ip:$ip port:$port subscription_id:$subscription_id cbname:$name";
+
+        try
+        {
+                $url="http://".$ip.":".$port."/v2/subscriptions/".$subscription_id;
+
+                $result["log"] .= "\n Delete url is:".$url;
+
+                $options = array(
+                          'http' => array(
+                                          'method' => 'DELETE',
+                                          'ignore_errors' => true,
+                                          'timeout' => 30
+                          )
+                );
+                $context = stream_context_create($options);
+                $local_result = @file_get_contents($url, false, $context);
+
+		$result["log"] .= "\n Response is:".$http_response_header[0]." ".$local_result;
+
+		//return status==ok even if the subscription failed
+        }
+        catch (Exception $ex)
+        {
+                $result["status"]='ko';
+                $result["error_msg"] .= 'Error in removing the subscription for NIFI. ';
+                $result["msg"] .= '\n Error in removing the subscription for NIFI ';
+                $result["log"] .= '\n Error in removing the subscription for NIFI ' . $ex;
+	}
+}
+
+
 
 //sara2210 
 function logAction($link,$accessed_by,$target_entity_type,$access_type,$entity_name, $organization, 

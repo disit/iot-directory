@@ -342,9 +342,10 @@
 
                 <div id="addContextBrokerModalBody" class="modal-body modalBody">
                     <ul id="addContextBrokerModalTabs" class="nav nav-tabs nav-justified">
-						<li class="active"><a data-toggle="tab" href="#infoTabCB">Info</a></li>
-                        <li><a data-toggle="tab" href="#geoPositionTabCB">Geo-Position</a></li>
-                        <li><a data-toggle="tab" href="#securityTabCB">Security</a></li>
+			<li id='tab-addCB-1' class="active"><a data-toggle="tab" href="#infoTabCB">Info</a></li>
+                        <li id='tab-addCB-2'><a data-toggle="tab" href="#geoPositionTabCB">Geo-Position</a></li>
+                        <li id='tab-addCB-3'><a data-toggle="tab" href="#securityTabCB">Security</a></li>
+			<li id='tab-addCB-4'><a data-toggle="tab" href="#subscriptionTabCB">Subscription</a></li>
                     </ul>
                     
                     <div class="tab-content">
@@ -530,7 +531,9 @@
                                     <div class="modalFieldLabelCnt">Password</div>
 									<div id="inputPasswordCBMsg" class="modalFieldMsgCnt">&nbsp;</div>
                                 </div>
-                 
+
+
+ 
                             </div>
 							
 							<div class="row">
@@ -544,6 +547,23 @@
 						  </div>
 							
                         </div>
+
+
+			<!-- Subscription Tab -->
+                        <div id="subscriptionTabCB" class="tab-pane fade">
+				<div class="row">
+					<div class="col-xs-12 col-md-6 modalCell">
+						<div class="modalFieldCnt">
+							<input type="text" class="modalInputTxt" name="inputUrlOrionCallback" id="inputUrlOrionCallback">
+						</div>
+						<div class="modalFieldLabelCnt">Url Orion Callback</div>
+						<div id="selectUrlOrionCallbackMsg" class="modalFieldMsgCnt">&nbsp;</div>
+					</div>
+				</div>
+			</div>
+                        <!-- End Subscription Tab-->
+
+
                     </div>
 					
 					
@@ -558,6 +578,7 @@
                     </div>
                     <div class="row" id="addCBOkMsg">
                         <div class="col-xs-12 centerWithFlex">Contextbroker added successfully</div>
+			<div id="additionInfoOKadd" class="col-xs-12 centerWithFlex">&nbsp;</div>
                     </div>
                     <div class="row" id="addCBOkIcon">
                         <div class="col-xs-12 centerWithFlex"><i class="fa fa-thumbs-o-up" style="font-size:36px"></i></div>
@@ -616,9 +637,10 @@
                    <!--				   <form id="editUserForm" name="editUserForm" role="form" method="post" action="process-form.php" data-toggle="validator">-->
                         
 					<ul id="editContextBrokerModalTabs" class="nav nav-tabs nav-justified">
-						<li class="active"><a data-toggle="tab" href="#editInfoTabCB">Info</a></li>
-                        <li><a data-toggle="tab" href="#editGeoPositionTabCB">Geo-Position</a></li>
-                        <li><a data-toggle="tab" href="#editSecurityTabCB">Security</a></li>
+						<li id="tab-editCB-1" class="active"><a data-toggle="tab" href="#editInfoTabCB">Info</a></li>
+                        <li id="tab-editCB-2"><a data-toggle="tab" href="#editGeoPositionTabCB">Geo-Position</a></li>
+                        <li id="tab-editCB-3"><a data-toggle="tab" href="#editSecurityTabCB">Security</a></li>
+			<li id="tab-editCB-4"><a data-toggle="tab" href="#editSubscriptionTabCB">Subscription</a></li>
                     </ul>
                     
                     <div class="tab-content">
@@ -828,12 +850,29 @@
 							</div>
 						</div>
                         </div>
-                    </div>
-			
-                       <!-- <input type="hidden" id="inputNameCBM" name="inputNameCBM"/>-->
-                    <!--</form>-->    
+	
+			<!-- Subscription Tab -->
+                        <div id="editSubscriptionTabCB" class="tab-pane fade">
+				<div class="row">
+                                        <div class="col-xs-12 col-md-6 modalCell">
+                                                <div class="modalFieldCnt">
+                                                        <input type="text" class="modalInputTxt" name="inputUrlOrionCallbackM" id="inputUrlOrionCallbackM">
+                                                </div>
+                                                <div id="urlOrionCallbackLabelM" class="modalFieldLabelCnt">Url Orion Callback</div>
+                                                <div id="selectUrlOrionCallbackMsgM" class="modalFieldMsgCnt">&nbsp;</div>
+                                        </div>
+                                </div>
+                                <div class="row">
+                                        <div class="col-xs-12 col-md-6 modalCell">
+						<div class="modalFieldLabelCnt" id="substatusCBMMsg" name="substatusCBMMsg">&nbsp;</div>
+	                                </div>
+	                        </div>
+			</div>
+                        <!-- End Subscription Tab-->
+		   </div>
                 </div>
-                  <div class="row" id="editContextBrokerLoadingMsg">
+                
+		<div class="row" id="editContextBrokerLoadingMsg">
                         <div class="col-xs-12 centerWithFlex">Updating context broker, please wait</div>
 				</div>
 				<div class="row" id="editContextBrokerLoadingIcon">
@@ -841,6 +880,7 @@
 				</div>
 				<div class="row" id="editContextBrokerOkMsg">
                         <div class="col-xs-12 centerWithFlex">Context Broker updated successfully</div>
+			<div id="additionInfoOKedit" class="col-xs-12 centerWithFlex">&nbsp;</div>
 				</div>
 				<div class="row" id="editContextBrokerOkIcon">
                         <div class="col-xs-12 centerWithFlex"><i class="fa fa-thumbs-o-up" style="font-size:36px"></i></div>
