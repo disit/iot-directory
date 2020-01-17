@@ -58,10 +58,14 @@ var _serviceIP = "../stubs";
          dataType: 'json',
          success: function (mydata)
          {
+		if (mydata["status"] === 'ok'){
 		   gb_datatypes= mydata["data_type"];
-		   
 		   gb_value_units= mydata["value_unit"];
-		   gb_value_types= mydata["value_type"];		   
+		   gb_value_types= mydata["value_type"];		  
+		}
+		else {
+                        alert("An error occured when reading the data. <br/> Get in touch with the Snap4City Administrator. <br/>"+ mydata["error_msg"]);
+                } 
          },
 		 error: function (mydata)
 		 {
@@ -2406,7 +2410,7 @@ function updateGroupList(ouname){
                         if(data["status"] === 'ko')
                         {
                                 console.log("Error: "+data);
-                               //TODO: manage error
+				alert("An error occured when reading the data. <br/> Get in touch with the Snap4City Administrator. <br/>"+ data["error_msg"]);
                         }
                         else if (data["status"] === 'ok')
                         {

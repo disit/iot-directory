@@ -1,5 +1,5 @@
 <?php
-
+/*
 function checkRegisterOwnerShipDevice($token, &$result) {
         try
         {
@@ -47,7 +47,7 @@ function checkRegisterOwnerShipDevice($token, &$result) {
                $result["msg"] .= '\n general error in checkRegisterOwnership';
                $result["log"] .= '\n general error in checkRegisterOwnership' . $ex;
         }
-} 
+}*/ 
 
 function checkRegisterOwnerShipObject($token,$object, &$result) {
         try
@@ -75,9 +75,9 @@ function checkRegisterOwnerShipObject($token,$object, &$result) {
                        else
                        {
                                $result["status"]='ko';
-                                $result["error_msg"] .= "The registration is NOT possible. Reached limit of IoT Devices. ";
-                                $result["msg"] .= "\n The registration is NOT possible. Reached limit of IoT Devices (".json_decode($local_result)->limits[0]->limit.")";
-                                $result["log"] .= "\n The registration is NOT possible. Reached limit of IoT Devices (".json_decode($local_result)->limits[0]->limit.")";
+                                $result["error_msg"] .= "The registration is NOT possible. Reached limit of ".$object;
+                                $result["msg"] .= "\n The registration is NOT possible. Reached limit of ".$object." (".json_decode($local_result)->limits[0]->limit.")";
+                                $result["log"] .= "\n The registration is NOT possible. Reached limit of ".$object." (".json_decode($local_result)->limits[0]->limit.")";
 
                        }
                 }
@@ -103,17 +103,40 @@ $producer,$latitude,$longitude,$visibility, $frequency, $k1, $k2, $edgegateway_t
 $listAttributes,$pathCertificate,$accessToken,&$result,$shouldbeRegistered='yes', $organization, $kbUrl="", $username="")
 {
 
- checkRegisterOwnerShipDevice($accessToken, $result);
- if ($result["status"]=='ok'){ 
-   //Sara312
-     
-     $selectDevicesDeleted = "SELECT contextBroker, id
+  checkRegisterOwnerShipObject($accessToken, 'IOTID', $result);
+  if ($result["status"]=='ok')
+  { 
+    $selectDevicesDeleted = "SELECT contextBroker, id
 		FROM deleted_devices WHERE contextBroker = '$contextbroker'
 		AND id = '$id';";
-     $s3 = mysqli_query($link, $selectDevicesDeleted);
-     if($s3){
-			if(mysqli_num_rows($s3) == 0){
-  
+    $s3 = mysqli_query($link, $selectDevicesDeleted);
+    if($s3)
+    {
+      if(mysqli_num_rows($s3) == 0)
+      {
+ 
+	$isRegistered=registerCertificatePrivateKey($link, $contextbroker, $id, $model, $pathCertificate, $result, $username);
+	if ($result["status"]=='ok')
+        {
+		if ($isRegistered)
+		{
+                	$privatekey = $id . "-key.pem";
+	                $certificate = $id . "-crt.pem";
+        	        $publickey = $id . "-pubkey.pem";
+		}
+		else 
+		{
+			$privatekey = "";
+			$certificate = "";
+			$publickey = "";
+		}
+        }
+        else
+        {
+                //the registration failed, return error
+                return $result;
+        }
+
 	if(!isset($shouldbeRegistered))
 	{
 		registerKB($link, $id, $devicetype, $contextbroker, $kind, $protocol,
@@ -127,24 +150,8 @@ $listAttributes,$pathCertificate,$accessToken,&$result,$shouldbeRegistered='yes'
 	 $frequency, $listAttributes, $result,$shouldbeRegistered, $organization,$kbUrl); 
 	}
 
-
- //Sara312
-
 	if ($result["status"]=='ko' ) return $result;
-
-	if (registerCertificatePrivateKey($link, $contextbroker, $id, $model, $pathCertificate, $result, $username))
-	{
-		$privatekey = $id . "-key.pem";
-		$certificate = $id . "-crt.pem";
-		$publickey = $id . "-pubkey.pem";
-	}
-	else
-	{
-		$privatekey = "";
-		$certificate = "";
-		$publickey = "";
-	} 
-
+	
 	if ($result["status"]=='ok' &&  $result["content"]==null)
 	{
 	 $q = "INSERT INTO devices(id, devicetype, contextBroker,  kind, protocol, format, macaddress, model, producer, latitude, longitude, visibility, frequency, privatekey, certificate, organization) " .
@@ -226,7 +233,6 @@ $listAttributes,$pathCertificate,$accessToken,&$result,$shouldbeRegistered='yes'
 		 {
 		   $result["status"]='ko';
 		 }
-		  
 	} 
 	else 
 	{
@@ -235,27 +241,24 @@ $listAttributes,$pathCertificate,$accessToken,&$result,$shouldbeRegistered='yes'
 	   $result["msg"] .= "\n Problem in inserting the device $id:  <br/>" .  generateErrorMessage($link); 
 	   $result["log"] .= "\r\n Problem in inserting the device $id:  $q  " .  generateErrorMessage($link);  
 	}
-                
-    }
-         
-            else{
+      }
+      else
+      {
              $result["status"]='ko';
              $result["error_msg"] .= "Problem in inserting the device $id, device name already exists in deleted devices. "; 
              $result["msg"] .= "\n Problem in inserting the device $id, device name already exists in deleted devices"; 
              $result["log"] .= "\r\n Problem in inserting the device $id, device name already exists in deleted devices";
-
-            }
-         
-     }
-     else{
+      }
+    }
+    else
+    {
            $result["status"]='ko';
            $result["error_msg"] .= "Problem in inserting the device $id, related to the deleted_devices table. " ;
            $result["msg"] .= "\n Problem in inserting the device $id, related to the deleted_devices table:  <br/>" .  generateErrorMessage($link); 
            $result["log"] .= "\r\n Problem in inserting the device $id, related to the deleted_devices table:   " .  generateErrorMessage($link);  
-  
-         }
- 
- }
+    }
+  }
+  // limits reached, error message are already thrown  
 }
 
 
@@ -334,61 +337,91 @@ function create_datatable_data($link,$request,$query,$where){
 
 
 function my_log($result) {  
- // $fp=fopen("../../../log/log.txt","a") or die("Unable to open file!");;
-  $fp=fopen($GLOBALS["pathLog"],"a") or die("Unable to open file!");;
-  flock($fp,LOCK_EX);
-  $output = date("Y-m-d h:i:sa") . ": ". $result["log"] . "\r\n";
-  fwrite($fp,$output);
-  unset($result["log"]);
+  // my_log
+  $fp=fopen($GLOBALS["pathLog"],"a");
+  if (!$fp)
+  {
+	$result["status"]='ko';
+	$result["error_msg"] = "\n Unable to open LOG file. Please contact an administrator";
+  }
+  else
+  {
+  	flock($fp,LOCK_EX);
+	$output = date("Y-m-d h:i:sa") . ": ". $result["log"] . "\r\n";
+	fwrite($fp,$output);
+	unset($result["log"]);
+	flock($fp,LOCK_UN);
+	fclose($fp);
+  }
+
+  // return json encoded result
   echo json_encode($result);
-  flock($fp,LOCK_UN);
-  fclose($fp);
 }
 
 
+//this routine return two information:
+//1 or 0 that means if a certificate has been created (information to fill the db)
+//status == ok or ko that means an error is reached (error to be notified to gui)
 function registerCertificatePrivateKey($link, $cb, $deviceId, $model, $path, &$result, $username="")
 {
-	if ($username==""){
-		error_log("username not passed, retrieve from session", 0);
+	$result["status"]='ok';
+
+	if ($username=="")
+	{
 		$username=$_SESSION['loggedUsername'];
-	}
-	else{
-		error_log("username is ".$username, 0);
 	}
 
 	$q = "select name from model where kgenerator = 'authenticated' and name ='$model';";
 	$res = mysqli_query($link, $q);
-    if ($res)
+	if ($res)
 	{
 	
 	  $row = mysqli_fetch_assoc($res);
 	  if ($row["name"]==$model)
 	  {
 		 $result["msg"] .= "\n the model $model is of type authenticated";
-		  $result["log"] .= "\n the model $model is of type authenticated"; 
+		 $result["log"] .= "\n the model $model is of type authenticated"; 
 		
-		  $cmd1="$path/generate-device-keys.sh $cb/$deviceId?".$username." $deviceId $path 2>&1";
-		  $output = shell_exec($cmd1);
+		 $cmd1="$path/generate-device-keys.sh $cb/$deviceId?".$username." $deviceId $path 2>&1";
+		 $output = shell_exec($cmd1);
 
-                  $result["msg"] .= "\n result of command " . $cmd1 . " is " . $output;
-                  $result["log"] .= "\n result of  command " . $cmd1 . " is " . $output;
-		  
-		  return 1;
+                 $result["msg"] .= "\n result of command " . $cmd1 . " is " . $output;
+                 $result["log"] .= "\n result of  command " . $cmd1 . " is " . $output;
+		
+		//check error string
+		foreach(preg_split("/((\r?\n)|(\r\n?))/", $output) as $line){
+			if (strpos($line, "asn1 encoding routines:ASN1_mbstring_ncopy:string too long")!== false){ //openSSL error message returned if the CN is too long
+				$result["status"]='ko';
+                                $result["error_msg"] .= "\n IOT Device name too long";
+                                $result["msg"] .= "\n IOT Device name too long";
+                                $result["log"] .= "\n IOT Device name too long";
+                                return 0;
+			}
+			else if (strpos($line, "error") !== false){
+				$result["status"]='ko';				
+				$result["error_msg"] .= "An error has been catched generating the device certificate: ".$line;
+				$result["msg"] .= "\n an error has been returned from the script for certificate generation ".$line;
+		                $result["log"] .= "\n an error has been returned from the script for certificate generation ".$line;
+				return 0;
+                	}
+		}
+
+		return 1;
 	  }
 	  else
 	  {
-		$result["error_msg"] .= "The model $model is NOT of type authenticated";
 		$result["msg"] .= "\n the model $model is NOT of type authenticated";
 		$result["log"] .= "\n the model $model is NOT of type authenticated";
-	        return 0; 
+		return 0;
 	  }
 	}
 	else
 	{
+		$result["status"]='ko';
 		$result["error_msg"] .= "Error in the query for retrieving the type of model";
 		$result["msg"] .= "\n error in the query for retrieving the type of model";
 		$result["log"] .= "\n error in the query for retrieving the type of model" . generateErrorMessage($link);
-        	return 0; 
+		return 0;
 	}
 }
 

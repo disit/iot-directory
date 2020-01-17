@@ -328,6 +328,11 @@ if ($action=="insert")
 	$listAttributes= mysqli_real_escape_string($link, $_REQUEST['attributes']);
 	$organization= mysqli_real_escape_string($link, $_REQUEST['organization']);
 
+	checkRegisterOwnerShipObject($accessToken, 'ModelID', $result);
+	
+	 if ($result["status"]=='ok'){
+	
+
 	$q = "INSERT INTO model(name, description, devicetype, kind, producer, frequency, contextbroker, protocol, format, healthiness_criteria, healthiness_value, kgenerator, attributes, edgegateway_type, organization, visibility ) " .
 		 "VALUES('$name', '$description', '$type', '$kind', '$producer', '$frequency', '$contextbroker', '$protocol', '$format', '$hc', '$hv', '$kgenerator', '$listAttributes', '$edgegateway_type', '$organization', 'private')";
 	$r = mysqli_query($link, $q);
@@ -364,6 +369,8 @@ if ($action=="insert")
 						   ' Please enter again the Model';
 		 $result["log"]= "action=insert -" . $q . " error " .  mysqli_error($link)  . "\r\n";
 	}
+	}
+	
 	echo json_encode($result);
 	mysqli_close($link);
 }

@@ -178,8 +178,10 @@ use Jumbojett\OpenIDConnectClient;
 			   // console.log(JSON.stringify(mydata));
 			   if (mydata["status"]=='ok')
 				 functionality = mydata["content"];
-			   else
-				  console.log("Error from the DB" + mydata["msg"]);		   
+			   else{
+				  console.log("Error from the DB" + mydata["msg"] + mydata["error_msg"]);		   
+					alert("An error occured when reading the data. <br/> Get in touch with the Snap4City Administrator. <br/>"+ mydata["error_msg"]);
+			   }
 			 },
 			 error: function (mydata)
 			 {

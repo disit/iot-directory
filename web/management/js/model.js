@@ -322,12 +322,13 @@ function format ( d ) {
 	 
    });
    
-   
-   	if (loggedRole!='RootAdmin' && loggedRole!='ToolAdmin') {		
-	dataTable.columns( [4,5] ).visible( false );		
+
+	//TODO can we use the get_functionalities here??
+	if (loggedRole!='RootAdmin' && loggedRole!='ToolAdmin') {		
+		dataTable.columns( [4,5,9,10] ).visible( false );//avoid to show Organization, owner, edit and delete
 	}
-      if (loggedRole=='ToolAdmin') {		
-	dataTable.columns( [5] ).visible( false );		
+	if (loggedRole=='ToolAdmin') {		
+		dataTable.columns( [5] ).visible( false );//avoid to show owner		
 	}
   
   }
@@ -688,7 +689,7 @@ function format ( d ) {
 						$('#addModelLoadingMsg').hide();
                         $('#addModelLoadingIcon').hide();
                         $('#addModelKoMsg').show();
-						$('#addModelKoMsg div:first-child').html(data["error_msg"]);
+						$('#addModelKoMsg div:first-child').html(mydata["error_msg"]);
                         $('#addModelKoIcon').show();
                  
 				 
@@ -1646,7 +1647,7 @@ function updateGroupList(ouname){
                         if(data["status"] === 'ko')
                         {
                                 console.log("Error: "+data);
-                               //TODO: manage error
+				alert("An error occured when reading the data. <br/> Get in touch with the Snap4City Administrator. <br/>"+ data["error_msg"]);
                         }
                         else if (data["status"] === 'ok')
                         {

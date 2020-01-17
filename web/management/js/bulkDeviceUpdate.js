@@ -55,10 +55,14 @@ $.ajax({url: "../api/bulkDeviceLoad.php",
 	dataType: 'json',
 	success: function (mydata)
 	{
-		gb_datatypes= mydata["data_type"];
-		gb_value_units= mydata["value_unit"];
-		gb_value_types= mydata["value_type"];	
-		console.log(mydata);
+		if (mydata["status"] === 'ok'){
+			gb_datatypes= mydata["data_type"];
+			gb_value_units= mydata["value_unit"];
+			gb_value_types= mydata["value_type"];	
+		}
+		else {
+			alert("An error occured when reading the data. <br/> Get in touch with the Snap4City Administrator. <br/>"+ mydata["error_msg"]);
+		}
 	},
 	error: function (mydata)
 	{

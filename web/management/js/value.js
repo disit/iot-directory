@@ -1282,7 +1282,7 @@ function format ( d ) {
                         if(data["status"] === 'ko')
                         {
                                 console.log("Error: "+data);
-				//TODO: manage error
+				alert("An error occured when reading the data. <br/> Get in touch with the Snap4City Administrator. <br/>"+ data["error_msg"]);
                         }
                         else if (data["status"] === 'ok')
                         {

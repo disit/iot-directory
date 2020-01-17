@@ -181,8 +181,10 @@ $accessToken = "";
 			   // console.log(JSON.stringify(mydata));
 			   if (mydata["status"]=='ok')
 				 functionality = mydata["content"];
-			   else
+			   else{
 				  console.log("Error from the DB" + mydata["msg"]);		   
+				alert("An error occured when reading the data. <br/> Get in touch with the Snap4City Administrator. <br/>"+ mydata["error_msg"]);
+			}
 			 },
 			 error: function (mydata)
 			 {
