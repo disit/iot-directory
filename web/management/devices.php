@@ -195,7 +195,8 @@ $accessToken = "";
 		</script>
  
         <!-- Custom scripts -->
-		
+	
+		<script  src="js/common.js"></script>	
 		<script  src="js/devices.js"></script>
 		<script  src="js/devicesManagement.js"></script>
 		<script  src="js/fieldsManagement.js"></script>
@@ -391,32 +392,6 @@ $accessToken = "";
 								<div id="selectModelMsg" class="modalFieldMsgCnt">&nbsp;</div>
                                 </div>
 								</div>	
-									<!--
-									<div class="col-xs-12 col-md-6 modalCell">
-										<div class="modalFieldCnt">
-											<input type="text" class="modalInputTxt" name="inputTypeDeviceUser" id="inputTypeDeviceUser"> 
-										</div>
-										<div class="modalFieldLabelCnt">Type</div>
-										<div id="inputTypeDeviceUserMsg" class="modalFieldMsgCnt">&nbsp;</div>
-									</div>
-									  <div class="col-xs-12 col-md-6 modalCell">
-										 <div class="modalFieldCnt">
-											<select id="selectKindDeviceUser" name="selectKindDeviceUser" class="modalInputTxt">
-												<option value="sensor">sensor</option>
-												<option value="actuator">actuator</option>
-											</select>
-										</div>
-										<div class="modalFieldLabelCnt">Kind</div>
-										<div id="selectKindDeviceUserMsg" class="modalFieldMsgCnt">&nbsp;</div>
-									</div>
-									<div class="col-xs-12 col-md-6 modalCell">
-										<div class="modalFieldCnt">
-											<input type="text" class="modalInputTxt" value="Private" id="inputDeviceOwnershipUser" name="inputDeviceOwnershipUser"readonly> 
-										</div>
-										<div class="modalFieldLabelCnt">Ownership</div>
-										<div id="ownership" class="modalFieldMsgCnt">&nbsp;</div>
-									</div> 
-									-->
 									<div class="row">
 									<div class="col-xs-12 col-md-6 modalCell">
 										<div class="modalFieldCnt">
@@ -1290,10 +1265,10 @@ $accessToken = "";
                         <div id="editSchemaTabDevice" class="tab-pane fade">
                            
 							<div id="editlistAttributes"></div>
-							<div id="addlistAttributesM"></div>
-							<div id="deletedAttributes" style="display:none"></div>
-							<!-- <div class="pull-left"><i id="addAttrMBtn" class="fa fa-plus-square" style="font-size:36px; color: #ffcc00"></i></div> -->
+                                                        <div id="addlistAttributesM"></div>
+                                                        <div id="deletedAttributes" style="display:none"></div>
 							<div class="pull-left"><button id="addAttrMBtn" class="btn btn-primary">Add Value</button></div>
+							<div id="editlistAttributesMsg" class="modalFieldMsgCnt">&nbsp;</div>
                         </div>
 						
 						<!-- Semantic Labeling tab -->

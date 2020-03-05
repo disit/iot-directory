@@ -33,8 +33,81 @@ function showAddModelModal()
 	checkModelDeviceType();
 	checkModelProducer();
 	
+	checkModelSelectionCB_all();
+	checkAtlistOneAttribute();
+	
 	 $("#addModelModal").modal('show');    
      
+}
+
+function checkModelSelectionCB_all(){
+        checkSelectionCB();
+        checkSelectionProtocol();
+        checkSelectionFormat();
+}
+
+function checkSelectionCB()
+{
+    var message = null;
+
+    if ( !$("#addIOTBrokerTabModel #selectContextBroker").val() ||  $("#addIOTBrokerTabModel #selectContextBroker").val().length === 0)
+    {
+        $("#selectContextBrokerMsg").css("color", "red");
+        message = 'Context broker is mandatory';
+        addModelConditionsArray['contextbroker'] = false;
+    }
+    else
+    {
+       $("#selectContextBrokerMsg").css("color", "#337ab7");
+       message = 'Ok';
+       addModelConditionsArray['contextbroker'] = true;
+    }
+
+    $("#selectContextBrokerMsg").html(message);
+}
+
+function checkSelectionProtocol()
+{
+    var message = null;
+
+	console.log("aa:"+$("#addIOTBrokerTabModel #selectProtocolModel").val());
+
+    if ( !$("#addIOTBrokerTabModel #selectProtocolModel").val() || $("#addIOTBrokerTabModel #selectProtocolModel").val().length === 0 )
+    {
+        $("#selectProtocolModelMsg").css("color", "red");
+        message = 'Device protocol is mandatory';
+        addModelConditionsArray['protocol'] = false;
+    }
+    else
+    {
+                $("#selectProtocolModelMsg").css("color", "#337ab7");
+                message = 'Ok';
+                addModelConditionsArray['protocol'] = true;
+    }
+
+    $("#selectProtocolModelMsg").html(message);
+}
+
+function checkSelectionFormat()
+{
+    var message = null;
+
+	console.log("bb:"+$("#addIOTBrokerTabModel #selectFormatModel").val());
+
+    if ( !$("#addIOTBrokerTabModel #selectFormatModel").val() || $("#addIOTBrokerTabModel #selectFormatModel").val().length === 0)
+    {
+        $("#selectFormatModelMsg").css("color", "red");
+        message = 'Device format is mandatory';
+        addModelConditionsArray['format'] = false;
+    }
+    else
+    {
+                $("#selectFormatModelMsg").css("color", "#337ab7");
+                message = 'Ok';
+                addModelConditionsArray['format'] = true;
+    }
+
+    $("#selectFormatModelMsg").html(message);
 }
 
 
@@ -43,13 +116,13 @@ function checkModelName()
     var message = null;
     var regex=/[^a-z0-9_-\s]+$/gi;
     
-    if($("#addInfoTabModel #inputNameModel").val().length === 0)
+    if( !$("#addInfoTabModel #inputNameModel").val() || $("#addInfoTabModel #inputNameModel").val().length === 0)
     {
         $("#inputNameModelMsg").css("color", "red");
         message = 'Model name is mandatory';
         addModelConditionsArray['inputNameModel'] = false;
     }
-    else if($("#addInfoTabModel #inputNameModel").val().length < 5)
+    else if($("#addInfoTabModel #inputNameModel").val().length < 2)
     {
         $("#inputNameModelMsg").css("color", "red");
         message = 'Model name (at least 5 chars long)';
@@ -74,48 +147,50 @@ function checkModelName()
     $("#inputNameModelMsg").html(message);
 }
 
-function checkModelValueName()
+function checkModelValueName(current)
 {
     var message = null;
     var regex=/[^a-z0-9_-]/gi;
-    console.log("valore identificato " + $(this).val());
-	console.log("elemento identificato " + $(this).parent().siblings().last().html());
+    value=current.val();
+    element=current.parent().siblings().last();
+
+    //console.log("valore identificato " + $(this).val());
+    //console.log("elemento identificato " + $(this).parent().siblings().last().html());
 	
-    if($(this).val().length === 0)
+    if ( !value || value.length === 0)
     {
-        $(this).parent().siblings().last().css("color", "red");
+        element.css("color", "red");
         message = 'Value name is mandatory';
         //addDeviceConditionsArray['inputNameValue'] = false;
     }
-    else if($(this).val().length < 3)
+    else if(value.length < 2)
     {
-        $(this).parent().siblings().last().css("color", "red");
-        message = 'Value name (at least 3 chars long)';
+        element.css("color", "red");
+        message = 'Value name (at least 2 chars long)';
         //addDeviceConditionsArray['inputNameValue'] = false;
     }
-    else if(regex.test($(this).val()))
+    else if(regex.test(value))
     {
-        $(this).parent().siblings().last().css("color", "red");
+        element.css("color", "red");
         message = 'No special characters are allowed in Value name';
         //addDeviceConditionsArray['inputNameValue'] = false;
     }
     else
     {
-	
-		$(this).parent().siblings().last().css("color", "#337ab7");
+		element.css("color", "#337ab7");
 		message = 'Ok';
 		//addDeviceConditionsArray['inputNameValue'] = true;
 	
     }
     
-    $(this).parent().siblings().last().html(message);
+    element.html(message);
 }
 
 function checkModelDescription()
 {
     var message = null;
     
-    if($("#addInfoTabModel #inputDescriptionModel").val().length === 0)
+    if( !$("#addInfoTabModel #inputDescriptionModel").val() || $("#addInfoTabModel #inputDescriptionModel").val().length === 0)
     {
         $("#inputDescriptionModelMsg").css("color", "red");
         message = 'Model Description is mandatory';
@@ -143,7 +218,7 @@ function checkModelDeviceType()
 {
     var message = null;
     
-    if($("#addInfoTabModel #inputTypeModel").val().length === 0)
+    if( !$("#addInfoTabModel #inputTypeModel").val() || $("#addInfoTabModel #inputTypeModel").val().length === 0)
     {
         $("#inputTypeModelMsg").css("color", "red");
         message = 'Device Type is mandatory';
@@ -173,7 +248,7 @@ function checkModelProducer()
 {
     var message = null;
     
-    if($("#addInfoTabModel #inputProducerModel").val().length === 0)
+    if( !$("#addInfoTabModel #inputProducerModel").val() || $("#addInfoTabModel #inputProducerModel").val().length === 0)
     {
         $("#inputProducerModelMsg").css("color", "red");
         message = 'Producer is mandatory';
@@ -201,6 +276,61 @@ function checkModelProducer()
 
 function checkAddModelConditions()
 {
+
+        //check that any value has a correct name/syntax
+        var n = $('#addSchemaTabModel #addlistAttributes .row input:even').filter(function(){return this.value.length>=2}).length;
+        var n1 =$('#addSchemaTabModel #addlistAttributes .row input:even').length;
+
+        //console.log("n: "+n+" n1:"+n1);
+        if (n==n1)
+        {
+                addModelConditionsArray['attributeWithName'] = true;
+        }
+        else
+        {
+                addModelConditionsArray['attributeWithName'] = false;
+        }
+
+        //check that any value has a correct name/syntax. this enforce is done here since the list of values is dynamic
+        var regex=/[^a-z0-9:._-]/gi;
+        var o = $('#addSchemaTabModel #addlistAttributes .row input:even').filter(function(){return !regex.test(this.value)}).length;
+
+        //console.log("o: "+o+" n1:"+n1);
+        if (o==n1)
+        {
+                addModelConditionsArray['specialChars'] = true;
+        }
+        else
+        {
+                addModelConditionsArray['specialChars'] = false;
+        }
+        //check that any value has a value type selected
+        var p = $('#addSchemaTabModel #addlistAttributes select[id*="value_type"]').filter(function(){return this.value!=="NOT VALID OPTION"}).length;
+
+        //console.log("p: "+p+" n1:"+n1);
+        if (p==n1)
+        {
+                addModelConditionsArray['attributeWithValueType'] = true;
+        }
+        else
+        {
+                addModelConditionsArray['attributeWithValueType'] = false;
+        }
+
+        //check that any value has a value unit selected
+        var c = $('#addSchemaTabModel #addlistAttributes select[id*="value_unit"]').filter(function(){return this.value!=="NOT VALID OPTION"}).length;
+
+        //console.log("c: "+c+" n1:"+n1);
+        if (c==n1)
+        {
+                addModelConditionsArray['attributeWithValueUnit'] = true;
+        }
+        else
+        {
+                addModelConditionsArray['attributeWithValueUnit'] = false;
+        }
+
+
     var enableButton = true;
     // console.log(addModelConditionsArray);
     for(var key in addModelConditionsArray) 
@@ -220,4 +350,23 @@ function checkAddModelConditions()
     {
         $("#addNewModelConfirmBtn").attr("disabled", true);   
     }
+}
+
+function checkAtlistOneAttribute()
+{
+    var message = null;
+
+    if ( !$("#addlistAttributes").html() || $("#addlistAttributes").html().length === 0)
+    {
+        $("#addlistAttributesMsg").css("color", "red");
+        message = 'At least a value needs to be specified';
+        addModelConditionsArray['oneAttribute'] = false;
+    }
+    else
+    {
+                $("#addlistAttributesMsg").css("color", "#337ab7");
+                message = '';
+                addModelConditionsArray['oneAttribute'] = true;
+    }
+    $("#addlistAttributesMsg").html(message);
 }

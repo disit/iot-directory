@@ -188,8 +188,7 @@ else
 		</script>
  
         <!-- Custom scripts -->
-		<!--
-		<script  src="js/devices.js"></script>-->
+		<script  src="js/common.js"></script>
 		<script  src="js/devicesManagement.js"></script>
 		<script  src="js/devicesEditManagement.js"></script>
         <script  src="../js/dashboard_mng.js"></script>
@@ -1190,6 +1189,7 @@ else
 							<div id="deletedAttributes" style="display:none"></div>
 							<!-- <div class="pull-left"><i id="addAttrMBtn" class="fa fa-plus-square" style="font-size:36px; color: #ffcc00"></i></div> -->
 							<div class="pull-left"><button id="addAttrMBtn" class="btn btn-primary">Add Value</button></div>
+							<div id="editlistAttributesMsg" class="modalFieldMsgCnt">&nbsp;</div>
                         </div>
 						
 						<!-- Semantic Labeling tab -->

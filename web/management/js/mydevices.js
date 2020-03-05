@@ -114,7 +114,7 @@ var dataTable ="";
 							'<div class="col-xs-6 col-sm-6" style="background-color:#D6CADD;"><button class="btn btn-warning" onclick="download(\'\/certsdb\/'+d.certificate+'\',\''+d.device+'\',\''+d.cb+'\');return true;"><b>Certificate</b></button></div>' +
 						'</div>'+
 						'<div class="row">' +
-                                                        '<div class="col-xs-6 col-sm-6" style="background-color:#D6CADD;"><a href="https://www.snap4city.org/ca/ca.pem" download><button class="btn btn-warning"><b>CA Certificate</b></button></a></div>' +
+                                                        '<div class="col-xs-6 col-sm-6" style="background-color:#E6E6FA;"><a href="https://www.snap4city.org/ca/ca.pem" download><button class="btn btn-warning"><b>CA Certificate</b></button></a></div>' +
                                                 '</div>';
 		else
 			txtCert = '<div class="row">' +
@@ -156,7 +156,11 @@ var dataTable ="";
 			'<div class="col-xs-6 col-sm-6" style="background-color:#E6E6FA;"><b>Gateway/Edge Type:</b>' + "  " + d.edgegateway_type + '</div>' +
 			'<div class="clearfix visible-xs"></div>' +
 			'<div class="col-xs-6 col-sm-6" style="background-color:#E6E6FA;"><b>Gateway/Edge Uri:</b>' + "  " + d.edgegateway_uri  + '</div>' +	
-		'</div>' ;
+		'</div>' +
+		'<div class="row">' +
+                        '<div class="col-xs-12 col-sm-12" style="background-color:#D6CADD;"><b>Device Uri:</b>' + "  <a href=\""+d.uri+"\">" + d.uri + '</a></div>' +
+                        '<div class="clearfix visible-xs"></div>' +
+                '</div>';
       }
       
 	result+=	'<div class="row">' +

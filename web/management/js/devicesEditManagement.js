@@ -11,8 +11,8 @@ function showEditDeviceModal()
     editDeviceConditionsArray['inputLatitudeDeviceM'] = false;
     editDeviceConditionsArray['inputLongitudeDeviceM'] = false;
 	editDeviceConditionsArray['inputMacDeviceM'] = false;
-    editDeviceConditionsArray['KeyOneDeviceUserM'] = false;
-	editDeviceConditionsArray['KeyTwoDeviceUserM'] = false;
+    //editDeviceConditionsArray['KeyOneDeviceUserM'] = false;
+	//editDeviceConditionsArray['KeyTwoDeviceUserM'] = false;
 	
 	
 	$("#editDeviceConfirmBtn").attr("disabled", true);
@@ -28,13 +28,13 @@ function showEditDeviceModal()
 	
 	$("#editInfoTabDevice #inputMacDeviceM").on('input', function(){checkEditDeviceMAC(); checkEditDeviceConditions();}); 
     
-    $("#editInfoTabDevice #KeyOneDeviceUserM").on('input', function(){UserEditKey(); checkEditDeviceConditions();}); 
-    $("#editInfoTabDevice #KeyOneDeviceUserM").change(function(){UserEditKey(); checkEditDeviceConditions();});
+    //$("#editInfoTabDevice #KeyOneDeviceUserM").on('input', function(){UserEditKey(); checkEditDeviceConditions();}); 
+    //$("#editInfoTabDevice #KeyOneDeviceUserM").change(function(){UserEditKey(); checkEditDeviceConditions();});
     
-    $("#editInfoTabDevice #KeyTwoDeviceUserM").on('input', function(){UserEditKey(); checkEditDeviceConditions();}); 
-    $("#editInfoTabDevice #KeyTwoDeviceUserM").change( function(){UserEditKey(); checkEditDeviceConditions();}); 
+    //$("#editInfoTabDevice #KeyTwoDeviceUserM").on('input', function(){UserEditKey(); checkEditDeviceConditions();}); 
+    //$("#editInfoTabDevice #KeyTwoDeviceUserM").change( function(){UserEditKey(); checkEditDeviceConditions();}); 
     
-    $("#editInfoTabDevice #editDeviceGenerateKeyBtn").on('click',function(){UserEditKey(); checkEditDeviceConditions();});
+    //$("#editInfoTabDevice #editDeviceGenerateKeyBtn").on('click',function(){UserEditKey(); checkEditDeviceConditions();});
 	
 	
 	checkEditDeviceName();
@@ -42,7 +42,7 @@ function showEditDeviceModal()
 	checkEditDeviceLatitude(); 
 	checkEditDeviceLongitude();
 	checkEditDeviceMAC();
-	UserEditKey(); 
+	//UserEditKey(); 
 	checkEditDeviceConditions();
     
 
@@ -56,7 +56,7 @@ function checkEditDeviceName()
 {
     var message = null;
     
-    if($("#editInfoTabDevice #inputNameDeviceM").val().length === 0)
+    if ( !$("#editInfoTabDevice #inputNameDeviceM").val() || $("#editInfoTabDevice #inputNameDeviceM").val().length === 0)
     {
         $("#inputNameDeviceMMsg").css("color", "red");
         message = 'Device name is not register but it is readonly';
@@ -78,7 +78,7 @@ function checkEditDeviceName()
 function checkEditDeviceType()
 {
     var message = null;
-    if($("#editInfoTabDevice #inputTypeDeviceM").val().length === 0)
+    if ( !$("#editInfoTabDevice #inputTypeDeviceM").val() || $("#editInfoTabDevice #inputTypeDeviceM").val().length === 0)
     {
         $("#inputTypeDeviceMMsg").css("color", "red");
         message = 'Device Type is mandatory';
@@ -120,7 +120,7 @@ function checkEditDeviceLatitude()
     //var pattern = /^[-+]?([1-8]?\d(\.\d+)?|90(\.0+)?)$/;
 	var value = document.getElementById("inputLatitudeDeviceM").value;
 	
-    if(value === '')
+    if( !value || value === '')
     {
         message = 'Latitude is mandatory';
         editDeviceConditionsArray['inputLatitudeDeviceM'] = false;
@@ -149,7 +149,8 @@ function checkEditDeviceLongitude()
    // var reg = new RegExp("^-?([1-8]?[1-9]|[1-9]0)\.{1}\d{1,6}");
     var pattern = /^[-+]?(180(\.0+)?|((1[0-7]\d)|([1-9]?\d))(\.\d+)?)$/;
 	var value = document.getElementById("inputLongitudeDeviceM").value;
-	if(value === '')
+	
+	if(!value || value === '')
     {
         message = 'Longitude is mandatory';
         editDeviceConditionsArray['inputLongitudeDeviceM'] = false;
@@ -177,7 +178,7 @@ function checkEditDeviceMAC()
     var message = null;
 	var pattern = /^([0-9A-Fa-f]{2}[:-]){5}([0-9A-Fa-f]{2})$/;
 	
-	if($("#editInfoTabDevice #inputMacDeviceM").val().length === 0 || $("#editInfoTabDevice #inputMacDeviceM").val()==='null')
+	if( !$("#editInfoTabDevice #inputMacDeviceM").val() ||  $("#editInfoTabDevice #inputMacDeviceM").val().length === 0 || $("#editInfoTabDevice #inputMacDeviceM").val()==='null')
     {
         $("#inputMacDeviceMMsg").css("color", "red");
         message = '';
@@ -249,17 +250,75 @@ function UserEditKey()
 	
 function checkEditDeviceConditions()
 {
+
+        //check that any value has a correct name/syntax
+        var n = $('#editSchemaTabDevice #editlistAttributes .row input:even').filter(function(){return this.value.length>=2}).length;
+	var nx= $('#editSchemaTabDevice #addlistAttributesM .row input:even').filter(function(){return this.value.length>=2}).length;
+        var n1 =$('#editSchemaTabDevice #editlistAttributes .row input:even').length;
+	var n1x =$('#editSchemaTabDevice #addlistAttributesM .row input:even').length;
+
+        console.log("n: "+n+" n1:"+n1+" nx:"+nx+" n1x:"+n1x);
+        if ((n+nx)==(n1+n1x))
+        {
+                editDeviceConditionsArray['attributeWithName'] = true;
+        }
+        else
+        {
+                editDeviceConditionsArray['attributeWithName'] = false;
+        }
+
+        //check that any value has a correct name/syntax. this enforce is done here since the list of values is dynamic
+        var regex=/[^a-z0-9:._-]/gi;
+        var o = $('#editSchemaTabDevice #editlistAttributes .row input:even').filter(function(){return !regex.test(this.value)}).length;
+	var ox = $('#editSchemaTabDevice #addlistAttributesM .row input:even').filter(function(){return !regex.test(this.value)}).length;
+
+        console.log("o: "+o+" n1:"+n1+" ox:"+ox);
+        if ((o+ox)==(n1+n1x))
+        {
+                editDeviceConditionsArray['specialChars'] = true;
+        }
+        else
+        {
+                editDeviceConditionsArray['specialChars'] = false;
+        }
+
+        //check that any value has a value type selected
+        var p = $('#editSchemaTabDevice #editlistAttributes select[id*="value_type"]').filter(function(){return this.value!=="NOT VALID OPTION"}).length;
+	var px = $('#editSchemaTabDevice #addlistAttributesM select[id*="value_type"]').filter(function(){return this.value!=="NOT VALID OPTION"}).length;
+
+        console.log("p: "+p+" n1:"+n1+" px:"+px);
+        if ((p+px)==(n1+n1x))
+        {
+                editDeviceConditionsArray['attributeWithValueType'] = true;
+        }
+        else
+        {
+                editDeviceConditionsArray['attributeWithValueType'] = false;
+        }
+
+        //check that any value has a value unit selected
+        var c = $('#editSchemaTabDevice #editlistAttributes select[id*="value_unit"]').filter(function(){return this.value!=="NOT VALID OPTION"}).length;
+	var cx = $('#editSchemaTabDevice #addlistAttributesM select[id*="value_unit"]').filter(function(){return this.value!=="NOT VALID OPTION"}).length;
+
+        console.log("c: "+c+" n1:"+n1+" cx:"+cx);
+        if ((c+cx)==(n1+n1x))
+        {
+                editDeviceConditionsArray['attributeWithValueUnit'] = true;
+        }
+        else
+        {
+                editDeviceConditionsArray['attributeWithValueUnit'] = false;
+        }
+
     var enableButton = true;
 	
-	 // console.log(editDeviceConditionsArray);
-    
     for(var key in editDeviceConditionsArray) 
     {
-        console.log(key);
         if(editDeviceConditionsArray[key] === false)
         {
-            enableButton = false;
-            break;
+		enableButton = false;
+		console.log("need:" + key);
+		break;
         }
     }
     
@@ -272,3 +331,60 @@ function checkEditDeviceConditions()
         $("#editDeviceConfirmBtn").attr("disabled", true);
     }
 }
+
+//don't use ConditionsArray here since the list of Values is dynamic and should be checked in all together in checkAddDeviceConditions
+function checkEditValueName(current)
+{
+    value=current.val();
+    element=current.parent().siblings().last();
+
+    //console.log("Check edit value name on:"+value);
+
+    var message = null;
+    var regex=/[^a-z0-9:._-]/gi;
+
+    if  (!value || value.length === 0)
+    {
+        element.css("color", "red");
+        message = 'Value name is mandatory';
+    }
+    else if(value.length < 2)
+    {
+        element.css("color", "red");
+        message = 'Value name (at least 2 chars long)';
+    }
+    else if(regex.test(value))
+    {
+        element.css("color", "red");
+        message = 'No special characters are allowed in Value name';
+    }
+    else
+    {
+        element.css("color", "#337ab7");
+        message = 'Ok';
+    }
+
+    element.html(message);
+}
+
+function checkEditAtlistOneAttribute()
+{
+    var message = null;
+
+    if (( !$("#editlistAttributes").html() ||  $("#editlistAttributes").html().length === 0)
+	&&
+	(!$("#addlistAttributesM").html() ||  $("#addlistAttributesM").html().length === 0))
+    {
+        $("#editlistAttributesMsg").css("color", "red");
+        message = 'At least a value needs to be specified';
+        editDeviceConditionsArray['oneAttribute'] = false;
+    }
+    else
+    {
+                $("#editlistAttributesMsg").css("color", "#337ab7");
+                message = '';
+                editDeviceConditionsArray['oneAttribute'] = true;
+    }
+    $("#editlistAttributesMsg").html(message);
+}
+

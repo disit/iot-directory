@@ -751,14 +751,33 @@ else if($action == 'get_device_attributes')
 }	
 else if($action == 'get_param_values')
 {	
-	// $result = array();
-	$result['status'] = 'ok'; 
-	$result['value_type'] = generatelabels($link);
-	$result['data_type'] = generatedatatypes($link);
-	$result['value_unit'] = generateunits($link);
-	$result['log'] .= '\n\naction:get_param_values';
-	my_log($result);
-	mysqli_close($link); 
+	$newresult=array("status"=>"","msg"=>"","content"=>"","log"=>"", "error_msg"=>"");
+	$newresult['status'] = 'ok'; 
+
+	$newresult['data_type'] = generatedatatypes($link);
+	mysqli_close($link);
+
+	retrieveValue("value%20type", $result);
+	if ($result["status"]=='ok'){
+		$newresult['value_type'] = $result["content"];
+		retrieveValue("value%20unit", $result);
+		if ($result["status"]=='ok'){
+			$newresult['value_unit'] = $result["content"];
+		}
+		else{
+			$newresult['status'] = 'ko';
+			$newresult['error_msg'] = 'Problem contacting the Snap4City server (Dictionary). Please try later';
+			$newresult['log'] .= '\n Problem contacting the Snap4City server (Dictionary value unit)';
+		}
+	}
+	else {
+		$newresult['status'] = 'ko';
+		$newresult['error_msg'] = 'Problem contacting the Snap4City server (Dictionary). Please try later';
+		$newresult['log'] .= '\n Problem contacting the Snap4City server (Dictionary value type)';
+	}
+	
+	$newresult['log'] .= '\n\naction:get_param_values';
+	my_log($newresult);
 }
 else if ($action == 'get_device'){
 /*Sara611 not logged, this function is used in value.php to determine the visibility of a device before changing 

@@ -27,7 +27,6 @@ function showAddDeviceModal()
 {
 //	var  addDeviceConditionsArray = new Array();
 	addDeviceConditionsArray['inputNameDevice'] = false;
-	//addDeviceConditionsArray['inputNameValue'] = false;
     addDeviceConditionsArray['inputLatitudeDevice'] = false;
     addDeviceConditionsArray['inputLongitudeDevice'] = false;	
 	addDeviceConditionsArray['inputTypeDevice'] = false;
@@ -105,8 +104,6 @@ function showAddDeviceModal()
 	
     // end last inserted controls
 	
-    //$("#addSchemaTabDevice #addlistAttributes .row input:even").on('input', checkValueName);
-	//$("#addSchemaTabDevice #addlistAttributes .row input:even").on('input', checkAddDeviceConditions);
 
 	
 	
@@ -166,7 +163,7 @@ function checkSelectionProtocol()
 {
     var message = null;
     
-    if($("#addIOTBrokerTabDevice #selectProtocolDevice").val().length === 0)
+    if ( !$("#addIOTBrokerTabDevice #selectProtocolDevice").val() || $("#addIOTBrokerTabDevice #selectProtocolDevice").val().length === 0 )
     {
         $("#selectProtocolDeviceMsg").css("color", "red");
         message = 'Device protocol  is mandatory';
@@ -186,7 +183,7 @@ function checkSelectionFormat()
 {
     var message = null;
     
-    if($("#addIOTBrokerTabDevice #selectFormatDevice").val().length === 0)
+    if ( !$("#addIOTBrokerTabDevice #selectFormatDevice").val() || $("#addIOTBrokerTabDevice #selectFormatDevice").val().length === 0)
     {
         $("#selectFormatDeviceMsg").css("color", "red");
         message = 'Device format  is mandatory';
@@ -208,7 +205,7 @@ function checkSelectionKind()
 {
     var message = null;
     
-    if($("#addIOTBrokerTabDevice #selectKindDevice").val().length === 0)
+    if ( !$("#addIOTBrokerTabDevice #selectKindDevice").val() || $("#addIOTBrokerTabDevice #selectKindDevice").val().length === 0)
     {
         $("#selectKindDeviceMsg").css("color", "red");
         message = 'Device kind  is mandatory';
@@ -230,7 +227,7 @@ function checkSelectionCB()
 {
     var message = null;
     
-    if($("#addIOTBrokerTabDevice #selectContextBroker").val()!=undefined && $("#addIOTBrokerTabDevice #selectContextBroker").val().length === 0)
+    if ( !$("#addIOTBrokerTabDevice #selectContextBroker").val() ||  $("#addIOTBrokerTabDevice #selectContextBroker").val().length === 0)
     {
         $("#selectContextBrokerMsg").css("color", "red");
         message = 'Context broker is mandatory';
@@ -251,7 +248,7 @@ function checkDeviceName()
     var message = null;
     var regex=/[^a-z0-9:_-]/gi;
     
-    if($("#addInfoTabDevice #inputNameDevice").val().length === 0)
+    if ( !$("#addInfoTabDevice #inputNameDevice").val() || $("#addInfoTabDevice #inputNameDevice").val().length === 0)
     {
         $("#inputNameDeviceMsg").css("color", "red");
         message = 'Device name is mandatory';
@@ -281,53 +278,47 @@ function checkDeviceName()
     $("#inputNameDeviceMsg").html(message);
 }
 
-
-function checkValueName()
+//don't use ConditionsArray here since the list of Values is dynamic and should be checked in all together in checkAddDeviceConditions
+function checkValueName(current)
 {
+    value=current.val();
+    element=current.parent().siblings().last();
+
+    //console.log("Check value name on:"+value);
+
     var message = null;
     var regex=/[^a-z0-9:._-]/gi;
-    console.log("valore identificato " + $(this).val());
-	console.log("elemento identificato " + $(this).parent().siblings().last().html());
 	
-    if($(this).val().length === 0)
+    if 	(!value || value.length === 0)
     {
-        $(this).parent().siblings().last().css("color", "red");
+        element.css("color", "red");
         message = 'Value name is mandatory';
-        //addDeviceConditionsArray['inputNameValue'] = false;
     }
-    else if($(this).val().length < 2)
+    else if(value.length < 2)
     {
-        $(this).parent().siblings().last().css("color", "red");
+        element.css("color", "red");
         message = 'Value name (at least 2 chars long)';
-        //addDeviceConditionsArray['inputNameValue'] = false;
     }
-    else if(regex.test($(this).val()))
+    else if(regex.test(value))
     {
-        $(this).parent().siblings().last().css("color", "red");
+        element.css("color", "red");
         message = 'No special characters are allowed in Value name';
-        //addDeviceConditionsArray['inputNameValue'] = false;
     }
     else
     {
-	
-		$(this).parent().siblings().last().css("color", "#337ab7");
-		message = 'Ok';
-		//addDeviceConditionsArray['inputNameValue'] = true;
-	
+	element.css("color", "#337ab7");
+	message = 'Ok';
     }
     
-    $(this).parent().siblings().last().html(message);
+    element.html(message);
 }
-
-
-
 
 function checkDeviceNameUser()
 {
     var message = null;
     var regex=/[^a-z0-9_-]/gi;
     
-    if($("#inputNameDeviceUser").val().length === 0)
+    if ( !$("#inputNameDeviceUser").val() || $("#inputNameDeviceUser").val().length === 0)
     {
         $("#inputNameDeviceUserMsg").css("color", "red");
         message = 'Device name is mandatory';
@@ -370,7 +361,7 @@ function checkDeviceType()
 {
     var message = null;
     
-    if($("#addInfoTabDevice #inputTypeDevice").val().length === 0)
+    if ( !$("#addInfoTabDevice #inputTypeDevice").val() || $("#addInfoTabDevice #inputTypeDevice").val().length === 0)
     {
         $("#inputTypeDeviceMsg").css("color", "red");
         message = 'Device Type is mandatory';
@@ -403,7 +394,7 @@ function checkModel()
 	var nameOpt =  document.getElementById('selectModelDevice').options;
 	var selectednameOpt = document.getElementById('selectModelDevice').selectedIndex;
 	 
-    if(nameOpt[selectednameOpt].value =="")
+    if (nameOpt[selectednameOpt].value =="")
     {
         $("#inputModelDeviceMsg").css("color", "red");
         message = 'Device Model is mandatory';
@@ -423,7 +414,7 @@ function checkAtlistOneAttribute()
 {
     var message = null;
 	 
-    if($("#addlistAttributes").html().length === 0)
+    if ( !$("#addlistAttributes").html() || $("#addlistAttributes").html().length === 0)
     {
         $("#addlistAttributesMsg").css("color", "red");
         message = 'At least a value needs to be specified';
@@ -443,7 +434,7 @@ function checkDeviceTypeUser()
 {
     var message = null;
     
-    if($("#inputTypeDeviceUser").val().length === 0)
+    if (!$("#inputTypeDeviceUser").val() || $("#inputTypeDeviceUser").val().length === 0)
     {
         $("#inputTypeDeviceUserMsg").css("color", "red");
         message = 'Device Type is mandatory';
@@ -483,7 +474,7 @@ function checkFrequencyType()
 	var pattern = /^\d+$/;
 	//var value = document.getElementById("inputFrequencyDevice").value;
     
-    if($("#addInfoTabDevice #inputFrequencyDevice").val().length === 0)
+    if (!$("#addInfoTabDevice #inputFrequencyDevice").val() || $("#addInfoTabDevice #inputFrequencyDevice").val().length === 0)
     {
         $("#inputFrequencyDeviceMsg").css("color", "red");
         message = 'Device Frequency is mandatory';
@@ -517,7 +508,7 @@ function checkUri()
     var message = null;
 	var pattern = /^(?:http(s)?:\/\/)?[\w.-]+(?:\.[\w\.-]+)+[\w\-\._~:/?#[\]@!\$&'\(\)\*\+,;=.]+$/;
 	
-	if($("#addInfoTabDevice #inputEdgeGatewayUri").val().length === 0)
+	if ( !$("#addInfoTabDevice #inputEdgeGatewayUri").val() || $("#addInfoTabDevice #inputEdgeGatewayUri").val().length === 0)
     {
         $("#inputEdgeGatewayUriMsg").css("color", "red");
         message = '';
@@ -549,7 +540,7 @@ function checkMAC()
     var message = null;
 	var pattern = /^([0-9A-Fa-f]{2}[:-]){5}([0-9A-Fa-f]{2})$/;
 	
-	if($("#addInfoTabDevice #inputMacDevice").val().length === 0)
+	if ( !$("#addInfoTabDevice #inputMacDevice").val() || $("#addInfoTabDevice #inputMacDevice").val().length === 0)
     {
         $("#inputMacDeviceMsg").css("color", "red");
         message = '';
@@ -580,7 +571,7 @@ function checkDeviceLatitude()
     var pattern = /^[-+]?([1-8]?\d(\.\d+)?|90(\.0+)?)$/;
 	//var value = document.getElementById("inputLatitudeDevice").value;
 	
-    if($("#addGeoPositionTabDevice #inputLatitudeDevice").val() === '')
+    if ( !$("#addGeoPositionTabDevice #inputLatitudeDevice").val() || $("#addGeoPositionTabDevice #inputLatitudeDevice").val() === '')
     {
         message = 'Latitude is mandatory';
         addDeviceConditionsArray['inputLatitudeDevice'] = false;
@@ -609,7 +600,7 @@ function checkDeviceLongitude()
    // var reg = new RegExp("^-?([1-8]?[1-9]|[1-9]0)\.{1}\d{1,6}");
     var pattern = /^[-+]?(180(\.0+)?|((1[0-7]\d)|([1-9]?\d))(\.\d+)?)$/;
 	//var value = document.getElementById("inputLongitudeDevice").value;
-	if($("#addGeoPositionTabDevice #inputLongitudeDevice").val() === '')
+	if ( !$("#addGeoPositionTabDevice #inputLongitudeDevice").val() || $("#addGeoPositionTabDevice #inputLongitudeDevice").val() === '')
     {
         message = 'Longitude is mandatory';
         addDeviceConditionsArray['inputLongitudeDevice'] = false;
@@ -639,7 +630,7 @@ function checkDeviceLatitudeUser()
     //var pattern = /^[-+]?([1-8]?\d(\.\d+)?|90(\.0+)?)$/;
 	var value = document.getElementById("inputLatitudeDeviceUser").value;
 	
-    if(value === '')
+    if ( !value || value === '')
     {
         message = 'Latitude is mandatory';
         addMyDeviceConditionsArray['inputLatitudeDeviceUser'] = false;
@@ -668,7 +659,7 @@ function checkDeviceLongitudeUser()
    // var reg = new RegExp("^-?([1-8]?[1-9]|[1-9]0)\.{1}\d{1,6}");
     var pattern = /^[-+]?(180(\.0+)?|((1[0-7]\d)|([1-9]?\d))(\.\d+)?)$/;
 	var value = document.getElementById("inputLongitudeDeviceUser").value;
-	if(value === '')
+	if ( !value || value === '')
     {
         message = 'Longitude is mandatory';
         addMyDeviceConditionsArray['inputLongitudeDeviceUser'] = false;
@@ -741,7 +732,7 @@ function checkValue()
 {
     var message = null;
     
-    if($("#addSchemaTabDevice #addlistAttributes").val().length === 0)
+    if( !$("#addSchemaTabDevice #addlistAttributes").val() || $("#addSchemaTabDevice #addlistAttributes").val().length === 0)
     {
         $("#addlistAttributesMsg").css("color", "red");
         message = 'One value is mandatory';
@@ -759,46 +750,85 @@ function checkValue()
     $("#addlistAttributesMsg").html(message);
 }
 */
-	
+
+//here we also implement again the CheckNameValue, since the list of the values is dynamic
 function checkAddDeviceConditions()
 {
-    var enableButton = true;
-	
-	   console.log(addDeviceConditionsArray);
+	//check that any value has a correct name/syntax
+	var n = $('#addSchemaTabDevice #addlistAttributes .row input:even').filter(function(){return this.value.length>=2}).length;
+	var n1 =$('#addSchemaTabDevice #addlistAttributes .row input:even').length;
 
-	var n = $('#addSchemaTabDevice #addlistAttributes .row input:even').filter(function(){return this.value.length>=5}).length;
-	var n1 =n;// $('#addSchemaTabDevice #addlistAttributes .row input:even').length;
-    //troubles are in this function, removed, to be investigated further
-	console.log("valore di n=" + n + " valore di n1" + n1);
+	//console.log("n: "+n+" n1:"+n1);	
 	if (n==n1)
 	{
 		addDeviceConditionsArray['attributeWithName'] = true; 
-    }	
+	}	
 	else
 	{
 		addDeviceConditionsArray['attributeWithName'] = false;
-    }	
-	
-	
-    for(var key in addDeviceConditionsArray) 
-    {
-        if(addDeviceConditionsArray[key] === false)
+	}
+
+ 	//check that any value has a correct name/syntax. this enforce is done here since the list of values is dynamic
+	var regex=/[^a-z0-9:._-]/gi;
+        var o = $('#addSchemaTabDevice #addlistAttributes .row input:even').filter(function(){return !regex.test(this.value)}).length;
+
+        //console.log("o: "+o+" n1:"+n1);
+        if (o==n1)
         {
-            enableButton = false;
-			
-			console.log("need" + key);
-            break;
+                addDeviceConditionsArray['specialChars'] = true;
         }
-    }
-    console.log(JSON.stringify(addDeviceConditionsArray));
-    if(enableButton)
-    {
-        $("#addNewDeviceConfirmBtn").attr("disabled", false);
-    }
-    else
-    {
-        $("#addNewDeviceConfirmBtn").attr("disabled", true);
-    }
+        else
+        {
+                addDeviceConditionsArray['specialChars'] = false;
+        }
+
+	//check that any value has a value type selected 
+	var p = $('#addSchemaTabDevice #addlistAttributes select[id*="value_type"]').filter(function(){return this.value!=="NOT VALID OPTION"}).length;
+
+	//console.log("p: "+p+" n1:"+n1);
+	if (p==n1)
+        {
+                addDeviceConditionsArray['attributeWithValueType'] = true;
+        }
+        else
+        {
+                addDeviceConditionsArray['attributeWithValueType'] = false;
+        }
+
+	//check that any value has a value unit selected
+        var c = $('#addSchemaTabDevice #addlistAttributes select[id*="value_unit"]').filter(function(){return this.value!=="NOT VALID OPTION"}).length;
+
+        //console.log("c: "+c+" n1:"+n1);
+        if (c==n1)
+        {
+                addDeviceConditionsArray['attributeWithValueUnit'] = true;
+        }
+        else
+        {
+                addDeviceConditionsArray['attributeWithValueUnit'] = false;
+        }
+
+	var enableButton = true;
+
+	for(var key in addDeviceConditionsArray) 
+	{
+		if(addDeviceConditionsArray[key] === false)
+		{
+			enableButton = false;
+			
+			console.log("need:" + key);
+			break;
+		}
+	}
+
+	if(enableButton)
+	{
+		$("#addNewDeviceConfirmBtn").attr("disabled", false);
+	}
+	else
+	{
+		$("#addNewDeviceConfirmBtn").attr("disabled", true);
+	}
 }
 
 function checkAddMyDeviceConditions()

@@ -717,7 +717,7 @@ if ($k1!="" && $k2!=""){
 	  
 	try
 	{
-$url= $GLOBALS["delegationURI"] . "datamanager/api/v1/username/". $user . "/delegation?accessToken=" . $token .
+$url= $GLOBALS["delegationURI"] . "datamanager/api/v1/username/". urlencode($user) . "/delegation?accessToken=" . $token .
 "&sourceRequest=iotdirectory";
 
  $options = array(
@@ -779,7 +779,7 @@ function delegateObject($elementId, $user, $userdelegated, $groupdelegated, $obj
 	try
 	{
 
-        $url= $GLOBALS["delegationURI"] . "datamanager/api/v1/username/". $user . "/delegation?accessToken=" . $token ."&sourceRequest=iotdirectory";
+        $url= $GLOBALS["delegationURI"] . "datamanager/api/v1/username/". urlencode($user) . "/delegation?accessToken=" . $token ."&sourceRequest=iotdirectory";
 
         $options = array(
                           'http' => array(
@@ -833,7 +833,7 @@ function removeDelegationValue($token, $user, $delegationId, &$result) {
 	$local_result="";
     try
 	{  
-        $url= $GLOBALS["delegationURI"] . "datamanager/api/v1/username/". $user . "/delegation/" . $delegationId . "?accessToken=" . $token . 
+        $url= $GLOBALS["delegationURI"] . "datamanager/api/v1/username/". urlencode($user) . "/delegation/" . $delegationId . "?accessToken=" . $token . 
 "&sourceRequest=iotdirectory";
           $options = array(
                           'http' => array(
@@ -876,7 +876,7 @@ function getDelegatedDevice($token, $user, &$result) {
         $mykeys = array();
 	try
 	{
-          $url= $GLOBALS["delegationURI"] . "datamanager/api/v2/username/". $user . "/delegated?accessToken=" . $token . 
+          $url= $GLOBALS["delegationURI"] . "datamanager/api/v2/username/". urlencode($user) . "/delegated?accessToken=" . $token . 
 "&sourceRequest=iotdirectory";
           $local_result = file_get_contents($url);
 	} 
@@ -970,7 +970,7 @@ function getDelegatedObject($token, $user, $object, &$result) {
 	try
 	{
           
-        $url= $GLOBALS["delegationURI"] . "datamanager/api/v2/username/". $user . "/delegated?accessToken=" . $token ."&sourceRequest=iotdirectory";  
+        $url= $GLOBALS["delegationURI"] . "datamanager/api/v2/username/". urlencode($user) . "/delegated?accessToken=" . $token ."&sourceRequest=iotdirectory";  
         $local_result = file_get_contents($url);
 	} 
 	catch (Exception $ex)
@@ -1043,7 +1043,7 @@ function getDelegatorDevice($token, $user, &$result, $eId) {
         $mykeys = array();
 	try
 	{
-          $url= $GLOBALS["delegationURI"] . "datamanager/api/v2/username/". $user . "/delegator?accessToken=" . $token . 
+          $url= $GLOBALS["delegationURI"] . "datamanager/api/v2/username/". urlencode($user) . "/delegator?accessToken=" . $token . 
 "&sourceRequest=iotdirectory";
           $local_result = file_get_contents($url);
 	  if(strpos($http_response_header[0], '200') == true || strpos($http_response_header[0], '204') == true)
@@ -1116,7 +1116,7 @@ function getDelegatorObject($token, $user, &$result,$object, $delegationId) {
     $mykeys = array();
 	try
 	{
-        $url= $GLOBALS["delegationURI"] . "datamanager/api/v2/username/".$user."/delegator?accessToken=".$token."&sourceRequest=iotdirectory";  
+        $url= $GLOBALS["delegationURI"] . "datamanager/api/v2/username/".urlencode($user)."/delegator?accessToken=".$token."&sourceRequest=iotdirectory";  
         $local_result = file_get_contents($url);
 	  
         if(strpos($http_response_header[0], '200') == true || strpos($http_response_header[0], '204') == true)
@@ -1285,7 +1285,6 @@ function getOwnerShipObject($token, $object, &$result) {
        return $listCondDevice;
 }
 
-
 function generatelabels($link) {
      $query2 = "SELECT value_type FROM value_types ORDER BY value_type";
      $res = mysqli_query($link, $query2) or die(mysqli_error($link));
@@ -1312,7 +1311,47 @@ function generateunits($link) {
          return $labels;
 }
 
+function retrieveValue($type,&$result){
+	$local_result="";
+	try
+	{
+		$url= $GLOBALS["processLoaderURI"] . "dictionary/?type=".$type;
+		$local_result = file_get_contents($url);
+		$result["log"] .= $local_result;
 
+		//TODO how to catch an 504
+		if (($local_result!== FALSE) && (strpos($http_response_header[0], '200') == true || strpos($http_response_header[0], '204') == true))
+		{
+			$dictionary = json_decode($local_result);
+			if ($dictionary->{'code'}=='200') {
+				$result["status"]='ok';
+				$result["content"]=$dictionary->{'content'};
+				$result["msg"] .='\n ok, returning dictionary';
+				$result["log"] .='\n ok, returning dictionary';
+			}
+			else {
+				$result["status"]='ko';
+				$result["error_msg"]=$dictionary{'result'};
+				$result["msg"] .='\n ko NOT returning dictionary';
+				$result["log"] .='\n ko NOT returning dictionary';
+			}
+		}
+		else{
+			$result["status"]='ko';
+                        $result["error_msg"]=" Dictionary NOT reacheable";
+                        $result["msg"] .='\n ko dictionary not reacheable';
+                        $result["log"] .='\n ko dictionary not reacheable';
+		}
+	}
+	catch (Exception $ex)
+	{
+		$result["status"]='ko';
+		$result["error_msg"] .= ' Error in accessing the dictionary. ';
+		$result["msg"] .= '\n error in accessing the dictionary ';
+		$result["log"] .= '\n error in accessing the dictionary ' . $ex;
+	}
+	return $result;
+}
 
 /* ****FUNCTIONS FOR THE REGISTRATION OF A DEVICE IN THE CONTEXT BROKER AND IN THE KNOWLEDGE BASE ****** */
 	
@@ -1435,9 +1474,9 @@ $visibility, $frequency, $listnewAttributes, &$result)
 		   if ($att["data_type"]==null || $att["data_type"]=="")
 		        {$error=true; $result["msg"].= "\n data type for attribute $att[value_name] not specified";$result["error_msg"].= " data type for attribute $att[value_name] not specified. ";
 				              $result["log"].= "\n data type for attribute $att[value_name] not specified";}
-			if ($att["value_unit"]==null || $att["value_unit"]=="")
-				{$error=true; $result["msg"].= "\n value unit for attribute $att[value_name] not specified";$result["error_msg"].= " value unit for attribute $att[value_name] not specified. ";
-				              $result["log"].= "\n value unit for attribute $att[value_name] not specified";}
+                       if ($att["value_unit"]==null || $att["value_unit"]=="")
+                               {$error=true; $result["msg"].= "\n value unit for attribute $att[value_name] not specified";$result["error_msg"].= " value unit for attribute $att[value_name] not specified. ";
+                                             $result["log"].= "\n value unit for attribute $att[value_name] not specified";}
 			if ($att["value_type"]==null || $att["value_type"]=="")
 				{$error=true; $result["msg"].= "\n value type for attribute $att[value_name] not specified";$result["error_msg"].= " value type for attribute $att[value_name] not specified. ";
 				              $result["log"].= "\n value type for attribute $att[value_name] not specified";}
@@ -1519,10 +1558,10 @@ $visibility, $frequency, $listnewAttributes, &$result)
 				}
 		   if ($att->value_unit==null || $att->value_unit=="")
 				{
-					$error=true; 
-			        $result["error_msg"].= "value unit for attribute $att->value_name not specified. ";
-			        $result["msg"].= "\n value unit for attribute $att->value_name not specified";
-				    $result["log"].= "\n value unit for attribute $att->value_name not specified";
+				 $error=true;
+                               $result["error_msg"].= "value unit for attribute $att->value_name not specified. ";
+                               $result["msg"].= "\n value unit for attribute $att->value_name not specified";
+                                   $result["log"].= "\n value unit for attribute $att->value_name not specified";
 				}
 		   if ($att->value_type==null || $att->value_type=="")
 			{
@@ -1874,8 +1913,8 @@ $visibility, $frequency, $attributes, $result))
 		else $myatt["value_bounds"]=$att->value_bounds;
 		$myatt["order"]=$i++;
 		$myAttrs[]=$myatt;
-		
-	  }	 
+	}
+
 	  $msg["attributes"]=$myAttrs;
 	
 	  try
@@ -2143,8 +2182,6 @@ $visibility, $frequency, $listnewAttributes, $result))
 		  }	 
 		  $msg["attributes"]=$myAttrs;
 		  
-		  // echo json_encode($msg);
-		  
 		  try
 		   {
 			 //$url= $GLOBALS["knowledgeBaseURI"] . "api/v1/iot/delete";
@@ -2166,6 +2203,7 @@ $visibility, $frequency, $listnewAttributes, $result))
 				);
 			 $context = stream_context_create($options);
 			 $local_result = @file_get_contents($url, false, $context);
+
 		 } 
 		 catch (Exception $ex)
 		  {

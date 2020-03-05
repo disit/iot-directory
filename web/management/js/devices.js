@@ -23,6 +23,9 @@ var gb_valVU = "";
 var gb_valVT = "";
 var _serviceIP = "../stubs";
 
+var indexValues=0;//it keeps track of unique identirier on the values, so it's possible to enforce specific value type 
+var currentEditId="";//it keeps the current id of device in edit, so it's possibile to avoid to add any time the same values of the current device id
+
   var filterDefaults = {
 			myOwnPrivate: 'MyOwnPrivate',
 			myOwnPublic: 'MyOwnPublic',
@@ -73,7 +76,53 @@ var _serviceIP = "../stubs";
 		   alert("Network errors. <br/> Get in touch with the Snap4City Administrator<br/>"+ JSON.stringify(mydata));
 		 }
 });
-     
+    
+function addCB(element, data){
+        var $dropdown = element;
+        $.each(data['content'], function() {
+                $dropdown.append("<option my_data= "+this.protocol+" data_kind="+this.kind+" value='"+this.name+"'>"+this.name+"</option>");
+        });
+}
+
+function addModel(element, data){
+	var $dropdown = element;
+	$.each(data['content_model'], function() {
+        	$dropdown.append("<option data_key="+this.kgenerator+" value='"+this.name+"'>"+this.name+"</option>");
+        });
+}
+
+$.ajax({
+        url: "../api/value.php",
+        data:{
+                    action: "get_cb",
+                    token : sessionToken,
+                    username: loggedUser,
+                    organization : organization,
+                    loggedrole:loggedRole
+        },
+        type: "POST",
+        async: true,
+        success: function (data)
+        {
+                    if (data["status"] === 'ok')
+                    {
+                        addCB($("#selectContextBrokerM"), data);
+                        addCB($("#selectContextBroker"), data);
+			addModel($("#selectModelDevice"), data);
+                    }
+                    else{
+                        console.log("error getting the context brokers "+data);
+                    }
+                },
+                error: function (data)
+                {
+                 console.log("error in the call to get the context brokers "+data);
+                 alert("Network errors. <br/> Get in touch with the Snap4City Administrator<br/>"+ JSON.stringify(data));
+                }
+});
+
+
+ 
 function removeElementAt(parent,child) {
     var list = document.getElementById(parent);
 	// var content = child.parentElement.parentElement.parentElement.innerHTML
@@ -82,6 +131,7 @@ function removeElementAt(parent,child) {
 	{     document.getElementById('deletedAttributes').appendChild(child.parentElement.parentElement.parentElement);}
 	else list.removeChild(child.parentElement.parentElement.parentElement);
 	checkAtlistOneAttribute();
+	checkEditAtlistOneAttribute();
 }
 
 
@@ -134,12 +184,8 @@ const url = 'https://helsinki.snap4city.org/ServiceMap/api/v1/value_type/';
   .catch(function(error) {
     console.log(error);
   });  
-  
-
 
 function download(sourcename, devicename, contextbroker) {
-
-
  	$.ajax({url: "../api/device.php",
          data: {
 			 token : sessionToken,
@@ -169,51 +215,54 @@ function download(sourcename, devicename, contextbroker) {
          {
 		console.log(mydata);
          }
-});
-
-
+	});
 }
 
 function drawAttributeMenu
-(attrName, data_type, value_type, editable, value_unit, healthiness_criteria, value_refresh_rate, old_value_name, parent)
+(attrName, data_type, value_type, editable, value_unit, healthiness_criteria, value_refresh_rate, old_value_name, parent, indice)
 {
-	console.log("parent1= "+parent);
-	console.log("old_value_name= "+old_value_name);
-    if (attrName=="")
+	//console.log("attrname= "+attrName);
+	//console.log("value_type= "+value_type);
+	//console.log("parent1= "+parent);
+	//console.log("old_value_name= "+old_value_name);
+	
+	if (attrName==""){
 		msg="<div style=\"color:red;\" class=\"modalFieldMsgCnt\"></div>";
-	else 
+	}
+	else {
 		msg="<div class=\"modalFieldMsgCnt\">&nbsp;</div>";
-    options="";
-    if (value_type!="") labelcheck= value_type;
-    else labelcheck="";	
+	}
+
+	options="";
+	if (value_type==""){
+		 options+="<option hidden disabled selected value=\"NOT VALID OPTION\"> -- select an option -- </option>";
+		msg_value_type="<div style=\"color:red;\" class=\"modalFieldMsgCnt\">Value type is mandatory</div>";
+	}
+	else
+		msg_value_type="<div style=\"color:#337ab7;\" class=\"modalFieldMsgCnt\">Ok</div>";
+
 	for (var n=0; n < gb_value_types.length; n++)
 	{
-	  if (labelcheck == gb_value_types[n]) 
-		 options += "<option my_data=\""+gb_value_units[n]+"\" value=\""+gb_value_types[n]+"\" selected>"+ gb_value_types[n]+ "</option>";
-	  else options += "<option my_data=\""+gb_value_units[n]+"\" value=\""+gb_value_types[n]+"\">"+ gb_value_types[n]+ "</option>";
+		//console.log("check against: "+gb_value_types[n].value);
+		if (value_type == gb_value_types[n].value) 
+			options += "<option value=\""+gb_value_types[n].value+"\" selected>"+ gb_value_types[n].label+ "</option>";
+		else 
+			options += "<option value=\""+gb_value_types[n].value+"\">"+ gb_value_types[n].label+ "</option>";
 	}
 	
-	
-    myunits="";// <option value=\"none\"></option>";
-    if (value_unit!="") labelcheck= value_unit;
-	else labelcheck="#";
-    for (var n=0; n < gb_value_units.length; n++)
-	{
-	  if (labelcheck == gb_value_units[n]) 
-		 myunits += "<option value=\""+gb_value_units[n]+"\" selected>"+ gb_value_units[n]+ "</option>";
-	  else myunits += "<option value=\""+gb_value_units[n]+"\">"+ gb_value_units[n]+ "</option>";
+	myunits="";
+	msg_value_unit="<div style=\"color:#337ab7;\" class=\"modalFieldMsgCnt\">Ok</div>";
+	//retrieve acceptable value unit, and select the selected if available
+	validValueUnit=getValidValueUnit(value_type, value_unit);
+	if (validValueUnit!==""){
+		if (!validValueUnit.includes('selected')){
+			myunits+="<option hidden disabled selected value=\"NOT VALID OPTION\"> -- select an option -- </option>";
+			msg_value_unit="<div style=\"color:red;\" class=\"modalFieldMsgCnt\">Value unit is mandatory</div>";
+		}
+		myunits+=validValueUnit;
 	}
-	/*
-	 myunits="";
-	function getValueTypeUnit ()	{
-	// <option value=\"none\"></option>";
-  
-	   myunits += "<option value=\""+valueUnitOpt[n]+"\">"+ valueUnitOpt[n]+ "</option>";
 	
-	
-	}
-	*/
-	mydatatypes="";
+    mydatatypes="";
     if (data_type!="") labelcheck= data_type;
 	else labelcheck="";
     for (var n=0; n < gb_datatypes.length; n++)
@@ -223,43 +272,38 @@ function drawAttributeMenu
 	  else mydatatypes += "<option value=\""+gb_datatypes[n]+"\">"+ gb_datatypes[n]+ "</option>";
 	}
 	
- console.log("parent2= "+parent);
-    return "<div class=\"row\" style=\"border:3px solid blue;\" ><div class=\"col-xs-6 col-md-3 modalCell\">" +
-        "<div class=\"modalFieldCnt\" title=\"Insert a name for the sensor/actuator\"><input type=\"text\" class=\"modalInputTxt\""+
+ //console.log("parent2= "+parent);
+	return "<div class=\"row\" style=\"border:3px solid blue;\" id=\"value"+indice+"\">"+
+		
+		"<div class=\"col-xs-6 col-md-3 modalCell\">" +
+        	"<div class=\"modalFieldCnt\" title=\"Insert a name for the sensor/actuator\"><input type=\"text\" class=\"modalInputTxt\""+
 		"name=\"" +  attrName +  "\"  value=\"" + attrName + "\" onkeyup=\"checkStrangeCharacters(this)\">" + 
-        "</div><div class=\"modalFieldLabelCnt\">Value Name</div>"+ msg +"</div>"+
+		"</div><div class=\"modalFieldLabelCnt\">Value Name</div>"+ msg +"</div>"+
 			
 		"<div class=\"col-xs-6 col-md-3 modalCell\"><div class=\"modalFieldCnt\">"+
 		"<select class=\"modalInputTxt\" name=\""+ attrName+"-type" +
 		"\" title=\"select the type of data generated by the sensor/actuator\">" + mydatatypes + 
 		"</select></div><div class=\"modalFieldLabelCnt\">Data Type</div></div>" + 
 	
-		//"<div class=\"col-xs-6 col-md-3 modalCell\"><div class=\"modalFieldCnt\">" +
-		//"<select class=\"modalInputTxt\" id=\"value_type\">" + 	valueTypeOpt + 	
-		//"</select></div><div class=\"modalFieldLabelCnt\">Value Type</div></div>" +
-		
 		"<div class=\"col-xs-6 col-md-3 modalCell\"><div class=\"modalFieldCnt\">" +
-			"<select class=\"modalInputTxt\" name=\""+ value_type +
-			"\" title=\"select the type of the sensor/actuator\">" + 		 options + 
-			"</select></div><div class=\"modalFieldLabelCnt\">Value Type</div></div>" +
-		
-		"<div class=\"col-xs-6 col-md-3 modalCell\"><div class=\"modalFieldCnt\" title=\"is the sensor/actuator editable?\">" +
-		"<select class=\"modalInputTxt\" name=\""+ editable +
-		"\">" + 
-		"<option value='0' default>false</option>" +
-		"<option value='1'>true</option> </select>" +
-		"</div><div class=\"modalFieldLabelCnt\">Editable</div></div>"+
-		
-		//"<div class=\"col-xs-6 col-md-3 modalCell\"><div class=\"modalFieldCnt\">" +
-		//"<select class=\"modalInputTxt\" id=\"value_unit\">" + valueUnitOpt +
-		 //myunits + 
-		//"</select></div><div class=\"modalFieldLabelCnt\">Value Unit</div></div>"+
+		"<select class=\"modalInputTxt\" id=\"value_type"+indice+"\" "+
+		"onchange=valueTypeChanged("+indice+") "+
+		"title=\"select the type of the sensor/actuator\">" +	 options + 
+		"</select></div><div class=\"modalFieldLabelCnt\">Value Type</div>"+msg_value_type+"</div>" +
 		
 		"<div class=\"col-xs-6 col-md-3 modalCell\"><div class=\"modalFieldCnt\" title=\"select the unit of the data generated by the sensor/actuator\">" +
-			"<select class=\"modalInputTxt\" name=\""+ value_unit +
-			"\">" + 
-			 myunits + 
-			"</select></div><div class=\"modalFieldLabelCnt\">Value Unit</div></div>"+
+		"<select class=\"modalInputTxt\" id=\"value_unit"+indice+"\" "+
+		"onchange=valueUnitChanged("+indice+") "+
+		"\">" + 
+		 myunits + 
+		"</select></div><div class=\"modalFieldLabelCnt\">Value Unit</div>"+msg_value_unit+"</div>"+
+
+                "<div class=\"col-xs-6 col-md-3 modalCell\"><div class=\"modalFieldCnt\" title=\"is the sensor/actuator editable?\">" +
+                "<select class=\"modalInputTxt\" name=\""+ editable +
+                "\">" +
+                "<option value='0' default>false</option>" +
+                "<option value='1'>true</option> </select>" +
+                "</div><div class=\"modalFieldLabelCnt\">Editable</div></div>"+
    		
 		"<div class=\"col-xs-6 col-md-3 modalCell\"><div class=\"modalFieldCnt\" title=\"select a criterion as a reference to decide whether the sensor/actuator is working well\">" +
 		"<select class=\"modalInputTxt\" name=\"" + healthiness_criteria +
@@ -274,15 +318,13 @@ function drawAttributeMenu
 		"\" value=\"" + value_refresh_rate + "\"></div><div class=\"modalFieldLabelCnt\">Healthiness_Value</div></div>"+
 		
 		 "<div class=\"col-xs-6 col-md-3 modalCell\"><div class=\"modalFieldCnt\">" +
-        "<select class=\"modalInputTxt\" style=\"display:none\" name=\"" + old_value_name +
+		"<select class=\"modalInputTxt\" style=\"display:none\" name=\"" + old_value_name +
 		"\" \>"+ 
-			"<option value=\"" + old_value_name + "\">"+old_value_name+"</option>" +
-	       "</select></div></div>"+
+		"<option value=\"" + old_value_name + "\">"+old_value_name+"</option>" +
+	       	"</select></div></div>"+
 		"<div class=\"col-xs-6 col-md-3 modalCell\"><div class=\"modalFieldCnt\">" +
-		//"<i class=\"fa fa-minus-square\" onclick=\"removeElementAt('" + parent + "',this); return true;\"  style=\"font-size:36px; color: #ffcc00\"></i></div></div></div>";
-	    "<button class=\"btn btn-warning\" onclick=\"removeElementAt('" + parent + "',this); return true;\">Remove Value</button></div></div></div>";
 
-		
+		"<button class=\"btn btn-warning\" onclick=\"removeElementAt('" + parent + "',this); return true;\">Remove Value</button></div></div></div>";
 }		
   
   
@@ -329,18 +371,18 @@ function drawAttributeMenu
 	//console.log(x);
 	//var tu = x.getYear();
 		txtCert  = '<div class="row">' +
-			'<div class="col-xs-6 col-sm-6" style="background-color:#D6CADD;"><b>Created on:</b>' + "  " + d.created + '</div>' +
+			'<div class="col-xs-6 col-sm-6" style="background-color:#E6E6FA;"><b>Created on:</b>' + "  " + d.created + '</div>' +
 			'<div class="clearfix visible-xs"></div>' +
-			'<div class="col-xs-6 col-sm-6" style="background-color:#D6CADD;"><b>Expire on:</b>' + "  " + y + '</div>' +
+			'<div class="col-xs-6 col-sm-6" style="background-color:#E6E6FA;"><b>Expire on:</b>' + "  " + y + '</div>' +
 			'</div>'+ 
 			
 			'<div class="row">' +
-			'<div class="col-xs-6 col-sm-6" style="background-color:#E6E6FA;"><button class="btn btn-warning" onclick="download(\'\/private\/'+d.privatekey+'\',\''+d.id+'\',\''+d.contextBroker+'\');return true;"><b>private key</b></button></div>' +
+			'<div class="col-xs-6 col-sm-6" style="background-color:#D6CADD;"><button class="btn btn-warning" onclick="download(\'\/private\/'+d.privatekey+'\',\''+d.id+'\',\''+d.contextBroker+'\');return true;"><b>private key</b></button></div>' +
 			'<div class="clearfix visible-xs"></div>' +
-			'<div class="col-xs-6 col-sm-6" style="background-color:#E6E6FA;"><button class="btn btn-warning" onclick="download(\'\/certsdb\/'+d.certificate+'\',\''+d.id+'\',\''+d.contextBroker+'\');return true;"><b>certificate</b></button></div>' +
+			'<div class="col-xs-6 col-sm-6" style="background-color:#D6CADD;"><button class="btn btn-warning" onclick="download(\'\/certsdb\/'+d.certificate+'\',\''+d.id+'\',\''+d.contextBroker+'\');return true;"><b>certificate</b></button></div>' +
 			'</div>' +
 			'<div class="row">' +
-			'<div class="col-xs-6 col-sm-6" style="background-color:#D6CADD;"><b>SHA1:</b>' + "  " + d.sha + '</div>' +
+			'<div class="col-xs-6 col-sm-6" style="background-color:#E6E6FA;"><b>SHA1:</b>' + "  " + d.sha + '</div>' +
 			'<div class="clearfix visible-xs"></div>' +
 			'</div>';
     }
@@ -348,7 +390,7 @@ function drawAttributeMenu
 		txtCert = '<div class="row">' +
 			'<div class="col-xs-6 col-sm-6" style="background-color:#D6CADD;"><b>Created on:</b>' + "  " + d.created + '</div>' +
 			'<div class="clearfix visible-xs"></div>' +
-			'</div>'; 
+                        '</div>'; 
 	
 	// `d` is the original data object for the row
   	return '<div class="container-fluid">' +
@@ -386,12 +428,14 @@ function drawAttributeMenu
 			'<div class="col-xs-6 col-sm-6" style="background-color:#E6E6FA;"><b>Gateway/Edge Type:</b>' + "  " + d.edgegateway_type + '</div>' +
 			'<div class="clearfix visible-xs"></div>' +
 			'<div class="col-xs-6 col-sm-6" style="background-color:#E6E6FA;"><b>Gateway/Edge Uri:</b>' + "  " + d.edgegateway_uri  + '</div>' +	
-		'</div>' + showKey +
-		
+		'</div>' +
+		'<div class="row">' +
+                        '<div class="col-xs-12 col-sm-12" style="background-color:#D6CADD;"><b>Device Uri:</b>' + "  <a href=\""+d.uri+"\">" + d.uri + '</a></div>' +
+                        '<div class="clearfix visible-xs"></div>' +
+                '</div>' + showKey +
 		'<div class="row">' +
 			'<div class="col-xs-6 col-sm-6" style="background-color:#E6E6FA;"><b>Organization:</b>' + "  " + d.organization + '</div>' +
 			'<div class="clearfix visible-xs"></div>' +
-
 		'</div>' + txtCert +
 	'</div>' ;
 	
@@ -618,44 +662,7 @@ function drawAttributeMenu
     $("#addDeviceKoIcon").hide();
 	$('#addDeviceLoadingMsg').hide();
 	$('#addDeviceLoadingIcon').hide();
-       
-       $.ajax({
-                url: "../api/value.php",
-                data:{
-                                          
-                    action: "get_cb",
-                    token : sessionToken, 
-                    username: loggedUser, 
-                    organization : organization, 
-                    loggedrole:loggedRole                          
-                },
-                type: "POST",
-                async: true,
-                success: function (data)
-                {
-                        
-                    if (data["status"] === 'ok')
-                    {        
-                        var $dropdown = $("#selectContextBroker");  
-                        var defaultcbValue="";
-                        $dropdown.empty();
-                        $.each(data['content_cb'], function() {
-                            //if(this.kind !='external')
-                               // $dropdown.append($("<option />").val(this.name).text(this.name));
-                            var opt= "<option my_data= "+this.protocol+" data_kind="+this.kind+" value='"+this.name+"'>"+this.name+"</option>";
-                            if(this.kind!="external" && defaultcbValue=="")
-                                defaultcbValue=this.name;
-                            $dropdown.append(opt); 
-                        });
-                        $dropdown.val(defaultcbValue);
-                        var $dropdown = $("#selectModelDevice");        
-                        $dropdown.empty();  
-                        $dropdown.append($("<option />").val("custom").text("custom"));   
-                        $.each(data['content_model'], function() {
-                            var opt= "<option data_key="+this.kgenerator+" value='"+this.name+"'>"+this.name+"</option>";
-                            $dropdown.append(opt); 
-                            //$dropdown.append($("<option />").val(this.name).text(this.name));        
-                        });
+                       
                         
                           $("#addDeviceLoadingMsg").hide();
                           $("#addDeviceLoadingIcon").hide();
@@ -673,48 +680,30 @@ function drawAttributeMenu
                         showAddDeviceModal();
                         $("#selectContextBroker").change();
 				
-                        }
-                    else{
-                        console.log("error getting the context brokers and models "+data); 
-                    }
-                },
-                error: function (data)
-                {
-                 console.log("error in the call to get the context brokers and models "+data);   
-                }
-          });
-       
 		
    });
 								
-		// Add lines related to attributes			
+	// Add lines related to attributes			
 	$("#addAttrBtn").off("click");
 	$("#addAttrBtn").click(function(){
-	   console.log("#addAttrBtn ");										   
-	   content = drawAttributeMenu("","", "", "", "", "", "300", "", 'addlistAttributes');
-		// addDeviceConditionsArray['addlistAttributes'] = true;
-	   //console.log("contenuto drawAttr" +content);
-	   $('#addlistAttributes').append(content);
+		console.log("#addAttrBtn");									
+		
+		content = drawAttributeMenu("","", "", "", "", "", "300", "", 'addlistAttributes', indexValues);
+		indexValues=indexValues+1;
+		$('#addlistAttributes').append(content);
 	   
-	   checkAtlistOneAttribute();
-	   
-	   $("#addSchemaTabDevice #addlistAttributes .row input:even").on('input', checkValueName);
-	   $("#addSchemaTabDevice #addlistAttributes .row input:even").on('input', checkAddDeviceConditions);
-	   // $("#addSchemaTabDevice #addlistAttributes .row input:even").each(function(){checkValueName();});
-	   
-	   checkAddDeviceConditions();
-	   
+		checkAtlistOneAttribute();
+		$("#addSchemaTabDevice #addlistAttributes .row input:even").each(function(){checkValueName($(this));});
+		checkAddDeviceConditions();
 	});					
 	
 	$("#addSchemaTabDevice").off("click");
-	$("#addSchemaTabDevice").click(function(){				
-	   console.log("#addAttrMBtn tabdev");	
+	$("#addSchemaTabDevice").on('click keyup', function(){				
+		console.log("#addSchemaTabDevice");	
   
-	   checkAtlistOneAttribute();
-	   
-	   // $("#addSchemaTabDevice #addlistAttributes .row input:even").each(function(){checkValueName();});
-	   checkAddDeviceConditions();
-	   
+		//checkAtlistOneAttribute();
+		$("#addSchemaTabDevice #addlistAttributes .row input:even").each(function(){checkValueName($(this));});
+		checkAddDeviceConditions();
 	});	
 
   
@@ -723,21 +712,32 @@ function drawAttributeMenu
   
 // Start Related to Edit Device
   
-		// add lines related to attributes in case of edit
+	// Add lines related to attributes in case of edit
 	$("#addAttrMBtn").off("click");
 	$("#addAttrMBtn").click(function(){				
-	   console.log("#addAttrMBtn" +JSON.stringify($('#addSchemaTabDevice #addlistAttributes .row input:even')) +" x");					
+		console.log("#addAttrMBtn");					
 	   
-        content = drawAttributeMenu("","", "", "", "", "", "300","", 'addlistAttributesM');
-		editDeviceConditionsArray['addlistAttributesM'] = true;
-	   $('#addlistAttributesM').append(content);
-        
-        $("#editSchemaTabDevice #addlistAttributesM .row input:even").on('input', checkEditValueName);
-	    $("#editSchemaTabDevice #addlistAttributesM .row input:even").on('input', checkEditDeviceConditions);
-        //editDeviceConditionsArray['inputNameValueM'] = false;
-        checkEditDeviceConditions();
+		content = drawAttributeMenu("","", "", "", "", "", "300","", 'addlistAttributesM', indexValues)
+		indexValues=indexValues+1;
+		//editDeviceConditionsArray['addlistAttributesM'] = true;
+		$('#addlistAttributesM').append(content);
+       
+		checkEditAtlistOneAttribute();
+		$("#editSchemaTabDevice #addlistAttributesM .row input:even").each(function(){checkEditValueName($(this));}); 
+        	$("#editSchemaTabDevice #editlistAttributes .row input:even").each(function(){checkEditValueName($(this));});
+		checkEditDeviceConditions();
 	});	
-									
+	
+        $("#editSchemaTabDevice").off("click");
+        $("#editSchemaTabDevice").on('click keyup', function(){
+           console.log("#editSchemaTabDevice");
+
+           //checkEditAtlistOneAttribute();
+           $("#editSchemaTabDevice #addlistAttributesM .row input:even").each(function(){checkEditValueName($(this));});
+ 	   $("#editSchemaTabDevice #editlistAttributes .row input:even").each(function(){checkEditValueName($(this));});
+           checkEditDeviceConditions();
+        });
+								
   
 		//Edit button in dataTable 
 	$('#devicesTable tbody').on('click', 'button.editDashBtn', function () {
@@ -761,6 +761,14 @@ function drawAttributeMenu
 		
 	  $("#editDeviceModalLabel").html("Edit device -  " + $(this).attr("data-id"));
 	  var id = $(this).attr('data-id');
+
+if (currentEditId!==id){
+	//if the user changed the device to edit, clean the list of value and update the currentEditId
+	document.getElementById('editlistAttributes').innerHTML = "";
+        document.getElementById('addlistAttributesM').innerHTML = "";
+        document.getElementById('deletedAttributes').innerHTML = "";
+	currentEditId=id;
+
 	  var contextbroker = $(this).attr('data-contextBroker');
 		gb_old_cb = contextbroker;
 	  var type = $(this).attr('data-devicetype');
@@ -780,7 +788,7 @@ function drawAttributeMenu
 	  var key2 = $(this).attr('data-k2');
 	  var gtw_type = $(this).attr('data-edgegateway_type');
 	  var gtw_uri = $(this).attr('data-edgegateway_uri');
-	  console.log(key1 + key2);
+	  //console.log(key1 + key2);
 	  
 	  if (model == "custom")
 		   $("#editDeviceGenerateKeyBtn").show();
@@ -808,46 +816,8 @@ function drawAttributeMenu
 		$('#selectEdgeGatewayTypeM').val(gtw_type);
 		$('#inputEdgeGatewayUriM').val(gtw_uri);
         
-        UserEditKey();
+        //UserEditKey();
         checkEditDeviceConditions();
-
-		$.ajax({
-                url: "../api/value.php",
-                data:{
-                                          
-                    action: "get_cb",
-                    token : sessionToken, 
-                    username: loggedUser, 
-                    organization : organization, 
-                    loggedrole:loggedRole                          
-                },
-                type: "POST",
-                async: true,
-                success: function (data)
-                {
-                        
-                    if (data["status"] === 'ok')
-                    {        
-                        var $dropdown = $("#selectContextBrokerM");        
-                        $dropdown.empty();
-                        $.each(data['content'], function() {
-                            //if(this.kind !='external'|| this.name.toLowerCase()==contextbroker.toLowerCase())
-                            $dropdown.append($("<option />").val(this.name).text(this.name));        
-                        });
-                        $('#selectContextBrokerM').val(contextbroker);
-                        showEditDeviceModal();
-				
-                        }
-                    else{
-                        console.log("error getting the context brokers "+data); 
-                    }
-                },
-                error: function (data)
-                {
-                 console.log("error in the call to get the context brokers "+data);   
-                }
-          });
-        
 
 		$.ajax({
 			url: "../api/device.php",
@@ -868,22 +838,21 @@ function drawAttributeMenu
 					myattributes=mydata['content'];
 					content="";
 					k=0;
+				console.log("adding new attribute for id:"+id);
 				while (k < myattributes.length)
 				{
 					// console.log(k); 
 					content = drawAttributeMenu(myattributes[k].value_name, 
 					myattributes[k].data_type, myattributes[k].value_type, myattributes[k].editable, myattributes[k].value_unit, myattributes[k].healthiness_criteria, 
-					myattributes[k].healthiness_value, myattributes[k].value_name, 'editlistAttributes');
+					myattributes[k].healthiness_value, myattributes[k].value_name, 'editlistAttributes', indexValues);
+					indexValues=indexValues+1;
 					k++;
-                    $('#editlistAttributes').append(content);
-                   $("#editSchemaTabDevice #editlistAttributes .row input:even").on('input', checkValueName);
-                   $("#editSchemaTabDevice #editlistAttributes .row input:even").on('input', checkAddDeviceConditions);
-                   // $("#addSchemaTabDevice #addlistAttributes .row input:even").each(function(){checkValueName();});
-
-                   checkEditDeviceConditions();
+		                        $('#editlistAttributes').append(content);
                     
 				}
-				
+                   		
+				$("#editSchemaTabDevice #editlistAttributes .row input:even").each(function(){checkEditValueName($(this));});
+		                checkEditDeviceConditions();
 			},
 			error: function (data)
 			{
@@ -895,7 +864,7 @@ function drawAttributeMenu
 				$('#inputOrganizationDeviceM').val("");
 				$('#selectContextBrokerM').val("");
 				$('#inputTypeDeviceM').val("");
-				$('#selectKindDeviceM').val("");
+				//$('#selectKindDeviceM').val("");
 				$('#inputUriDeviceM').val("");
 				//$('#selectProtocolDeviceM').val("");
 				//$('#selectFormatDeviceM').val("");
@@ -916,7 +885,10 @@ function drawAttributeMenu
 				  
 			}
 		});
+}
+showEditDeviceModal();
 	});
+
 	
 		//Edit button hover - needs to be checked
 	$('#devicesTable tbody').on('hover', 'button.editDashBtn', function () {
@@ -930,7 +902,6 @@ function drawAttributeMenu
 		$(this).parents('tr').find('td').eq(1).css('background', $(this).parents('td').css('background'));
 	});
 	
-			
 //End Related to Edit Device
   
   
@@ -1385,7 +1356,8 @@ function drawAttributeMenu
 									console.log(myattributes.length + " " +k); 
 									content += drawAttributeMenu(myattributes[k].value_name, 
 										 myattributes[k].data_type, myattributes[k].value_type, myattributes[k].editable, myattributes[k].value_unit, myattributes[k].healthiness_criteria, 
-										 myattributes[k].healthiness_value, myattributes[k].old_value_name, 'addlistAttributes');
+										 myattributes[k].healthiness_value, myattributes[k].old_value_name, 'addlistAttributes', indexValues);
+									indexValues=indexValues+1;
 									k++;
 								  }
 								$('#addlistAttributes').html(content);
@@ -1427,7 +1399,7 @@ function drawAttributeMenu
 						 $('#addlistAttributes').html("");
 												
 								$('#inputTypeDevice').val("");
-								$('#selectKindDevice').val("");
+								//$('#selectKindDevice').val("");
 								$('#inputProducerDevice').val("");
 								$('#inputFrequencyDevice').val("600");
 								$('#inputMacDevice').val("");
@@ -1452,7 +1424,7 @@ function drawAttributeMenu
 		}
 		else if (nameOpt[selectednameOpt].value ==""){ // case not specified
 			$('#inputTypeDevice').val("");
-			$('#selectKindDevice').val("");
+			//$('#selectKindDevice').val("");
 			$('#inputProducerDevice').val("");
 			$('#inputFrequencyDevice').val("600");
 			
@@ -1531,12 +1503,14 @@ function drawAttributeMenu
 		var newatt= {value_name: document.getElementById('addlistAttributes').childNodes[m].childNodes[0].childNodes[0].childNodes[0].value.trim(), 
 					   data_type:document.getElementById('addlistAttributes').childNodes[m].childNodes[1].childNodes[0].childNodes[0].value.trim(),
 				  value_type:document.getElementById('addlistAttributes').childNodes[m].childNodes[2].childNodes[0].childNodes[0].value.trim(),
-				editable:document.getElementById('addlistAttributes').childNodes[m].childNodes[3].childNodes[0].childNodes[0].value.trim(),
-			  value_unit:document.getElementById('addlistAttributes').childNodes[m].childNodes[4].childNodes[0].childNodes[0].value.trim(),
+				editable:document.getElementById('addlistAttributes').childNodes[m].childNodes[4].childNodes[0].childNodes[0].value.trim(),
+			  value_unit:document.getElementById('addlistAttributes').childNodes[m].childNodes[3].childNodes[0].childNodes[0].value.trim(),
 		   healthiness_criteria: document.getElementById('addlistAttributes').childNodes[m].childNodes[5].childNodes[0].childNodes[0].value.trim(),
 		  healthiness_value: document.getElementById('addlistAttributes').childNodes[m].childNodes[6].childNodes[0].childNodes[0].value.trim()};
-		
-		if (newatt.value_name!=""&& !regex.test(newatt.value_name) && newatt.data_type!="" && newatt.value_type!="" && newatt.editable!="" && newatt.value_unit!="" && newatt.healthiness_criteria!="" && newatt.healthiness_value!="") 
+	
+		console.log("new att:"+JSON.stringify(newatt));
+	
+		if (newatt.value_name!=""&& !regex.test(newatt.value_name) && newatt.data_type!="" && newatt.value_type!="" && newatt.editable!="" && newatt.healthiness_criteria!="" && newatt.healthiness_value!="") 
             mynewAttributes.push(newatt);
         else
             someNameisWrong=true;
@@ -1617,8 +1591,9 @@ function drawAttributeMenu
 				$("#addDeviceModal").modal('hide');
                 
                 
-                $('#inputNameDevice').val("");
+				$('#inputNameDevice').val("");
 				$('#inputTypeDevice').val("");
+				//$('#selectKindDevice').val(""),
 				$('#selectContextBroker').val("NULL");
 				$('#inputUriDevice').val("");
 				//$('#selectProtocolDevice').val("NULL");
@@ -1728,14 +1703,15 @@ function drawAttributeMenu
         
     }
         else{
-            alert("Check the values of your device, make sure that data you entered are valid");
+            alert("Check the values of your device, make sure that data you entered are valid1");
         }
 });		 	 
 		//add lines related to attributes - addAttrBtnUser		
 	$("#addAttrBtnUser").off("click");
 	$("#addAttrBtnUser").click(function(){
 	   console.log("#addAttrBtnUser");							   
-	   content = drawAttributeMenu("","", "", "", "", "", "300", "", 'addlistAttributes');
+	   content = drawAttributeMenu("","", "", "", "", "", "300", "", 'addlistAttributes', indexValues);
+	indexValues=indexValues+1;
 	   $('#addlistAttributesUser').append(content);
 	});
         
@@ -1853,13 +1829,13 @@ function drawAttributeMenu
 		var newatt= {value_name: document.getElementById('addlistAttributesM').childNodes[m].childNodes[0].childNodes[0].childNodes[0].value.trim(), 
 					data_type:document.getElementById('addlistAttributesM').childNodes[m].childNodes[1].childNodes[0].childNodes[0].value.trim(),
 					value_type:document.getElementById('addlistAttributesM').childNodes[m].childNodes[2].childNodes[0].childNodes[0].value.trim(),
-					editable:document.getElementById('addlistAttributesM').childNodes[m].childNodes[3].childNodes[0].childNodes[0].value.trim(),
-					value_unit:document.getElementById('addlistAttributesM').childNodes[m].childNodes[4].childNodes[0].childNodes[0].value.trim(),
+					editable:document.getElementById('addlistAttributesM').childNodes[m].childNodes[4].childNodes[0].childNodes[0].value.trim(),
+					value_unit:document.getElementById('addlistAttributesM').childNodes[m].childNodes[3].childNodes[0].childNodes[0].value.trim(),
 					healthiness_criteria: document.getElementById('addlistAttributesM').childNodes[m].childNodes[5].childNodes[0].childNodes[0].value.trim(),
 					healthiness_value: document.getElementById('addlistAttributesM').childNodes[m].childNodes[6].childNodes[0].childNodes[0].value.trim(),
                     old_value_name:document.getElementById('addlistAttributesM').childNodes[m].childNodes[7].childNodes[0].childNodes[0].value.trim()};
 							
-                if(newatt.value_name!=""&& !regex.test(newatt.value_name) && newatt.data_type!="" && newatt.value_type!="" && newatt.editable!="" && newatt.value_unit!="" && newatt.healthiness_criteria!="" && newatt.healthiness_value!="")
+                if(newatt.value_name!=""&& !regex.test(newatt.value_name) && newatt.data_type!="" && newatt.value_type!="" && newatt.editable!="" && newatt.healthiness_criteria!="" && newatt.healthiness_value!="")
                 
                     mynewAttributes.push(newatt);	
             else
@@ -1875,14 +1851,14 @@ function drawAttributeMenu
 			  var selectOpt_data_type= document.getElementById('editlistAttributes').childNodes[j].childNodes[1].childNodes[0].childNodes[0].options;
   			  var selectIndex_data_type= document.getElementById('editlistAttributes').childNodes[j].childNodes[1].childNodes[0].childNodes[0].selectedIndex;
 			  
-			  var selectOpt_value_unit= document.getElementById('editlistAttributes').childNodes[j].childNodes[4].childNodes[0].childNodes[0].options;
-  			  var selectIndex_value_unit= document.getElementById('editlistAttributes').childNodes[j].childNodes[4].childNodes[0].childNodes[0].selectedIndex;
+			  var selectOpt_value_unit= document.getElementById('editlistAttributes').childNodes[j].childNodes[3].childNodes[0].childNodes[0].options;
+  			  var selectIndex_value_unit= document.getElementById('editlistAttributes').childNodes[j].childNodes[3].childNodes[0].childNodes[0].selectedIndex;
 			  
 			  var selectOpt_hc= document.getElementById('editlistAttributes').childNodes[j].childNodes[5].childNodes[0].childNodes[0].options;
   			  var selectIndex_hc= document.getElementById('editlistAttributes').childNodes[j].childNodes[5].childNodes[0].childNodes[0].selectedIndex;
 			  
-			  var selectOpt_edit= document.getElementById('editlistAttributes').childNodes[j].childNodes[3].childNodes[0].childNodes[0].options;
-  			  var selectIndex_edit= document.getElementById('editlistAttributes').childNodes[j].childNodes[3].childNodes[0].childNodes[0].selectedIndex;
+			  var selectOpt_edit= document.getElementById('editlistAttributes').childNodes[j].childNodes[4].childNodes[0].childNodes[0].options;
+  			  var selectIndex_edit= document.getElementById('editlistAttributes').childNodes[j].childNodes[4].childNodes[0].childNodes[0].selectedIndex;
 			  
 			  //Added
 			  try{var dt= selectOpt_data_type[selectIndex_data_type].value}catch(err){var dt=""};
@@ -1916,14 +1892,14 @@ function drawAttributeMenu
 			  var selectOpt_data_type= document.getElementById('deletedAttributes').childNodes[j].childNodes[1].childNodes[0].childNodes[0].options;
   			  var selectIndex_data_type= document.getElementById('deletedAttributes').childNodes[j].childNodes[1].childNodes[0].childNodes[0].selectedIndex;
 			  
-			  var selectOpt_value_unit= document.getElementById('deletedAttributes').childNodes[j].childNodes[4].childNodes[0].childNodes[0].options;
-  			  var selectIndex_value_unit= document.getElementById('deletedAttributes').childNodes[j].childNodes[4].childNodes[0].childNodes[0].selectedIndex;
+			  var selectOpt_value_unit= document.getElementById('deletedAttributes').childNodes[j].childNodes[3].childNodes[0].childNodes[0].options;
+  			  var selectIndex_value_unit= document.getElementById('deletedAttributes').childNodes[j].childNodes[3].childNodes[0].childNodes[0].selectedIndex;
 			  
 			  var selectOpt_hc= document.getElementById('deletedAttributes').childNodes[j].childNodes[5].childNodes[0].childNodes[0].options;
   			  var selectIndex_hc= document.getElementById('deletedAttributes').childNodes[j].childNodes[5].childNodes[0].childNodes[0].selectedIndex;
 			  
-			  var selectOpt_edit= document.getElementById('deletedAttributes').childNodes[j].childNodes[3].childNodes[0].childNodes[0].options;
-  			  var selectIndex_edit= document.getElementById('deletedAttributes').childNodes[j].childNodes[3].childNodes[0].childNodes[0].selectedIndex;
+			  var selectOpt_edit= document.getElementById('deletedAttributes').childNodes[j].childNodes[4].childNodes[0].childNodes[0].options;
+  			  var selectIndex_edit= document.getElementById('deletedAttributes').childNodes[j].childNodes[4].childNodes[0].childNodes[0].selectedIndex;
 			  
 			  var att= {value_name: document.getElementById('deletedAttributes').childNodes[j].childNodes[0].childNodes[0].childNodes[0].value.trim(), 
 			       data_type:selectOpt_data_type[selectIndex_data_type].value,
@@ -2019,7 +1995,7 @@ function drawAttributeMenu
 			{
 				$('#inputNameDevice').val("");
 				$('#inputTypeDevice').val("");
-				$('#selectKindDevice').val("");
+				//$('#selectKindDevice').val("");
 				$('#selectContextBroker').val("");
                 $('#inputUriDevice').val("");
 				//$('#selectProtocolDevice').val("");
@@ -2068,7 +2044,7 @@ function drawAttributeMenu
                                      
                    
         else{
-            alert("Check the values of your device, make sure that data you entered are valid");
+            alert("Check the values of your device, make sure that data you entered are valid2");
         }
 });
 
@@ -2079,7 +2055,8 @@ function drawAttributeMenu
 	$("#editDeviceCancelBtn").on('click', function(){
 	   document.getElementById('editlistAttributes').innerHTML = ""; 
 	   document.getElementById('addlistAttributesM').innerHTML = ""; 
-	   document.getElementById('deletedAttributes').innerHTML = "";  
+	   document.getElementById('deletedAttributes').innerHTML = ""; 
+		currentEditId=""; 
 	});
 
 //END EDIT DEVICE CANCEL BUTTON  	
@@ -2111,6 +2088,8 @@ function drawAttributeMenu
 			//  $('#addDeviceModalTabs').show();
 			//  $('#addDeviceModal div.modalCell').show();
 			//  $('#addDeviceModalFooter').show(); 
+		document.getElementById('addlistAttributes').innerHTML = "";
+
 	});
         
 //END ADD DEVICE CANCEL BUTTON 		
@@ -2505,17 +2484,17 @@ $(function(){
 });
 */
 
-$(document).on('change', '#value_type', function() {
+//$(document).on('change', '#value_type', function() {
 //$("#value_type").change(function() {
-	var index = document.getElementById("value_type").selectedIndex;
-	console.log(index);	
-	var opt = document.getElementById("value_type").options;
-	var gb_valVU = opt[index].getAttribute("my_data");
-	document.getElementById("value_unit").value = gb_valVU ;
-	gb_valVT = opt[index].value;
-	console.log("Value Type= " + gb_valVT +  " Value Unit= " + gb_valVU);	
+//	var index = document.getElementById("value_type").selectedIndex;
+//	console.log(index);	
+//	var opt = document.getElementById("value_type").options;
+//	var gb_valVU = opt[index].getAttribute("my_data");
+//	document.getElementById("value_unit").value = gb_valVU ;
+//	gb_valVT = opt[index].value;
+//	console.log("Value Type= " + gb_valVT +  " Value Unit= " + gb_valVU);	
 	
-});
+//});
 
 $("#addNewDeviceCheckExternalBtn").on('click', function(){	
 	
@@ -2678,7 +2657,8 @@ function activateStub(cb,deviceName, ipa,protocol,user,accesslink,accessport,mod
 					// console.log(k); 
 					content += drawAttributeMenu(myattributes[k].value_name, 
 					myattributes[k].data_type, myattributes[k].value_type, myattributes[k].editable, myattributes[k].value_unit, myattributes[k].healthiness_criteria, 
-					myattributes[k].healthiness_value, myattributes[k].value_name, 'addlistAttributes');
+					myattributes[k].healthiness_value, myattributes[k].value_name, 'addlistAttributes', indexValues);
+					indexValues=indexValues+1;
 					k++;
 				}
 				$('#addlistAttributes').html(content);

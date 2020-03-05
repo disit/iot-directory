@@ -16,6 +16,7 @@ var gb_key2;
 
 var dataTable ="";
 
+var indexValues=0;//it keeps track of unique identirier on the values, so it's possible to enforce specific value type
 
   var filterDefaults = {
 			myOwnPrivate: 'MyOwnPrivate',
@@ -31,11 +32,12 @@ var dataTable ="";
 
 
 		
- $.ajax({url: "../api/device.php",
+$.ajax({
+	 url: "../api/device.php",
          data: {
-			 action: 'get_param_values',
-             organization:organization
-			 },
+		action: 'get_param_values',
+		organization:organization
+	 },
          type: "POST",
          async: true,
          dataType: 'json',
@@ -51,7 +53,46 @@ var dataTable ="";
 		   alert("Network errors. <br/> Get in touch with the Snap4City Administrator<br/>"+ JSON.stringify(mydata));
 		 }
 });
-     
+
+function addCB(element, data){
+	var $dropdown = element;
+	$.each(data['content'], function() {
+        	$dropdown.append("<option my_data= "+this.protocol+" data_kind="+this.kind+" value='"+this.name+"'>"+this.name+"</option>");
+        });
+}
+
+$.ajax({              
+	url: "../api/value.php",
+        data:{
+                    action: "get_cb",
+                    token : sessionToken,
+                    username: loggedUser,
+                    organization : organization,
+                    loggedrole:loggedRole
+	},
+        type: "POST",
+        async: true,
+        success: function (data)
+        {
+                    if (data["status"] === 'ok')
+                    {
+			addCB($("#selectContextBrokerM"), data);
+			addCB($("#selectContextBroker"), data);
+                    }
+                    else{
+                        console.log("error getting the context brokers "+data);
+                    }
+                },
+                error: function (data)
+                {
+                 console.log("error in the call to get the context brokers "+data);
+		 alert("Network errors. <br/> Get in touch with the Snap4City Administrator<br/>"+ JSON.stringify(data));
+                }
+});
+
+
+
+
 function removeElementAt(parent,child) {
     var list = document.getElementById(parent);
 	// var content = child.parentElement.parentElement.parentElement.innerHTML
@@ -59,34 +100,47 @@ function removeElementAt(parent,child) {
 	if (parent=="editlistAttributes") 
 	{     document.getElementById('deletedAttributes').appendChild(child.parentElement.parentElement.parentElement);}
 	else list.removeChild(child.parentElement.parentElement.parentElement);
+checkAtlistOneAttribute();
+checkEditAtlistOneAttributeM();
+checkAddModelConditions();
+checkEditModelConditions();
 }
 
 
 function drawAttributeMenu
-(attrName, data_type, value_type, editable, value_unit, healthiness_criteria, value_refresh_rate, parent)
+(attrName, data_type, value_type, editable, value_unit, healthiness_criteria, value_refresh_rate, parent, indice)
 {
-    options="";
-     if (attrName=="")
+	if (attrName=="")
 		msg="<div style=\"color:red;\" class=\"modalFieldMsgCnt\"></div>";
 	else 
 		msg="<div class=\"modalFieldMsgCnt\">&nbsp;</div>";
-    if (value_type!="") labelcheck= value_type;
-    else labelcheck="";	
+
+	options="";
+	if (value_type==""){
+		options+="<option hidden disabled selected value=\"NOT VALID OPTION\"> -- select an option -- </option>";
+		msg_value_type="<div style=\"color:red;\" class=\"modalFieldMsgCnt\">Value type is mandatory</div>";
+	}
+	else
+		msg_value_type="<div style=\"color:#337ab7;\" class=\"modalFieldMsgCnt\">Ok</div>"
+
 	for (var n=0; n < gb_value_types.length; n++)
 	{
-	  if (labelcheck == gb_value_types[n]) 
-		 options += "<option value=\""+gb_value_types[n]+"\" selected>"+ gb_value_types[n]+ "</option>";
-	  else options += "<option value=\""+gb_value_types[n]+"\">"+ gb_value_types[n]+ "</option>";
+		if (value_type == gb_value_types[n].value)
+			options += "<option value=\""+gb_value_types[n].value+"\" selected>"+ gb_value_types[n].label+ "</option>";
+		else
+			options += "<option value=\""+gb_value_types[n].value+"\">"+ gb_value_types[n].label+ "</option>";
 	}
 	
-    myunits="";// <option value=\"none\"></option>";
-    if (value_unit!="") labelcheck= value_unit;
-	else labelcheck="";
-    for (var n=0; n < gb_value_units.length; n++)
-	{
-	  if (labelcheck == gb_value_units[n]) 
-		 myunits += "<option value=\""+gb_value_units[n]+"\" selected>"+ gb_value_units[n]+ "</option>";
-	  else myunits += "<option value=\""+gb_value_units[n]+"\">"+ gb_value_units[n]+ "</option>";
+	myunits="";// <option value=\"none\"></option>";
+	msg_value_unit="<div style=\"color:#337ab7;\" class=\"modalFieldMsgCnt\">Ok</div>";
+	//retrieve acceptable value unit, and select the selected if available
+	validValueUnit=getValidValueUnit(value_type, value_unit);
+	if (validValueUnit!==""){
+		if (!validValueUnit.includes('selected')){
+			myunits+="<option hidden disabled selected value=\"NOT VALID OPTION\"> -- select an option -- </option>";
+			msg_value_unit="<div style=\"color:red;\" class=\"modalFieldMsgCnt\">Value unit is mandatory</div>";
+		}
+		myunits+=validValueUnit;
 	}
 	
 	mydatatypes="";
@@ -110,23 +164,29 @@ function drawAttributeMenu
 		"</select></div><div class=\"modalFieldLabelCnt\">Data Type</div></div>" + 
 	
 		"<div class=\"col-xs-6 col-md-3 modalCell\"><div class=\"modalFieldCnt\" title=\"select the type of the sensor/actuator\">" +
-		"<select class=\"modalInputTxt\" name=\""+ value_type +
+		"<select class=\"modalInputTxt\" id=\"value_type" +indice+"\" "+
+		"onchange=valueTypeChanged("+indice+") "+
 		"\">" + 		 options + 
-		"</select></div><div class=\"modalFieldLabelCnt\">Value Type</div></div>" +
-		
-		"<div class=\"col-xs-6 col-md-3 modalCell\"><div class=\"modalFieldCnt\" title=\"is the sensor/actuator editable?\">" +
-		"<select class=\"modalInputTxt\" name=\""+ editable +
-		"\">" + 
-		"<option value='0' default>false</option>" +
-		"<option value='1'>true</option> </select>" +
-		"</div><div class=\"modalFieldLabelCnt\">Editable</div></div>"+
+		"</select></div><div class=\"modalFieldLabelCnt\">Value Type"+
+		"<button onclick=\"copyClipboard('value_type"+indice+"')\"><img src=\"../img/clipboard.svg\" width=\"16\"></button>"+
+		"</div>"+msg_value_type+"</div>" +
 		
 		"<div class=\"col-xs-6 col-md-3 modalCell\"><div class=\"modalFieldCnt\" title=\"select the unit of the data generated by the sensor/actuator\">" +
-		"<select class=\"modalInputTxt\" name=\""+ value_unit +
+		"<select class=\"modalInputTxt\" id=\"value_unit"+indice+"\" "+
+                "onchange=valueUnitChanged("+indice+") "+
 		"\">" + 
 		 myunits + 
-		"</select></div><div class=\"modalFieldLabelCnt\">Value Unit</div></div>"+
-   		
+		"</select></div><div class=\"modalFieldLabelCnt\">Value Unit"+
+		"<button onclick=\"copyClipboard('value_unit"+indice+"')\"><img src=\"../img/clipboard.svg\" width=\"16\"></button>"+
+		"</div>"+msg_value_unit+"</div>"+
+   	
+		"<div class=\"col-xs-6 col-md-3 modalCell\"><div class=\"modalFieldCnt\" title=\"is the sensor/actuator editable?\">" +
+                "<select class=\"modalInputTxt\" name=\""+ editable +
+                "\">" +
+                "<option value='0' default>false</option>" +
+                "<option value='1'>true</option> </select>" +
+                "</div><div class=\"modalFieldLabelCnt\">Editable</div></div>"+
+	
 		"<div class=\"col-xs-6 col-md-3 modalCell\"><div class=\"modalFieldCnt\" title=\"select a criterion as a reference to decide whether the sensor/actuator is working well\">" +
 		"<select class=\"modalInputTxt\" name=\"" + healthiness_criteria +
 		"\" \>"+ 
@@ -483,59 +543,24 @@ function format ( d ) {
 		// This is loading validation when the cursor is on 
 	$("#addModelBtn").off("click");
 	$('#addModelBtn').click(function(){
-        
-        $.ajax({
-                url: "../api/value.php",
-                data:{
-                                          
-                    action: "get_cb",
-                    token : sessionToken, 
-                    username: loggedUser, 
-                    organization : organization, 
-                    loggedrole:loggedRole                          
-                },
-                type: "POST",
-                async: true,
-                success: function (data)
-                {
-                        
-                    if (data["status"] === 'ok')
-                    {        
-                        var $dropdown = $("#selectContextBroker");        
-                        $dropdown.empty();
-                        $.each(data['content'], function() {
-                            $dropdown.append($("<option />").val(this.name).text(this.name));        
-                        });
-                                                
-                        
                         $("#addModelModalTabs").show();
                         $('#addModelModalBody').show();
-			            $('#addModelModal div.modalCell').show();
+                                    $('#addModelModal div.modalCell').show();
                         $('#addNewModelCancelBtn').show();
                         $('#addNewModelConfirmBtn').show();
                         $('#addNewModelOkBtn').hide();
-			             $('#addModelOkMsg').hide();
-			             $('#addModelOkIcon').hide();	
-			             $('#addModelKoMsg').hide();
-			             $('#addModelKoIcon').hide();	
+                                     $('#addModelOkMsg').hide();
+                                     $('#addModelOkIcon').hide();
+                                     $('#addModelKoMsg').hide();
+                                     $('#addModelKoIcon').hide();
                          $('#addModelLoadingMsg').hide();
-                        $('#addModelLoadingIcon').hide();  
+                        $('#addModelLoadingIcon').hide();
 
-                
 
-		                showAddModelModal();
-				
-                        }
-                    else{
-                        console.log("error getting the context brokers "+data); 
-                    }
-                },
-                error: function (data)
-                {
-                 console.log("error in the call to get the context brokers "+data);   
-                }
-          });
-		
+                                showAddModelModal();
+                $("#addSchemaTabModel #addlistAttributes .row input:even").each(function(){checkModelValueName($(this));});
+                checkAddModelConditions();
+			
 	});
 
 	
@@ -543,14 +568,25 @@ function format ( d ) {
 			$("#addAttrBtn").off("click");
 			$("#addAttrBtn").click(function(){
 			   console.log("#addAttrBtn");							   
-			   content = drawAttributeMenu("","", "", "", "", "", "300",  'addlistAttributes');
+			   content = drawAttributeMenu("","", "", "", "", "", "300",  'addlistAttributes', indexValues);
+				indexValues=indexValues+1;
 				// addDeviceConditionsArray['addlistAttributes'] = true;
 			   //console.log("contenuto drawAttr" +content);
 			   $('#addlistAttributes').append(content);
-                 $("#addSchemaTabDevice #addlistAttributes .row input:even").on('input', checkModelValueName);
+
+		checkAtlistOneAttribute();
+		$("#addSchemaTabModel #addlistAttributes .row input:even").each(function(){checkModelValueName($(this));});
+		checkAddModelConditions();
 			});	
 
-		
+		$("#addSchemaTabModel").off("click");
+	        $("#addSchemaTabModel").on('click keyup', function(){
+        	        console.log("#addSchemaTabDevice");
+
+                	//checkAtlistOneAttribute();
+	                $("#addSchemaTabModel #addlistAttributes .row input:even").each(function(){checkModelValueName($(this));});
+        	        checkAddModelConditions();
+	        });
   
 		$('#addNewModelConfirmBtn').off("click");
         $('#addNewModelConfirmBtn').click(function(){
@@ -565,8 +601,8 @@ function format ( d ) {
                 var newatt= {value_name: document.getElementById('addlistAttributes').childNodes[m].childNodes[0].childNodes[0].childNodes[0].value.trim(), 
 			                   data_type:document.getElementById('addlistAttributes').childNodes[m].childNodes[1].childNodes[0].childNodes[0].value.trim(),
 				          value_type:document.getElementById('addlistAttributes').childNodes[m].childNodes[2].childNodes[0].childNodes[0].value.trim(),
-					    editable:document.getElementById('addlistAttributes').childNodes[m].childNodes[3].childNodes[0].childNodes[0].value.trim(),
-					  value_unit:document.getElementById('addlistAttributes').childNodes[m].childNodes[4].childNodes[0].childNodes[0].value.trim(),
+					    editable:document.getElementById('addlistAttributes').childNodes[m].childNodes[4].childNodes[0].childNodes[0].value.trim(),
+					  value_unit:document.getElementById('addlistAttributes').childNodes[m].childNodes[3].childNodes[0].childNodes[0].value.trim(),
 		  	       healthiness_criteria: document.getElementById('addlistAttributes').childNodes[m].childNodes[5].childNodes[0].childNodes[0].value.trim(),
 				  healthiness_value: document.getElementById('addlistAttributes').childNodes[m].childNodes[6].childNodes[0].childNodes[0].value.trim()};
 				
@@ -701,7 +737,22 @@ function format ( d ) {
 					else if (mydata["status"] === 'ok')
                     {
 						console.log("Added Model");
-						
+
+
+                        //empty information
+			$('#inputNameModel').val("");
+                        $('#inputDescriptionModel').val("");
+                        $('#inputTypeModel').val("");
+                        $('#selectKindModel').val("");
+                        $('#selectHCModel').val("");
+                        $('#inputHVModel').val("");
+                        $('#selectContextBroker').val("");
+                        $('#selectProtocolModel').val("");
+                        $('#selectFormatModel').val("");
+                        $('#inputProducerModel').val("");
+                        $('#inputFrequencyModel').val("");
+                        $('#selectKGeneratorModel').val("");
+                        $('#addlistAttributes').html("");
                         
                         $('#addModelLoadingMsg').hide();
                         $('#addModelLoadingIcon').hide();
@@ -714,6 +765,10 @@ function format ( d ) {
 						//$('#addContextBrokerModalFooter').hide();
 						$('#addNewModelCancelBtn').hide();
 						$('#addNewModelConfirmBtn').hide();
+
+
+
+
                         $('#addNewModelOkBtn').show();
 						
                         $('#addModelOkMsg').show();
@@ -880,13 +935,24 @@ function format ( d ) {
 	$("#addAttrMBtn").off("click");
 	$("#addAttrMBtn").click(function(){				
 	   console.log("#addAttrMBtn");					
-	   content = drawAttributeMenu("","", "", "", "", "", "300", 'addlistAttributesM');
+	   content = drawAttributeMenu("","", "", "", "", "", "300", 'addlistAttributesM', indexValues);
+	   indexValues=indexValues+1;
 		//editDeviceConditionsArray['addlistAttributesM'] = true;
 	   $('#addlistAttributesM').append(content);
-         $("#editSchemaTabDevice #addlistAttributesM .row input:even").on('input', checkModelValueNameM);
+	checkEditAtlistOneAttributeM();
+	$("#editSchemaTabModel #addistAttributesM .row input:even").each(function(){checkModelValueNameM($(this));});
+	checkEditModelConditions();
         
 	});	
 	
+	 $("#editSchemaTabModel").off("click");
+                $("#editSchemaTabModel").on('click keyup', function(){
+                        console.log("#editSchemaTabDevice");
+
+                        //checkAtlistOneAttribute();
+                        $("#editSchemaTabModel #addlistAttributesM .row input:even").each(function(){checkModelValueNameM($(this));});
+                        checkEditModelConditions();
+                });
 	
 
 	$('#modelTable tbody').on('click', 'button.editDashBtn', function () {                         	
@@ -950,44 +1016,7 @@ function format ( d ) {
 			$('#selectHCModelM').val(hc);															  
 			$('#inputHVModelM').val(hv);	
 		 
-        $.ajax({
-                url: "../api/value.php",
-                data:{
-                                          
-                    action: "get_cb",
-                    token : sessionToken, 
-                    username: loggedUser, 
-                    organization : organization, 
-                    loggedrole:loggedRole                          
-                },
-                type: "POST",
-                async: true,
-                success: function (data)
-                {
-                        
-                    if (data["status"] === 'ok')
-                    {        
-                        var $dropdown = $("#selectContextBrokerM");        
-                        $dropdown.empty();
-                        $.each(data['content'], function() {
-                            $dropdown.append($("<option />").val(this.name).text(this.name));        
-                        });
-                        
-                        $('#selectContextBrokerM').val(contextbroker);
                         showEditModelModal();
-				
-                        }
-                    else{
-                        console.log("error getting the context brokers "+data); 
-                    }
-                },
-                error: function (data)
-                {
-                 console.log("error in the call to get the context brokers "+data);   
-                }
-          });
-        
-        
 		
 	$.ajax({
 		url: "../api/model.php",
@@ -1016,12 +1045,15 @@ function format ( d ) {
 			// console.log(k); 
 			content = drawAttributeMenu(myattributes[k].value_name, 
 				 myattributes[k].data_type, myattributes[k].value_type, myattributes[k].editable, myattributes[k].value_unit, myattributes[k].healthiness_criteria, 
-				 myattributes[k].healthiness_value, 'editlistAttributes');
+				 myattributes[k].healthiness_value, 'editlistAttributes', indexValues);
+
+			indexValues=indexValues+1;
 			k++;
-              $("#editSchemaTabDevice #editlistAttributes .row input:even").on('input', checkModelValueNameM);
                $('#editlistAttributes').append(content);
 		  }
-		 
+		checkEditAtlistOneAttributeM();
+		$("#editSchemaTabModel #editlistAttributes .row input:even").each(function(){checkModelValueNameM($(this));});	
+		checkAddModelConditions();
 		 },
 		 error: function (data)
 				{
@@ -1075,8 +1107,8 @@ function format ( d ) {
 		var newatt= {value_name: document.getElementById('addlistAttributesM').childNodes[m].childNodes[0].childNodes[0].childNodes[0].value.trim(), 
 					data_type:document.getElementById('addlistAttributesM').childNodes[m].childNodes[1].childNodes[0].childNodes[0].value.trim(),
 					value_type:document.getElementById('addlistAttributesM').childNodes[m].childNodes[2].childNodes[0].childNodes[0].value.trim(),
-					editable:document.getElementById('addlistAttributesM').childNodes[m].childNodes[3].childNodes[0].childNodes[0].value.trim(),
-					value_unit:document.getElementById('addlistAttributesM').childNodes[m].childNodes[4].childNodes[0].childNodes[0].value.trim(),
+					editable:document.getElementById('addlistAttributesM').childNodes[m].childNodes[4].childNodes[0].childNodes[0].value.trim(),
+					value_unit:document.getElementById('addlistAttributesM').childNodes[m].childNodes[3].childNodes[0].childNodes[0].value.trim(),
 					healthiness_criteria: document.getElementById('addlistAttributesM').childNodes[m].childNodes[5].childNodes[0].childNodes[0].value.trim(),
 					healthiness_value: document.getElementById('addlistAttributesM').childNodes[m].childNodes[6].childNodes[0].childNodes[0].value.trim()};
 						   //MARCO: mynewAttributes.push(newatt);
@@ -1098,14 +1130,14 @@ function format ( d ) {
 		  var selectOpt_data_type= document.getElementById('editlistAttributes').childNodes[j].childNodes[1].childNodes[0].childNodes[0].options;
 		  var selectIndex_data_type= document.getElementById('editlistAttributes').childNodes[j].childNodes[1].childNodes[0].childNodes[0].selectedIndex;
 		  
-		  var selectOpt_value_unit= document.getElementById('editlistAttributes').childNodes[j].childNodes[4].childNodes[0].childNodes[0].options;
-		  var selectIndex_value_unit= document.getElementById('editlistAttributes').childNodes[j].childNodes[4].childNodes[0].childNodes[0].selectedIndex;
+		  var selectOpt_value_unit= document.getElementById('editlistAttributes').childNodes[j].childNodes[3].childNodes[0].childNodes[0].options;
+		  var selectIndex_value_unit= document.getElementById('editlistAttributes').childNodes[j].childNodes[3].childNodes[0].childNodes[0].selectedIndex;
 		  
 		  var selectOpt_hc= document.getElementById('editlistAttributes').childNodes[j].childNodes[5].childNodes[0].childNodes[0].options;
 		  var selectIndex_hc= document.getElementById('editlistAttributes').childNodes[j].childNodes[5].childNodes[0].childNodes[0].selectedIndex;
 		  
-		  var selectOpt_edit= document.getElementById('editlistAttributes').childNodes[j].childNodes[3].childNodes[0].childNodes[0].options;
-		  var selectIndex_edit= document.getElementById('editlistAttributes').childNodes[j].childNodes[3].childNodes[0].childNodes[0].selectedIndex;
+		  var selectOpt_edit= document.getElementById('editlistAttributes').childNodes[j].childNodes[4].childNodes[0].childNodes[0].options;
+		  var selectIndex_edit= document.getElementById('editlistAttributes').childNodes[j].childNodes[4].childNodes[0].childNodes[0].selectedIndex;
 		  
 		  var att= {value_name: document.getElementById('editlistAttributes').childNodes[j].childNodes[0].childNodes[0].childNodes[0].value.trim(), 
 			   data_type:selectOpt_data_type[selectIndex_data_type].value,
@@ -1135,14 +1167,14 @@ function format ( d ) {
 		  var selectOpt_data_type= document.getElementById('deletedAttributes').childNodes[j].childNodes[1].childNodes[0].childNodes[0].options;
 		  var selectIndex_data_type= document.getElementById('deletedAttributes').childNodes[j].childNodes[1].childNodes[0].childNodes[0].selectedIndex;
 		  
-		  var selectOpt_value_unit= document.getElementById('deletedAttributes').childNodes[j].childNodes[4].childNodes[0].childNodes[0].options;
-		  var selectIndex_value_unit= document.getElementById('deletedAttributes').childNodes[j].childNodes[4].childNodes[0].childNodes[0].selectedIndex;
+		  var selectOpt_value_unit= document.getElementById('deletedAttributes').childNodes[j].childNodes[3].childNodes[0].childNodes[0].options;
+		  var selectIndex_value_unit= document.getElementById('deletedAttributes').childNodes[j].childNodes[3].childNodes[0].childNodes[0].selectedIndex;
 		  
 		  var selectOpt_hc= document.getElementById('deletedAttributes').childNodes[j].childNodes[5].childNodes[0].childNodes[0].options;
 		  var selectIndex_hc= document.getElementById('deletedAttributes').childNodes[j].childNodes[5].childNodes[0].childNodes[0].selectedIndex;
 		  
-		  var selectOpt_edit= document.getElementById('deletedAttributes').childNodes[j].childNodes[3].childNodes[0].childNodes[0].options;
-		  var selectIndex_edit= document.getElementById('deletedAttributes').childNodes[j].childNodes[3].childNodes[0].childNodes[0].selectedIndex;
+		  var selectOpt_edit= document.getElementById('deletedAttributes').childNodes[j].childNodes[4].childNodes[0].childNodes[0].options;
+		  var selectIndex_edit= document.getElementById('deletedAttributes').childNodes[j].childNodes[4].childNodes[0].childNodes[0].selectedIndex;
 		  
 		  var att= {value_name: document.getElementById('deletedAttributes').childNodes[j].childNodes[0].childNodes[0].childNodes[0].value.trim(), 
 			   data_type:selectOpt_data_type[selectIndex_data_type].value,
@@ -1358,144 +1390,23 @@ function format ( d ) {
 		
 	
   
-  /*
-	$("#selectPolicyModel").click(function() {
-			
-     var nameOpt =  document.getElementById('selectPolicyModel').options;
-     var selectednameOpt = document.getElementById('selectPolicyModel').selectedIndex;
-		
-	
-				$.ajax({
-					url: "../api/model.php",
-					data: {
-					action: "get_model",
-					name: nameOpt[selectednameOpt].value 
-					},
-					type: "POST",
-					async: true,
-					datatype: 'json',
-					success: function (data) 
-					 {
-						
-						 if(data["status"] === 'ko')
-							{
-								  // data = data["content"];
-								  alert("An error occured when reading the data. <br/> Get in touch with the Snap4City Administrator<br/>"+ data["msg"]);
-							}
+	$("#selectProtocolModel").change(function() {
+		checkModelSelectionCB_all();
+		checkAddModelConditions();
+	});
 
-						 else (data["status"] === 'ok')
-							{					
-								//console.log("maroc" + data.content.attributes);
-								
-								//var model = data.content.name;
-								//var type = data.content.devicetype;
-								//var kind = data.content.kind;
-								//var producer = data.content.producer;
-								//var mac = data.content.mac;
-								//var frequency = data.content.frequency;
-								var contextbroker = data.content.contextbroker;
-								var protocol = data.content.protocol;
-								var format = data.content.format;
-								var active = data.content.active;
-								var healthiness_criteria = data.content.healthiness_criteria;
-								var healthiness_value =  data.content.healthiness_value;
-								
-								 
-								var myattributes  = JSON.parse(data.content.attributes);
-								var k =0;
-								var content ="";
-								// population of the value tab with the values taken from the db						
-								while (k < myattributes.length)
-								  {
-									console.log(myattributes.length + " " +k); 
-									content += drawAttributeMenu(myattributes[k].value_name, 
-										 myattributes[k].data_type, myattributes[k].value_type, myattributes[k].editable, myattributes[k].value_unit, myattributes[k].healthiness_criteria, 
-										 myattributes[k].healthiness_value, 'addlistAttributes');
-									k++;
-								  }
-								$('#addlistAttributes').html(content);
-							 					
-								//$('#inputTypeDevice').val(data.content.devicetype);
-								//$('#selectKindDevice').val(data.content.kind);
-								//$('#inputProducerDevice').val(data.content.producer);
-								//$('#inputFrequencyDevice').val(data.content.frequency);
-								//$('#inputMacDevice').val(data.content.mac);
-								$('#selectContextBroker').val(data.content.contextbroker);
-								$('#selectProtocolModel').val(data.content.protocol);
-								$('#selectFormatModel').val(data.content.format); 
-								//addDeviceConditionsArray['inputTypeDevice'] = true;
-								//checkDeviceType(); checkAddDeviceConditions();
-								//addDeviceConditionsArray['inputFrequencyDevice'] = true;
-								//checkFrequencyType(); checkAddDeviceConditions();
-								
-
-							}
-					 },
-					 error: function (data) 
-					 {
-						 console.log("Ko result: " + JSON.stringify(data));
-						 $('#addlistAttributes').html("");
-												
-								$('#inputTypeDevice').val("");
-								$('#selectKindDevice').val("");
-								$('#inputProducerDevice').val("");
-								$('#inputFrequencyDevice').val("");
-								$('#inputMacDevice').val("");
-								$('#selectContextBroker').val("");
-								$('#selectProtocolDevice').val("");
-								$('#selectFormatDevice').val("");
-                                alert("An error occured when reading the information about model. <br/> Try again or get in touch with the Snap4City Administrator<br/>");
-
-								// $("#addDeviceModal").modal('hide');								
-					 }
-					
-				});		
-				
-				
-		
-			  $("#addDeviceModal").modal('show');
-			 // console.log(name);
-			 // $("#addDeviceModalBody").modal('show');
-			  $("#addDeviceLoadingMsg").hide();
-			  $("#addDeviceLoadingIcon").hide();
-			  $("#addDeviceOkMsg").hide();
-			  $("#addDeviceOkIcon").hide();
-			  $("#addDeviceKoMsg").hide();
-			  $("#addDeviceKoIcon").hide();
-		
-		else{
-			$('#inputTypeDevice').val("");
-			$('#selectKindDevice').val("");
-			$('#inputProducerDevice').val("");
-			$('#inputFrequencyDevice').val("");
-			
-			$('#inputMacDevice').val("");
-			$('#selectContextBroker').val("");
-			$('#selectProtocolDevice').val("");
-			$('#selectFormatDevice').val(""); 
-			gb_key1 = "";
-		     gb_key2 = "";
-			$('#KeyOneDeviceUserMsg').html("");
-			$('#KeyTwoDeviceUserMsg').html("");
-            $('#KeyOneDeviceUserMsg').val("");
-			$('#KeyTwoDeviceUserMsg').val("");
-		    // $('#addlistAttributes').html("");
-			addDeviceConditionsArray['inputTypeDevice'] = false;
-			checkDeviceType(); checkAddDeviceConditions();
-			addDeviceConditionsArray['inputFrequencyDevice'] = false;
-			checkFrequencyType(); checkAddDeviceConditions();
-
-		} 		
-
-   });
-*/
-
+	$("#selectFormatModel").change(function() {
+                checkModelSelectionCB_all();
+		checkAddModelConditions();
+        });
 
   $("#selectContextBroker").change(function() {
 	
 		var index = document.getElementById("selectContextBroker").selectedIndex;
 		var opt = document.getElementById("selectContextBroker").options;
 		var valCB= opt[index].getAttribute("my_data");
+
+		console.log("index:"+index+" opt:"+opt+" valCB:"+valCB);
 		
 		if(valCB ==='ngsi')
 		{
@@ -1518,7 +1429,8 @@ function format ( d ) {
 			console.log("an error occurred");
 		}
 		
-		
+		checkModelSelectionCB_all();			
+		checkAddModelConditions();
 	});
 	
 	

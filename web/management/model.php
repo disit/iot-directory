@@ -192,6 +192,7 @@
         <script type="text/javascript" src="../js/dashboard_mng.js"></script>
 
 <!-- Custom scripts -->
+<script type="text/javascript" src="js/common.js"></script>
 <script type="text/javascript" src="js/model.js"></script>
 <script type="text/javascript" src="js/modelManagement.js"></script>
 <script type="text/javascript" src="js/modelEditManagement.js"></script>
@@ -855,8 +856,8 @@
 							<div id="editlistAttributes"></div>
 							<div id="addlistAttributesM"></div>
 							<div id="deletedAttributes" style="display:none"></div>
-							<!-- <div class="pull-left"><i id="addAttrMBtn" class="fa fa-plus-square" style="font-size:36px; color: #ffcc00"></i></div> -->
 							<div class="pull-left"><button id="addAttrMBtn" class="btn btn-primary">Add Value</button></div>
+						<div id="editlistAttributesMsg" class="modalFieldMsgCnt">&nbsp;</div>	
                         </div>
 					
 						

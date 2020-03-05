@@ -475,12 +475,14 @@ else if ($action=="update")
 	$listdeleteAttributes= json_decode($_REQUEST['deleteattributes']);
 	$listAttributes= json_decode($_REQUEST['attributes']);
 	$listnewAttributes= json_decode($_REQUEST['newattributes']);
-	
+
 	if ($listAttributes==null) $merge=$listnewAttributes;
 	else if ($listnewAttributes==null) $merge=$listAttributes;
 	else $merge=array_merge($listAttributes,$listnewAttributes, 'compare_values');
 	
 	if ($listdeleteAttributes!=null) $merge= array_udiff($merge, $listdeleteAttributes, 'compare_values');
+
+
 	
 	//Sara2510 - for logging purpose
 	$deviceName= $old_id . " ".$old_contextbroker; 
@@ -521,27 +523,8 @@ else if ($action=="update")
 		if($s1 && $s2 && $s3){
 			if($notDuplicate){
 			
-			$q = "UPDATE temporary_devices SET id='$id', 
-			contextBroker='$contextbroker', 
-			devicetype='$devicetype', 
-			kind= '$kind', 
-			protocol='$protocol', 
-			format='$format', 
-			macaddress='$macaddress', 
-			model='$model', 
-			producer='$producer', 
-			latitude='$latitude', 
-			longitude='$longitude', 
-			status='$status', 
-			validity_msg='$validity_msg' ,
-			frequency = '$frequency', 
-			visibility = '$visibility',
-            organization='$organization',
-            k1 = '$k1',
-            k2 = '$k2',
-			edge_gateway_type = '$edge_gateway_type',
-			edge_gateway_uri = '$edge_gateway_uri'
-			WHERE id='$old_id' and contextBroker='$old_contextbroker';";
+			$q = "UPDATE temporary_devices SET id='$id',contextBroker='$contextbroker',devicetype='$devicetype',kind='$kind',protocol='$protocol',format='$format',macaddress='$macaddress',model='$model',producer='$producer',latitude='$latitude',longitude='$longitude',status='$status',validity_msg='$validity_msg',frequency = '$frequency',visibility = '$visibility',organization='$organization',k1 = '$k1',k2 = '$k2',edge_gateway_type='$edge_gateway_type',edge_gateway_uri = '$edge_gateway_uri' WHERE id='$old_id' and contextBroker='$old_contextbroker';";
+	
 			$r = mysqli_query($link, $q);
 
 			if($r) 
@@ -554,18 +537,18 @@ else if ($action=="update")
 
 				$ok=true;$q="";
 				$a=0;
-			
-				while ($a < count($listAttributes) && $ok)
+		
+				while ($a < count($merge) && $ok)
 				{
-				   $att=$listAttributes[$a];	
+				   $att=$merge[$a];	
 				   if ($att->healthiness_criteria=="refresh_rate")  $hc="value_refresh_rate";
 				   else if ($att->healthiness_criteria=="different_values") $hc="different_values";
 				   else $hc="value_bounds";					
 
-				  $upquery="UPDATE `temporary_event_values` SET `cb`='$contextbroker', `device` = '$id',`value_name`='". $att->value_name . "',`data_type`='" . $att->data_type . "',`value_type`='". $att->value_type. "', `editable`='". $att->editable. "', `value_unit`='". $att->value_unit."', `healthiness_criteria`='". $att->healthiness_criteria."', $hc='". $att->healthiness_value ."'  WHERE  `cb`='$old_contextbroker' AND `device`='$old_id' AND old_value_name='". $att->old_value_name . "';";
+
+				  $upquery="UPDATE temporary_event_values SET cb='$contextbroker', device = '$id',value_name='". $att->value_name . "',data_type='" . $att->data_type . "',value_type='". $att->value_type. "', editable='". $att->editable. "', value_unit='". $att->value_unit."', healthiness_criteria='". $att->healthiness_criteria."', $hc='". $att->healthiness_value ."' WHERE cb='$old_contextbroker' AND device='$old_id' AND old_value_name='". $att->old_value_name . "';";
 
 					  $r1 = mysqli_query($link, $upquery);
-					//   echo $upquery;
 					  if ($r1) 
 					  {
 						  $result["msg"] .= "\n attribute $att->value_name with old name $att->old_value_name correctly updated";
@@ -1107,18 +1090,6 @@ else if($action=='delete_after_insert')
         $result["msg"] .= "\n Problem in deleting the valid devices inserted " . generateErrorMessage($link);
         $result["log"] .= "\n Problem in deleting the valid devices inserted " . generateErrorMessage($link); 	
     }
-}
-
-else if($action == 'get_param_values')
-{	
-	// $result = array();
-	$result['status'] = 'ok'; 
-	$result['value_type'] = generatelabels($link);
-	$result['data_type'] = generatedatatypes($link);
-	$result['value_unit'] = generateunits($link);
-	//$result['log'] .= '\n\naction:get_param_values';
-	my_log($result);
-	mysqli_close($link); 
 }
 
 //----Sara end---

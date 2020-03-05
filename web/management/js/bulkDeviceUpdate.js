@@ -43,9 +43,10 @@ var gb_old_cb="";
 var timerID= undefined;
 var was_processing=0;
 
+var indexValues=0;//it keeps track of unique identirier on the values, so it's possible to enforce specific value type
 
 //--------to get the drop-down menus items----------// 
-$.ajax({url: "../api/bulkDeviceLoad.php",
+$.ajax({url: "../api/device.php",
 	data: {
 		action: 'get_param_values',
 		organization:organization
@@ -202,6 +203,10 @@ function sendJsonToDb(jsondata){
 	});
 }//end send json to db
 //sara 1510 end
+
+function getText( obj ) {
+    return obj.textContent ? obj.textContent : obj.innerText;
+}
 
 
 /*------ Method for read uploded csv file ------*/
@@ -1164,8 +1169,9 @@ $(document).ready(function ()
 								console.log(myattributes.length + " " +k); 
 								content += drawAttributeMenu(myattributes[k].value_name, 
 									 myattributes[k].data_type, myattributes[k].value_type, myattributes[k].editable, myattributes[k].value_unit, myattributes[k].healthiness_criteria, 
-									 myattributes[k].healthiness_value, myattributes[k].old_value_name,
-									 'addlistAttributes');
+									 myattributes[k].healthiness_value, myattributes[k].value_name,
+									 'addlistAttributes', indexValues);
+								indexValues=indexValues+1;
 								k++;
 							}
 							$('#addlistAttributes').html(content);
@@ -1179,9 +1185,9 @@ $(document).ready(function ()
 							$('#selectProtocolDevice').val(data.content.protocol);
 							$('#selectFormatDevice').val(data.content.format); 
 							addDeviceConditionsArray['inputTypeDevice'] = true;
-							checkDeviceType(); checkAddDeviceConditions();
+							checkDeviceType(); checkEditDeviceConditions();
 							addDeviceConditionsArray['inputFrequencyDevice'] = true;
-							checkFrequencyType(); checkAddDeviceConditions();
+							checkFrequencyType(); checkEditDeviceConditions();
 									
 						}
 					},
@@ -1232,9 +1238,9 @@ $(document).ready(function ()
 			$('#KeyTwoDeviceUserMsg').val("");
 		    // $('#addlistAttributes').html("");
 			addDeviceConditionsArray['inputTypeDevice'] = false;
-			checkDeviceType(); checkAddDeviceConditions();
+			checkDeviceType(); checkEditDeviceConditions();
 			addDeviceConditionsArray['inputFrequencyDevice'] = false;
-			checkFrequencyType(); checkAddDeviceConditions();
+			checkFrequencyType(); checkEditDeviceConditions();
 
 		} 		
 	});*/
@@ -1245,9 +1251,25 @@ $(document).ready(function ()
 	$("#addAttrBtn").off("click");
 	$("#addAttrBtn").click(function(){
 	   console.log("#addAttrBtn");							   
-	   content = drawAttributeMenu("","", "", "", "", "", " "," ",  'addlistAttributes');
+	   content = drawAttributeMenu("","", "", "", "", "", " "," ",  'addlistAttributes',indexValues);
+   		indexValues=indexValues+1;
 	   $('#addlistAttributes').append(content);
+
+              checkAtlistOneAttribute();
+              $("#addSchemaTabDevice #addlistAttributes .row input:even").each(function(){checkValueNameM($(this));});
+              checkEditDeviceConditions();
+
 	});			
+
+	$("#addSchemaTabDevice").off("click");
+        $("#addSchemaTabDevice").on('click keyup', function(){
+                console.log("#addSchemaTabDevice");
+
+                //checkAtlistOneAttribute();
+                $("#addSchemaTabDevice #addlistAttributes .row input:even").each(function(){checkValueNameM($(this));});
+                checkEditDeviceConditions();
+        });
+
 	
 //DELETE DEVICE (DELETE FROM DB)  			
 		
@@ -1443,12 +1465,34 @@ $(document).ready(function ()
 	$("#addAttrMBtn").off("click");
 	$("#addAttrMBtn").click(function(){				
 	   console.log("#addAttrMBtn");					
-	   content = drawAttributeMenu("","", "", "", "", "", "300"," ",'addlistAttributesM');
+	   content = drawAttributeMenu("","", "", "", "", "", "300"," ",'addlistAttributesM', indexValues);
+		indexValues=indexValues+1;
 		editDeviceConditionsArray['addlistAttributesM'] = true;
 	   $('#addlistAttributesM').append(content);
+
+               checkEditAtlistOneAttribute();
+               $("#editSchemaTabDevice #addlistAttributesM .row input:even").each(function(){checkEditValueName($(this));});
+               $("#editSchemaTabDevice #editlistAttributes .row input:even").each(function(){checkEditValueName($(this));});
+               checkEditDeviceConditions();
+
 	});	
 
+        $("#editSchemaTabDevice").off("click");
+        $("#editSchemaTabDevice").on('click keyup', function(){
+           console.log("#editSchemaTabDevice");
+
+           //checkEditAtlistOneAttribute();
+           $("#editSchemaTabDevice #addlistAttributesM .row input:even").each(function(){checkEditValueName($(this));});
+          $("#editSchemaTabDevice #editlistAttributes .row input:even").each(function(){checkEditValueName($(this));});
+           checkEditDeviceConditions();
+        });
+
+
 	$('#devicesTable tbody').on('click', 'button.editDashBtn', function () {
+
+		document.getElementById('editlistAttributes').innerHTML = "";
+                document.getElementById('addlistAttributesM').innerHTML = "";
+                document.getElementById('deletedAttributes').innerHTML = "";
 
 		//$("#editDeviceModal").modal('show');
         
@@ -1518,7 +1562,7 @@ $(document).ready(function ()
 
 		console.log('edge_gateway_type');  
 
-		UserEditKey();
+		//UserEditKey();
 		checkEditDeviceConditions();
 		
 		$.ajax({
@@ -1598,15 +1642,13 @@ $(document).ready(function ()
 					// console.log(k); 
 					content = drawAttributeMenu(myattributes[k].value_name, 
 					myattributes[k].data_type, myattributes[k].value_type, myattributes[k].editable, myattributes[k].value_unit, myattributes[k].healthiness_criteria, 
-					myattributes[k].healthiness_value, myattributes[k].value_name, 'editlistAttributes');
+					myattributes[k].healthiness_value, myattributes[k].value_name, 'editlistAttributes', indexValues);
+					indexValues=indexValues+1;
 					k++;
                     $('#editlistAttributes').append(content);
-					$("#editSchemaTabDevice #editlistAttributes .row input").on('input', checkValueName);
-					$("#editSchemaTabDevice #editlistAttributes .row input").on('input', checkAddDeviceConditions);
-					// $("#addSchemaTabDevice #addlistAttributes .row input:even").each(function(){checkValueName();});
  
 					checkEditDeviceConditions();
-					 
+					$("#editSchemaTabDevice #editlistAttributes .row input:even").each(function(){checkEditValueName($(this));}); 
                     
 				}
 			},
@@ -1649,8 +1691,8 @@ $(document).ready(function ()
 			var newatt= {value_name: document.getElementById('addlistAttributesM').childNodes[m].childNodes[0].childNodes[0].childNodes[0].value.trim(), 
 				data_type:document.getElementById('addlistAttributesM').childNodes[m].childNodes[1].childNodes[0].childNodes[0].value.trim(),
 				value_type:document.getElementById('addlistAttributesM').childNodes[m].childNodes[2].childNodes[0].childNodes[0].value.trim(),
-				editable:document.getElementById('addlistAttributesM').childNodes[m].childNodes[3].childNodes[0].childNodes[0].value.trim(),
-				value_unit:document.getElementById('addlistAttributesM').childNodes[m].childNodes[4].childNodes[0].childNodes[0].value.trim(),
+				editable:document.getElementById('addlistAttributesM').childNodes[m].childNodes[4].childNodes[0].childNodes[0].value.trim(),
+				value_unit:document.getElementById('addlistAttributesM').childNodes[m].childNodes[3].childNodes[0].childNodes[0].value.trim(),
 				healthiness_criteria: document.getElementById('addlistAttributesM').childNodes[m].childNodes[5].childNodes[0].childNodes[0].value.trim(),
 				healthiness_value: document.getElementById('addlistAttributesM').childNodes[m].childNodes[6].childNodes[0].childNodes[0].value.trim()}
 				mynewAttributes.push(newatt);			 
@@ -1666,14 +1708,14 @@ $(document).ready(function ()
 				var selectOpt_data_type= document.getElementById('editlistAttributes').childNodes[j].childNodes[1].childNodes[0].childNodes[0].options;
 				var selectIndex_data_type= document.getElementById('editlistAttributes').childNodes[j].childNodes[1].childNodes[0].childNodes[0].selectedIndex;
 			  
-				var selectOpt_value_unit= document.getElementById('editlistAttributes').childNodes[j].childNodes[4].childNodes[0].childNodes[0].options;
-				var selectIndex_value_unit= document.getElementById('editlistAttributes').childNodes[j].childNodes[4].childNodes[0].childNodes[0].selectedIndex;
+				var selectOpt_value_unit= document.getElementById('editlistAttributes').childNodes[j].childNodes[3].childNodes[0].childNodes[0].options;
+				var selectIndex_value_unit= document.getElementById('editlistAttributes').childNodes[j].childNodes[3].childNodes[0].childNodes[0].selectedIndex;
 			  
 				var selectOpt_hc= document.getElementById('editlistAttributes').childNodes[j].childNodes[5].childNodes[0].childNodes[0].options;
 				var selectIndex_hc= document.getElementById('editlistAttributes').childNodes[j].childNodes[5].childNodes[0].childNodes[0].selectedIndex;
 			  
-				var selectOpt_edit= document.getElementById('editlistAttributes').childNodes[j].childNodes[3].childNodes[0].childNodes[0].options;
-				var selectIndex_edit= document.getElementById('editlistAttributes').childNodes[j].childNodes[3].childNodes[0].childNodes[0].selectedIndex;
+				var selectOpt_edit= document.getElementById('editlistAttributes').childNodes[j].childNodes[4].childNodes[0].childNodes[0].options;
+				var selectIndex_edit= document.getElementById('editlistAttributes').childNodes[j].childNodes[4].childNodes[0].childNodes[0].selectedIndex;
 
 				try{var dt= selectOpt_data_type[selectIndex_data_type].value}catch(err){var dt=""};
 				try{var vt= selectOpt_value_type[selectIndex_value_type].value}catch(err){var vt=""};
@@ -1687,8 +1729,10 @@ $(document).ready(function ()
 				   healthiness_criteria: selectOpt_hc[selectIndex_hc].value,
 				   healthiness_value: document.getElementById('editlistAttributes').childNodes[j].childNodes[6].childNodes[0].childNodes[0].value.trim(),
 				   //sara start				   
-				   old_value_name:document.getElementById('editlistAttributes').childNodes[j].childNodes[7].childNodes[0].childNodes[0].value
+				   old_value_name:getText(document.getElementById('editlistAttributes').childNodes[j].childNodes[7].childNodes[0].childNodes[0])
 				};
+				console.log("edit attr----------------------"+getText(document.getElementById('editlistAttributes').childNodes[j].childNodes[7].childNodes[0].childNodes[0]));
+				
 				   //sara end
 				myAttributes.push(att);
 			  
@@ -1704,14 +1748,14 @@ $(document).ready(function ()
 				var selectOpt_data_type= document.getElementById('deletedAttributes').childNodes[j].childNodes[1].childNodes[0].childNodes[0].options;
 				var selectIndex_data_type= document.getElementById('deletedAttributes').childNodes[j].childNodes[1].childNodes[0].childNodes[0].selectedIndex;
 			  
-				var selectOpt_value_unit= document.getElementById('deletedAttributes').childNodes[j].childNodes[4].childNodes[0].childNodes[0].options;
-				var selectIndex_value_unit= document.getElementById('deletedAttributes').childNodes[j].childNodes[4].childNodes[0].childNodes[0].selectedIndex;
+				var selectOpt_value_unit= document.getElementById('deletedAttributes').childNodes[j].childNodes[3].childNodes[0].childNodes[0].options;
+				var selectIndex_value_unit= document.getElementById('deletedAttributes').childNodes[j].childNodes[3].childNodes[0].childNodes[0].selectedIndex;
 			  
 				var selectOpt_hc= document.getElementById('deletedAttributes').childNodes[j].childNodes[5].childNodes[0].childNodes[0].options;
 				var selectIndex_hc= document.getElementById('deletedAttributes').childNodes[j].childNodes[5].childNodes[0].childNodes[0].selectedIndex;
 			  
-				var selectOpt_edit= document.getElementById('deletedAttributes').childNodes[j].childNodes[3].childNodes[0].childNodes[0].options;
-				var selectIndex_edit= document.getElementById('deletedAttributes').childNodes[j].childNodes[3].childNodes[0].childNodes[0].selectedIndex;
+				var selectOpt_edit= document.getElementById('deletedAttributes').childNodes[j].childNodes[4].childNodes[0].childNodes[0].options;
+				var selectIndex_edit= document.getElementById('deletedAttributes').childNodes[j].childNodes[4].childNodes[0].childNodes[0].selectedIndex;
 			  
 				var att= {value_name: document.getElementById('deletedAttributes').childNodes[j].childNodes[0].childNodes[0].childNodes[0].value.trim(), 
 			       data_type:selectOpt_data_type[selectIndex_data_type].value,
@@ -1721,8 +1765,11 @@ $(document).ready(function ()
 				   healthiness_criteria: selectOpt_hc[selectIndex_hc].value,
 				   healthiness_value: document.getElementById('deletedAttributes').childNodes[j].childNodes[6].childNodes[0].childNodes[0].value.trim(),
 				   //sara start				   
-				   old_value_name: document.getElementById('deletedAttributes').childNodes[j].childNodes[7].childNodes[0].childNodes[0].value
+				   old_value_name: document.getElementById('deletedAttributes').childNodes[j].childNodes[7].childNodes[0].childNodes[0]
 				};
+				
+				console.log(document.getElementById('editlistAttributes').childNodes[j].childNodes[7].childNodes[0].childNodes[0]);	
+			
 				   //sara end
 				mydeletedAttributes.push(att);
 			}
@@ -1768,7 +1815,10 @@ $(document).ready(function ()
 			console.log(device_status);
 			console.log(verify.message);
 			console.log("attributes "+JSON.stringify(myAttributes));
-         
+        
+		console.log("old_id"+gb_old_id);
+		console.log("old_cb"+gb_old_cb);
+ 
 		$.ajax({
             url: "../api/bulkDeviceLoad.php",
             data:{
@@ -2201,7 +2251,7 @@ $(document).on({
 			
 			var fieldIf= document.getElementById('ifBlockTable').tBodies[0].rows.item(m).cells.item(1).childNodes[0].value;
 			var operatorIf= document.getElementById('ifBlockTable').tBodies[0].rows.item(m).cells.item(2).childNodes[0].value			
-			var valueIf=document.getElementById('ifBlockTable').tBodies[0].childNodes[m].childNodes[3].childNodes[0].value;
+			var valueIf=document.getElementById('ifBlockTable').tBodies[0].childNodes[m].childNodes[4].childNodes[0].value;
 			 
 			//params.newValue
 			if(valueIf != undefined && valueIf.localeCompare("Empty")==0){
@@ -2323,7 +2373,7 @@ $(document).on({
 						document.getElementById(id).tBodies[0].rows.item(pos).cells.item(2).innerHTML= myDataP[0].fieldsHtml;					
 					}
 					else{
-						document.getElementById(id).tBodies[0].childNodes[pos].childNodes[3].innerHTML= myDataP[0].fieldsHtml;
+						document.getElementById(id).tBodies[0].childNodes[pos].childNodes[4].innerHTML= myDataP[0].fieldsHtml;
 					}
 				}
 				else{
@@ -2332,7 +2382,7 @@ $(document).on({
 						document.getElementById(id).tBodies[0].rows.item(pos).cells.item(2).innerHTML= myDataP[0].fieldsHtml;					
 					}
 					else{
-						document.getElementById(id).tBodies[0].childNodes[pos].childNodes[3].innerHTML= myDataP[0].fieldsHtml;
+						document.getElementById(id).tBodies[0].childNodes[pos].childNodes[4].innerHTML= myDataP[0].fieldsHtml;
 						
 
 						if(value == 1){
@@ -2359,7 +2409,7 @@ $(document).on({
 					document.getElementById(id).tBodies[0].rows.item(pos).cells.item(2).innerHTML=  "<input type=\"text\" class=\"fieldNameThen\" value=\"Empty\">";				
 				}
 				else{
-					document.getElementById(id).tBodies[0].childNodes[pos].childNodes[3].innerHTML= "<input type=\"text\" class=\"fieldNameIf\" value=\"Empty\">";
+					document.getElementById(id).tBodies[0].childNodes[pos].childNodes[4].innerHTML= "<input type=\"text\" class=\"fieldNameIf\" value=\"Empty\">";
 				}
 
 			}
@@ -2377,7 +2427,7 @@ $(document).on({
 			//var attribute= document.getElementById('ifBlockTable').rows[m].cells[1].selectedIndex;
 			var fieldIf= document.getElementById('ifBlockTable').tBodies[0].rows.item(m).cells.item(1).childNodes[0].value;
 			var operatorIf= document.getElementById('ifBlockTable').tBodies[0].rows.item(m).cells.item(2).childNodes[0].value			
-			var valueIf=document.getElementById('ifBlockTable').tBodies[0].childNodes[m].childNodes[3].childNodes[0].value;
+			var valueIf=document.getElementById('ifBlockTable').tBodies[0].childNodes[m].childNodes[4].childNodes[0].value;
 
 				if(valueIf.localeCompare("Empty")==0){
 					valueIf = "";
@@ -2713,7 +2763,7 @@ $(document).on({
 
 			var fieldIf= document.getElementById('ifBlockTableValue').tBodies[0].rows.item(m).cells.item(1).childNodes[0].value;
 			var operatorIf= document.getElementById('ifBlockTableValue').tBodies[0].rows.item(m).cells.item(2).childNodes[0].value;
-			var valueIf= document.getElementById('ifBlockTableValue').tBodies[0].childNodes[m].childNodes[3].childNodes[0].value;
+			var valueIf= document.getElementById('ifBlockTableValue').tBodies[0].childNodes[m].childNodes[4].childNodes[0].value;
 			//params.newValue
 			if(valueIf.localeCompare("Empty")==0){
 				valueIf = "";
@@ -2780,7 +2830,7 @@ $(document).on({
 
 				var fieldIf= document.getElementById('ifBlockTableValue').tBodies[0].rows.item(m).cells.item(1).childNodes[0].value;
 				var operatorIf= document.getElementById('ifBlockTableValue').tBodies[0].rows.item(m).cells.item(2).childNodes[0].value;
-				var valueIf= document.getElementById('ifBlockTableValue').tBodies[0].childNodes[m].childNodes[3].childNodes[0].value;
+				var valueIf= document.getElementById('ifBlockTableValue').tBodies[0].childNodes[m].childNodes[4].childNodes[0].value;
 
 				if(valueIf.localeCompare("Empty")==0){
 					valueIf = "";
@@ -2854,31 +2904,45 @@ $(document).on({
 
 
 function drawAttributeMenu
-(attrName, data_type, value_type, editable, value_unit, healthiness_criteria, value_refresh_rate,old_value_name, parent)
+(attrName, data_type, value_type, editable, value_unit, healthiness_criteria, value_refresh_rate,old_value_name, parent, indice)
 {
+
+	if (attrName==""){
+                msg="<div style=\"color:red;\" class=\"modalFieldMsgCnt\"></div>";
+        }
+        else {
+                msg="<div class=\"modalFieldMsgCnt\">&nbsp;</div>";
+        }
+
 	
 	options="";
-	if (value_type!="") labelcheck= value_type;
-	else { //0910Fatima
-		labelcheck="";
-		options += "<option value=' ' selected> </option>";
+	if (value_type==""){
+		options+="<option hidden disabled selected value=\"NOT VALID OPTION\"> -- select an option -- </option>";
+                msg_value_type="<div style=\"color:red;\" class=\"modalFieldMsgCnt\">Value type is mandatory</div>";
 	}
+	else
+		msg_value_type="<div style=\"color:#337ab7;\" class=\"modalFieldMsgCnt\">Ok</div>";
+
 	for (var n=0; n < gb_value_types.length; n++)
 	{
-	  if (labelcheck == gb_value_types[n]) 
-		 options += "<option value=\""+gb_value_types[n]+"\" selected>"+ gb_value_types[n]+ "</option>";
-	  else options += "<option value=\""+gb_value_types[n]+"\">"+ gb_value_types[n]+ "</option>";
+		if (value_type == gb_value_types[n].value)
+                        options += "<option value=\""+gb_value_types[n].value+"\" selected>"+ gb_value_types[n].label+ "</option>";
+                else
+                        options += "<option value=\""+gb_value_types[n].value+"\">"+ gb_value_types[n].label+ "</option>";
 	}
 	
 	myunits="";// <option value=\"none\"></option>";
-	if (value_unit!="") labelcheck= value_unit;
-	else labelcheck="";
-	for (var n=0; n < gb_value_units.length; n++)
-	{
-	  if (labelcheck == gb_value_units[n]) 
-		 myunits += "<option value=\""+gb_value_units[n]+"\" selected>"+ gb_value_units[n]+ "</option>";
-	  else myunits += "<option value=\""+gb_value_units[n]+"\">"+ gb_value_units[n]+ "</option>";
-	}
+	msg_value_unit="<div style=\"color:#337ab7;\" class=\"modalFieldMsgCnt\">Ok</div>";
+	//retrieve acceptable value unit, and select the selected if available
+        validValueUnit=getValidValueUnit(value_type, value_unit);
+
+	if (validValueUnit!==""){
+                if (!validValueUnit.includes('selected')){
+                        myunits+="<option hidden disabled selected value=\"NOT VALID OPTION\"> -- select an option -- </option>";
+                        msg_value_unit="<div style=\"color:red;\" class=\"modalFieldMsgCnt\">Value unit is mandatory</div>";
+                }
+                myunits+=validValueUnit;
+        }
 	
 	//---start sara---
 	if(value_refresh_rate===undefined){
@@ -2918,7 +2982,7 @@ function drawAttributeMenu
 	if (data_type!="") labelcheck= data_type;
 	else { //0910Fatima
 		labelcheck="";
-		mydatatypes += "<option value=' ' selected> </option>";
+		//mydatatypes += "<option value=' ' selected> </option>";
 	}
 	
 	for (var n=0; n < gb_datatypes.length; n++)
@@ -2931,7 +2995,7 @@ function drawAttributeMenu
  return "<div class=\"row\" style=\"border:3px solid blue;\" ><div class=\"col-xs-6 col-md-3 modalCell\">" +
 		"<div class=\"modalFieldCnt\"><input type=\"text\" class=\"modalInputTxt\""+
 		"name=\"" +  attrName +  "\"  value=\"" + attrName + "\">" + 
-		"</div><div class=\"modalFieldLabelCnt\">Value Name</div></div>"+
+		"</div><div class=\"modalFieldLabelCnt\">Value Name</div>"+ msg +"</div>"+
 			
 		"<div class=\"col-xs-6 col-md-3 modalCell\"><div class=\"modalFieldCnt\">"+
 		"<select class=\"modalInputTxt\" name=\""+ attrName+"-type" +
@@ -2939,24 +3003,31 @@ function drawAttributeMenu
 		"</select></div><div class=\"modalFieldLabelCnt\">Data Type</div></div>" + 
 	
 		"<div class=\"col-xs-6 col-md-3 modalCell\"><div class=\"modalFieldCnt\">" +
-		"<select class=\"modalInputTxt\" name=\""+ value_type +
+		"<select class=\"modalInputTxt\"  id=\"value_type"+indice+"\" "+
+		"onchange=valueTypeChanged("+indice+") "+
 		"\">" + 		 options + 
-		"</select></div><div class=\"modalFieldLabelCnt\">Value Type</div></div>" +
+		"</select>"+
+		"</div><div class=\"modalFieldLabelCnt\">Value Type"+
+		"</div>"+msg_value_type+"</div>" +
 		
 		"<div class=\"col-xs-6 col-md-3 modalCell\"><div class=\"modalFieldCnt\">" +
-		"<select class=\"modalInputTxt\" name=\""+ editable +
-		"\">" + 
-		"<option value='0' "+editable_false+">false</option>" +
-		"<option value='1' "+editable_true+">true</option> </select>" +
-		"<option value='' "+editable_empty+"> </option> </select>" + //0910Fatima
-		"</div><div class=\"modalFieldLabelCnt\">Editable</div></div>"+
-		
-		"<div class=\"col-xs-6 col-md-3 modalCell\"><div class=\"modalFieldCnt\">" +
-		"<select class=\"modalInputTxt\" name=\""+ value_unit +
+		"<select class=\"modalInputTxt\" id=\"value_unit"+indice+"\" "+
+		"onchange=valueUnitChanged("+indice+") "+
 		"\">" + 
 		 myunits + 
-		"</select></div><div class=\"modalFieldLabelCnt\">Value Unit</div></div>"+
-		
+		"</select>"+
+		"</div><div class=\"modalFieldLabelCnt\">Value Unit"+
+		"</div>"+msg_value_unit+"</div>"+
+	
+		"<div class=\"col-xs-6 col-md-3 modalCell\"><div class=\"modalFieldCnt\">" +
+                "<select class=\"modalInputTxt\" name=\""+ editable +
+                "\">" +
+                "<option value='0' "+editable_false+">false</option>" +
+                "<option value='1' "+editable_true+">true</option> </select>" +
+                "<option value='' "+editable_empty+"> </option> </select>" + //0910Fatima
+                "</div><div class=\"modalFieldLabelCnt\">Editable</div></div>"+
+
+	
 		"<div class=\"col-xs-6 col-md-3 modalCell\"><div class=\"modalFieldCnt\">" +
 		"<select class=\"modalInputTxt\" name=\"" + healthiness_criteria +
 		"\" \>"+ 
@@ -2970,16 +3041,14 @@ function drawAttributeMenu
 		"<div class=\"col-xs-6 col-md-3 modalCell\"><div class=\"modalFieldCnt\">" +
 		"<input type=\"text\" class=\"modalInputTxt\" name=\""+ value_refresh_rate +
 		"\" value=\"" + value_refresh_rate + "\"></div><div class=\"modalFieldLabelCnt\">healthiness value</div></div>"+
-		//sara start
-		"<div class=\"col-xs-6 col-md-3 modalCell\"><div class=\"modalFieldCnt\">" +
-		"<input type=\"hidden\"  name=\""+ old_value_name +
-		"\" value=\"" + old_value_name + "\"></div></div>"+
-		//sara end
+		"<select class=\"modalInputTxt\" style=\"display:none\" name=\"" + old_value_name +
+                "\" \>"+
+                "<option value=\"" + old_value_name + "\">"+old_value_name+"</option>" +
+                "</select>"+
+
 		"<div class=\"col-xs-6 col-md-3 modalCell\"><div class=\"modalFieldCnt\">" +
 		//"<i class=\"fa fa-minus-square\" onclick=\"removeElementAt('" + parent + "',this); return true;\"  style=\"font-size:36px; color: #ffcc00\"></i></div></div></div>";
-		"<button class=\"btn btn-warning\" onclick=\"removeElementAt('" + parent + "',this); return true;\">Remove Value</button></div></div></div>"	
-		;
-
+		"<button class=\"btn btn-warning\" onclick=\"removeElementAt('" + parent + "',this); return true;\">Remove Value</button></div></div></div>";
 		
 }	
 
@@ -2991,6 +3060,7 @@ function removeElementAt(parent,child) {
 	{     document.getElementById('deletedAttributes').appendChild(child.parentElement.parentElement.parentElement);}
 	else list.removeChild(child.parentElement.parentElement.parentElement);
 	checkAtlistOneAttribute();
+       checkEditAtlistOneAttribute();
 }
 function verifyDevice(deviceToverify){
 	console.log("VERIFYING THE DEVICE");
@@ -3185,9 +3255,10 @@ function verifyDevice(deviceToverify){
 						attr_msg = attr_msg+ " value_unit";
 				}				
 				//Sara3010 - End
-				console.log("gb " + gb_value_types.indexOf(v.value_type));
+				console.log("------------------------------------");
+				console.log("gb " + gb_value_types.indexOf(v.value_type).value);
 
-				if(v.value_type==undefined || v.value_type==""|| gb_value_types.indexOf(v.value_type)<0){
+				if(v.value_type==undefined || v.value_type==""|| gb_value_types.indexOf(v.value_type).value<0){
 						console.log("valie")
 						attr_status=false;
 						attr_msg =attr_msg+ " value_type";
@@ -3305,9 +3376,9 @@ function isLongitude(lng) {
 				 document.getElementById('inputLatitudeDevice').value = lat;
 				 document.getElementById('inputLongitudeDevice').value = lng;
 				 addDeviceConditionsArray['inputLatitudeDevice'] = true;
-				 checkDeviceLatitude(); checkAddDeviceConditions(); 
+				 checkDeviceLatitude(); checkEditDeviceConditions(); 
 				 addDeviceConditionsArray['inputLongitudeDevice'] = true;
-				 checkDeviceLongitude(); checkAddDeviceConditions(); 
+				 checkDeviceLongitude(); checkEditDeviceConditions(); 
 				 if (marker){
 					 map1.removeLayer(marker);
 				 }

@@ -17,12 +17,6 @@ CREATE TABLE `data_types` (
   PRIMARY KEY (`data_type`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
-CREATE TABLE `value_types` (
-  `value_type` varchar(30) NOT NULL,
-  `value_unit_default` varchar(30) NOT NULL,
-  PRIMARY KEY (`value_type`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
-
 CREATE TABLE `access_log` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `time` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -171,9 +165,7 @@ CREATE TABLE `deleted_event_values` (
   `order` int(11) NOT NULL,
   PRIMARY KEY (`cb`,`device`,`value_name`),
   KEY `data_type` (`data_type`),
-  KEY `value_type` (`value_type`),
   CONSTRAINT `deleted_event_values_ibfk_1` FOREIGN KEY (`data_type`) REFERENCES `data_types` (`data_type`) ON DELETE CASCADE ON UPDATE CASCADE,
-  CONSTRAINT `deleted_event_values_ibfk_2` FOREIGN KEY (`value_type`) REFERENCES `value_types` (`value_type`) ON DELETE CASCADE ON UPDATE CASCADE,
   CONSTRAINT `deleted_event_values_ibfk_3` FOREIGN KEY (`cb`, `device`) REFERENCES `deleted_devices` (`contextBroker`, `id`) ON DELETE CASCADE ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
@@ -229,9 +221,7 @@ CREATE TABLE `event_values` (
   `old_value_name` varchar(50) DEFAULT NULL,
   PRIMARY KEY (`cb`,`device`,`value_name`),
   KEY `data_type` (`data_type`),
-  KEY `value_type` (`value_type`),
   CONSTRAINT `event_values_ibfk_1` FOREIGN KEY (`data_type`) REFERENCES `data_types` (`data_type`) ON DELETE CASCADE ON UPDATE CASCADE,
-  CONSTRAINT `event_values_ibfk_2` FOREIGN KEY (`value_type`) REFERENCES `value_types` (`value_type`) ON DELETE CASCADE ON UPDATE CASCADE,
   CONSTRAINT `event_values_ibfk_3` FOREIGN KEY (`cb`, `device`) REFERENCES `devices` (`contextBroker`, `id`) ON DELETE CASCADE ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
@@ -370,7 +360,6 @@ CREATE TABLE `temporary_event_values` (
   `value_bounds` varchar(10) DEFAULT NULL,
   PRIMARY KEY (`cb`,`device`,`value_name`),
   KEY `data_type` (`data_type`),
-  KEY `value_type` (`value_type`),
   KEY `temporary_event_values_ibfk_1` (`device`,`cb`),
   CONSTRAINT `temporary_event_values_ibfk_1` FOREIGN KEY (`device`, `cb`) REFERENCES `temporary_devices` (`id`, `contextBroker`) ON DELETE CASCADE ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
@@ -473,134 +462,6 @@ INSERT INTO `protocols` (`name`) VALUES ('coap');
 INSERT INTO `protocols` (`name`) VALUES ('mqtt');
 INSERT INTO `protocols` (`name`) VALUES ('ngsi');
 INSERT INTO `protocols` (`name`) VALUES ('sigfox');
-
-/*
--- Query: SELECT * FROM iotdb.value_types
--- Date: 2019-10-28 18:48
-*/
-INSERT INTO `value_types` (`value_type`,`value_unit_default`) VALUES ('actuator_canceller','');
-INSERT INTO `value_types` (`value_type`,`value_unit_default`) VALUES ('actuator_deleted','');
-INSERT INTO `value_types` (`value_type`,`value_unit_default`) VALUES ('actuator_deletion_date','');
-INSERT INTO `value_types` (`value_type`,`value_unit_default`) VALUES ('annual_PM10_exceedance_count','#');
-INSERT INTO `value_types` (`value_type`,`value_unit_default`) VALUES ('audio','');
-INSERT INTO `value_types` (`value_type`,`value_unit_default`) VALUES ('available_bikes','#');
-INSERT INTO `value_types` (`value_type`,`value_unit_default`) VALUES ('average_vehicle_distance','m');
-INSERT INTO `value_types` (`value_type`,`value_unit_default`) VALUES ('average_vehicle_speed','km/h');
-INSERT INTO `value_types` (`value_type`,`value_unit_default`) VALUES ('average_vehicle_time','s');
-INSERT INTO `value_types` (`value_type`,`value_unit_default`) VALUES ('battery_level','%');
-INSERT INTO `value_types` (`value_type`,`value_unit_default`) VALUES ('benzene_concentration','ppm');
-INSERT INTO `value_types` (`value_type`,`value_unit_default`) VALUES ('blue_code_count','#');
-INSERT INTO `value_types` (`value_type`,`value_unit_default`) VALUES ('broken_bikes','#');
-INSERT INTO `value_types` (`value_type`,`value_unit_default`) VALUES ('button','');
-INSERT INTO `value_types` (`value_type`,`value_unit_default`) VALUES ('car_park_exit_rate','');
-INSERT INTO `value_types` (`value_type`,`value_unit_default`) VALUES ('car_park_fill_rate','');
-INSERT INTO `value_types` (`value_type`,`value_unit_default`) VALUES ('car_park_free_places','#');
-INSERT INTO `value_types` (`value_type`,`value_unit_default`) VALUES ('car_park_occupancy','%');
-INSERT INTO `value_types` (`value_type`,`value_unit_default`) VALUES ('car_park_occupied_places','#');
-INSERT INTO `value_types` (`value_type`,`value_unit_default`) VALUES ('car_park_status','');
-INSERT INTO `value_types` (`value_type`,`value_unit_default`) VALUES ('car_park_validity_status','');
-INSERT INTO `value_types` (`value_type`,`value_unit_default`) VALUES ('charging_level','%');
-INSERT INTO `value_types` (`value_type`,`value_unit_default`) VALUES ('charging_state','');
-INSERT INTO `value_types` (`value_type`,`value_unit_default`) VALUES ('charging_station_state','');
-INSERT INTO `value_types` (`value_type`,`value_unit_default`) VALUES ('CO2_concentration','ppm');
-INSERT INTO `value_types` (`value_type`,`value_unit_default`) VALUES ('CO_concentration','ppm');
-INSERT INTO `value_types` (`value_type`,`value_unit_default`) VALUES ('creation_date','');
-INSERT INTO `value_types` (`value_type`,`value_unit_default`) VALUES ('current','A');
-INSERT INTO `value_types` (`value_type`,`value_unit_default`) VALUES ('daily_O3_exceedance_count','#');
-INSERT INTO `value_types` (`value_type`,`value_unit_default`) VALUES ('date','-');
-INSERT INTO `value_types` (`value_type`,`value_unit_default`) VALUES ('datetime','-');
-INSERT INTO `value_types` (`value_type`,`value_unit_default`) VALUES ('dew_point','°C');
-INSERT INTO `value_types` (`value_type`,`value_unit_default`) VALUES ('duration','s');
-INSERT INTO `value_types` (`value_type`,`value_unit_default`) VALUES ('electro_conductivity','mS/cm');
-INSERT INTO `value_types` (`value_type`,`value_unit_default`) VALUES ('electro_valve_action','');
-INSERT INTO `value_types` (`value_type`,`value_unit_default`) VALUES ('energy','KW/h');
-INSERT INTO `value_types` (`value_type`,`value_unit_default`) VALUES ('entity_creator','');
-INSERT INTO `value_types` (`value_type`,`value_unit_default`) VALUES ('entity_desc','');
-INSERT INTO `value_types` (`value_type`,`value_unit_default`) VALUES ('fan','');
-INSERT INTO `value_types` (`value_type`,`value_unit_default`) VALUES ('freeze','');
-INSERT INTO `value_types` (`value_type`,`value_unit_default`) VALUES ('free_stalls','#');
-INSERT INTO `value_types` (`value_type`,`value_unit_default`) VALUES ('fuel_price','euro');
-INSERT INTO `value_types` (`value_type`,`value_unit_default`) VALUES ('fuel_type','');
-INSERT INTO `value_types` (`value_type`,`value_unit_default`) VALUES ('glucose_percentage','');
-INSERT INTO `value_types` (`value_type`,`value_unit_default`) VALUES ('green_code_count','#');
-INSERT INTO `value_types` (`value_type`,`value_unit_default`) VALUES ('H2S_concentration','ppm');
-INSERT INTO `value_types` (`value_type`,`value_unit_default`) VALUES ('hour_O3_max','');
-INSERT INTO `value_types` (`value_type`,`value_unit_default`) VALUES ('humidity','%');
-INSERT INTO `value_types` (`value_type`,`value_unit_default`) VALUES ('ir','');
-INSERT INTO `value_types` (`value_type`,`value_unit_default`) VALUES ('lamp_level','%');
-INSERT INTO `value_types` (`value_type`,`value_unit_default`) VALUES ('lamp_temperature','°C');
-INSERT INTO `value_types` (`value_type`,`value_unit_default`) VALUES ('latitude','');
-INSERT INTO `value_types` (`value_type`,`value_unit_default`) VALUES ('latitude_longitude','');
-INSERT INTO `value_types` (`value_type`,`value_unit_default`) VALUES ('leaf_wetness','%');
-INSERT INTO `value_types` (`value_type`,`value_unit_default`) VALUES ('light','lux');
-INSERT INTO `value_types` (`value_type`,`value_unit_default`) VALUES ('longitude','');
-INSERT INTO `value_types` (`value_type`,`value_unit_default`) VALUES ('max_temperature','°C');
-INSERT INTO `value_types` (`value_type`,`value_unit_default`) VALUES ('min_temperature','°C');
-INSERT INTO `value_types` (`value_type`,`value_unit_default`) VALUES ('monitor_status','-');
-INSERT INTO `value_types` (`value_type`,`value_unit_default`) VALUES ('moonrise_time','');
-INSERT INTO `value_types` (`value_type`,`value_unit_default`) VALUES ('moonset_time','');
-INSERT INTO `value_types` (`value_type`,`value_unit_default`) VALUES ('motion_detection','');
-INSERT INTO `value_types` (`value_type`,`value_unit_default`) VALUES ('NO2_concentration','ppm');
-INSERT INTO `value_types` (`value_type`,`value_unit_default`) VALUES ('NO_concentration','ppm');
-INSERT INTO `value_types` (`value_type`,`value_unit_default`) VALUES ('O3_concentration','ppm');
-INSERT INTO `value_types` (`value_type`,`value_unit_default`) VALUES ('orientation','');
-INSERT INTO `value_types` (`value_type`,`value_unit_default`) VALUES ('people_count','#');
-INSERT INTO `value_types` (`value_type`,`value_unit_default`) VALUES ('perceived_temperature','°C');
-INSERT INTO `value_types` (`value_type`,`value_unit_default`) VALUES ('PM10_concentration','ppm');
-INSERT INTO `value_types` (`value_type`,`value_unit_default`) VALUES ('PM2.5_concentration','ppm');
-INSERT INTO `value_types` (`value_type`,`value_unit_default`) VALUES ('pollen_concentration_level','');
-INSERT INTO `value_types` (`value_type`,`value_unit_default`) VALUES ('pollen_concentration_trend','');
-INSERT INTO `value_types` (`value_type`,`value_unit_default`) VALUES ('pollen_concentration_value','');
-INSERT INTO `value_types` (`value_type`,`value_unit_default`) VALUES ('power','W');
-INSERT INTO `value_types` (`value_type`,`value_unit_default`) VALUES ('power_meter_m','');
-INSERT INTO `value_types` (`value_type`,`value_unit_default`) VALUES ('power_meter_s','');
-INSERT INTO `value_types` (`value_type`,`value_unit_default`) VALUES ('precipitation_type','');
-INSERT INTO `value_types` (`value_type`,`value_unit_default`) VALUES ('presence_detection_e','');
-INSERT INTO `value_types` (`value_type`,`value_unit_default`) VALUES ('pressure','hPa');
-INSERT INTO `value_types` (`value_type`,`value_unit_default`) VALUES ('rain','mm');
-INSERT INTO `value_types` (`value_type`,`value_unit_default`) VALUES ('red_code_count','#');
-INSERT INTO `value_types` (`value_type`,`value_unit_default`) VALUES ('road_condition','');
-INSERT INTO `value_types` (`value_type`,`value_unit_default`) VALUES ('salt_concentration','%');
-INSERT INTO `value_types` (`value_type`,`value_unit_default`) VALUES ('sittings_count','#');
-INSERT INTO `value_types` (`value_type`,`value_unit_default`) VALUES ('snow','');
-INSERT INTO `value_types` (`value_type`,`value_unit_default`) VALUES ('soil_humidity','%');
-INSERT INTO `value_types` (`value_type`,`value_unit_default`) VALUES ('soil_temperature','°C');
-INSERT INTO `value_types` (`value_type`,`value_unit_default`) VALUES ('soil_water_potential','cbar');
-INSERT INTO `value_types` (`value_type`,`value_unit_default`) VALUES ('sound_lv','');
-INSERT INTO `value_types` (`value_type`,`value_unit_default`) VALUES ('SO_concentration','ppm');
-INSERT INTO `value_types` (`value_type`,`value_unit_default`) VALUES ('speed','');
-INSERT INTO `value_types` (`value_type`,`value_unit_default`) VALUES ('state_count','');
-INSERT INTO `value_types` (`value_type`,`value_unit_default`) VALUES ('state_time','');
-INSERT INTO `value_types` (`value_type`,`value_unit_default`) VALUES ('status','-');
-INSERT INTO `value_types` (`value_type`,`value_unit_default`) VALUES ('stop','');
-INSERT INTO `value_types` (`value_type`,`value_unit_default`) VALUES ('sunrise_time','');
-INSERT INTO `value_types` (`value_type`,`value_unit_default`) VALUES ('sunset_time','');
-INSERT INTO `value_types` (`value_type`,`value_unit_default`) VALUES ('sun_max_height','');
-INSERT INTO `value_types` (`value_type`,`value_unit_default`) VALUES ('sun_max_height_hour','');
-INSERT INTO `value_types` (`value_type`,`value_unit_default`) VALUES ('temperature','°C');
-INSERT INTO `value_types` (`value_type`,`value_unit_default`) VALUES ('time','-');
-INSERT INTO `value_types` (`value_type`,`value_unit_default`) VALUES ('timestamp','');
-INSERT INTO `value_types` (`value_type`,`value_unit_default`) VALUES ('transits_count','#');
-INSERT INTO `value_types` (`value_type`,`value_unit_default`) VALUES ('uv','');
-INSERT INTO `value_types` (`value_type`,`value_unit_default`) VALUES ('vdc','V');
-INSERT INTO `value_types` (`value_type`,`value_unit_default`) VALUES ('vehicle_concentration','');
-INSERT INTO `value_types` (`value_type`,`value_unit_default`) VALUES ('vehicle_flow','car/h');
-INSERT INTO `value_types` (`value_type`,`value_unit_default`) VALUES ('vehicle_occupancy','');
-INSERT INTO `value_types` (`value_type`,`value_unit_default`) VALUES ('vehicle_speed_percentile','');
-INSERT INTO `value_types` (`value_type`,`value_unit_default`) VALUES ('vehicle_threshold_perc','');
-INSERT INTO `value_types` (`value_type`,`value_unit_default`) VALUES ('velocity','');
-INSERT INTO `value_types` (`value_type`,`value_unit_default`) VALUES ('voltage','V');
-INSERT INTO `value_types` (`value_type`,`value_unit_default`) VALUES ('waste_filling_rate','%');
-INSERT INTO `value_types` (`value_type`,`value_unit_default`) VALUES ('water_consumption','l/h');
-INSERT INTO `value_types` (`value_type`,`value_unit_default`) VALUES ('water_film','µm');
-INSERT INTO `value_types` (`value_type`,`value_unit_default`) VALUES ('water_flowing','');
-INSERT INTO `value_types` (`value_type`,`value_unit_default`) VALUES ('water_level','m');
-INSERT INTO `value_types` (`value_type`,`value_unit_default`) VALUES ('white_code_count','#');
-INSERT INTO `value_types` (`value_type`,`value_unit_default`) VALUES ('wind','');
-INSERT INTO `value_types` (`value_type`,`value_unit_default`) VALUES ('wind_direction','deg');
-INSERT INTO `value_types` (`value_type`,`value_unit_default`) VALUES ('wind_gust_speed','m/s');
-INSERT INTO `value_types` (`value_type`,`value_unit_default`) VALUES ('wind_speed','m/s');
-INSERT INTO `value_types` (`value_type`,`value_unit_default`) VALUES ('yellow_code_count','#');
 
 /*
 -- Query: SELECT * FROM iotdb.data_types
