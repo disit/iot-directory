@@ -1312,15 +1312,24 @@ function generateunits($link) {
 }
 
 function retrieveValue($type,&$result){
+
 	$local_result="";
 	try
 	{
-		$url= $GLOBALS["processLoaderURI"] . "dictionary/?type=".$type;
+		if (isset($GLOBALS["processLoaderURI"])){
+			$url= $GLOBALS["processLoaderURI"] . "dictionary/?type=".$type;
+		}
+		else {
+			$url="default-".$type.".json";
+		}
 		$local_result = file_get_contents($url);
 		$result["log"] .= $local_result;
 
 		//TODO how to catch an 504
-		if (($local_result!== FALSE) && (strpos($http_response_header[0], '200') == true || strpos($http_response_header[0], '204') == true))
+		if (($local_result!== FALSE) && (
+			(!isset($GLOBALS["processLoaderURI"])) || //default scenario from file
+			((isset($GLOBALS["processLoaderURI"])) && (strpos($http_response_header[0], '200') == true || strpos($http_response_header[0], '204') == true))
+			))
 		{
 			$dictionary = json_decode($local_result);
 			if ($dictionary->{'code'}=='200') {

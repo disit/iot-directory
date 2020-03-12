@@ -650,6 +650,10 @@ function drawAttributeMenu
 		//Add Device Button 
    $("#addDeviceBtn").off("click");
    $("#addDeviceBtn").click(function(){
+
+	//select custom model
+	$("#selectModelDevice").prop('selectedIndex',1);	
+
 	  
       $("#addDeviceModalTabs").show();
 	$("#addDeviceModalBody").show();

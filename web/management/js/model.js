@@ -54,6 +54,39 @@ $.ajax({
 		 }
 });
 
+//export model for sensor
+function exporta(name,devicetype, frequency, kind, protocol, format, producer, attributes){
+	var txt="name,device type,mac,frequency,kind,protocol,format,producer,lat,long,value name,data_type,value_type,editable,value_unit,healthiness_criteria,healthiness_value,k1,k2\r\n";
+
+	var arr=JSON.parse(atob(attributes));
+
+	for (var i = 0; i < arr.length; i++){
+		var value="<DEVICENAME>,"+devicetype+",<MACADDRESS>,"+frequency+","+kind+","+protocol+","+format+","+producer+",<LAT>,<LONG>,";
+		var obj = arr[i];
+		for (var key in obj){
+			var attrName = key;
+			var attrValue = obj[key];
+			if ("editable"===attrName){
+				if (attrValue==0)
+					attrValue="FALSE";
+				else attrValue="TRUE";
+			}
+			value=value+attrValue+",";
+		}	
+		var txt=txt+value+"<K1>,<K2>\r\n";
+	}
+
+	var txt=txt+"\r\n";
+	
+	var element = document.createElement('a');
+        element.setAttribute('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent(txt.substring(0, txt.length-1)));
+        element.setAttribute('download', name+"-model.csv");
+        element.style.display = 'none';
+        document.body.appendChild(element);
+        element.click();
+        document.body.removeChild(element);
+}
+
 function addCB(element, data){
 	var $dropdown = element;
 	$.each(data['content'], function() {
@@ -203,14 +236,9 @@ function drawAttributeMenu
 		"<div class=\"col-xs-6 col-md-3 modalCell\"><div class=\"modalFieldCnt\">" +
 		//"<i class=\"fa fa-minus-square\" onclick=\"removeElementAt('" + parent + "',this); return true;\"  style=\"font-size:36px; color: #ffcc00\"></i></div></div></div>";
 	    "<button class=\"btn btn-warning\" onclick=\"removeElementAt('" + parent + "',this); return true;\">Remove Value</button></div></div></div>";
-
-		
 }		
   
-  
 function format ( d ) {
-
-		
 		// `d` is the original data object for the row
   	return '<div class="container-fluid">' +
 	'<div class="row">' +
@@ -223,12 +251,11 @@ function format ( d ) {
 		'<div class="clearfix visible-xs"></div>' +
 		'<div class="col-xs-6 col-sm-6" style="background-color:#E6E6FA;"><b>Key Generator:</b>' + "  " + d.kgenerator + '</div>' +
 	'</div>' + 
-	 
+	'<div class="row">' +
+                '<div class="col-xs-6 col-sm-6" style="background-color:#E6E6FA;"><button class="btn btn-warning" onclick="exporta(\''+d.name+'\',\''+d.devicetype+'\',\''+d.frequency+'\',\''+d.kind+'\',\''+d.protocol+'\',\''+d.format+'\',\''+d.producer+'\',\''+btoa(d.attributes)+'\',);return true;"><b>export</b></button></div>' +
+        '</div>' + 
     '</div>' ;
-	
 }
-
-
 
   function updateDeviceTimeout()
         {
