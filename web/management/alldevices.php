@@ -192,7 +192,7 @@ use Jumbojett\OpenIDConnectClient;
 		</script>
  
         <!-- Custom scripts -->
-		
+		<script  src="js/common.js"></script>	
 		<script  src="js/alldevices.js"></script>
 		<script  src="js/devicesManagement.js"></script>
 		<script  src="js/devicesEditManagement.js"></script>
@@ -1222,6 +1222,7 @@ use Jumbojett\OpenIDConnectClient;
 							<div id="deletedAttributes" style="display:none"></div>
 							<!-- <div class="pull-left"><i id="addAttrMBtn" class="fa fa-plus-square" style="font-size:36px; color: #ffcc00"></i></div> -->
 							<div class="pull-left"><button id="addAttrMBtn" class="btn btn-primary">Add Value</button></div>
+							<div id="editlistAttributesMsg" class="modalFieldMsgCnt">&nbsp;</div>
                         </div>
 						
 						<!-- Semantic Labeling tab -->

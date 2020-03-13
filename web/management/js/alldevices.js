@@ -13,12 +13,14 @@ var gb_longitude = "";
 
 var dataTable ="";
 
+var indexValues=0;//it keeps track of unique identirier on the values, so it's possible to enforce specific value type 
+
+
 //var existingPoolsJson = null;
 // var internalDest = false;
 var tableFirstLoad = true;
 
 var gb_old_cb="";
-
 //GET PARAM VALUES 
 
 	$.ajax({url: "../api/device.php",
@@ -55,48 +57,91 @@ var gb_old_cb="";
 		{     document.getElementById('deletedAttributes').appendChild(child.parentElement.parentElement.parentElement);}
         else list.removeChild(child.parentElement.parentElement.parentElement);
 		checkAtlistOneAttribute();
+		checkEditAtlistOneAttribute();
 	}
+
+function addCB(element, data){
+        var $dropdown = element;
+        $.each(data['content'], function() {
+                $dropdown.append("<option my_data= "+this.protocol+" data_kind="+this.kind+" value='"+this.name+"'>"+this.name+"</option>");
+        });
+}
+
+function addModel(element, data){
+	var $dropdown = element;
+	$.each(data['content_model'], function() {
+        	$dropdown.append("<option data_key="+this.kgenerator+" value='"+this.name+"'>"+this.name+"</option>");
+        });
+}
+
+$.ajax({
+        url: "../api/value.php",
+        data:{
+                    action: "get_cb",
+                    token : sessionToken,
+                    username: loggedUser,
+                    organization : organization,
+                    loggedrole:loggedRole
+        },
+        type: "POST",
+        async: true,
+        success: function (data)
+        {
+                    if (data["status"] === 'ok')
+                    {
+                        addCB($("#selectContextBrokerM"), data);
+                        addCB($("#selectContextBroker"), data);
+			addModel($("#selectModelDevice"), data);
+                    }
+                    else{
+                        console.log("error getting the context brokers "+data);
+                    }
+                },
+                error: function (data)
+                {
+                 console.log("error in the call to get the context brokers "+data);
+                 alert("Network errors. <br/> Get in touch with the Snap4City Administrator<br/>"+ JSON.stringify(data));
+                }
+});
 
 
 	function drawAttributeMenu
-(attrName, data_type, value_type, editable, value_unit, healthiness_criteria, value_refresh_rate, old_value_name, parent)
+(attrName, data_type, value_type, editable, value_unit, healthiness_criteria, value_refresh_rate, old_value_name, parent, indice)
 {
-	console.log("parent1= "+parent);
-	console.log("old_value_name= "+old_value_name);
     if (attrName=="")
 		msg="<div style=\"color:red;\" class=\"modalFieldMsgCnt\"></div>";
 	else 
 		msg="<div class=\"modalFieldMsgCnt\">&nbsp;</div>";
-    options="";
-    if (value_type!="") labelcheck= value_type;
-    else labelcheck="";	
+	
+options="";
+	if (value_type==""){
+		 options+="<option hidden disabled selected value=\"NOT VALID OPTION\"> -- select an option -- </option>";
+		msg_value_type="<div style=\"color:red;\" class=\"modalFieldMsgCnt\">Value type is mandatory</div>";
+	}
+	else
+		msg_value_type="<div style=\"color:#337ab7;\" class=\"modalFieldMsgCnt\">Ok</div>";
+
 	for (var n=0; n < gb_value_types.length; n++)
 	{
-	  if (labelcheck == gb_value_types[n]) 
-		 options += "<option my_data=\""+gb_value_units[n]+"\" value=\""+gb_value_types[n]+"\" selected>"+ gb_value_types[n]+ "</option>";
-	  else options += "<option my_data=\""+gb_value_units[n]+"\" value=\""+gb_value_types[n]+"\">"+ gb_value_types[n]+ "</option>";
+		//console.log("check against: "+gb_value_types[n].value);
+		if (value_type == gb_value_types[n].value) 
+			options += "<option value=\""+gb_value_types[n].value+"\" selected>"+ gb_value_types[n].label+ "</option>";
+		else 
+			options += "<option value=\""+gb_value_types[n].value+"\">"+ gb_value_types[n].label+ "</option>";
 	}
 	
-	
-    myunits="";// <option value=\"none\"></option>";
-    if (value_unit!="") labelcheck= value_unit;
-	else labelcheck="#";
-    for (var n=0; n < gb_value_units.length; n++)
-	{
-	  if (labelcheck == gb_value_units[n]) 
-		 myunits += "<option value=\""+gb_value_units[n]+"\" selected>"+ gb_value_units[n]+ "</option>";
-	  else myunits += "<option value=\""+gb_value_units[n]+"\">"+ gb_value_units[n]+ "</option>";
+	myunits="";
+	msg_value_unit="<div style=\"color:#337ab7;\" class=\"modalFieldMsgCnt\">Ok</div>";
+	//retrieve acceptable value unit, and select the selected if available
+	validValueUnit=getValidValueUnit(value_type, value_unit);
+	if (validValueUnit!==""){
+		if (!validValueUnit.includes('selected')){
+			myunits+="<option hidden disabled selected value=\"NOT VALID OPTION\"> -- select an option -- </option>";
+			msg_value_unit="<div style=\"color:red;\" class=\"modalFieldMsgCnt\">Value unit is mandatory</div>";
+		}
+		myunits+=validValueUnit;
 	}
-	/*
-	 myunits="";
-	function getValueTypeUnit ()	{
-	// <option value=\"none\"></option>";
-  
-	   myunits += "<option value=\""+valueUnitOpt[n]+"\">"+ valueUnitOpt[n]+ "</option>";
-	
-	
-	}
-	*/
+
 	mydatatypes="";
     if (data_type!="") labelcheck= data_type;
 	else labelcheck="";
@@ -106,44 +151,38 @@ var gb_old_cb="";
 		 mydatatypes += "<option value=\""+gb_datatypes[n]+"\" selected>"+ gb_datatypes[n]+ "</option>";
 	  else mydatatypes += "<option value=\""+gb_datatypes[n]+"\">"+ gb_datatypes[n]+ "</option>";
 	}
-	
- console.log("parent2= "+parent);
-    return "<div class=\"row\" style=\"border:3px solid blue;\" ><div class=\"col-xs-6 col-md-3 modalCell\">" +
-        "<div class=\"modalFieldCnt\" title=\"Insert a name for the sensor/actuator\"><input type=\"text\" class=\"modalInputTxt\""+
+
+return "<div class=\"row\" style=\"border:3px solid blue;\" id=\"value"+indice+"\">"+
+		
+		"<div class=\"col-xs-6 col-md-3 modalCell\">" +
+        	"<div class=\"modalFieldCnt\" title=\"Insert a name for the sensor/actuator\"><input type=\"text\" class=\"modalInputTxt\""+
 		"name=\"" +  attrName +  "\"  value=\"" + attrName + "\" onkeyup=\"checkStrangeCharacters(this)\">" + 
-        "</div><div class=\"modalFieldLabelCnt\">Value Name</div>"+ msg +"</div>"+
+		"</div><div class=\"modalFieldLabelCnt\">Value Name</div>"+ msg +"</div>"+
 			
-		"<div class=\"col-xs-6 col-md-3 modalCell\"><div class=\"modalFieldCnt\" title=\"select the type of data generated by the sensor/actuator\">"+
+		"<div class=\"col-xs-6 col-md-3 modalCell\"><div class=\"modalFieldCnt\">"+
 		"<select class=\"modalInputTxt\" name=\""+ attrName+"-type" +
-		"\">" + mydatatypes + 
+		"\" title=\"select the type of data generated by the sensor/actuator\">" + mydatatypes + 
 		"</select></div><div class=\"modalFieldLabelCnt\">Data Type</div></div>" + 
 	
-		//"<div class=\"col-xs-6 col-md-3 modalCell\"><div class=\"modalFieldCnt\">" +
-		//"<select class=\"modalInputTxt\" id=\"value_type\">" + 	valueTypeOpt + 	
-		//"</select></div><div class=\"modalFieldLabelCnt\">Value Type</div></div>" +
-		
-		"<div class=\"col-xs-6 col-md-3 modalCell\"><div class=\"modalFieldCnt\" title=\"select the type of the sensor/actuator\" >" +
-			"<select class=\"modalInputTxt\" name=\""+ value_type +
-			"\">" + 		 options + 
-			"</select></div><div class=\"modalFieldLabelCnt\">Value Type</div></div>" +
-		
-		"<div class=\"col-xs-6 col-md-3 modalCell\"><div class=\"modalFieldCnt\" title=\"is the sensor/actuator editable?\" >" +
-		"<select class=\"modalInputTxt\" name=\""+ editable +
-		"\">" + 
-		"<option value='0' default>false</option>" +
-		"<option value='1'>true</option> </select>" +
-		"</div><div class=\"modalFieldLabelCnt\">Editable</div></div>"+
-		
-		//"<div class=\"col-xs-6 col-md-3 modalCell\"><div class=\"modalFieldCnt\">" +
-		//"<select class=\"modalInputTxt\" id=\"value_unit\">" + valueUnitOpt +
-		 //myunits + 
-		//"</select></div><div class=\"modalFieldLabelCnt\">Value Unit</div></div>"+
+		"<div class=\"col-xs-6 col-md-3 modalCell\"><div class=\"modalFieldCnt\">" +
+		"<select class=\"modalInputTxt\" id=\"value_type"+indice+"\" "+
+		"onchange=valueTypeChanged("+indice+") "+
+		"title=\"select the type of the sensor/actuator\">" +	 options + 
+		"</select></div><div class=\"modalFieldLabelCnt\">Value Type</div>"+msg_value_type+"</div>" +
 		
 		"<div class=\"col-xs-6 col-md-3 modalCell\"><div class=\"modalFieldCnt\" title=\"select the unit of the data generated by the sensor/actuator\">" +
-			"<select class=\"modalInputTxt\" name=\""+ value_unit +
-			"\">" + 
-			 myunits + 
-			"</select></div><div class=\"modalFieldLabelCnt\">Value Unit</div></div>"+
+		"<select class=\"modalInputTxt\" id=\"value_unit"+indice+"\" "+
+		"onchange=valueUnitChanged("+indice+") "+
+		"\">" + 
+		 myunits + 
+		"</select></div><div class=\"modalFieldLabelCnt\">Value Unit</div>"+msg_value_unit+"</div>"+
+
+                "<div class=\"col-xs-6 col-md-3 modalCell\"><div class=\"modalFieldCnt\" title=\"is the sensor/actuator editable?\">" +
+                "<select class=\"modalInputTxt\" name=\""+ editable +
+                "\">" +
+                "<option value='0' default>false</option>" +
+                "<option value='1'>true</option> </select>" +
+                "</div><div class=\"modalFieldLabelCnt\">Editable</div></div>"+
    		
 		"<div class=\"col-xs-6 col-md-3 modalCell\"><div class=\"modalFieldCnt\" title=\"select a criterion as a reference to decide whether the sensor/actuator is working well\">" +
 		"<select class=\"modalInputTxt\" name=\"" + healthiness_criteria +
@@ -158,66 +197,16 @@ var gb_old_cb="";
 		"\" value=\"" + value_refresh_rate + "\"></div><div class=\"modalFieldLabelCnt\">Healthiness_Value</div></div>"+
 		
 		 "<div class=\"col-xs-6 col-md-3 modalCell\"><div class=\"modalFieldCnt\">" +
-        "<select class=\"modalInputTxt\" style=\"display:none\" name=\"" + old_value_name +
+		"<select class=\"modalInputTxt\" style=\"display:none\" name=\"" + old_value_name +
 		"\" \>"+ 
-			"<option value=\"" + old_value_name + "\">"+old_value_name+"</option>" +
-	       "</select></div></div>"+
+		"<option value=\"" + old_value_name + "\">"+old_value_name+"</option>" +
+	       	"</select></div></div>"+
 		"<div class=\"col-xs-6 col-md-3 modalCell\"><div class=\"modalFieldCnt\">" +
-		//"<i class=\"fa fa-minus-square\" onclick=\"removeElementAt('" + parent + "',this); return true;\"  style=\"font-size:36px; color: #ffcc00\"></i></div></div></div>";
-	    "<button class=\"btn btn-warning\" onclick=\"removeElementAt('" + parent + "',this); return true;\">Remove Value</button></div></div></div>";
 
+		"<button class=\"btn btn-warning\" onclick=\"removeElementAt('" + parent + "',this); return true;\">Remove Value</button></div></div></div>";
 		
 }			
 	  
-/*  
- function drawAttrJSON(attrJSON)
-{
-   console.log("inside FUnction:" + attrJSON);
-   
-   var attrValue = JSON.parse(attrJSON);
-
-   var content = ""; 
-   
-
-   for (var x=0; x<attrValue.length; x++){
-
-		content += "<div class=\"row\" style=\"border:3px solid blue;\" ><div class=\"col-xs-6 col-md-3 modalCell\">" +
-        "<div class=\"modalFieldCnt\"><input type=\"text\" class=\"modalInputTxt\""+
-		"name=\"value_name\"  value=\"" + attrValue[x].value_name + "\">" + 
-        "</div><div class=\"modalFieldLabelCnt\">Value Name</div></div>"+
-		
-		"<div class=\"row\" style=\"border:3px solid blue;\" ><div class=\"col-xs-6 col-md-3 modalCell\">" +
-        "<div class=\"modalFieldCnt\"><input type=\"text\" class=\"modalInputTxt\""+
-		"name=\"data_type\"  value=\"" + attrValue[x].data_type + "\">" + 
-        "</div><div class=\"modalFieldLabelCnt\">Data Type</div></div>"+
-		
-		"<div class=\"row\" style=\"border:3px solid blue;\" ><div class=\"col-xs-6 col-md-3 modalCell\">" +
-        "<div class=\"modalFieldCnt\"><input type=\"text\" class=\"modalInputTxt\""+
-		"name=\"value_type\"  value=\"" + attrValue[x].value_type + "\">" + 
-        "</div><div class=\"modalFieldLabelCnt\">Value Type</div></div>"+
-		
-		"<div class=\"row\" style=\"border:3px solid blue;\" ><div class=\"col-xs-6 col-md-3 modalCell\">" +
-        "<div class=\"modalFieldCnt\"><input type=\"text\" class=\"modalInputTxt\""+
-		"name=\"value_unit\"  value=\"" + attrValue[x].value_unit + "\">" + 
-        "</div><div class=\"modalFieldLabelCnt\">Value Unit</div></div>"+
-		
-		"<div class=\"row\" style=\"border:3px solid blue;\" ><div class=\"col-xs-6 col-md-3 modalCell\">" +
-        "<div class=\"modalFieldCnt\"><input type=\"text\" class=\"modalInputTxt\""+
-		"name=\"healthiness_criteria\"  value=\"" + attrValue[x].healthiness_criteria + "\">" + 
-        "</div><div class=\"modalFieldLabelCnt\">Healthiness Criteria</div></div>"+
-		
-		
-		"<div class=\"row\" style=\"border:3px solid blue;\" ><div class=\"col-xs-6 col-md-3 modalCell\">" +
-        "<div class=\"modalFieldCnt\"><input type=\"text\" class=\"modalInputTxt\""+
-		"name=\"healthiness_value\"  value=\"" + attrValue[x].healthiness_value + "\">" + 
-        "</div><div class=\"modalFieldLabelCnt\">Healthiness Value</div></div>"+
-
-	    "</div></div>";
-	}
-     addlistAttributes.innerHTML=content;
-}	
-*/  
-  
 
   function updateDeviceTimeout()
         {
@@ -842,7 +831,8 @@ var gb_old_cb="";
 							console.log(myattributes.length + " " +k); 
 							content = drawAttributeMenu(myattributes[k].value_name, 
 								 myattributes[k].data_type, myattributes[k].value_type, myattributes[k].editable, myattributes[k].value_unit, myattributes[k].healthiness_criteria, 
-								 myattributes[k].healthiness_value,  myattributes[k].value_name, 'addlistAttributes');
+								 myattributes[k].healthiness_value,  myattributes[k].value_name, 'addlistAttributes', indexValues);
+								indexValues=indexValues+1;
 							k++;
                               
                               $('#addlistAttributes').append(content);
@@ -917,22 +907,10 @@ var gb_old_cb="";
 			 $("#KeyTwoDeviceUser").removeAttr('disabled');
 		 }
 		
-		/* 	
-	
-		  $("#addDeviceModal").modal('show');
-		 // console.log(name);
-		 // $("#addDeviceModalBody").modal('show');
-		  $("#addDeviceLoadingMsg").hide();
-		  $("#addDeviceLoadingIcon").hide();
-		  $("#addDeviceOkMsg").hide();
-		  $("#addDeviceOkIcon").hide();
-		  $("#addDeviceKoMsg").hide();
-		  $("#addDeviceKoIcon").hide();
-		   */
 		}
 		else if (nameOpt[selectednameOpt].value ==""){ // case not specified
 			$('#inputTypeDevice').val("");
-			$('#selectKindDevice').val("");
+			//$('#selectKindDevice').val("");
 			$('#inputProducerDevice').val("");
 			$('#inputFrequencyDevice').val("600");
 			
@@ -1047,24 +1025,20 @@ var gb_old_cb="";
 	$("#addAttrBtn").off("click");
 	$("#addAttrBtn").click(function(){
 	   console.log("#addAttrBtn");							   
-	   content = drawAttributeMenu("","", "", "", "", "", "300", "", 'addlistAttributes');
-		//addDeviceConditionsArray['addlistAttributes'] = true;
-	   //console.log("contenuto drawAttr" +content);
+	   content = drawAttributeMenu("","", "", "", "", "", "300", "", 'addlistAttributes', indexValues);
+	indexValues=indexValues+1;
 	   $('#addlistAttributes').append(content);
 	   checkAtlistOneAttribute();
 	   
-	   $("#addSchemaTabDevice #addlistAttributes .row input:even").on('input', checkValueName);
-	   $("#addSchemaTabDevice #addlistAttributes .row input:even").on('input', checkAddDeviceConditions);
-	   // $("#addSchemaTabDevice #addlistAttributes .row input:even").each(function(){checkValueName();});
-	   checkAddDeviceConditions();
-	   
+	  $("#addSchemaTabDevice #addlistAttributes .row input:even").each(function(){checkValueName($(this));});
+		checkAddDeviceConditions(); 
 	});
 	
 
 	$("#addSchemaTabDevice").off("click");
 	$("#addSchemaTabDevice").click(function(){				
 	   console.log("#addAttrMBtn");					
-	   checkAtlistOneAttribute();
+	   //checkAtlistOneAttribute();
 	   // $("#addSchemaTabDevice #addlistAttributes .row input:even").each(function(){checkValueName();});
 	   checkAddDeviceConditions();
 	});	
@@ -1096,7 +1070,8 @@ var gb_old_cb="";
 	$("#addAttrBtnUser").off("click");
 	$("#addAttrBtnUser").click(function(){
 	   console.log("#addAttrBtnUser");							   
-	   content = drawAttributeMenu("","", "", "", "", "", "300", "",  'addlistAttributes');
+	   content = drawAttributeMenu("","", "", "", "", "", "300", "",  'addlistAttributes', indexValues);
+		indexValues=indexValues+1;
 	   $('#addlistAttributesUser').append(content);
 	});	
 		
@@ -1110,12 +1085,12 @@ var gb_old_cb="";
 			var newatt= {value_name: document.getElementById('addlistAttributes').childNodes[m].childNodes[0].childNodes[0].childNodes[0].value.trim(), 
 						   data_type:document.getElementById('addlistAttributes').childNodes[m].childNodes[1].childNodes[0].childNodes[0].value.trim(),
 					  value_type:document.getElementById('addlistAttributes').childNodes[m].childNodes[2].childNodes[0].childNodes[0].value.trim(),
-					editable:document.getElementById('addlistAttributes').childNodes[m].childNodes[3].childNodes[0].childNodes[0].value.trim(),
-				  value_unit:document.getElementById('addlistAttributes').childNodes[m].childNodes[4].childNodes[0].childNodes[0].value.trim(),
+					editable:document.getElementById('addlistAttributes').childNodes[m].childNodes[4].childNodes[0].childNodes[0].value.trim(),
+				  value_unit:document.getElementById('addlistAttributes').childNodes[m].childNodes[3].childNodes[0].childNodes[0].value.trim(),
 			   healthiness_criteria: document.getElementById('addlistAttributes').childNodes[m].childNodes[5].childNodes[0].childNodes[0].value.trim(),
 			  healthiness_value: document.getElementById('addlistAttributes').childNodes[m].childNodes[6].childNodes[0].childNodes[0].value.trim()};
 			
-			if (newatt.value_name!="" && newatt.data_type!="" && newatt.value_type!="" && newatt.editable!="" && newatt.value_unit!="" && newatt.healthiness_criteria!="" && newatt.healthiness_value!="") mynewAttributes.push(newatt);
+			if (newatt.value_name!="" && newatt.data_type!="" && newatt.value_type!="" && newatt.editable!="" && newatt.healthiness_criteria!="" && newatt.healthiness_value!="") mynewAttributes.push(newatt);
 		}
 		document.getElementById('addlistAttributes').innerHTML = "";			
 	
@@ -1481,17 +1456,26 @@ var gb_old_cb="";
 		// add lines related to attributes in case of edit
 	$("#addAttrMBtn").off("click");
 	$("#addAttrMBtn").click(function(){				
-	   console.log("#addAttrMBtn");					
-        content = drawAttributeMenu("","", "", "", "", "", "300", "", 'addlistAttributesM');
-		editDeviceConditionsArray['addlistAttributesM'] = true;
-	   $('#addlistAttributesM').append(content);
-        
-        $("#editSchemaTabDevice #addlistAttributesM .row input:even").on('input', checkEditValueName);
-        $("#editSchemaTabDevice #addlistAttributesM .row input:even").on('input', checkEditDeviceConditions);
-                   // $("#addSchemaTabDevice #addlistAttributes .row input:even").each(function(){checkValueName();});
+	content = drawAttributeMenu("","", "", "", "", "", "300","", 'addlistAttributesM', indexValues)
+		indexValues=indexValues+1;
+		//editDeviceConditionsArray['addlistAttributesM'] = true;
+		$('#addlistAttributesM').append(content);
 
-                   checkEditDeviceConditions();
-	});	
+		checkEditAtlistOneAttribute();
+		$("#editSchemaTabDevice #addlistAttributesM .row input:even").each(function(){checkEditValueName($(this));}); 
+        	$("#editSchemaTabDevice #editlistAttributes .row input:even").each(function(){checkEditValueName($(this));});
+		checkEditDeviceConditions();	
+});	
+
+ $("#editSchemaTabDevice").off("click");
+        $("#editSchemaTabDevice").on('click keyup', function(){
+           console.log("#editSchemaTabDevice");
+
+           //checkEditAtlistOneAttribute();
+           $("#editSchemaTabDevice #addlistAttributesM .row input:even").each(function(){checkEditValueName($(this));});
+ 	   $("#editSchemaTabDevice #editlistAttributes .row input:even").each(function(){checkEditValueName($(this));});
+           checkEditDeviceConditions();
+        });
 	
 	
 			//Edit button in dataTable 
@@ -1513,6 +1497,12 @@ var gb_old_cb="";
 		
 	  $("#editDeviceModalLabel").html("Edit device -  " + $(this).attr("data-id"));
 	  var id = $(this).attr('data-id');
+
+	//if the user changed the device to edit, clean the list of value and update the currentEditId
+	document.getElementById('editlistAttributes').innerHTML = "";
+        document.getElementById('addlistAttributesM').innerHTML = "";
+        document.getElementById('deletedAttributes').innerHTML = "";
+
 	  var contextbroker = $(this).attr('data-contextBroker');
       gb_old_cb = contextbroker;
 	  var type = $(this).attr('data-devicetype');
@@ -1561,43 +1551,6 @@ var gb_old_cb="";
 
 		showEditDeviceModal();
 
-		$.ajax({
-                url: "../api/value.php",
-                data:{
-                                          
-                    action: "get_cb",
-                    token : sessionToken, 
-                    username: loggedUser, 
-                    organization : organization, 
-                    loggedrole:loggedRole                          
-                },
-                type: "POST",
-                async: true,
-                success: function (data)
-                {
-                        
-                    if (data["status"] === 'ok')
-                    {        
-                        var $dropdown = $("#selectContextBrokerM");        
-                        $dropdown.empty();
-                        $.each(data['content'], function() {
-                            //if(this.kind !='external'|| this.name.toLowerCase()==contextbroker.toLowerCase())
-                            $dropdown.append($("<option />").val(this.name).text(this.name));        
-                        });
-                        $('#selectContextBrokerM').val(contextbroker);				
-                        }
-                    else{
-                        console.log("error getting the context brokers "+data); 
-                    }
-                },
-                error: function (data)
-                {
-                 console.log("error in the call to get the context brokers "+data);   
-                }
-          });
-        
-        
-        
         $.ajax({
 			url: "../api/device.php",
 			data: {
@@ -1622,17 +1575,14 @@ var gb_old_cb="";
 					// console.log(k); 
 					content = drawAttributeMenu(myattributes[k].value_name, 
 					myattributes[k].data_type, myattributes[k].value_type, myattributes[k].editable, myattributes[k].value_unit, myattributes[k].healthiness_criteria, 
-					myattributes[k].healthiness_value, myattributes[k].value_name, 'editlistAttributes');
+					myattributes[k].healthiness_value, myattributes[k].value_name, 'editlistAttributes', indexValues);
+					indexValues=indexValues+1;
 					k++;
-                    
-                    $('#editlistAttributes').append(content);
-                     //MM 050819 $("#editSchemaTabDevice #addlistAttributes .row input:even").on('input', checkEditValueName);
-							  $("#editSchemaTabDevice #addlistAttributes .row input:even").on('input', checkValueName);
-                             
-                   $("#editSchemaTabDevice #editlistAttributes .row input:even").on('input', checkEditDeviceConditions);
-                   // $("#addSchemaTabDevice #addlistAttributes .row input:even").each(function(){checkValueName();});
-
-                   checkEditDeviceConditions();
+                   
+					$('#editlistAttributes').append(content); 
+					$("#editSchemaTabDevice #editlistAttributes .row input:even").each(function(){checkEditValueName($(this));});
+		                checkEditDeviceConditions();
+					checkEditAtlistOneAttribute();
 				}
 				
 			},
@@ -1646,7 +1596,7 @@ var gb_old_cb="";
 				$('#inputOrganizationDeviceM').val("");
 				$('#selectContextBrokerM').val("");
 				$('#inputTypeDeviceM').val("");
-				$('#selectKindDeviceM').val("");
+				//$('#selectKindDeviceM').val("");
 				$('#inputUriDeviceM').val("");
 				$('#selectProtocolDeviceM').val("");
 				$('#selectFormatDeviceM').val("");
@@ -1667,6 +1617,7 @@ var gb_old_cb="";
 				  
 			}
 		});
+showEditDeviceModal();
 	});
 
 		//EDIT button hover - needs to be checked
@@ -1700,8 +1651,8 @@ var gb_old_cb="";
 		var newatt= {value_name: document.getElementById('addlistAttributesM').childNodes[m].childNodes[0].childNodes[0].childNodes[0].value.trim(), 
 					data_type:document.getElementById('addlistAttributesM').childNodes[m].childNodes[1].childNodes[0].childNodes[0].value.trim(),
 					value_type:document.getElementById('addlistAttributesM').childNodes[m].childNodes[2].childNodes[0].childNodes[0].value.trim(),
-					editable:document.getElementById('addlistAttributesM').childNodes[m].childNodes[3].childNodes[0].childNodes[0].value.trim(),
-					value_unit:document.getElementById('addlistAttributesM').childNodes[m].childNodes[4].childNodes[0].childNodes[0].value.trim(),
+					editable:document.getElementById('addlistAttributesM').childNodes[m].childNodes[4].childNodes[0].childNodes[0].value.trim(),
+					value_unit:document.getElementById('addlistAttributesM').childNodes[m].childNodes[3].childNodes[0].childNodes[0].value.trim(),
 					healthiness_criteria: document.getElementById('addlistAttributesM').childNodes[m].childNodes[5].childNodes[0].childNodes[0].value.trim(),
 					healthiness_value: document.getElementById('addlistAttributesM').childNodes[m].childNodes[6].childNodes[0].childNodes[0].value.trim(),
                      old_value_name:document.getElementById('addlistAttributesM').childNodes[m].childNodes[7].childNodes[0].childNodes[0].value.trim()};
@@ -1725,14 +1676,14 @@ var gb_old_cb="";
 		  var selectOpt_data_type= document.getElementById('editlistAttributes').childNodes[j].childNodes[1].childNodes[0].childNodes[0].options;
 		  var selectIndex_data_type= document.getElementById('editlistAttributes').childNodes[j].childNodes[1].childNodes[0].childNodes[0].selectedIndex;
 		  
-		  var selectOpt_value_unit= document.getElementById('editlistAttributes').childNodes[j].childNodes[4].childNodes[0].childNodes[0].options;
-		  var selectIndex_value_unit= document.getElementById('editlistAttributes').childNodes[j].childNodes[4].childNodes[0].childNodes[0].selectedIndex;
+		  var selectOpt_value_unit= document.getElementById('editlistAttributes').childNodes[j].childNodes[3].childNodes[0].childNodes[0].options;
+		  var selectIndex_value_unit= document.getElementById('editlistAttributes').childNodes[j].childNodes[3].childNodes[0].childNodes[0].selectedIndex;
 		  
 		  var selectOpt_hc= document.getElementById('editlistAttributes').childNodes[j].childNodes[5].childNodes[0].childNodes[0].options;
 		  var selectIndex_hc= document.getElementById('editlistAttributes').childNodes[j].childNodes[5].childNodes[0].childNodes[0].selectedIndex;
 		  
-		  var selectOpt_edit= document.getElementById('editlistAttributes').childNodes[j].childNodes[3].childNodes[0].childNodes[0].options;
-		  var selectIndex_edit= document.getElementById('editlistAttributes').childNodes[j].childNodes[3].childNodes[0].childNodes[0].selectedIndex;
+		  var selectOpt_edit= document.getElementById('editlistAttributes').childNodes[j].childNodes[4].childNodes[0].childNodes[0].options;
+		  var selectIndex_edit= document.getElementById('editlistAttributes').childNodes[j].childNodes[4].childNodes[0].childNodes[0].selectedIndex;
 		  
 		  var att= {value_name: document.getElementById('editlistAttributes').childNodes[j].childNodes[0].childNodes[0].childNodes[0].value.trim(), 
 			   data_type:selectOpt_data_type[selectIndex_data_type].value,
@@ -1744,7 +1695,7 @@ var gb_old_cb="";
                old_value_name:document.getElementById('editlistAttributes').childNodes[j].childNodes[7].childNodes[0].childNodes[0].value
 				   };
 					
-            if(att.value_name!=""&& !regex.test(att.value_name) && att.value_name.length>= 3&& att.data_type!="" && att.value_type!="" && att.editable!="" && att.value_unit!="" && att.healthiness_criteria!="" && att.healthiness_value!="")
+            if(att.value_name!=""&& !regex.test(att.value_name) && att.value_name.length>= 3&& att.data_type!="" && att.value_type!="" && att.editable!="" && att.healthiness_criteria!="" && att.healthiness_value!="")
                    myAttributes.push(att);
                 else
                     someNameisWrong=true;
@@ -1762,14 +1713,14 @@ var gb_old_cb="";
 		  var selectOpt_data_type= document.getElementById('deletedAttributes').childNodes[j].childNodes[1].childNodes[0].childNodes[0].options;
 		  var selectIndex_data_type= document.getElementById('deletedAttributes').childNodes[j].childNodes[1].childNodes[0].childNodes[0].selectedIndex;
 		  
-		  var selectOpt_value_unit= document.getElementById('deletedAttributes').childNodes[j].childNodes[4].childNodes[0].childNodes[0].options;
-		  var selectIndex_value_unit= document.getElementById('deletedAttributes').childNodes[j].childNodes[4].childNodes[0].childNodes[0].selectedIndex;
+		  var selectOpt_value_unit= document.getElementById('deletedAttributes').childNodes[j].childNodes[3].childNodes[0].childNodes[0].options;
+		  var selectIndex_value_unit= document.getElementById('deletedAttributes').childNodes[j].childNodes[3].childNodes[0].childNodes[0].selectedIndex;
 		  
 		  var selectOpt_hc= document.getElementById('deletedAttributes').childNodes[j].childNodes[5].childNodes[0].childNodes[0].options;
 		  var selectIndex_hc= document.getElementById('deletedAttributes').childNodes[j].childNodes[5].childNodes[0].childNodes[0].selectedIndex;
 		  
-		  var selectOpt_edit= document.getElementById('deletedAttributes').childNodes[j].childNodes[3].childNodes[0].childNodes[0].options;
-		  var selectIndex_edit= document.getElementById('deletedAttributes').childNodes[j].childNodes[3].childNodes[0].childNodes[0].selectedIndex;
+		  var selectOpt_edit= document.getElementById('deletedAttributes').childNodes[j].childNodes[4].childNodes[0].childNodes[0].options;
+		  var selectIndex_edit= document.getElementById('deletedAttributes').childNodes[j].childNodes[4].childNodes[0].childNodes[0].selectedIndex;
 		  
 		  var att= {value_name: document.getElementById('deletedAttributes').childNodes[j].childNodes[0].childNodes[0].childNodes[0].value.trim(), 
 			   data_type:selectOpt_data_type[selectIndex_data_type].value,
@@ -1868,7 +1819,7 @@ var gb_old_cb="";
 			{
 				$('#inputNameDevice').val("");
 				$('#inputTypeDevice').val("");
-				$('#selectKindDevice').val("");
+				//$('#selectKindDevice').val("");
 				$('#selectContextBroker').val("");
                 $('#inputUriDevice').val("");
 				//$('#selectProtocolDevice').val("");
@@ -1953,6 +1904,7 @@ var gb_old_cb="";
 		//  $('#addDeviceModalTabs').show();
 		//  $('#addDeviceModal div.modalCell').show();
 		//  $('#addDeviceModalFooter').show(); 
+document.getElementById('addlistAttributes').innerHTML = "";
 	});
 	
 	$("#addDeviceKoBackBtn").off("click");
