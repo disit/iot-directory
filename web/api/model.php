@@ -327,14 +327,16 @@ if ($action=="insert")
 	$hv = mysqli_real_escape_string($link, $_REQUEST['hv']);
 	$listAttributes= mysqli_real_escape_string($link, $_REQUEST['attributes']);
 	$organization= mysqli_real_escape_string($link, $_REQUEST['organization']);
+	$subnature=mysqli_real_escape_string($link, $_REQUEST['subnature']);
+	$staticAttributes= mysqli_real_escape_string($link, $_REQUEST['static_attributes']);
 
 	checkRegisterOwnerShipObject($accessToken, 'ModelID', $result);
 	
 	 if ($result["status"]=='ok'){
 	
 
-	$q = "INSERT INTO model(name, description, devicetype, kind, producer, frequency, contextbroker, protocol, format, healthiness_criteria, healthiness_value, kgenerator, attributes, edgegateway_type, organization, visibility ) " .
-		 "VALUES('$name', '$description', '$type', '$kind', '$producer', '$frequency', '$contextbroker', '$protocol', '$format', '$hc', '$hv', '$kgenerator', '$listAttributes', '$edgegateway_type', '$organization', 'private')";
+	$q = "INSERT INTO model(name, description, devicetype, kind, producer, frequency, contextbroker, protocol, format, healthiness_criteria, healthiness_value, kgenerator, attributes, edgegateway_type, organization, visibility, subnature, static_attributes ) " .
+		 "VALUES('$name', '$description', '$type', '$kind', '$producer', '$frequency', '$contextbroker', '$protocol', '$format', '$hc', '$hv', '$kgenerator', '$listAttributes', '$edgegateway_type', '$organization', 'private', '$subnature', '$staticAttributes')";
 	$r = mysqli_query($link, $q);
 
 	if($r)
@@ -401,9 +403,10 @@ if ($action=="update")
     $obj_organization = mysqli_real_escape_string($link, $_REQUEST['obj_organization']);
 	//MARCO $listdeleteAttributes= mysqli_real_escape_string($link, $_REQUEST['deleteattributes']);
 	//MARCO $listnewAttributes= mysqli_real_escape_string($link, $_REQUEST['newattributes']);
-	
+	$subnature= mysqli_real_escape_string($link, $_REQUEST['subnature']);	
+	$staticAttributes= mysqli_real_escape_string($link, $_REQUEST['static_attributes']);
 
-	$q = "UPDATE model SET name = '$name', attributes = '$listAttributes', description = '$description', devicetype = '$type', kind = '$kind',  producer= '$producer', frequency = '$frequency', contextbroker='$contextbroker', protocol = '$protocol', format = '$format', healthiness_criteria = '$hc', healthiness_value='$hv', kgenerator = '$kgenerator', edgegateway_type = '$edgegateway_type' WHERE id = '$id'";
+	$q = "UPDATE model SET name = '$name', attributes = '$listAttributes', description = '$description', devicetype = '$type', kind = '$kind',  producer= '$producer', frequency = '$frequency', contextbroker='$contextbroker', protocol = '$protocol', format = '$format', healthiness_criteria = '$hc', healthiness_value='$hv', kgenerator = '$kgenerator', edgegateway_type = '$edgegateway_type', subnature='$subnature', static_attributes='$staticAttributes' WHERE id = '$id'";
 	$r = mysqli_query($link, $q);
 
 	if($r)

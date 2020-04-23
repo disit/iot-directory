@@ -1,3 +1,4 @@
+$.fn.modal.Constructor.prototype.enforceFocus = function() {};
 
 var gb_datatypes ="";
 var gb_value_units ="";
@@ -12,7 +13,6 @@ var gb_latitude ="";
 var gb_longitude = "";
 var gb_key1;
 var gb_key2;
-
 
 var dataTable ="";
 
@@ -46,6 +46,8 @@ $.ajax({
 		   gb_datatypes= mydata["data_type"];
 		   gb_value_units= mydata["value_unit"];
 		   gb_value_types= mydata["value_type"];		   
+		   addSubnature($("#selectSubnature"),mydata["subnature"]);
+		   addSubnature($("#selectSubnatureM"),mydata["subnature"]);
          },
 		 error: function (mydata)
 		 {
@@ -55,11 +57,10 @@ $.ajax({
 });
 
 //export model for sensor
-function exporta(name,devicetype, frequency, kind, protocol, format, producer, attributes){
-	var txt="name,device type,mac,frequency,kind,protocol,format,producer,lat,long,value name,data_type,value_type,editable,value_unit,healthiness_criteria,healthiness_value,k1,k2\r\n";
+function exporta(name,devicetype, frequency, kind, protocol, format, producer, attributes, subnature, staticAttributes){
+	var txt="name,device type,mac,frequency,kind,protocol,format,producer,lat,long,value name,data_type,value_type,editable,value_unit,healthiness_criteria,healthiness_value,k1,k2,subnature,static_attributes\r\n";
 
 	var arr=JSON.parse(atob(attributes));
-
 	for (var i = 0; i < arr.length; i++){
 		var value="<DEVICENAME>,"+devicetype+",<MACADDRESS>,"+frequency+","+kind+","+protocol+","+format+","+producer+",<LAT>,<LONG>,";
 		var obj = arr[i];
@@ -72,8 +73,12 @@ function exporta(name,devicetype, frequency, kind, protocol, format, producer, a
 				else attrValue="TRUE";
 			}
 			value=value+attrValue+",";
-		}	
-		var txt=txt+value+"<K1>,<K2>\r\n";
+		}
+
+		//TODO: also other fields probably need to be escaped like above (for other special character, live COMMA, SEMICOLON, ...)
+		var staticAtt="\""+atob(staticAttributes).replace(/"/g, "\"\"")+"\"";
+
+		var txt=txt+value+"<K1>,<K2>,"+subnature+","+staticAtt+"\r\n";
 	}
 
 	var txt=txt+"\r\n";
@@ -85,13 +90,6 @@ function exporta(name,devicetype, frequency, kind, protocol, format, producer, a
         document.body.appendChild(element);
         element.click();
         document.body.removeChild(element);
-}
-
-function addCB(element, data){
-	var $dropdown = element;
-	$.each(data['content'], function() {
-        	$dropdown.append("<option my_data= "+this.protocol+" data_kind="+this.kind+" value='"+this.name+"'>"+this.name+"</option>");
-        });
 }
 
 $.ajax({              
@@ -186,7 +184,7 @@ function drawAttributeMenu
 	  else mydatatypes += "<option value=\""+gb_datatypes[n]+"\">"+ gb_datatypes[n]+ "</option>";
 	}
 	
- return "<div class=\"row\" style=\"border:3px solid blue;\" ><div class=\"col-xs-6 col-md-3 modalCell\">" +
+ return "<div class=\"row\" style=\"border:2px solid blue;\" ><div class=\"col-xs-6 col-md-3 modalCell\">" +
         "<div class=\"modalFieldCnt\" title=\"Insert a name for the sensor/actuator\"><input type=\"text\" class=\"modalInputTxt\""+
 		"name=\"" +  attrName +  "\"  value=\"" + attrName + "\" onkeyup=\"checkStrangeCharacters(this)\">" + 
         "</div><div class=\"modalFieldLabelCnt\">Value Name</div>"+ msg +"</div>"+
@@ -235,7 +233,7 @@ function drawAttributeMenu
 		
 		"<div class=\"col-xs-6 col-md-3 modalCell\"><div class=\"modalFieldCnt\">" +
 		//"<i class=\"fa fa-minus-square\" onclick=\"removeElementAt('" + parent + "',this); return true;\"  style=\"font-size:36px; color: #ffcc00\"></i></div></div></div>";
-	    "<button class=\"btn btn-warning\" onclick=\"removeElementAt('" + parent + "',this); return true;\">Remove Value</button></div></div></div>";
+	    "<button class=\"btn btn-danger\" onclick=\"removeElementAt('" + parent + "',this); return true;\">Remove Value</button></div></div></div>";
 }		
   
 function format ( d ) {
@@ -252,7 +250,7 @@ function format ( d ) {
 		'<div class="col-xs-6 col-sm-6" style="background-color:#E6E6FA;"><b>Key Generator:</b>' + "  " + d.kgenerator + '</div>' +
 	'</div>' + 
 	'<div class="row">' +
-                '<div class="col-xs-6 col-sm-6" style="background-color:#E6E6FA;"><button class="btn btn-warning" onclick="exporta(\''+d.name+'\',\''+d.devicetype+'\',\''+d.frequency+'\',\''+d.kind+'\',\''+d.protocol+'\',\''+d.format+'\',\''+d.producer+'\',\''+btoa(d.attributes)+'\',);return true;"><b>export</b></button></div>' +
+                '<div class="col-xs-6 col-sm-6" style="background-color:#E6E6FA;"><button class="btn btn-warning" onclick="exporta(\''+d.name+'\',\''+d.devicetype+'\',\''+d.frequency+'\',\''+d.kind+'\',\''+d.protocol+'\',\''+d.format+'\',\''+d.producer+'\',\''+btoa(d.attributes)+'\',\''+d.subnature+'\',\''+btoa(d.static_attributes)+'\');return true;"><b>export</b></button></div>' +
         '</div>' + 
     '</div>' ;
 }
@@ -387,6 +385,8 @@ function format ( d ) {
 				'data-attributes="'+d.attributes+'" ' +
 				'data-k1="'+d.k1+'" ' +
 				'data-k2="'+d.k2+'" ' +
+				'data-subnature="'+d.subnature+'" '+
+				'data-static-attributes="'+btoa(d.static_attributes)+'" '+
 				'data-policy="'+d.policy+'">Edit</button>';
 				
 				}
@@ -423,7 +423,7 @@ function format ( d ) {
   
     $(document).ready(function () 
     {
-	
+
 //fetch_data function will load the device table 	
 		fetch_data(false);	
 		
@@ -582,6 +582,7 @@ function format ( d ) {
                                      $('#addModelKoIcon').hide();
                          $('#addModelLoadingMsg').hide();
                         $('#addModelLoadingIcon').hide();
+				
 
 
                                 showAddModelModal();
@@ -697,10 +698,7 @@ function format ( d ) {
 			$('#addModelKoIcon').hide();	
 			$('#addModelLoadingMsg').show();
             $('#addModelLoadingIcon').show();    
-           
-            
-            console.log("XIEL" + JSON.stringify(mynewAttributes));
-			
+	
              $.ajax({
                  url: "../api/model.php",
                  data:{
@@ -725,9 +723,9 @@ function format ( d ) {
 					 //active: $('#selectActiveModel').val(),
 					  hc: $('#selectHCModel').val(),
 					  hv: $('#inputHVModel').val(),
-				
+					  subnature: $('#selectSubnature').val(),		
 					  token : sessionToken,
-
+					static_attributes: JSON.stringify(retrieveStaticAttributes("addlistStaticAttributes"))
 					 },
                  type: "POST",
                  async: true,
@@ -780,7 +778,12 @@ function format ( d ) {
                         $('#inputFrequencyModel').val("");
                         $('#selectKGeneratorModel').val("");
                         $('#addlistAttributes').html("");
-                        
+			$('#selectSubnature').val("");
+			$('#selectSubnature').trigger("change");
+			$("#addNewStaticBtn").hide();
+                        removeStaticAttributes();                       
+
+ 
                         $('#addModelLoadingMsg').hide();
                         $('#addModelLoadingIcon').hide();
 						$('#addModelKoMsg').hide();
@@ -955,7 +958,7 @@ function format ( d ) {
         }); 
         
 // END DELETE MODEL
-		
+
 //START EDIT MODEL 
 
 		//add lines related to attributes in case of edit
@@ -1023,7 +1026,7 @@ function format ( d ) {
 		  //var active = $(this).attr('data-active');
 		  var hc = $(this).attr('data_healthiness_criteria');
 		  var hv = $(this).attr('data_healthiness_value');
-		  
+		 var subnature= $(this).attr('data-subnature');		  
 		  
 			$('#inputIdModelM').val(id);
 			$('#inputOrganizationModelM').val(obj_organization);
@@ -1042,7 +1045,10 @@ function format ( d ) {
 			//$('#selectActiveModelM').val(active);
 			$('#selectHCModelM').val(hc);															  
 			$('#inputHVModelM').val(hv);	
-		 
+			$('#selectSubnatureM').val(subnature);
+			$('#selectSubnatureM').trigger('change');
+			subnatureChanged(true, JSON.parse(atob($(this).attr("data-static-attributes"))));	
+			
                         showEditModelModal();
 		
 	$.ajax({
@@ -1261,7 +1267,8 @@ function format ( d ) {
 				 //active: $('#selectActiveModelM').val(),
 				  hc: $('#selectHCModelM').val(),
 				  hv: $('#inputHVModelM').val(),
-			
+				  subnature: $('#selectSubnatureM').val(),
+				static_attributes: JSON.stringify(retrieveStaticAttributes("editlistStaticAttributes"))
 				 },
 			 type: "POST",
 			 async: true,
@@ -1337,7 +1344,9 @@ function format ( d ) {
 			     //$('#inputPolicyModel').val("");
 			     $('#selectKGeneratorModelM').val("");
 			     $('#editlistAttributes').html("");	
-                 
+
+				$('#selectSubnatureM').val("");                
+ 
                  $('#modelTable').DataTable().destroy();
                     fetch_data(true);
 		
@@ -1386,6 +1395,11 @@ function format ( d ) {
 			 //$('#inputPolicyModel').val("");
 			  $('#selectKGeneratorModel').val("");
 			  $('#addlistAttributes').html("");	
+
+			$('#selectSubnature').val("");
+			$('#selectSubnature').trigger("change");
+			$("#addNewStaticBtn").hide();
+			removeStaticAttributes();
 	
 			  location.reload();    								  
 	
@@ -1663,8 +1677,47 @@ function updateGroupList(ouname){
        {
                $(this).removeData();
        });	
+
+//--------------------- static attribute ADD start
+
+        $("#addNewStaticBtn").off("click");
+        $("#addNewStaticBtn").click(function(){	
+                var row = createRowElem('', '', currentDictionaryStaticAttribAdd, "addlistStaticAttributes");
+        });
+		
+//--------------------- static attribute ADD end		
+//--------------------- static attribute EDIT start
+
+        $("#addNewStaticBtnM").off("click");
+        $("#addNewStaticBtnM").click(function(){
+                var row = createRowElem('', '', currentDictionaryStaticAttribEdit, "editlistStaticAttributes");
+        });
+
+//--------------------- static attribute EDIT end
+
+
+	$('#selectSubnature').on('select2:selecting', function(e){
+		checkSubnatureChanged($('#selectSubnature'), e.target.value, e.params.args.data.id, e);
+	});
+
+	$('#selectSubnatureM').on('select2:selecting', function(e){
+                checkSubnatureChanged($('#selectSubnatureM'), e.target.value, e.params.args.data.id, e, true);
+        });
+	$('#selectSubnature').on('select2:clearing', function(e){
+                checkSubnatureChanged($('#selectSubnature'), e.params.args.data.id, "", e);
+        });
+
+        $('#selectSubnatureM').on('select2:clearing', function(e){
+                checkSubnatureChanged($('#selectSubnatureM'), e.params.args.data.id, "", e, true);
+        });
+
         
 });  // end of ready-state
+
+
+
+
+
 
 //   START TO CHANGE THE VISIBILITY  & OWNERSHIP 
 				
@@ -2201,12 +2254,6 @@ function updateGroupList(ouname){
 			   }
                });
        });     //group delegation -end
-	
-	}
 
-// END TO CHANGE THE VISIBILITY 
-	
-  
-
-
-
+// END TO CHANGE THE VISIBILITY
+}

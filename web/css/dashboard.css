@@ -3647,3 +3647,10 @@ div.uploadBulkLoad{
 }
 
 /*Sara2410 end*/
+
+/*.tab-pane{
+  max-height:450px;
+  overflow-y:scroll;
+  overflow:auto;
+  width:100%;
+}*/

@@ -104,7 +104,10 @@
        <link rel="stylesheet" href="../boostrapTable/dist/bootstrap-table.css">
        <script src="../boostrapTable/dist/bootstrap-table.js"></script>
 	   <script src="../boostrapTable/dist/bootstrap-table-filter-control.js"></script>
-	   
+	  
+	<!-- select2 -->
+	<link href="https://cdn.jsdelivr.net/npm/select2@4.0.13/dist/css/select2.min.css" rel="stylesheet" />
+	<script src="https://cdn.jsdelivr.net/npm/select2@4.0.13/dist/js/select2.min.js"></script>
 	   
 	    <!-- DataTables -->
 	   
@@ -167,6 +170,8 @@
  //var statusVisibile = true;
  var mypage = location.pathname.split("/").slice(-1)[0];
          var functionality = [];
+ var currentDictionaryStaticAttribAdd=[];
+ var currentDictionaryStaticAttribEdit=[];
 
           $.ajax({url: "../api/functionality.php",
 			 data: {action: 'get_functionality', page : mypage},
@@ -313,6 +318,7 @@
 					<ul id="addModelModalTabs" class="nav nav-tabs nav-justified">
 						<li class="active"><a data-toggle="tab" href="#addInfoTabModel">General Info</a></li>
                         <li><a data-toggle="tab" href="#addIOTBrokerTabModel">IOT Broker</a></li>
+			<li><a data-toggle="tab" href="#addStaticTabModel">Static Attributes</a></li>
                         <li><a data-toggle="tab" href="#addSchemaTabModel">Values</a></li>
 						
                     </ul>
@@ -554,8 +560,27 @@
 							<div id="addlistAttributes"></div>
 							<div class="pull-left"><button id="addAttrBtn" class="btn btn-primary">Add Value</button></div>
 							<div id="addlistAttributesMsg" class="modalFieldMsgCnt">&nbsp;</div>
-		                </div>
-							
+	                </div>
+
+			<!-- Attributes tab -->
+			<div id="addStaticTabModel" class="tab-pane fade">
+				<div class="row">	
+					<div class="col-xs-12 col-md-8 modalCell" >
+						<div class="modalFieldCnt">
+							<select id="selectSubnature" name="selectSubnature" class="modalInputTxt">
+								<option></option>
+							</select>
+						</div>
+						<div class="modalFieldLabelCnt">Subnature</div>
+					</div>
+				</div>
+				<div class="row">
+					<div id="addlistStaticAttributes"></div>
+				</div>
+				<div class="row">
+					<div class="pull-left"><button type="text" id="addNewStaticBtn" class="btn confirmBtn" style="display: none;">Add Attribute</button></div>
+				</div>
+			</div>
                     </div>
 					
                   </div>
@@ -607,6 +632,7 @@
                      <ul id="editModelModalTabs" class="nav nav-tabs nav-justified">
 						<li class="active"><a data-toggle="tab" href="#editInfoTabModel">General Info</a></li>
                         <li><a data-toggle="tab" href="#editIOTBrokerTabModel">IoT Broker</a></li>
+			<li><a data-toggle="tab" href="#editStaticTabModel">Static Attributes</a></li>
                         <li><a data-toggle="tab" href="#editSchemaTabModel">Values</a></li>
 						
                     </ul>
@@ -859,8 +885,27 @@
 							<div class="pull-left"><button id="addAttrMBtn" class="btn btn-primary">Add Value</button></div>
 						<div id="editlistAttributesMsg" class="modalFieldMsgCnt">&nbsp;</div>	
                         </div>
-					
-						
+			
+			<!-- Attributes tab -->
+                        <div id="editStaticTabModel" class="tab-pane fade">
+                                <div class="row">
+                                        <div class="col-xs-12 col-md-6 modalCell">
+                                                <div class="modalFieldCnt">
+                                                        <select id="selectSubnatureM" name="selectSubnatureM" class="modalInputTxt">
+                                                                <option></option>
+                                                        </select>
+                                                </div>
+                                                <div class="modalFieldLabelCnt">Subnature</div>
+                                        </div>
+                                </div>
+				<div class="row">
+                                        <div id="editlistStaticAttributes"></div>
+                                </div>
+				<div class="row">
+					<div class="pull-left"><button type="text" id="addNewStaticBtnM" class="btn confirmBtn" style="display: none;">Add Attribute</button></div>
+				</div>
+                        </div>	
+	
                     </div>
 					</div>
 					

@@ -1,3 +1,4 @@
+$.fn.modal.Constructor.prototype.enforceFocus = function() {};
 
 var gb_datatypes ="";
 var gb_value_units ="";
@@ -35,7 +36,9 @@ var gb_old_cb="";
          {
 		   gb_datatypes= mydata["data_type"];
 		   gb_value_units= mydata["value_unit"];
-		   gb_value_types= mydata["value_type"];		   
+		   gb_value_types= mydata["value_type"];		  
+                  addSubnature($("#selectSubnatureM"),mydata["subnature"]);
+ 
          },
 		 error: function (mydata)
 		 {
@@ -59,13 +62,6 @@ var gb_old_cb="";
 		checkAtlistOneAttribute();
 		checkEditAtlistOneAttribute();
 	}
-
-function addCB(element, data){
-        var $dropdown = element;
-        $.each(data['content'], function() {
-                $dropdown.append("<option my_data= "+this.protocol+" data_kind="+this.kind+" value='"+this.name+"'>"+this.name+"</option>");
-        });
-}
 
 function addModel(element, data){
 	var $dropdown = element;
@@ -152,7 +148,7 @@ options="";
 	  else mydatatypes += "<option value=\""+gb_datatypes[n]+"\">"+ gb_datatypes[n]+ "</option>";
 	}
 
-return "<div class=\"row\" style=\"border:3px solid blue;\" id=\"value"+indice+"\">"+
+return "<div class=\"row\" style=\"border:2px solid blue;\" id=\"value"+indice+"\">"+
 		
 		"<div class=\"col-xs-6 col-md-3 modalCell\">" +
         	"<div class=\"modalFieldCnt\" title=\"Insert a name for the sensor/actuator\"><input type=\"text\" class=\"modalInputTxt\""+
@@ -203,7 +199,7 @@ return "<div class=\"row\" style=\"border:3px solid blue;\" id=\"value"+indice+"
 	       	"</select></div></div>"+
 		"<div class=\"col-xs-6 col-md-3 modalCell\"><div class=\"modalFieldCnt\">" +
 
-		"<button class=\"btn btn-warning\" onclick=\"removeElementAt('" + parent + "',this); return true;\">Remove Value</button></div></div></div>";
+		"<button class=\"btn btn-danger\" onclick=\"removeElementAt('" + parent + "',this); return true;\">Remove Value</button></div></div></div>";
 		
 }			
 	  
@@ -401,6 +397,7 @@ return "<div class=\"row\" style=\"border:3px solid blue;\" id=\"value"+indice+"
 				"orderable":      false,
                 className: "center",
 				render: function(d) {
+
                 //defaultContent: '<button type="button" id="edit" class="editDashBtn data-id="'+ row.name +'"">Edit</button>'
 				return '<button type="button" class="editDashBtn" ' +
 				'data-id="'+d.id+'" ' +
@@ -423,6 +420,9 @@ return "<div class=\"row\" style=\"border:3px solid blue;\" id=\"value"+indice+"
 				'data-edgegateway_uri="'+d.edgegateway_uri+'" ' +
 				'data-k1="'+d.k1+'" ' +
 				'data-k2="'+d.k2+'" ' +
+                               'data-subnature="'+d.subnature+'" '+
+                               'data-static-attributes="'+btoa(d.staticAttributes)+'" '+
+
 				'data-status1="'+d.status1+'">Edit</button>';
 				//"data-created": row.created,
 				//"data-properties": row.properties,
@@ -1127,7 +1127,10 @@ return "<div class=\"row\" style=\"border:3px solid blue;\" id=\"value"+indice+"
 			  k1 : $("#KeyOneDeviceUser").val(),
 			  k2 : $("#KeyTwoDeviceUser").val(),
 			  edgegateway_type : $("#selectEdgeGatewayType").val(),
-			  edgegateway_uri : $("#inputEdgeGatewayUri").val()					  
+			  edgegateway_uri : $("#inputEdgeGatewayUri").val(),
+                          subnature: $('#selectSubnature').val(),
+                          static_attributes: JSON.stringify(retrieveStaticAttributes("addStaticTabModel"))
+					  
 			 },
 		 type: "POST",
 		 async: true,
@@ -1521,6 +1524,7 @@ return "<div class=\"row\" style=\"border:3px solid blue;\" id=\"value"+indice+"
 	  var key2 = $(this).attr('data-k2');
 	  var gtw_type = $(this).attr('data-edgegateway_type');
 	  var gtw_uri = $(this).attr('data-edgegateway_uri');
+	var subnature= $(this).attr('data-subnature');
 	  console.log(key1 + key2);
 	  
 	  if (model == "custom")
@@ -1548,6 +1552,11 @@ return "<div class=\"row\" style=\"border:3px solid blue;\" id=\"value"+indice+"
 		$('#KeyTwoDeviceUserM').val(key2);
 		$('#selectEdgeGatewayTypeM').val(gtw_type);
 		$('#inputEdgeGatewayUriM').val(gtw_uri);	  
+
+                       $('#selectSubnatureM').val(subnature);
+			$('#selectSubnatureM').trigger('change');
+                       subnatureChanged(true, JSON.parse(atob($(this).attr("data-static-attributes"))));
+
 
 		showEditDeviceModal();
 
@@ -1788,7 +1797,9 @@ showEditDeviceModal();
 		k1: $('#KeyOneDeviceUserM').val(), 
 		k2: $('#KeyTwoDeviceUserM').val(),
 		edgegateway_type : $("#selectEdgeGatewayTypeM").val(),
-		edgegateway_uri : $("#inputEdgeGatewayUriM").val()
+		edgegateway_uri : $("#inputEdgeGatewayUriM").val(),
+                subnature: $('#selectSubnatureM').val(),
+                static_attributes: JSON.stringify(retrieveStaticAttributes("editlistStaticAttributes"))
 			 },
 			 type: "POST",
 			 async: true,
@@ -1832,7 +1843,7 @@ showEditDeviceModal();
 				$('#inputLongitudeDevice').val("");
 				$('#selectVisibilityDevice').val();
 				$('#inputFrequencyDevice').val();            
-                
+                $('#selectSubnatureM').val("");
                $('#editDeviceLoadingMsg').hide();
 				$('#editDeviceLoadingIcon').hide();
 				$('#editDeviceOkMsg').show();
@@ -1880,6 +1891,26 @@ showEditDeviceModal();
 	});	
 	
 //END EDIT DEVICE CANCEL BUTTON  	
+
+//--------------------- static attribute EDIT start
+
+        $("#addNewStaticBtnM").off("click");
+        $("#addNewStaticBtnM").click(function(){
+                var row = createRowElem('', '', currentDictionaryStaticAttribEdit, "editlistStaticAttributes");
+        });
+
+//--------------------- static attribute EDIT end
+
+
+        $('#selectSubnatureM').on('select2:selecting', function(e){
+                checkSubnatureChanged($('#selectSubnatureM'), e.target.value, e.params.args.data.id, e, true);
+        });
+
+        $('#selectSubnatureM').on('select2:clearing', function(e){
+                checkSubnatureChanged($('#selectSubnatureM'), e.params.args.data.id, "", e, true);
+        });
+
+
 	
 //ADD DEVICE CANCEL BUTTON 
 			
@@ -1899,6 +1930,8 @@ showEditDeviceModal();
 		  $('#inputLatitudeDevice').val("");
 		  $('#inputLongitudeDevice').val("");
 		  $('#addDeviceModal').modal('hide'); 
+		$('#selectSubnatureM').val("");
+		removeStaticAttributes();
 		  //.hide();
 		  location.reload();    								  
 		//  $('#addDeviceModalTabs').show();

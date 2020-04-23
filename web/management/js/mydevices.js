@@ -39,7 +39,7 @@ var dataTable ="";
 			   gb_datatypes= mydata["data_type"];
 			   gb_value_units= mydata["value_unit"];
 			   gb_value_types= mydata["value_type"];		   
-			}
+}
 			else{
 				 alert("An error occured when reading the data. <br/> Get in touch with the Snap4City Administrator. <br/>"+ mydata["error_msg"]);
 			}
@@ -885,6 +885,8 @@ var dataTable ="";
 						$('#selectProtocolDevice').val(data.content.protocol);
 						$('#selectFormatDevice').val(data.content.format); 
 						*/
+						var subnature=data.content.subnature;
+						var staticAttributes=data.content.static_attributes;				
 						
 					
 				 $.ajax({
@@ -913,7 +915,9 @@ var dataTable ="";
 						  token : sessionToken,
 						  k1 :  gb_k1,
 						  k2 : gb_k2,
-						  edgegateway_type:edgegateway_type
+						  edgegateway_type:edgegateway_type,
+						  subnature: subnature,
+						  static_attributes:staticAttributes
 
 						},
 						 type: "POST",

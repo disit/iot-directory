@@ -111,6 +111,11 @@ else
        <link rel="stylesheet" href="../boostrapTable/dist/bootstrap-table.css">
        <script src="../boostrapTable/dist/bootstrap-table.js"></script>
 	   <script src="../boostrapTable/dist/bootstrap-table-filter-control.js"></script>
+
+        <!-- select2 -->
+        <link href="https://cdn.jsdelivr.net/npm/select2@4.0.13/dist/css/select2.min.css" rel="stylesheet" />
+        <script src="https://cdn.jsdelivr.net/npm/select2@4.0.13/dist/js/select2.min.js"></script>
+
 	   
 	   	   <!-- DataTables -->
 	   
@@ -165,6 +170,7 @@ else
          var sessionToken = "<?php  if (isset($_SESSION['refreshToken'])) echo $_SESSION['refreshToken']; else echo ""; ?>";		 
 		 var mypage = location.pathname.split("/").slice(-1)[0];
          var functionality = [];
+	 var currentDictionaryStaticAttribEdit=[];
 /*
           $.ajax({url: "../api/functionality.php",
 			 data: {action: 'get_functionality', page : mypage},
@@ -926,6 +932,7 @@ else
 						<li class="active"><a data-toggle="tab" href="#editIOTBrokerTabDevice">IoT Broker</a></li>
                         <li><a data-toggle="tab" href="#editInfoTabDevice">Info</a></li>
                         <li><a data-toggle="tab" href="#editGeoPositionTabDevice">Position</a></li>
+			<li><a data-toggle="tab" href="#editStaticTabModel">Static Attributes</a></li>
                         <li><a data-toggle="tab" href="#editSchemaTabDevice">Values</a></li>
 						<!--<li><a data-toggle="tab" href="#editStatusTabDevice">Status</a></li>-->
 						
@@ -1181,6 +1188,29 @@ else
                         </div>
              
                     </div>
+
+                       <!-- Static Attributes tab -->
+                        <div id="editStaticTabModel" class="tab-pane fade">
+                                <div class="row">
+                                        <div class="col-xs-12 col-md-6 modalCell">
+                                                <div class="modalFieldCnt">
+                                                        <select id="selectSubnatureM" name="selectSubnatureM" class="modalInputTxt">
+                                                                <option></option>
+                                                        </select>
+                                                </div>
+                                                <div class="modalFieldLabelCnt">Subnature</div>
+                                        </div>
+                                </div>
+				<div class="row">
+                                        <div id="editlistStaticAttributes"></div>
+                                </div>
+                                <div class="row">
+                                        <div class="pull-left"><button type="text" id="addNewStaticBtnM" class="btn confirmBtn" style="display: none;">Add Attribute</button></div>
+                                </div>
+                        </div>
+
+
+
                         <!-- Attribute tab -->
                     <div id="editSchemaTabDevice" class="tab-pane fade">
                            

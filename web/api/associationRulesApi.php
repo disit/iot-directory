@@ -627,7 +627,7 @@ else if ($action=="bulkload")
 	
 	$q = "SELECT contextBroker, id, devicetype, model, status, macaddress,frequency,kind, 
 	 protocol,format,latitude, longitude, visibility, k1, k2,producer, edge_gateway_type, edge_gateway_uri, 
-	 validity_msg FROM temporary_devices WHERE username = '$username' 
+	 validity_msg, subnature, static_attributes FROM temporary_devices WHERE username = '$username' 
 	 AND deleted IS null AND organization='$organization' AND  should_be_registered='no';";
 	$r = mysqli_query($link, $q);	
 	
@@ -711,7 +711,7 @@ else if ($action=="bulkload")
 						insert_device($link, $row["id"],$row["devicetype"],$row["contextBroker"],$row["kind"],$row["protocol"],$row["format"],
 						$row["macaddress"],$row["model"],$row["producer"],$row["latitude"],$row["longitude"],
 						$row["visibility"], $row["frequency"], $row["k1"], $row["k2"], $row["edge_gateway_type"],
-						$row["edge_gateway_uri"],json_decode(json_encode($deviceattributes)),$pathCertificate,
+						$row["edge_gateway_uri"],json_decode(json_encode($deviceattributes)),$row["subnature"],$row["static_attributes"],$pathCertificate,
 						$accessToken,$result,'no',$organization,$kbUrl,$username);
 						
 					   //Sara2210

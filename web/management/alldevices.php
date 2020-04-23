@@ -107,6 +107,11 @@ use Jumbojett\OpenIDConnectClient;
        <script src="../boostrapTable/dist/bootstrap-table.js"></script>
 	   <script src="../boostrapTable/dist/bootstrap-table-filter-control.js"></script>
 
+        <!-- select2 -->
+        <link href="https://cdn.jsdelivr.net/npm/select2@4.0.13/dist/css/select2.min.css" rel="stylesheet" />
+        <script src="https://cdn.jsdelivr.net/npm/select2@4.0.13/dist/js/select2.min.js"></script>
+
+
 	    <!-- DataTables -->
 	   
 	    <script type="text/javascript" charset="utf8" src="../js/DataTables/datatables.js"></script>
@@ -167,6 +172,7 @@ use Jumbojett\OpenIDConnectClient;
              var bearerToken = "<?php  if (isset($_SESSION['accessToken'])) echo $_SESSION['accessToken']; else echo ""; ?>";		 
              var mypage = location.pathname.split("/").slice(-1)[0];
              var functionality = [];
+		var currentDictionaryStaticAttribEdit=[];
 
           $.ajax({url: "../api/functionality.php",
 			 data: {action: 'get_functionality', page : mypage},
@@ -937,6 +943,7 @@ use Jumbojett\OpenIDConnectClient;
 						<li  class="active"><a data-toggle="tab" href="#editIOTBrokerTabDevice">IoT Broker</a></li>
                          <li><a data-toggle="tab" href="#editInfoTabDevice">Info</a></li>
                         <li><a data-toggle="tab" href="#editGeoPositionTabDevice">Position</a></li>
+			<li><a data-toggle="tab" href="#editStaticTabModel">Static Attributes</a></li>
                         <li><a data-toggle="tab" href="#editSchemaTabDevice">Values</a></li>
 						<li><a data-toggle="tab" href="#editStatusTabDevice">Status</a></li>
 						
@@ -1213,6 +1220,29 @@ use Jumbojett\OpenIDConnectClient;
 							
 							
                         </div>
+
+
+                       <!-- Static Attributes tab -->
+                        <div id="editStaticTabModel" class="tab-pane fade">
+                                <div class="row">
+                                        <div class="col-xs-12 col-md-6 modalCell">
+                                                <div class="modalFieldCnt">
+                                                        <select id="selectSubnatureM" name="selectSubnatureM" class="modalInputTxt">
+                                                                <option></option>
+                                                        </select>
+                                                </div>
+                                                <div class="modalFieldLabelCnt">Subnature</div>
+                                        </div>
+                                </div>
+				<div class="row">
+                                        <div id="editlistStaticAttributes"></div>
+                                </div>
+                                <div class="row">
+                                        <div class="pull-left"><button type="text" id="addNewStaticBtnM" class="btn confirmBtn" style="display: none;">Add Attribute</button></div>
+                                </div>
+                        </div>
+
+
                         
                         <!-- Attribute tab -->
                         <div id="editSchemaTabDevice" class="tab-pane fade">
@@ -1224,6 +1254,8 @@ use Jumbojett\OpenIDConnectClient;
 							<div class="pull-left"><button id="addAttrMBtn" class="btn btn-primary">Add Value</button></div>
 							<div id="editlistAttributesMsg" class="modalFieldMsgCnt">&nbsp;</div>
                         </div>
+
+
 						
 						<!-- Semantic Labeling tab -->
                         <div id="editStatusTabDevice" class="tab-pane fade">

@@ -142,7 +142,11 @@ if ($action=="insert")
 	$visibility = mysqli_real_escape_string($link, $_REQUEST['visibility']);  
 	$frequency= mysqli_real_escape_string($link, $_REQUEST['frequency']);
 	$organization= mysqli_real_escape_string($link, $_REQUEST['organization']);
-    
+	$subnature=mysqli_real_escape_string($link, $_REQUEST['subnature']);
+	error_log("Arrivato:".$_REQUEST['static_attributes']);
+	$staticAttributes = mysqli_real_escape_string($link, $_REQUEST['static_attributes']);   
+	error_log("Mysql:".$staticAttributes);
+ 
 	//MM 
 	if (isset($_REQUEST['shouldbeRegistered'])) $shouldbeRegistered=$_REQUEST['shouldbeRegistered'];
 	else $shouldbeRegistered=true;
@@ -173,7 +177,7 @@ if ($action=="insert")
 
 	insert_device($link, $id,$devicetype,$contextbroker,$kind,$protocol,$format,$macaddress,$model,$producer,
 		   $latitude,$longitude,$visibility, $frequency, $k1, $k2, $edgegateway_type, $edgegateway_uri,
-		   $listAttributes, $pathCertificate,$accessToken,$result,$shouldbeRegistered, $organization, $kburl, $username);
+		   $listAttributes, $subnature, $staticAttributes,$pathCertificate,$accessToken,$result,$shouldbeRegistered, $organization,$kburl, $username);
 			//my_log($result);
 	
         
@@ -189,7 +193,9 @@ if ($action=="insert")
          my_log($result); //MM0301
 }
 else if ($action=="update")
-{   
+{  
+	error_log("pppp");
+ 
 	//Sara2510 - for logging purpose
 	$username = mysqli_real_escape_string($link, $_REQUEST['username']);
     $organization = mysqli_real_escape_string($link, $_REQUEST['organization']);
@@ -210,6 +216,10 @@ else if ($action=="update")
 	$dev_organization = mysqli_real_escape_string($link, $_REQUEST['dev_organization']);
 	$k1= $_REQUEST['k1'];
         $k2= $_REQUEST['k2'];
+	$subnature= mysqli_real_escape_string($link, $_REQUEST['subnature']);
+	$staticAttributes= mysqli_real_escape_string($link, $_REQUEST['static_attributes']);
+
+
 	if (isset( $_REQUEST['edgegateway_type']))
 		$edgegateway_type = $_REQUEST['edgegateway_type'];
 	else $edgegateway_type="";
@@ -250,9 +260,11 @@ else if ($action=="update")
 	{
 		$result["msg"] .= " cb ".$contextbroker . " old cb ".$old_contextbroker ; 
 	}
+
+	error_log("aaaaaaaaaaa");
 	
 	if($notDuplicate){
-	updateKB($link, $id, $devicetype, $contextbroker, $kind, $protocol, $format, $macaddress, $model, $producer, $latitude, $longitude,$visibility, $frequency, $merge, $uri, $dev_organization, $result); 
+	updateKB($link, $id, $devicetype, $contextbroker, $kind, $protocol, $format, $macaddress, $model, $producer, $latitude, $longitude,$visibility, $frequency, $merge, $uri, $dev_organization, $subnature, $staticAttributes,$result); 
 	
     if ($result["status"]=='ko'){
 		//Sara2510 - for logging purpose
@@ -262,12 +274,12 @@ else if ($action=="update")
 	 
 	if ($result["status"]=='ok' &&  $result["content"]==null)
 	{
-		$q = "UPDATE devices SET contextBroker='$contextbroker', devicetype='$devicetype', kind= '$kind', protocol='$protocol', format='$format', macaddress='$macaddress', model='$model', producer='$producer', latitude='$latitude', longitude='$longitude', frequency = '$frequency', organization='$dev_organization' WHERE id='$id' and contextBroker='$old_contextbroker'";
+		$q = "UPDATE devices SET contextBroker='$contextbroker', devicetype='$devicetype', kind= '$kind', protocol='$protocol', format='$format', macaddress='$macaddress', model='$model', producer='$producer', latitude='$latitude', longitude='$longitude', frequency = '$frequency', organization='$dev_organization', subnature='$subnature', static_attributes='$staticAttributes' WHERE id='$id' and contextBroker='$old_contextbroker'";
 	}
 	else {			
-		$q = "UPDATE  devices SET uri = '". $result["content"] . "', mandatoryproperties=1, mandatoryvalues=1, contextBroker='$contextbroker', devicetype='$devicetype', kind= '$kind', protocol='$protocol', format='$format', macaddress='$macaddress', model='$model', producer='$producer', latitude='$latitude', longitude='$longitude', frequency = '$frequency',organization='$dev_organization'  WHERE id='$id' and contextBroker='$old_contextbroker'";
+		$q = "UPDATE  devices SET uri = '". $result["content"] . "', mandatoryproperties=1, mandatoryvalues=1, contextBroker='$contextbroker', devicetype='$devicetype', kind= '$kind', protocol='$protocol', format='$format', macaddress='$macaddress', model='$model', producer='$producer', latitude='$latitude', longitude='$longitude', frequency = '$frequency',organization='$dev_organization', subnature='$subnature', static_attributes='$staticAttributes'  WHERE id='$id' and contextBroker='$old_contextbroker'";
 	}
-	
+
 	$r = mysqli_query($link, $q);
 			
     if($r) 
@@ -524,7 +536,7 @@ else if ($action =='change_visibility')
 		
 		// information to be passed to the interface
 		$result["visibility"] = $visibility;
-		modify_valueKB($link, $id, $contextbroker, $organization, $result);
+		//modify_valueKB($link, $id, $contextbroker, $organization, $result);NO NEED TO UPDATE KB anymore for change visiibility
 		//update delegation informations
 
 		//retrieve any values of this this device
@@ -757,12 +769,21 @@ else if($action == 'get_param_values')
 	$newresult['data_type'] = generatedatatypes($link);
 	mysqli_close($link);
 
-	retrieveValue("value%20type", $result);
+	retrieveFromDictionary("value%20type", $result);
 	if ($result["status"]=='ok'){
 		$newresult['value_type'] = $result["content"];
-		retrieveValue("value%20unit", $result);
+		retrieveFromDictionary("value%20unit", $result);
 		if ($result["status"]=='ok'){
 			$newresult['value_unit'] = $result["content"];
+			retrieveFromDictionary("subnature", $result);
+			if ($result["status"]=='ok'){
+	                        $newresult['subnature'] = $result["content"];
+			}
+			else{
+        	                $newresult['status'] = 'ko';
+	                        $newresult['error_msg'] = 'Problem contacting the Snap4City server (Dictionary). Please try later';
+                        	$newresult['log'] .= '\n Problem contacting the Snap4City server (Dictionary subnature)';
+                	}
 		}
 		else{
 			$newresult['status'] = 'ko';
@@ -777,6 +798,36 @@ else if($action == 'get_param_values')
 	}
 	
 	$newresult['log'] .= '\n\naction:get_param_values';
+	my_log($newresult);
+}
+else if ($action == 'get_available_static')
+{
+	$newresult=array("status"=>"","msg"=>"","content"=>"","log"=>"", "error_msg"=>"");
+        $newresult['status'] = 'ok';
+
+	$subnature = mysqli_real_escape_string($link, $_REQUEST['subnature']);
+
+	if($accessToken !=""){
+
+		retrieveAvailableStaticAttribute($subnature, $result);
+		if ($result["status"]=='ok'){
+			$newresult['availibility']=$result["content"];
+                	$newresult['log'] .= "\n Returning ".$result["content"];
+		}
+		else {
+			$newresult['status'] = 'ko';
+                        $newresult['error_msg'] = 'Problem contacting the Snap4City server (Service map list-static-attr). Please try later';
+                        $newresult['log'] .= '\n Problem contacting the Snap4City server (Service map list-static-attr)';
+		}
+	}
+	else{
+        	$newresult['status']='ko';
+		$newresult['msg'] .= "\n Problem in the access Token ";
+	        $newresult['error_msg'] .= "\n Problem in the access Token ";
+		$newresult['log'] .= "\n Problem in the access Token ";
+	}
+	
+	$newresult['log'] .= '\n\naction:get_available_static';
 	my_log($newresult);
 }
 else if ($action == 'get_device'){
@@ -805,7 +856,7 @@ it, only the second part will be logged*/
 			   d.`producer`, d.`longitude`, d.`latitude`, d.`protocol`, 
 			   d.`format`, d.`visibility`, d.`frequency`, d.`created`, 
 			   d.`privatekey`, d.`certificate`, cb.`accesslink`, 
-			   cb.`accessport`,cb.`sha` 
+			   cb.`accessport`,cb.`sha`, d.`subnature`, d.`static_attributes` 
 	      FROM `devices` d JOIN `contextbroker` cb 
 			       ON (d.contextBroker=cb.name) 
 		  WHERE deleted IS null and d.organization='".$organization."' and d.id='".$id."' AND 
@@ -838,7 +889,9 @@ it, only the second part will be logged*/
 				$rec["certificate"]= "";
 				$rec["edgegateway_type"]= "";
 				$rec["edgegateway_uri"]= "";
-				
+				$rec["subnature"]=($row["subnature"]==null)?"":$row["subnature"];
+                                $rec["staticAttributes"]=($row["static_attributes"]==null)?"[]":$row["static_attributes"];				
+	
 				$eid=$row["organization"].":".$row["contextBroker"].":".$row["id"]; 
                 if (isset($result["keys"][$eid]))
 				{
@@ -889,14 +942,14 @@ else if($action == "get_all_device")
         
 	}
 	
-    $q = "SELECT d.`contextBroker`, d.`id`, d.`uri`, d.`devicetype`, d.`kind`, 
+    $q = "SELECT d.`contextBroker`, d.`id`, d.`uri`, d.`devicetype`, d.`kind`,
 	      CASE WHEN mandatoryproperties AND mandatoryvalues THEN \"active\" ELSE \"idle\" END AS status1, 
 	     d.`macaddress`, d.`model`, d.`producer`, d.`longitude`, d.`latitude`, d.`protocol`, d.`format`, d.`visibility`, 
-	     d.`frequency`, d.`created`, d.`privatekey`, d.`certificate`,d.`organization`, cb.`accesslink`, cb.`accessport`, cb.`sha` FROM `devices` d JOIN `contextbroker` cb ON (d.contextBroker=cb.name)"; 
+	     d.`frequency`, d.`created`, d.`privatekey`, d.`certificate`,d.`organization`, cb.`accesslink`, cb.`accessport`, cb.`sha`, d.`subnature`, d.`static_attributes` FROM `devices` d JOIN `contextbroker` cb ON (d.contextBroker=cb.name)"; 
      
+
 	$r=create_datatable_data($link,$_REQUEST,$q, "deleted IS null");
     
-
 	$selectedrows=-1;
 	if($_REQUEST["length"] != -1)
 	{
@@ -914,6 +967,8 @@ else if($action == "get_all_device")
 
 	if ($r)
 	{
+	
+
         while($row = mysqli_fetch_assoc($r)) 
           {
             
@@ -955,6 +1010,8 @@ else if($action == "get_all_device")
 				$rec["frequency"]= $row["frequency"];
 				$rec["created"]= $row["created"];
 				$rec["organization"]= $row["organization"];
+				$rec["subnature"]=($row["subnature"]==null)?"":$row["subnature"];
+				$rec["staticAttributes"]=($row["static_attributes"]==null)?"[]":$row["static_attributes"];
 		
 		        $rec["accesslink"]= $row["accesslink"];
 			$rec["accessport"]= $row["accessport"];
@@ -1060,7 +1117,7 @@ else if($action == "get_all_device_admin")
 	    $q = "SELECT d.`contextBroker`, d.`id`, d.`uri`, d.`devicetype`, d.`kind`, 
 	      CASE WHEN mandatoryproperties AND mandatoryvalues THEN \"active\" ELSE \"idle\" END AS status1, 
 	     d.`macaddress`, d.`model`, d.`producer`, d.`longitude`, d.`latitude`, d.`protocol`, d.`format`, d.`visibility`, d.`organization`,
-	     d.`frequency`, d.`created`, d.`privatekey`, d.`certificate`, cb.`accesslink`,  cb.`accessport`,cb.`sha` FROM `devices` d JOIN `contextbroker` cb ON (d.contextBroker=cb.name) "; //  WHERE visibility =\"public\"";
+	     d.`frequency`, d.`created`, d.`privatekey`, d.`certificate`, cb.`accesslink`,  cb.`accessport`,cb.`sha`, d.`subnature`, d.`static_attributes` FROM `devices` d JOIN `contextbroker` cb ON (d.contextBroker=cb.name) "; //  WHERE visibility =\"public\"";
 
         
 	
@@ -1112,6 +1169,8 @@ else if($action == "get_all_device_admin")
 			 $rec["certificate"]= "";
 			 $rec["edgegateway_type"]= "";
 			 $rec["edgegateway_uri"]= "";
+ $rec["subnature"]=($row["subnature"]==null)?"":$row["subnature"];
+                                $rec["staticAttributes"]=($row["static_attributes"]==null)?"[]":$row["static_attributes"];
 
 			$eid=$row["organization"].":".$row["contextBroker"].":".$row["id"];
 			
@@ -1184,7 +1243,7 @@ else if($action == "get_all_private_device")
          $q = "SELECT d.`contextBroker`, d.`id`, d.`uri`, d.`devicetype`, d.`kind`, 
 	      CASE WHEN mandatoryproperties AND mandatoryvalues THEN \"active\" ELSE \"idle\" END AS status1, 
 	     d.`macaddress`, d.`model`, d.`producer`, d.`longitude`, d.`latitude`, d.`protocol`, d.`format`, d.`visibility`, 
-	     d.`frequency`, d.`created`, d.`privatekey`, d.`certificate`, cb.`accesslink`, cb.`accessport`,cb.`sha`  
+	     d.`frequency`, d.`created`, d.`privatekey`, d.`certificate`, cb.`accesslink`, cb.`accessport`,cb.`sha`,  d.`subnature`, d.`static_attributes`  
 		 FROM `devices` d JOIN `contextbroker` cb ON (d.contextBroker=cb.name)"; //  WHERE visibility =\"public\"";
     
 	
@@ -1238,6 +1297,9 @@ else if($action == "get_all_private_device")
 			$rec["certificate"]= $row["certificate"];
             $rec["edgegateway_type"]= $result["keys"][$rec["id"]]["edgegateway_type"];
 			$rec["edgegateway_uri"]= $result["keys"][$rec["id"]]["edgegateway_uri"];
+ $rec["subnature"]=($row["subnature"]==null)?"":$row["subnature"];
+                                $rec["staticAttributes"]=($row["static_attributes"]==null)?"[]":$row["static_attributes"];
+
 			array_push($data, $rec);           
            }
 		   
@@ -1272,7 +1334,7 @@ else if($action == "get_subset_device")
     $q = "SELECT d.`contextBroker`, d.`id`, d.`uri`, d.`devicetype`, d.`kind`, 
 	      CASE WHEN mandatoryproperties AND mandatoryvalues THEN \"active\" ELSE \"idle\" END AS status1, 
 	     d.`macaddress`, d.`model`, d.`producer`, d.`longitude`, d.`latitude`, d.`protocol`, d.`format`, d.`visibility`, 
-	     d.`frequency`, d.`organization`, d.`created`, d.`privatekey`, d.`certificate`, cb.`accesslink`, cb.`accessport`,cb.`sha` 
+	     d.`frequency`, d.`organization`, d.`created`, d.`privatekey`, d.`certificate`, cb.`accesslink`, cb.`accessport`,cb.`sha`, d.`subnature`, d.`static_attributes` 
 		 FROM `devices` d JOIN `contextbroker` cb ON (d.contextBroker=cb.name) ";
 	if (count($selection)!=0)
 	{
@@ -1344,7 +1406,8 @@ else if($action == "get_subset_device")
                     $rec["certificate"]= "";
                     $rec["edgegateway_type"]= "";
                     $rec["edgegateway_uri"]= "";
-			
+ $rec["subnature"]=($row["subnature"]==null)?"":$row["subnature"];
+                                $rec["staticAttributes"]=($row["static_attributes"]==null)?"[]":$row["static_attributes"];
                     if (((isset($result["keys"][$eid]))&&($loggedrole!=='RootAdmin'))
                                        ||            
                         ((isset($result["keys"][$eid]))&& ($result["keys"][$eid]["owner"]==$username) && ($loggedrole==='RootAdmin')))
@@ -1452,7 +1515,7 @@ else if($action == "get_subset_device_admin")
 		$q = "SELECT d.`contextBroker`, d.`id`, d.`uri`, d.`devicetype`, d.`kind`, 
 	      CASE WHEN mandatoryproperties AND mandatoryvalues THEN \"active\" ELSE \"idle\" END AS status1, 
 	     d.`macaddress`, d.`model`, d.`producer`, d.`longitude`, d.`latitude`, d.`protocol`, d.`format`, d.`visibility`, d.`organization`,
-	     d.`frequency`, d.`created`, d.`privatekey`, d.`certificate`, cb.`accesslink`, cb.`accessport`, cb.`sha` 
+	     d.`frequency`, d.`created`, d.`privatekey`, d.`certificate`, cb.`accesslink`, cb.`accessport`, cb.`sha`, d.`subnature`, d.`static_attributes` 
 		 FROM `devices` d JOIN `contextbroker` cb ON (d.contextBroker=cb.name)";
 		
 	 $r=create_datatable_data($link,$_REQUEST,$q, "deleted IS null AND (" . $cond . ")");
@@ -1506,6 +1569,8 @@ else if($action == "get_subset_device_admin")
 			$rec["accesslink"]= $row["accesslink"];
 			$rec["accessport"]= $row["accessport"];
 			$rec["sha"]= $row["sha"];
+ $rec["subnature"]=($row["subnature"]==null)?"":$row["subnature"];
+                                $rec["staticAttributes"]=($row["static_attributes"]==null)?"[]":$row["static_attributes"];
 		             
    			$rec["privatekey"]= "";
 			$rec["certificate"]= ""; 
@@ -1916,7 +1981,7 @@ else if ($action=="get_config_data")
     $q = "SELECT d.`contextBroker`, d.`id`, d.`uri`, d.`devicetype` AS entityType, d.`kind`, 
 	      CASE WHEN mandatoryproperties AND mandatoryvalues THEN \"active\" ELSE \"idle\" END AS status1, 
 	     d.`macaddress`, d.`model`, d.`producer`, d.`longitude`, d.`latitude`, d.`protocol`, d.`format`, d.`visibility`, 
-	     d.`frequency`, d.`created`, d.`privatekey`, d.`certificate`,d.`organization`, cb.`name`, cb.`protocol` as type, cb.`accesslink` AS ip, cb.`accessport` AS port, cb.`sha` FROM `devices` d JOIN `contextbroker` cb ON (d.contextBroker=cb.name) where d.deleted IS null order by d.id"; 
+	     d.`frequency`, d.`created`, d.`privatekey`, d.`certificate`,d.`organization`, cb.`name`, cb.`protocol` as type, cb.`accesslink` AS ip, cb.`accessport` AS port, cb.`sha`, d.`subnature`, d.`static_attributes` FROM `devices` d JOIN `contextbroker` cb ON (d.contextBroker=cb.name) where d.deleted IS null order by d.id"; 
      
 	//$r=create_datatable_data($link,$_REQUEST,$q, "d.deleted IS null"); //order by d.id
      $r = mysqli_query($link, $q);
@@ -1964,7 +2029,8 @@ else if ($action=="get_config_data")
 				$rec["frequency"]= $row["frequency"];
 				$rec["created"]= $row["created"];
 				$rec["organization"]= $row["organization"];
-		
+ $rec["subnature"]=($row["subnature"]==null)?"":$row["subnature"];
+                                $rec["staticAttributes"]=($row["static_attributes"]==null)?"":$row["static_attributes"];
 			   
 				$rec["sha"]= $row["sha"];
 				$rec["privatekey"]= "";

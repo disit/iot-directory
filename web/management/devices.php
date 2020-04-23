@@ -131,7 +131,12 @@ $accessToken = "";
        <!-- Bootstrap slider -->
         <script src="../bootstrapSlider/bootstrap-slider.js"></script>
         <link href="../bootstrapSlider/css/bootstrap-slider.css" rel="stylesheet"/>
-        
+       
+        <!-- select2 -->
+        <link href="https://cdn.jsdelivr.net/npm/select2@4.0.13/dist/css/select2.min.css" rel="stylesheet" />
+        <script src="https://cdn.jsdelivr.net/npm/select2@4.0.13/dist/js/select2.min.js"></script>
+
+ 
         <!-- Filestyle -->
         <script  src="../js/filestyle/src/bootstrap-filestyle.min.js"></script>
 
@@ -170,6 +175,8 @@ $accessToken = "";
          var sessionToken = "<?php  if (isset($_SESSION['refreshToken'])) echo $_SESSION['refreshToken']; else echo ""; ?>";		 
 		 var mypage = location.pathname.split("/").slice(-1)[0];
          var functionality = [];
+	var currentDictionaryStaticAttribAdd=[];
+	var currentDictionaryStaticAttribEdit=[];
 
           $.ajax({url: "../api/functionality.php",
 			 data: {action: 'get_functionality', page : mypage},
@@ -540,6 +547,7 @@ $accessToken = "";
                         <li  class="active"><a data-toggle="tab" href="#addIOTBrokerTabDevice">IOT Broker</a></li>
 						<li><a data-toggle="tab" href="#addInfoTabDevice">Info</a></li>
                         <li><a data-toggle="tab" href="#addGeoPositionTabDevice">Position</a></li>
+			<li><a data-toggle="tab" href="#addStaticTabModel">Static Attributes</a></li>
                         <li><a data-toggle="tab" href="#addSchemaTabDevice">Values</a></li>
 						
                     </ul>
@@ -821,7 +829,25 @@ $accessToken = "";
 
                         </div>
 						
-                        
+                       <!-- Static Attributes tab -->
+                       <div id="addStaticTabModel" class="tab-pane fade">
+                               <div class="row">
+                                       <div class="col-xs-12 col-md-8 modalCell">
+                                               <div class="modalFieldCnt">
+                                                       <select id="selectSubnature" name="selectSubnature" class="modalInputTxt">
+                                                               <option></option>
+                                                       </select>
+                                               </div>
+                                               <div class="modalFieldLabelCnt">Subnature</div>
+                                       </div>
+                               </div>
+				<div class="row">
+                                        <div id="addlistStaticAttributes"></div>
+                                </div>
+                                <div class="row">
+                                        <div class="pull-left"><button type="text" id="addNewStaticBtn" class="btn confirmBtn" style="display: none;">Add Attribute</button></div>
+                                </div>
+                       </div>
 						
 						
                     </div>
@@ -983,6 +1009,7 @@ $accessToken = "";
 						<li  class="active"><a data-toggle="tab" href="#editIOTBrokerTabDevice">IoT Broker</a></li>
                          <li><a data-toggle="tab" href="#editInfoTabDevice">Info</a></li>
                         <li><a data-toggle="tab" href="#editGeoPositionTabDevice">Position</a></li>
+			<li><a data-toggle="tab" href="#editStaticTabModel">Static Attributes</a></li>
                         <li><a data-toggle="tab" href="#editSchemaTabDevice">Values</a></li>
 						<li><a data-toggle="tab" href="#editStatusTabDevice">Status</a></li>
 						
@@ -1269,6 +1296,26 @@ $accessToken = "";
                                                         <div id="deletedAttributes" style="display:none"></div>
 							<div class="pull-left"><button id="addAttrMBtn" class="btn btn-primary">Add Value</button></div>
 							<div id="editlistAttributesMsg" class="modalFieldMsgCnt">&nbsp;</div>
+                        </div>
+
+                       <!-- Static Attributes tab -->
+                        <div id="editStaticTabModel" class="tab-pane fade">
+                                <div class="row">
+                                        <div class="col-xs-12 col-md-6 modalCell">
+                                                <div class="modalFieldCnt">
+                                                        <select id="selectSubnatureM" name="selectSubnatureM" class="modalInputTxt">
+                                                                <option></option>
+                                                        </select>
+                                                </div>
+                                                <div class="modalFieldLabelCnt">Subnature</div>
+                                        </div>
+                                </div>
+				<div class="row">
+                                        <div id="editlistStaticAttributes"></div>
+                                </div>
+                                <div class="row">
+                                        <div class="pull-left"><button type="text" id="addNewStaticBtnM" class="btn confirmBtn" style="display: none;">Add Attribute</button></div>
+                                </div>
                         </div>
 						
 						<!-- Semantic Labeling tab -->

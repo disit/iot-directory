@@ -121,7 +121,7 @@ if ($action=="get_temporary_devices"){
 
 
 	$q = "SELECT contextBroker, id, devicetype, model, status, macaddress,frequency,kind, 
-	 protocol,format,latitude, longitude, visibility, k1, k2,producer, edge_gateway_type, edge_gateway_uri, validity_msg
+	 protocol,format,latitude, longitude, visibility, k1, k2,producer, edge_gateway_type, edge_gateway_uri, validity_msg, subnature, static_attributes
 	FROM temporary_devices"; // WHERE username = '$username' AND deleted IS null;";
 	//$r = mysqli_query($link, $q);	
 	//$r=create_datatable_data($link,$_REQUEST,$q, "deleted IS null AND should_be_registered='yes' AND username = '$username' AND organization='$organization'");
@@ -175,6 +175,8 @@ if ($action=="get_temporary_devices"){
 				$rec["edge_gateway_type"]=$row["edge_gateway_type"];
 				$rec["edge_gateway_uri"]=$row["edge_gateway_uri"];
 				$rec["validity_msg"]=$row["validity_msg"];
+			        $rec["subnature"]=$row["subnature"];
+				$rec["static_attributes"]=$row["static_attributes"];
 				array_push($device, $rec);           
 			}
 		}

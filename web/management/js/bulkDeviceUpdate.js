@@ -1,3 +1,5 @@
+$.fn.modal.Constructor.prototype.enforceFocus = function() {};
+
 myFile=null;
 tableFirstLoad=true;
 fileData=[];
@@ -9,7 +11,7 @@ var previewFirstLoad=false;
 var previewValuesFirstLoad=false;
 
 var dataTable ="";
-requiredHeaders=["name", "devicetype", "macaddress", "frequency", "kind", "protocol", "format", "producer", /*"edge_gateway_type", "edge_gateway_uri",  commented by Sara*/ "latitude", "longitude", "value_name", "data_type", "value_type", "editable", "value_unit", "healthiness_criteria", "healthiness_value", "k1", "k2"];
+requiredHeaders=["name", "devicetype", "macaddress", "frequency", "kind", "protocol", "format", "producer", /*"edge_gateway_type", "edge_gateway_uri",  commented by Sara*/ "latitude", "longitude", "value_name", "data_type", "value_type", "editable", "value_unit", "healthiness_criteria", "healthiness_value", "k1", "k2", "subnature", "static_attributes"];
 
 var gb_datatypes ="";
 var gb_value_units ="";
@@ -60,6 +62,7 @@ $.ajax({url: "../api/device.php",
 			gb_datatypes= mydata["data_type"];
 			gb_value_units= mydata["value_unit"];
 			gb_value_types= mydata["value_type"];	
+			 addSubnature($("#selectSubnatureM"),mydata["subnature"]);
 		}
 		else {
 			alert("An error occured when reading the data. <br/> Get in touch with the Snap4City Administrator. <br/>"+ mydata["error_msg"]);
@@ -259,7 +262,7 @@ $('#uploadbutton').click( function(){
   
 uploadDealcsv.prototype.getParsecsvdata = function(data) {
 	
-	let parsedata = [];
+//	let parsedata = [];
 
 	console.log(data);
 	var data2 = data;
@@ -271,7 +274,7 @@ uploadDealcsv.prototype.getParsecsvdata = function(data) {
 		data= data2;
 	}
 	
-	let newLinebrk = data.split("\n");
+/*	let newLinebrk = data.split("\n");
 		console.log(" new line brik "+newLinebrk.length);
 
 	for(let i = 0; i < newLinebrk.length; i++) {
@@ -282,11 +285,12 @@ uploadDealcsv.prototype.getParsecsvdata = function(data) {
 		console.log(line.length);
           
 		if(line.length>0){
-			parsedata.push(line.split(","));
+			parsedata.push(CSVToArray2(line));
+			//parsedata.push(line.split(","));
 		}
             
 	}//end for
-        
+ */      
 	jsondata = csvJSON(data);
 		//Sara2910 
 	if(jsondata.length == 0){
@@ -325,7 +329,7 @@ uploadDealcsv.prototype.getParsecsvdata = function(data) {
 			}
 
 			if(existsIndevices==0){
-				var vd= {"name":jElement.name, "devicetype":jElement.devicetype, "macaddress":jElement.macaddress, "frequency":jElement.frequency, "kind":jElement.kind, "protocol":jElement.protocol ,"format":jElement.format, "producer":jElement.producer, /*"edge_gateway_type":jElement.edge_gateway_type, "edge_gateway_uri":jElement.edge_gateway_uri, commented by Sara*/"latitude":jElement.latitude ,"longitude":jElement.longitude , "validity_msg":jElement.validity_msg,"k1":jElement.k1, "k2":jElement.k2, "deviceValues":[{"value_name":jElement.value_name, "data_type":jElement.data_type, "value_type":jElement.value_type, "editable":jElement.editable, "value_unit":jElement.value_unit, "healthiness_criteria":jElement.healthiness_criteria ,"healthiness_value":jElement.healthiness_value}]};
+				var vd= {"name":jElement.name, "devicetype":jElement.devicetype, "macaddress":jElement.macaddress, "frequency":jElement.frequency, "kind":jElement.kind, "protocol":jElement.protocol ,"format":jElement.format, "producer":jElement.producer, /*"edge_gateway_type":jElement.edge_gateway_type, "edge_gateway_uri":jElement.edge_gateway_uri, commented by Sara*/"latitude":jElement.latitude ,"longitude":jElement.longitude , "validity_msg":jElement.validity_msg,"k1":jElement.k1, "k2":jElement.k2, "subnature":jElement.subnature, "static_attributes":jElement.static_attributes,  "deviceValues":[{"value_name":jElement.value_name, "data_type":jElement.data_type, "value_type":jElement.value_type, "editable":jElement.editable, "value_unit":jElement.value_unit, "healthiness_criteria":jElement.healthiness_criteria ,"healthiness_value":jElement.healthiness_value}]};
 				devicesData.push(vd);
 			}
 
@@ -405,7 +409,7 @@ function csvJSON(csv){
 		line= line.replace(";",",");
 		line= line.replace("\\t",",");
 			  
-		var currentline=line.split(",");
+		var currentline=CSVToArray2(line);//line.split(",");
 			  
 		if(currentline.length==1 && currentline[0]==""){
 			continue;
@@ -416,11 +420,12 @@ function csvJSON(csv){
 			return;
 		}
 
+		//REALLY I DONT UNDERSTAND WHY REPLACE 
 		for(var j=0;j<headers.length;j++)
 		{
 			if(requiredHeaders.indexOf(headers[j])>-1)
 			{
-				obj[headers[j]] = currentline[j].trim().replace('"','');
+				obj[headers[j]] = currentline[j].trim();//.replace('"','');
 			}
 		}
 			  
@@ -591,6 +596,8 @@ function fetch_data(destroyOld, selected=null)
 			'data-k1="'+d.k1+'" ' +
 			'data-k2="'+d.k2+'" ' +
 			'data-attributes="'+d.attributes+'" ' +
+                        'data-subnature="'+d.subnature+'" '+
+                        'data-static-attributes="'+btoa(d.static_attributes)+'" '+
 			'data-status="'+d.status+'">Edit</button>';
 			
 			}
@@ -1534,6 +1541,8 @@ $(document).ready(function ()
 		var key1 = $(this).attr('data-k1');
 		var key2 = $(this).attr('data-k2');	 
 
+                var subnature= $(this).attr('data-subnature');
+
 		if (model == "custom")
 			$("#editDeviceGenerateKeyBtn").show();
   		 else
@@ -1560,7 +1569,13 @@ $(document).ready(function ()
 		$('#KeyOneDeviceUserM').val(key1);
 		$('#KeyTwoDeviceUserM').val(key2);
 
+                $('#selectSubnatureM').val(subnature);
+                $('#selectSubnatureM').trigger('change');
+		subnatureChanged(true, JSON.parse(atob($(this).attr("data-static-attributes"))));
+
 		console.log('edge_gateway_type');  
+
+
 
 		//UserEditKey();
 		checkEditDeviceConditions();
@@ -1802,9 +1817,9 @@ $(document).ready(function ()
 			}
 			
 			console.log("arrayAttributes "+JSON.stringify(arrayAttributes));
-            
+
             //UPDATE FUNCTION
-			var updatedDevice={"contextbroker":$('#selectContextBrokerM').val(),"name":$('#inputNameDeviceM').val(),"devicetype":$('#inputTypeDeviceM').val(),"model":$('#selectModelDeviceM').val(),"macaddress":$('#inputMacDeviceM').val(),"frequency":$('#inputFrequencyDeviceM').val(),"kind":$('#selectKindDeviceM').val(),"protocol":$('#selectProtocolDeviceM').val(),"format":$('#selectFormatDeviceM').val(),"latitude":$('#inputLatitudeDeviceM').val(),"longitude":$('#inputLongitudeDeviceM').val(),"visibility":$('#selectVisibilityDeviceM').val(),"k1":$('#KeyOneDeviceUserM').val(), "k2":$('#KeyTwoDeviceUserM').val(),"producer":$('#inputProducerDeviceM').val(),"edge_gateway_type":$('#selectEdgeGatewayTypeM').val(),"edge_gateway_uri": $('#inputEdgeGatewayUriM').val(), "deviceValues":arrayAttributes};
+			var updatedDevice={"contextbroker":$('#selectContextBrokerM').val(),"name":$('#inputNameDeviceM').val(),"devicetype":$('#inputTypeDeviceM').val(),"model":$('#selectModelDeviceM').val(),"macaddress":$('#inputMacDeviceM').val(),"frequency":$('#inputFrequencyDeviceM').val(),"kind":$('#selectKindDeviceM').val(),"protocol":$('#selectProtocolDeviceM').val(),"format":$('#selectFormatDeviceM').val(),"latitude":$('#inputLatitudeDeviceM').val(),"longitude":$('#inputLongitudeDeviceM').val(),"visibility":$('#selectVisibilityDeviceM').val(),"k1":$('#KeyOneDeviceUserM').val(), "k2":$('#KeyTwoDeviceUserM').val(), "subnature":$('#selectSubnatureM').val(), "static_attributes":JSON.stringify(retrieveStaticAttributes("editlistStaticAttributes")),"producer":$('#inputProducerDeviceM').val(),"edge_gateway_type":$('#selectEdgeGatewayTypeM').val(),"edge_gateway_uri": $('#inputEdgeGatewayUriM').val(), "deviceValues":arrayAttributes};
 			 
 			var device_status = 'invalid';
 			var verify = verifyDevice(updatedDevice);
@@ -1849,7 +1864,9 @@ $(document).ready(function ()
 		    visibility:updatedDevice.visibility,
 		    frequency:updatedDevice.frequency,
 		    k1: updatedDevice.k1, //MM2909 this value need to be acquired from the 
-		    k2: updatedDevice.k2 //MM2909
+		    k2: updatedDevice.k2,  //MM2909
+			subnature:updatedDevice.subnature, 
+			static_attributes:updatedDevice.static_attributes
 /***********************Sara end*************/
 		    },
             type: "POST",
@@ -2900,6 +2917,28 @@ $(document).on({
 		$(this).parent('tr').remove();
 	});	
 
+//--------------------- static attribute EDIT start
+
+        $("#addNewStaticBtnM").off("click");
+        $("#addNewStaticBtnM").click(function(){
+                var row = createRowElem('', '', currentDictionaryStaticAttribEdit, "editlistStaticAttributes");
+        });
+
+//--------------------- static attribute EDIT end
+
+
+
+        $('#selectSubnatureM').on('select2:selecting', function(e){
+                checkSubnatureChanged($('#selectSubnatureM'), e.target.value, e.params.args.data.id, e, true);
+        });
+
+        $('#selectSubnatureM').on('select2:clearing', function(e){
+                checkSubnatureChanged($('#selectSubnatureM'), e.params.args.data.id, "", e, true);
+        });
+
+
+
+
 });  // end of ready-state
 
 
@@ -2992,7 +3031,7 @@ function drawAttributeMenu
 	  else mydatatypes += "<option value=\""+gb_datatypes[n]+"\">"+ gb_datatypes[n]+ "</option>";
 	}
 	console.log(data_type +","+ value_type+","+ editable+","+ value_unit+","+ healthiness_criteria+","+ value_refresh_rate+","+ parent);
- return "<div class=\"row\" style=\"border:3px solid blue;\" ><div class=\"col-xs-6 col-md-3 modalCell\">" +
+ return "<div class=\"row\" style=\"border:2px solid blue;\" ><div class=\"col-xs-6 col-md-3 modalCell\">" +
 		"<div class=\"modalFieldCnt\"><input type=\"text\" class=\"modalInputTxt\""+
 		"name=\"" +  attrName +  "\"  value=\"" + attrName + "\">" + 
 		"</div><div class=\"modalFieldLabelCnt\">Value Name</div>"+ msg +"</div>"+
@@ -3048,7 +3087,7 @@ function drawAttributeMenu
 
 		"<div class=\"col-xs-6 col-md-3 modalCell\"><div class=\"modalFieldCnt\">" +
 		//"<i class=\"fa fa-minus-square\" onclick=\"removeElementAt('" + parent + "',this); return true;\"  style=\"font-size:36px; color: #ffcc00\"></i></div></div></div>";
-		"<button class=\"btn btn-warning\" onclick=\"removeElementAt('" + parent + "',this); return true;\">Remove Value</button></div></div></div>";
+		"<button class=\"btn btn-danger\" onclick=\"removeElementAt('" + parent + "',this); return true;\">Remove Value</button></div></div></div>";
 		
 }	
 
@@ -3088,9 +3127,17 @@ function verifyDevice(deviceToverify){
 	if(deviceToverify.longitude==undefined ||!isLongitude(deviceToverify.longitude)){msg+="-Longitude is mandatory, with the correct numeric format.";}
 	if(deviceToverify.k1==undefined || deviceToverify.k1==""){msg+="-k1 is mandatory.";}
 	if(deviceToverify.k2==undefined || deviceToverify.k2==""){msg+="-k2 is mandatory.";}
+
+				//verify consistency subnature and its attributes
+				if (deviceToverify.subnature!==""){
+                                        console.log("verify consistency of "+ deviceToverify.static_attributes+" against subnature:"+deviceToverify.subnature);
+                                        if (!verifySubnature(deviceToverify.subnature, deviceToverify.static_attributes)){
+                                                answer.isvalid=false;
+                                                msg+="-The static attributes of the device do not comply with its subnature ("+deviceToverify.subnature+")";
+                                        }
+                                }
 	  
 	if(msg.length>0) answer.isvalid=false;
-
 	 
 	if(deviceToverify.deviceValues.length<1){
 		   answer.isvalid=false;
@@ -3098,16 +3145,18 @@ function verifyDevice(deviceToverify){
 		}
 		
 	console.log("Now we check the model conformity");
+
+
 	
 	if(deviceToverify.model!="custom"){
 		
 		console.log("The model is not custom, it is "+ deviceToverify.model);
-		
+	
 		for(var i=0; i<modelsdata.length; i++){
 				
 				
 			if(modelsdata[i].name!=deviceToverify.model){
-				continue;
+					continue;
 				}
 			
 			var modelAttributes= JSON.parse(modelsdata[i].attributes);
@@ -3124,8 +3173,6 @@ function verifyDevice(deviceToverify){
 				   }
 				
 			else{
-						
-							
 				for (var j=0; j<deviceToverify.deviceValues.length; j++){
 								var found=0;
 								for(var l= 0; l<modelAttributes.length; l++){
@@ -3205,6 +3252,11 @@ function verifyDevice(deviceToverify){
 															msg+="-The device property: producer does not comply with its model." ;}
 				if(modelsdata[i].protocol!=deviceToverify.protocol){{ answer.isvalid=false;
 															msg+="-The device property: protocol does not comply with its model." ;}}
+				if(modelsdata[i].subnature!=deviceToverify.subnature){{ answer.isvalid=false;
+                                                                                                                        msg+="-The device property: subnature does not comply with its model." ;}}
+				
+				if(modelsdata[i].static_attributes!=deviceToverify.static_attributes){{ answer.isvalid=false;
+                                                                                                                        msg+="-The device property: static_attributes does not comply with its model." ;}}	
 							  
 			}
 			
@@ -4054,6 +4106,18 @@ function checkHeadersIfValid(csvheaders){
 			b.add("healthiness_value");
 			continue;
 		}
+ if(h.trim().toLowerCase().indexOf("subnature")>-1 && h.trim().toLowerCase().indexOf("subnature")>-1){
+                        found=found+1;
+                        csvheaders[i]="subnature";
+                        b.add("subnature");
+                        continue;
+                }
+ if(h.trim().toLowerCase().indexOf("static_attributes")>-1 && h.trim().toLowerCase().indexOf("static_attributes")>-1){
+                        found=found+1;
+                        csvheaders[i]="static_attributes";
+                        b.add("static_attributes");
+                        continue;
+                }
 		
 	}
 	

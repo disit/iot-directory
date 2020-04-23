@@ -100,9 +100,8 @@ function checkRegisterOwnerShipObject($token,$object, &$result) {
 
 function insert_device($link,$id,$devicetype,$contextbroker,$kind,$protocol,$format,$macaddress,$model,
 $producer,$latitude,$longitude,$visibility, $frequency, $k1, $k2, $edgegateway_type, $edgegateway_uri,
-$listAttributes,$pathCertificate,$accessToken,&$result,$shouldbeRegistered='yes', $organization, $kbUrl="", $username="")
+$listAttributes,$subnature, $staticAttributes,$pathCertificate,$accessToken,&$result,$shouldbeRegistered='yes', $organization, $kbUrl="", $username="")
 {
-
   checkRegisterOwnerShipObject($accessToken, 'IOTID', $result);
   if ($result["status"]=='ok')
   { 
@@ -111,7 +110,7 @@ $listAttributes,$pathCertificate,$accessToken,&$result,$shouldbeRegistered='yes'
 		AND id = '$id';";
     $s3 = mysqli_query($link, $selectDevicesDeleted);
     if($s3)
-    {
+	   {
       if(mysqli_num_rows($s3) == 0)
       {
  
@@ -137,30 +136,34 @@ $listAttributes,$pathCertificate,$accessToken,&$result,$shouldbeRegistered='yes'
                 return $result;
         }
 
+
+
 	if(!isset($shouldbeRegistered))
 	{
 		registerKB($link, $id, $devicetype, $contextbroker, $kind, $protocol,
 		 $format, $macaddress, $model, $producer, $latitude, $longitude, $visibility, 
-		 $frequency, $listAttributes, $result,'yes', $organization,$kbUrl); 
+		 $frequency, $listAttributes, $subnature, $staticAttributes,$result,'yes', $organization,$kbUrl); 
 	}
 	else
 	{
 	 registerKB($link, $id, $devicetype, $contextbroker, $kind, $protocol,
 	 $format, $macaddress, $model, $producer, $latitude, $longitude, $visibility, 
-	 $frequency, $listAttributes, $result,$shouldbeRegistered, $organization,$kbUrl); 
+	 $frequency, $listAttributes, $subnature, $staticAttributes,$result,$shouldbeRegistered, $organization,$kbUrl); 
 	}
 
 	if ($result["status"]=='ko' ) return $result;
 	
 	if ($result["status"]=='ok' &&  $result["content"]==null)
 	{
-	 $q = "INSERT INTO devices(id, devicetype, contextBroker,  kind, protocol, format, macaddress, model, producer, latitude, longitude, visibility, frequency, privatekey, certificate, organization) " .
-		 "VALUES('$id', '$devicetype', '$contextbroker', '$kind', '$protocol', '$format', '$macaddress', '$model', '$producer', '$latitude', '$longitude', '$visibility', '$frequency', '$privatekey','$certificate', '$organization')";
+	 $q = "INSERT INTO devices(id, devicetype, contextBroker,  kind, protocol, format, macaddress, model, producer, latitude, longitude, visibility, frequency, privatekey, certificate, organization, subnature, static_attributes) " .
+		 "VALUES('$id', '$devicetype', '$contextbroker', '$kind', '$protocol', '$format', '$macaddress', '$model', '$producer', '$latitude', '$longitude', '$visibility', '$frequency', '$privatekey','$certificate', '$organization', '$subnature', '$staticAttributes')";
 	 }
 	else {
-	$q = "INSERT INTO devices(id, devicetype, contextBroker,  kind, protocol, format, macaddress, model, producer, latitude, longitude,uri, visibility,  frequency, privatekey, certificate, mandatoryproperties,mandatoryvalues, organization) " .
-		 "VALUES('$id', '$devicetype', '$contextbroker', '$kind', '$protocol', '$format', '$macaddress', '$model', '$producer', '$latitude', '$longitude', '" . $result["content"] . "', '$visibility', '$frequency', '$privatekey','$certificate',1,1, '$organization')";
+	$q = "INSERT INTO devices(id, devicetype, contextBroker,  kind, protocol, format, macaddress, model, producer, latitude, longitude,uri, visibility,  frequency, privatekey, certificate, mandatoryproperties,mandatoryvalues, organization, subnature, static_attributes) " .
+		 "VALUES('$id', '$devicetype', '$contextbroker', '$kind', '$protocol', '$format', '$macaddress', '$model', '$producer', '$latitude', '$longitude', '" . $result["content"] . "', '$visibility', '$frequency', '$privatekey','$certificate',1,1, '$organization', '$subnature', '$staticAttributes')";
 	}
+
+
 	$r = mysqli_query($link, $q);
 	if($r) 
 	{
@@ -280,6 +283,7 @@ function format_result($draw, $number_all_row, $number_filter_row, $data, $msg, 
 
 
 function create_datatable_data($link,$request,$query,$where){
+
 	
 	$columns=$request["columns"];
 	if(isset($request["search"]["value"]))
@@ -1029,7 +1033,7 @@ function getDelegatedObject($token, $user, $object, &$result) {
 		}
 		
        }
-       else {
+      else {
 		   $result["status"]='ko';
 		   $result["error_msg"] .= 'Errors in reading delegations personal. ';
 		   $result["msg"] .= '\n errors in reading delegations personal ' . $local_result . $url ."------" .  $http_response_header[0];
@@ -1311,7 +1315,7 @@ function generateunits($link) {
          return $labels;
 }
 
-function retrieveValue($type,&$result){
+function retrieveFromDictionary($type,&$result){
 
 	$local_result="";
 	try
@@ -1362,6 +1366,41 @@ function retrieveValue($type,&$result){
 	return $result;
 }
 
+function retrieveAvailableStaticAttribute($subnature, &$result){
+	$local_result="";
+        try
+        {
+		$url= $GLOBALS["knowledgeBaseURI"] . "api/v1/iot/list-static-attr?subnature=".$subnature;
+
+
+                $local_result = file_get_contents($url);
+                $result["log"] .= $local_result;
+
+                //TODO how to catch an 504
+                if (($local_result!== FALSE) && (strpos($http_response_header[0], '200') == true || strpos($http_response_header[0], '204') == true))
+                {
+                	$result["status"]='ok';
+                        $result["content"]=$local_result;
+                        $result["msg"] .='\n ok, returning dictionary';
+                        $result["log"] .='\n ok, returning dictionary';
+                }
+                else{
+                        $result["status"]='ko';
+                        $result["error_msg"]=" ServiceMap not reacheable NOT reacheable";
+                        $result["msg"] .='\n ko SM not reacheable';
+                        $result["log"] .='\n ko SM not reacheable';
+                }
+        }
+        catch (Exception $ex)
+        {
+                $result["status"]='ko';
+                $result["error_msg"] .= ' Error in accessing the SM. ';
+                $result["msg"] .= '\n error in accessing the SM ';
+                $result["log"] .= '\n error in accessing the SM ' . $ex;
+        }
+        return $result;
+}
+
 /* ****FUNCTIONS FOR THE REGISTRATION OF A DEVICE IN THE CONTEXT BROKER AND IN THE KNOWLEDGE BASE ****** */
 	
 	function insert_ngsi($name, $type, $contextbroker, $kind, $protocol, $format, $model, $latitude, $longitude,$visibility, $frequency, 
@@ -1383,7 +1422,7 @@ $listnewAttributes, $ip, $port, &$result)
       {
          $att=$listnewAttributes[$a];
 		 $msg_orion[$att->value_name]=array();
-		 $msg_orion[$att->value_name]["value"]="0";
+		 $msg_orion[$att->value_name]["value"]="";
  		 $msg_orion[$att->value_name]["type"]=$att->data_type;
          $a++;
       }
@@ -1507,7 +1546,7 @@ $visibility, $frequency, $listnewAttributes, &$result)
 
 	
 	function canBeRegistered($name, $type, $contextbroker, $kind, $protocol, $format, $macaddress, $model, $producer, $latitude, $longitude, 
-$visibility, $frequency, $listnewAttributes, &$result)
+$visibility, $frequency, $listnewAttributes, $subnature, $staticAttr, &$result)
 	{
 	  $error=false;
 	  if ($name==null || $name=="")
@@ -1602,11 +1641,11 @@ $visibility, $frequency, $listnewAttributes, &$result)
 	}
 	
 	function registerKB($link, $name, $type, $contextbroker, $kind, $protocol, $format, $macaddress, $model, $producer, $latitude,
-			$longitude, $visibility, $frequency, $listnewAttributes,&$result, $shouldbeRegistered, $organization, $kbUrl="")
+			$longitude, $visibility, $frequency, $listnewAttributes, $subnature, $staticAttributes,&$result, $shouldbeRegistered, $organization, $kbUrl="")
 	{
 		$result["status"]='ok';
 		
-		if (canBeRegistered($name, $type, $contextbroker, $kind, $protocol, $format, $macaddress, $model, $producer, $latitude, $longitude, $visibility, $frequency, $listnewAttributes, $result))
+		if (canBeRegistered($name, $type, $contextbroker, $kind, $protocol, $format, $macaddress, $model, $producer, $latitude, $longitude, $visibility, $frequency, $listnewAttributes, $subnature, $staticAttributes,$result))
 		{
 			$query="SELECT * from contextbroker WHERE name = '$contextbroker'";
 			$r = mysqli_query($link, $query);
@@ -1637,6 +1676,13 @@ $visibility, $frequency, $listnewAttributes, &$result)
 			$msg["frequency"]= $frequency;
 			$msg["organization"]= $organization;
               		$msg["ownership"]= $visibility;
+			$msg["subnature"]=$subnature;
+	
+			foreach(json_decode(stripcslashes($staticAttributes)) as $stAtt){
+				$msg[$stAtt[0]]=$stAtt[1];
+				error_log("Adding: ".$msg[$stAtt[0]]);
+			}
+
 			$msg["broker"]=array();
 			$msg["broker"]["name"]=$contextbroker;
 			$msg["broker"]["type"]=$rowCB["protocol"];
@@ -1668,6 +1714,12 @@ $visibility, $frequency, $listnewAttributes, &$result)
 			}	 
 			$msg["attributes"]=$myAttrs;
 
+			$encoda=json_encode($msg, JSON_UNESCAPED_SLASHES);
+			error_log("Sending to insertKB:".$encoda);
+			$encoda=str_replace('\\\\','\\\\u005C', $encoda);
+			$encoda=str_replace('\"','\\\\u0022', $encoda);
+			error_log("Sending to insertKB (after pulizia):".$encoda);
+
 			try {
 				if($kbUrl=="") 
 					$url= $_SESSION['kbUrl']."iot/insert";
@@ -1678,12 +1730,15 @@ $visibility, $frequency, $listnewAttributes, &$result)
 						'header' => "Content-Type: application/json;charset=utf-8",
 						'header' => "Access-Control-Allow-Origin: *",
 						'method' => 'POST',
-						'content' => json_encode($msg),
+						 'content' => $encoda,
 						'timeout' => 30
 					)
 				);
 				$context = stream_context_create($options);
 				$local_result = @file_get_contents($url, false, $context);
+
+				error_log("Returning from insertKB:".$local_result);
+
 				if (($local_result!="errore")&&(strlen($local_result)>0)) {
 					$result["status"]='ok';
 					$result["content"]=$local_result;
@@ -1777,13 +1832,13 @@ $listnewAttributes, $ip, $port,$uri, &$result)
 		 if (is_object($att))
 		 {
 			$msg_orion[$att->value_name]=array();
-			$msg_orion[$att->value_name]["value"]="0";
+			$msg_orion[$att->value_name]["value"]="";
 			$msg_orion[$att->value_name]["type"]=$att->data_type;
 		 }
 		 else
 		 {
 			 $msg_orion[$att["value_name"]]=array();
-			 $msg_orion[$att["value_name"]]["value"]="0";
+			 $msg_orion[$att["value_name"]]["value"]="";
 		     $msg_orion[$att["value_name"]]["type"]=$att["data_type"];
 		 }			 
          $a++;
@@ -1854,15 +1909,16 @@ $listnewAttributes, $ip, $port,$uri,&$result)
 	}
 	
 function updateKB($link, $name, $type, $contextbroker, $kind, $protocol, $format, $macaddress, $model, $producer, $latitude, $longitude, 
-$visibility, $frequency, $attributes, $uri,$organization, &$result) {
+$visibility, $frequency, $attributes, $uri,$organization, $subnature, $staticAttributes, &$result) {
   // $result=array();
   $result["status"]='ok';
   // $result["msg"]='';
   // $result["log"]='';
         
   if (canBeRegistered($name, $type, $contextbroker, $kind, $protocol, $format, $macaddress, $model, $producer, $latitude, $longitude, 
-$visibility, $frequency, $attributes, $result))
+$visibility, $frequency, $attributes,  $subnature, $staticAttributes,$result))
   {
+		error_log("ccc");
 	  $query="SELECT * from contextbroker WHERE name = '$contextbroker'";
 	  $r = mysqli_query($link, $query);
 	 
@@ -1906,7 +1962,15 @@ $visibility, $frequency, $attributes, $result))
 	  $msg["broker"]["longitude"]=$rowCB["longitude"];
 	  $msg["broker"]["created"]=$rowCB["created"];
 	   // $msg["attributes"]=array();
-	  
+	 
+
+			$msg["subnature"]=$subnature;
+
+                        foreach(json_decode(stripcslashes($staticAttributes)) as $stAtt){
+                                $msg[$stAtt[0]]=$stAtt[1];
+                                error_log("Adding: ".$msg[$stAtt[0]]);
+                        }
+ 
 	  $myAttrs=array();
 	  $i=1;
 	  foreach($attributes as $att)
@@ -1925,6 +1989,13 @@ $visibility, $frequency, $attributes, $result))
 	}
 
 	  $msg["attributes"]=$myAttrs;
+
+                        $encoda=json_encode($msg, JSON_UNESCAPED_SLASHES);
+                        error_log("Sending to insertKB:".$encoda);
+                        $encoda=str_replace('\\\\','\\\\u005C', $encoda);
+                        $encoda=str_replace('\"','\\\\u0022', $encoda);
+                        error_log("Sending to insertKB (after pulizia):".$encoda);
+
 	
 	  try
 	   {
@@ -1936,7 +2007,7 @@ $visibility, $frequency, $attributes, $result))
 						  'header' => "Content-Type: application/json;charset=utf-8",
 						  'header' => "Access-Control-Allow-Origin: *",
 						  'method' => 'POST',
-			  'content' => json_encode($msg),
+			  'content' => $encoda,
 						  'timeout' => 30)
 			);
 		 $context = stream_context_create($options);
