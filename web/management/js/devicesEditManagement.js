@@ -257,7 +257,7 @@ function checkEditDeviceConditions()
         var n1 =$('#editSchemaTabDevice #editlistAttributes .row input:even').length;
 	var n1x =$('#editSchemaTabDevice #addlistAttributesM .row input:even').length;
 
-        console.log("n: "+n+" n1:"+n1+" nx:"+nx+" n1x:"+n1x);
+        //console.log("n: "+n+" n1:"+n1+" nx:"+nx+" n1x:"+n1x);
         if ((n+nx)==(n1+n1x))
         {
                 editDeviceConditionsArray['attributeWithName'] = true;
@@ -272,7 +272,7 @@ function checkEditDeviceConditions()
         var o = $('#editSchemaTabDevice #editlistAttributes .row input:even').filter(function(){return !regex.test(this.value)}).length;
 	var ox = $('#editSchemaTabDevice #addlistAttributesM .row input:even').filter(function(){return !regex.test(this.value)}).length;
 
-        console.log("o: "+o+" n1:"+n1+" ox:"+ox);
+        //console.log("o: "+o+" n1:"+n1+" ox:"+ox);
         if ((o+ox)==(n1+n1x))
         {
                 editDeviceConditionsArray['specialChars'] = true;
@@ -286,7 +286,7 @@ function checkEditDeviceConditions()
         var p = $('#editSchemaTabDevice #editlistAttributes select[id*="value_type"]').filter(function(){return this.value!=="NOT VALID OPTION"}).length;
 	var px = $('#editSchemaTabDevice #addlistAttributesM select[id*="value_type"]').filter(function(){return this.value!=="NOT VALID OPTION"}).length;
 
-        console.log("p: "+p+" n1:"+n1+" px:"+px);
+        //console.log("p: "+p+" n1:"+n1+" px:"+px);
         if ((p+px)==(n1+n1x))
         {
                 editDeviceConditionsArray['attributeWithValueType'] = true;
@@ -300,7 +300,7 @@ function checkEditDeviceConditions()
         var c = $('#editSchemaTabDevice #editlistAttributes select[id*="value_unit"]').filter(function(){return this.value!=="NOT VALID OPTION"}).length;
 	var cx = $('#editSchemaTabDevice #addlistAttributesM select[id*="value_unit"]').filter(function(){return this.value!=="NOT VALID OPTION"}).length;
 
-        console.log("c: "+c+" n1:"+n1+" cx:"+cx);
+        //console.log("c: "+c+" n1:"+n1+" cx:"+cx);
         if ((c+cx)==(n1+n1x))
         {
                 editDeviceConditionsArray['attributeWithValueUnit'] = true;
@@ -317,7 +317,7 @@ function checkEditDeviceConditions()
         if(editDeviceConditionsArray[key] === false)
         {
 		enableButton = false;
-		console.log("need:" + key);
+		//console.log("need:" + key);
 		break;
         }
     }

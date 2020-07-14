@@ -79,7 +79,7 @@ $.ajax({
                 success: function (data)
                 {
 					modelsdata = data["content"];
-                    console.log(modelsdata);
+                    //console.log(modelsdata);
                 }});
 
 $.ajax({url: "../api/contextBrokerRetrieval_e.php",
@@ -95,7 +95,7 @@ $.ajax({url: "../api/contextBrokerRetrieval_e.php",
 		   gb_datatypes= mydata["data_type"];
 		   gb_value_units= mydata["value_unit"];
 		   gb_value_types= mydata["value_type"];	
-           console.log(mydata);
+           //console.log(mydata);
          },
 		 error: function (mydata)
 		 {
@@ -122,7 +122,7 @@ $.ajax({url: "../api/contextBrokerRetrieval_e.php",
 		datatype: 'json',
 		success: function (data)
 		{
-			console.log("success returned from cbr");
+			//console.log("success returned from cbr");
 			var content = data["content"];
 			content = content[0];
 			ip = content["ip"];
@@ -136,14 +136,14 @@ $.ajax({url: "../api/contextBrokerRetrieval_e.php",
 			apikey=content["apikey"];
 			path=content["path"];
 			kind = content["kind"];
-			console.log("apikey "+apikey);
+			//console.log("apikey "+apikey);
 
 			var ipa = ip + ':'+port;
 			if($('#selectModelLD').val() === undefined || $('#selectModelLD').val().length<1){
                model="custom";
             }
-			console.log("ACTIVATE STUB "+ kind);
-	//		console.log("MODEL " + model + " gateway " + edge_gateway_type +  " url " + edge_gateway_uri);
+			//console.log("ACTIVATE STUB "+ kind);
+	//		//console.log("MODEL " + model + " gateway " + edge_gateway_type +  " url " + edge_gateway_uri);
 
 		//	var retrieveModalWait = document.getElementById('retrieveModalWait');
 			//var span_b = document.getElementsByClassName("close")[0];
@@ -166,7 +166,7 @@ $.ajax({url: "../api/contextBrokerRetrieval_e.php",
 
 function activateStub(cb,ipa,protocol,user,accesslink,model,edge_type,edge_uri,path, apikey,kind)
 {
-	console.log("log "+ cb + " "+ipa+" "+accesslink+" "+model+ " api "+ apikey + " organization "+ organization + " kind "+kind);
+	//console.log("log "+ cb + " "+ipa+" "+accesslink+" "+model+ " api "+ apikey + " organization "+ organization + " kind "+kind);
 	var data;
 	if(apikey !== null || apikey !== undefined){
 		data = "contextbroker=" + cb + "&ip=" + ipa	+ "&user=" +user+ "&al="+accesslink + "&model="+model+ "&edge_gateway_type="+edge_type+"&edge_gateway_uri="+edge_uri+"&organization="+organization+"&path="+path+"&kind="+kind+"&apikey="+apikey;
@@ -176,27 +176,16 @@ function activateStub(cb,ipa,protocol,user,accesslink,model,edge_type,edge_uri,p
 	}
 	var service = _serviceIP + "/api/"+protocol;
 	
-	console.log("data to be sent "+data);
-	console.log("service "+ service);
+	//console.log("data to be sent "+data);
+	//console.log("service "+ service);
 	var xhr = ajaxRequest();
 			location.reload();
 
 	xhr.addEventListener("readystatechange", function () {
-		console.log("this.readyState "+this.readyState);
+		//console.log("this.readyState "+this.readyState);
 	  if (this.readyState === 4 && this.status == 200) {
 		
 			return this.responseText;
-
-
-		/*ù
-		        				if(resp.message.indexOf("**UPDATE**")==0){
-				    var progress_modal_w = document.getElementById('retrieveModalWait');
-		progress_modal_w.style.display = "none";
-		console.log("resp update");
-			refresh();
-			fetch_data(true);	
-		}*/
-
 		}
 	});
 
@@ -204,8 +193,7 @@ function activateStub(cb,ipa,protocol,user,accesslink,model,edge_type,edge_uri,p
 	xhr.open("POST", service);
 	xhr.setRequestHeader("Content-Type", "application/x-www-form-urlencoded");
 	xhr.setRequestHeader('Cache-Control', 'no-cache');
-/*	xhr.setRequestHeader("Content-Type", "text/plain;charset=UTF-8");*/
-    xhr.setRequestHeader("Access-Control-Allow-Origin", "*");
+    	xhr.setRequestHeader("Access-Control-Allow-Origin", "*");
 	xhr.send(data);
 	return true;
 }
@@ -272,7 +260,7 @@ function updateDeviceTimeout()
 
 function fetch_data(destroyOld, selected=null)
         {
-			console.log("usernametoDebug "+loggedUser);
+			//console.log("usernametoDebug "+loggedUser);
          
 		 //data=[];
             
@@ -339,7 +327,7 @@ function fetch_data(destroyOld, selected=null)
 			{"name": "status1","orderable":false, "data": function ( row, type, val, meta ) {
 			
 				 if (row.status=='invalid'){   
-					console.log(row.validity_msg);
+					//console.log(row.validity_msg);
 					return '<button type="button" id="invalid" class="btn btn-warning" onclick="showValidityMsg(\''+ row.status + '\',\'' + row.validity_msg + '\')\">Invalid</button>';																				
 					} 
 				else if (row.status=='valid'){
@@ -417,7 +405,7 @@ function fetch_data(destroyOld, selected=null)
 
 	xhr.addEventListener("readystatechange", function () {
 	if (this.readyState === 4 && this.status == 200) {
-			console.log("USE STATUS "+ this.responseText);
+			//console.log("USE STATUS "+ this.responseText);
 			useStatus(this.responseText);
 		}
 	
@@ -464,7 +452,7 @@ function buildPreview(attributesIf, destroyOld, selected=null)
 	},
 	"columns": [
 	{"name": "id", "data": function ( row, type, val, meta ) {
-		console.log("Name buildtable "+ row.name);
+		//console.log("Name buildtable "+ row.name);
 		return row.name;
 		} 
 	},			
@@ -661,14 +649,14 @@ $(document).ready(function ()
 
 
 	function useStatus(statusText){
-		console.log("chiamo activate stub");
+		//console.log("chiamo activate stub");
 		var activeBrokers = [];
 		var nContextBroker = document.getElementById('selectContextBrokerLD').length;
 	
 		var brokers= JSON.parse(statusText);
 		var brokers = brokers.message;
 		var row = "";
-		console.log("nContextBroker "+ JSON.stringify(brokers));
+		//console.log("nContextBroker "+ JSON.stringify(brokers));
 	    $('#activeInactiveBrokes').html("");
         $('#inactivateButton').show();
         $('#stopAllBrokers').show();
@@ -737,7 +725,7 @@ $(document).ready(function ()
 			datatype: 'json',
 			success: function (data)
 			{
-				console.log("success");
+				//console.log("success");
 				var content = data["content"];
 				content = content[0];
 				protocol = content["protocol"];
@@ -762,7 +750,7 @@ $(document).ready(function ()
 
 	$("#activateButton").off("click");
 	$('#activateButton').on('click',function(){
-		console.log("activate called");
+		//console.log("activate called");
 		var contextbroker= document.getElementById('activeInactiveBrokes').value;
 		var ip, port, protocol,user, accessLink, model, apikey, fiwareservice,kind;
 		$.ajax({
@@ -783,7 +771,7 @@ $(document).ready(function ()
 			$("#activeInactiveBrokes option:selected").attr('name',"active");
 			/*$("#activeInactiveBrokes option:selected").removeClass("inactive");
 			$("#activeInactiveBrokes option:selected").addClass("active");*/
-			console.log("success");
+			//console.log("success");
 			var content = data["content"];
 			content = content[0];
 			ip = content["ip"];
@@ -797,10 +785,10 @@ $(document).ready(function ()
 			apikey=content["apikey"];
 			path=content["path"];
 			kind = content["kind"];
-			console.log("apikey "+apikey);
+			//console.log("apikey "+apikey);
 
 			var ipa = ip + ':'+port;
-			console.log("ACTIVATE STUB "+ kind);
+			//console.log("ACTIVATE STUB "+ kind);
 	//		console.log("MODEL " + model + " gateway " + edge_gateway_type +  " url " + edge_gateway_uri);
 
 			//var retrieveModalWait = document.getElementById('retrieveModalWait');
@@ -849,7 +837,7 @@ $(document).ready(function ()
 				var content = data["content"];
 				
 				for(var i = 0; i < content.length; i++){
-					console.log("cont2 "+ i+ " i"+ JSON.stringify(content[i]));
+					//console.log("cont2 "+ i+ " i"+ JSON.stringify(content[i]));
 					protocol = content[i].protocol;				
 					activateStub(content[i].contextbroker,"kill",protocol,"","","","","","","","");
 					//content[i].contextbroker
@@ -869,7 +857,7 @@ $(document).ready(function ()
 		// Delete lines related to attributes 
 	$("#attrNameDelbtn").off("click");
 	$("#attrNameDelbtn").on("click", function(){
-		console.log("#attrNameDelbtn");	
+		//console.log("#attrNameDelbtn");	
 		$(this).parent('tr').remove();
 		});	
 		
@@ -881,7 +869,7 @@ $(document).ready(function ()
 		});			
 		
 	$('#devicesTable tbody').on('click', 'button.delDashBtn', function () {
-				console.log($(this));
+				//console.log($(this));
 
 		var id = $(this).attr('data-id');
 		var contextbroker = $(this).attr('data-contextbroker');
@@ -896,7 +884,7 @@ $(document).ready(function ()
 	$('#devicesTable tbody').on('hover', 'button.delDashBtn', function () {
 	//$('#devicesTable button.delDashBtn').off('hover');
 	//$('#devicesTable button.delDashBtn').hover(function(){
-		console.log($(this));
+		//console.log($(this));
 		$(this).css('background', '#ffcc00');
 		$(this).parents('tr').find('td').eq(1).css('background', '#ffcc00');
 	}, 
@@ -921,7 +909,7 @@ $(document).ready(function ()
 		if((dataTable.row( this ).index())%2 !== 0)
 		{
 			$('#devicesTable tbody').css("background", "rgba(0, 162, 211, 1)");
-			console.log( 'Row index: '+dataTable.row( this ).index() );
+			//console.log( 'Row index: '+dataTable.row( this ).index() );
 			$(this).find('td').eq(0).css("background-color", "rgb(230, 249, 255)");
 			$(this).find('td').eq(0).css("border-top", "none");
 		}
@@ -1107,7 +1095,7 @@ $(document).ready(function ()
     
 
         
-    console.log("ok I am building the main table z");
+    //console.log("ok I am building the main table z");
    // buildMainTable(false);
 	
 $("#insertValidBtn").off("click");
@@ -1124,7 +1112,7 @@ $("#insertValidBtn").off("click");
 		$('a[data-toggle="tab"]').on('shown.bs.tab', function (e) {
 			var target = $(e.target).attr("href");
 			if ((target == '#addGeoPositionTabDevice')) {
-				console.log("Elf: Add Device Map");
+				//console.log("Elf: Add Device Map");
 				var latitude = 43.78; 
 				var longitude = 11.23;
 				var flag = 0;
@@ -1137,7 +1125,7 @@ $("#insertValidBtn").off("click");
 		$('a[data-toggle="tab"]').on('shown.bs.tab', function (e) {
 			var target = $(e.target).attr("href");
 			if ((target == '#editGeoPositionTabDevice')) {
-				console.log("Elf : EditDeviceMap");
+				//console.log("Elf : EditDeviceMap");
 					var latitude = $("#inputLatitudeDeviceM").val(); 
 					var longitude = $("#inputLongitudeDeviceM").val();
 					var flag = 1;
@@ -1165,16 +1153,16 @@ $("#insertValidBtn").off("click");
 	   if (!(kind=="sensor" || kind=="actuator")) {var kindNote = ("\n kind not specified");}  else{kindNote = "&#10004;";}
 	   if ((latitude < -90 && latitude > 90) || (latitude=="" || latitude==null)) {var latitudeNote = ("\n latitude not correct ");} else{latitudeNote = "&#10004;";}
 	   if ((longitude < -180 && longitude > 180) || (longitude=="" || longitude==null)) {var longitudeNote = ("\n longitude not correct ");} else{longitudeNote = "&#10004;";}
-	   if (!(protocol=="ngsi" || protocol=="mqtt" || protocol=="amqp")) {var protocolNote = ("protocol not correct ");} else{protocolNote = "&#10004;";}
+	   if (!(protocol=="ngsi" || protocol=="mqtt" || protocol=="amqp" || protocol == "ngsi w/MultiService")) {var protocolNote = ("protocol not correct ");} else{protocolNote = "&#10004;";}
 		
-		console.log(id + contextbroker + type + kind + latitude + longitude + protocol);
+		//console.log(id + contextbroker + type + kind + latitude + longitude + protocol);
 	
 			if ((idNote == "&#10004;") && (contextbrokerNote == "&#10004;") && (typeNote == "&#10004;") && (kindNote == "&#10004;") && (latitudeNote == "&#10004;") && (longitudeNote == "&#10004;") && (protocolNote == "&#10004;")){var statusNote = "<button class=\"btn btn-success btn-round\"></button>";} else{statusNote= "<button class=\"btn btn-danger btn-round\"></button>";}
 		
 		var x =inputPropertiesDeviceMMsg.innerHTML;
 		
 		var div = document.createElement("div");
-		console.log("IPDMM:" + x);
+		//console.log("IPDMM:" + x);
 		
 		if (x =="&nbsp;"){
 			}
@@ -1219,7 +1207,7 @@ function insertValidDevices(){
             var spin = document.getElementById("loader_spin");
             var progress_ok=document.getElementById('progress_ok');*/
 
-            console.log("done contextBrokerRetrieva_e" + response_data);
+            //console.log("done contextBrokerRetrieva_e" + response_data);
 			
 		});
     //alert("Request sent, processing ...");
@@ -1262,7 +1250,7 @@ function stop_progress(){
 			 timeout: 0,
 			 success: function (mydata) 
 			 {
-                 console.log("bulk stop "+JSON.stringify(mydata));
+                 //console.log("bulk stop "+JSON.stringify(mydata));
                  if(mydata["status"]=='ok'){
                      is_processing=0;
                      refresh();
@@ -1304,7 +1292,7 @@ function checkBulkStatus(){
     if (timerID!= undefined){
         clearInterval(timerID);
     }
-    console.log("is_processing "+ is_processing);
+    //console.log("is_processing "+ is_processing);
     timerID = setInterval(function() {
     
         if(is_processing==0){
@@ -1339,7 +1327,7 @@ function checkBulkStatus(){
 			 timeout: 0,
 			 success: function (mydata) 
 			 {
-                 console.log("bulkstatus checked "+JSON.stringify(mydata));
+                 //console.log("bulkstatus checked "+JSON.stringify(mydata));
                  if(mydata["status"]=='ok'){
                      if(mydata['is_bulk_processing']==1|| mydata['is_bulk_processing']=='1'){
                             
@@ -1398,10 +1386,10 @@ function insertValidDevicesByPieces_parallel(start_index,end_index,totalDevices,
 	alert("Request sent, processing ...");	
 	//../api/contextBrokerRetrieval_e.php
 	$.post('../api/async_request_cb_retrieval_e.php', {'data' : data}, function(response_data) {
-			console.log("done");
+			//console.log("done");
 			response_data= JSON.parse(response_data);
-			console.log(response_data);
-			console.log(response_data['status']);
+			//console.log(response_data);
+			//console.log(response_data['status']);
 			if(response_data['status']=="ok"){
 				alert("Your valid devices have been uploaded.");
 			}
@@ -1431,23 +1419,23 @@ function insertValidDevicesByPieces(start_index,end_index,totalDevices,bulk_offs
 			 timeout: 0,
 			 success: function (mydata) 
 			 {
-					console.log("mydata "+JSON.stringify(mydata));
-					console.log("mydata[content] "+JSON.stringify(mydata['content']));
+					//console.log("mydata "+JSON.stringify(mydata));
+					//console.log("mydata[content] "+JSON.stringify(mydata['content']));
 				//Sara3110 - To remove waiting message
 				//document.getElementById('myModalBody').innerHTML = "";
 				
 				if (mydata['content'] != undefined){
 				 	var content = mydata['content'];
 					content = content[0];
-					console.log("Success "+ JSON.stringify(content));
+					//console.log("Success "+ JSON.stringify(content));
 					
 					if(content!=undefined){
 						var user_message="";
-						console.log("msg "+mydata["msg"]);
-					    console.log("content "+content);
+						//console.log("msg "+mydata["msg"]);
+					    //console.log("content "+content);
 					
                         for(var i = 0; i < content.length; i++){
-						   console.log("for i "+i+" length "+content[i].inserted);
+						   //console.log("for i "+i+" length "+content[i].inserted);
 						 /*Sara3110  if(mydata["msg"]=="" ||typeof mydata["msg"] === 'undefined' || mydata["msg"] === null)
 						   {*/
 								if(content[i].inserted=='ok'){
@@ -1506,7 +1494,7 @@ function insertValidDevicesByPieces(start_index,end_index,totalDevices,bulk_offs
                  //ATTENTION: THIS TIMEOUT HERE TO GIVE SOME TIME BETWEEN EACH REQUEST
                 setTimeout(function(){
 				
-                    console.log("another call maybe");
+                    //console.log("another call maybe");
                     start_index=end_index+1;
     
                     if(end_index==totalDevices){
@@ -1636,7 +1624,7 @@ function insertValidDevicesByPieces(start_index,end_index,totalDevices,bulk_offs
 		
 			$("#KeyOneDeviceUser").val(gb_key1);
 			$("#KeyTwoDeviceUser").val(gb_key2);
-			console.log("normal" +nameOpt[selectednameOpt].getAttribute("data_key")+gb_key1+gb_key2);							 
+			//console.log("normal" +nameOpt[selectednameOpt].getAttribute("data_key")+gb_key1+gb_key2);							 
          }								 
 	}
 	if (nameOpt[selectednameOpt].getAttribute("data_key")=="special" && ownerSelect[ownerOpt].value=='private')
@@ -1649,7 +1637,7 @@ function insertValidDevicesByPieces(start_index,end_index,totalDevices,bulk_offs
 			$("#sigFoxDeviceUserMsg").html("Generate in your SigFox server the keys and report them here.  Details on <a href=\"https://www.snap4city.org/drupal/node/76\">info</a>");
 			$("#KeyOneDeviceUser").val("");
 			$("#KeyTwoDeviceUser").val("");
-			console.log("special "+ nameOpt[selectednameOpt].getAttribute("data_key")+gb_key1+gb_key2);							 
+			//console.log("special "+ nameOpt[selectednameOpt].getAttribute("data_key")+gb_key1+gb_key2);							 
 		 }
 		// UserKey();
 	}
@@ -1659,7 +1647,7 @@ function insertValidDevicesByPieces(start_index,end_index,totalDevices,bulk_offs
 
 
 			 
-			 console.log(nameOpt[selectednameOpt].value + " " + gb_device + " " + gb_longitude + " " + gb_latitude);
+			 //console.log(nameOpt[selectednameOpt].value + " " + gb_device + " " + gb_longitude + " " + gb_latitude);
 			
          if(nameOpt[selectednameOpt].value !="custom"){ 
 				$.ajax({
@@ -1682,7 +1670,7 @@ function insertValidDevicesByPieces(start_index,end_index,totalDevices,bulk_offs
 
 						 else (data["status"] === 'ok')
 							{					
-								console.log("maroc" + data.content.attributes);
+								//console.log("maroc" + data.content.attributes);
 								
 								var model = data.content.name;
 								var type = data.content.devicetype;
@@ -1699,7 +1687,7 @@ function insertValidDevicesByPieces(start_index,end_index,totalDevices,bulk_offs
 								// population of the value tab with the values taken from the db						
 								while (k < myattributes.length)
 								  {
-									console.log(myattributes.length + " " +k); 
+									//console.log(myattributes.length + " " +k); 
 									content += drawAttributeMenu(myattributes[k].value_name, 
 										 myattributes[k].data_type, myattributes[k].value_type, myattributes[k].editable, myattributes[k].value_unit, myattributes[k].healthiness_criteria, 
 										 myattributes[k].healthiness_value, myattributes[k].old_value_name,
@@ -1800,7 +1788,7 @@ function insertValidDevicesByPieces(start_index,end_index,totalDevices,bulk_offs
 // add lines related to attributes			
 	$("#addAttrBtn").off("click");
 	$("#addAttrBtn").click(function(){
-	   console.log("#addAttrBtn");							   
+	   //console.log("#addAttrBtn");							   
 	   content = drawAttributeMenu("","", "", "", "", "", " "," ",  'addlistAttributes');
 		// addDeviceConditionsArray['addlistAttributes'] = true;
 	   //console.log("contenuto drawAttr" +content);
@@ -1813,7 +1801,7 @@ function insertValidDevicesByPieces(start_index,end_index,totalDevices,bulk_offs
 
 	$("#attrNameDelbtn").off("click");
 	$("#attrNameDelbtn").on("click", function(){
-		console.log("#attrNameDelbtn");	
+		//console.log("#attrNameDelbtn");	
 		$(this).parent('tr').remove();
 		});	
 					
@@ -1837,7 +1825,7 @@ function insertValidDevicesByPieces(start_index,end_index,totalDevices,bulk_offs
 			var contextbroker = $("#deleteDeviceModal span").attr("data-contextbroker");
             var uri = $("#deleteDeviceModal span").attr("data-uri");
             var status = $("#deleteDeviceModal span").attr("data-status1");
-            console.log("valori val "+id +" "+contextbroker + " " + status);
+            //console.log("valori val "+id +" "+contextbroker + " " + status);
 	 
             $("#deleteDeviceModal div.modal-body").html("");
             $("#deleteDeviceCancelBtn").hide();
@@ -1848,9 +1836,9 @@ function insertValidDevicesByPieces(start_index,end_index,totalDevices,bulk_offs
             /*********Sara start - delete from json *****/
 			var toDelete = {id: id, uri: uri, contextBroker: contextbroker, status: status};
 			//deleteJSONvalues(toDelete);
-            console.log("GOING TO DELETE ");
-            console.log("id "+ id);
-            console.log("status"+status);
+            //console.log("GOING TO DELETE ");
+            //console.log("id "+ id);
+            //console.log("status"+status);
 			/****Sara end****/
             
             $.ajax({
@@ -1871,7 +1859,7 @@ function insertValidDevicesByPieces(start_index,end_index,totalDevices,bulk_offs
                 async: true,
                 success: function (data) 
                 {
-					console.log(JSON.stringify(data));
+					//console.log(JSON.stringify(data));
                     if(data["status"] === 'ko')
                     {
                         $("#deleteDeviceModalInnerDiv1").html(data["msg"]);
@@ -1886,7 +1874,7 @@ function insertValidDevicesByPieces(start_index,end_index,totalDevices,bulk_offs
                         $("#deleteDeviceModalInnerDiv1").html('Device &nbsp; <b>' + id + '</b> &nbsp;deleted successfully');
                         $("#deleteDeviceModalInnerDiv2").html('<i class="fa fa-check" style="font-size:42px"></i>');
 						
-						console.log(status);
+						//console.log(status);
 						if(status=='valid')
 						$('#dashboardTotActiveCnt .pageSingleDataCnt').html(parseInt($('#dashboardTotActiveCnt .pageSingleDataCnt').html()) - 1);
 						else          
@@ -1949,7 +1937,7 @@ $('#deleteAllDevConfirmBtn').off("click");
                 async: true,
                 success: function (data) 
                 {
-					console.log(JSON.stringify(data));
+					//console.log(JSON.stringify(data));
                     if(data["status"] === 'ko')
                     {
                         $("#deleteAllDevModalInnerDiv1").html(data["msg"]);
@@ -2007,7 +1995,7 @@ $('#deleteAllDevConfirmBtn').off("click");
 // add lines related to attributes in case of edit
 	$("#addAttrMBtn").off("click");
 	$("#addAttrMBtn").click(function(){				
-	   console.log("#addAttrMBtn");					
+	   //console.log("#addAttrMBtn");					
 	   content = drawAttributeMenu("","", "", "", "", "", "300"," ",'addlistAttributesM');
 		editDeviceConditionsArray['addlistAttributesM'] = true;
 	   $('#addlistAttributesM').append(content);
@@ -2080,8 +2068,6 @@ $('#devicesTable tbody').on('click', 'button.editDashBtn', function () {
 	$('#KeyOneDeviceUserM').val(key1);
 	$('#KeyTwoDeviceUserM').val(key2);
 	  
-	console.log('edge_gateway_type');  
-	console.log(edge_gateway_type);  
 
 	$('#editDeviceModal').show();	
 
@@ -2097,7 +2083,7 @@ $('#devicesTable tbody').on('click', 'button.editDashBtn', function () {
 			async: true,
 			dataType: 'json',
 			success: function (mydata){
-				console.log("contenent logg "+JSON.stringify(mydata['content']));
+				//console.log("contenent logg "+JSON.stringify(mydata['content']));
 
 				var row = null;
 				$("#editUserPoolsTable tbody").empty();
@@ -2156,7 +2142,7 @@ $('#devicesTable tbody').on('click', 'button.editDashBtn', function () {
            // $("#editDeviceModalBody").hide();
            // $("#editDeviceModalFooter").hide();
            // $("#editDeviceModalUpdating").show();
-            console.log("button confimr clicked");
+            //console.log("button confimr clicked");
 			
 			mynewAttributes = [];
 			num1 = document.getElementById('addlistAttributesM').childElementCount;
@@ -2281,20 +2267,20 @@ error messages returned by verifyDevice are longer.
 				arrayAttributes.push(mynewAttributes[i]);
 			}
 			
-			console.log("arrayAttributes "+JSON.stringify(arrayAttributes));
+			//console.log("arrayAttributes "+JSON.stringify(arrayAttributes));
             
             //UPDATE FUNCTION
 			 var updatedDevice={"contextbroker":$('#selectContextBrokerM').val(),"name":$('#inputNameDeviceM').val(),"devicetype":$('#inputTypeDeviceM').val(),"model":$('#selectModelDeviceM').val(),"macaddress":$('#inputMacDeviceM').val(),"frequency":$('#inputFrequencyDeviceM').val(),"kind":$('#selectKindDeviceM').val(),"protocol":$('#selectProtocolDeviceM').val(),"format":$('#selectFormatDeviceM').val(),"latitude":$('#inputLatitudeDeviceM').val(),"longitude":$('#inputLongitudeDeviceM').val(),"visibility":$('#selectVisibilityDeviceM').val(),"k1":$('#KeyOneDeviceUserM').val(), "k2":$('#KeyTwoDeviceUserM').val(),"producer":$('#inputProducerDeviceM').val(),"edge_gateway_type":$('#selectEdgeGatewayTypeM').val(),"edge_gateway_uri": $('#inputEdgeGatewayUriM').val(), "deviceValues":arrayAttributes};
 			 
 			 var device_status = 'invalid';
 			 var verify = verifyDevice(updatedDevice);
-			 console.log("verify "+JSON.stringify(verify));
+			 //console.log("verify "+JSON.stringify(verify));
 			 if(verify.isvalid){
 				 device_status='valid';
 			 }
-			 console.log(device_status);
-			 console.log(verify.message);
-			console.log("attributes xyz"+JSON.stringify(myAttributes));
+			 //console.log(device_status);
+			 //console.log(verify.message);
+			//console.log("attributes xyz"+JSON.stringify(myAttributes));
 		 
 		$.ajax({
             url: "../api/contextBrokerRetrieval_e.php",
@@ -2333,7 +2319,7 @@ error messages returned by verifyDevice are longer.
             async: true,
             success: function (data) 
             {
-				console.log("Marco edit Data " + JSON.stringify(data));
+				//console.log("Marco edit Data " + JSON.stringify(data));
 
 				if(data["status"] === 'ko')
                 {
@@ -2582,7 +2568,6 @@ error messages returned by verifyDevice are longer.
 				attributesThen.push(newThen);
 			}
 		
-			console.log("");
 			$.ajax({
 				url: "../api/associationRulesApi.php",
 				data:{
@@ -2597,7 +2582,7 @@ error messages returned by verifyDevice are longer.
 				async: true,
 				success: function (myData) 
 				{
-					console.log("suggestion apply suiccess "+ JSON.stringify(mydata));	
+					//console.log("suggestion apply suiccess "+ JSON.stringify(mydata));	
 
 					if(myData['status']== 'ok'){
 							
@@ -2767,7 +2752,7 @@ $(document).on({
 	change: function () {
 	
 		var rowIndex = $(this).parents('tr').index();
-		console.log("row index" + rowIndex);
+		//console.log("row index" + rowIndex);
 		var fieldIf= document.getElementById('ifBlockTable').tBodies[0].rows.item(rowIndex).cells.item(1).childNodes[0].value;
 		getFields(fieldIf,rowIndex,'ifBlockTable',0);
 		checkUpdateButton();
@@ -2825,7 +2810,7 @@ $(document).on({
 			}
 
 			var newIf={"field": fieldIf, "operator" : operatorIf, "value": valueIf};
-			console.log("newIf "+ JSON.stringify(newIf));
+			//console.log("newIf "+ JSON.stringify(newIf));
 			attributesIf.push(newIf);
 		}
 		
@@ -2858,7 +2843,7 @@ $(document).on({
             success: function (myData) 
             {
 
-				console.log("data success "+ myData['content']);
+				//console.log("data success "+ myData['content']);
 				$("#devicesFound").html( myData['content'] + " devices founded");
 				
 				if(attributesIf.length==0){
@@ -2909,8 +2894,8 @@ $(document).on({
 			success: function (myData) 
 			{
 				let myDataP = myData['content'];
-				console.log(JSON.stringify(myDataP));
-				console.log("INDICE "+ pos + " field if "+ fieldIf);
+				//console.log(JSON.stringify(myDataP));
+				//console.log("INDICE "+ pos + " field if "+ fieldIf);
 
 				if(fieldIf.localeCompare("healthiness_value")==0 && healthinessValueIsPresent(id)==0){
 					var num1 = document.getElementById(id).tBodies[0].childElementCount;
@@ -3059,7 +3044,7 @@ $(document).on({
 	});
 	$("#attrNameDelbtn").off("click");
 	$("#attrNameDelbtn").on("click", function(){
-		console.log("#attrNameDelbtn");	
+		//console.log("#attrNameDelbtn");	
 		$(this).parent('tr').remove();
 	});	
 	$("#editDeviceOkModalDoneBtn").off("click");
@@ -3168,9 +3153,9 @@ $('#addifBlockBtnValue').click(function(){
 $(document).on({
 	change: function () {
 		var rowIndex = $(this).parents('tr').index();
-		console.log("row index" + rowIndex);
+		//console.log("row index" + rowIndex);
 		var fieldIf= document.getElementById('ifBlockTableValue').tBodies[0].rows.item(rowIndex).cells.item(1).childNodes[0].value;
-		console.log("fieldIf" + fieldIf);
+		//console.log("fieldIf" + fieldIf);
 		switch(fieldIf){
 			case "cb":
 				fieldIf = "contextBroker";
@@ -3217,24 +3202,8 @@ $(document).on({
 		}
 	}, '.fieldNameIfValue select');
  
-	/*function updateConditionsValue(){
-		$('#ifBlockTableValue .fieldTdValue .fieldIfValue').on('input',function (e) {
-		
-			var rowIndex = $(this).parents('tr').index();
-			console.log("row index" + rowIndex);
-			var fieldIf= document.getElementById('ifBlockTableValue').tBodies[0].rows.item(rowIndex).cells.item(1).childNodes[0].value;
-			getFields(fieldIf,rowIndex,'ifBlockTableValue');
-		})
-
-
-		$('#ifBlockTableValue .fieldNameIfValue').on('input', getAffectedRowsValue);
-		getAffectedRowsValue();
-
-	}*/
-
 	$('#addDecisionBlockBtnValue').off("click");
 	$('#addDecisionBlockBtnValue').click(function(){
-		console.log("update value");
 
 		var row = $('<tr id="thenHV'+idCounterThen+'"><td><h3><span class="label label-success">Then</span></h3></td><td class="fieldTdThenValue"><select class="fieldThenValue"><option value="empty">--Select an option--</option><option value="data_type">Data type</option><option value="value_type">Value type</option><option value="value_unit">Value unit</option><option value="editable">Editable</option>	<option value="healthiness_criteria">Healthiness criteria</option><option value="healthiness_value">Healthiness value</option></select></td></td><td class="fieldNameValue"><input type="text" class="fieldNameIfValue" value="Empty"><td><i class="fa fa-minus"></i></td></tr>');
 		$('#decisionBlockTableValue tbody').append(row);
@@ -3356,7 +3325,6 @@ $(document).on({
 				async: true,
 				success: function (myData) 
 				{
-					console.log("data success "+ myData['content']);
 					$("#valueFound").html( myData['content'] + " values founded");
 				//	document.getElementById('devicesFound').value = myData['content'] + " devices found";
 					
@@ -3396,7 +3364,6 @@ $(document).on({
 			async: true,
 			success: function (myData) 
 			{
-				console.log("JSON.st "+ JSON.stringify(myData['content']));
 				useAssociationRules( myData['content']);
 
 			},
@@ -3427,14 +3394,12 @@ $(document).on({
 				var val = rule[i];
 				if(rule !== 'lift' && rule !== 'support'){
 					if(key.search("output_") > -1){
-						console.log("output");
 						var keySplitted = key.split("output_");
 						if(val != ""){
 							htmlElse += "<tr class=\"ifrow\"><td><h3><span class=\"label label-success\">THEN</span></h3></td><td class=\"thenTd\"><select class=\"thenSelect\"><option value=\""+ keySplitted[1]+"\">"+keySplitted[1]+"</option></select></td><td class=\"fieldName\">"+val+"</td><td><i class=\"fa fa-minus\"></i></td></tr>";
 						}
 					}
 					else if(key.search("input_")>-1){
-						console.log("input")
 						var keySplitted = key.split("input_");
 						if(val != ""){
 							if (rulesPrinted == 0){
@@ -3451,7 +3416,6 @@ $(document).on({
 				}				
 			}
 			
-			console.log("html if "+ htmlIf + " htmlElse "+ htmlElse);
 			
 			document.getElementById('ifBlockSuggestions').tBodies[0].innerHTML= htmlIf;
 			document.getElementById('decisionBlockSuggestions').tBodies[0].innerHTML= htmlElse;
@@ -3506,7 +3470,6 @@ $(document).on({
 				async: true,
 				success: function (myData) 
 				{
-					console.log("data success "+ myData['content']);
 					$("#rulesMatchFound").html( myData['content'] + " values founded");
 				//	document.getElementById('devicesFound').value = myData['content'] + " devices found";
 					
@@ -3517,14 +3480,10 @@ $(document).on({
 						buildPreviewAssociationRules( JSON.stringify(attributesIfValues), previewRulesFirstLoad);
 						previewRulesFirstLoad = true;
 					}
-					console.log("buildPreview called");
-
 				},
 				error: function (myData) 
 				{		
-					//console.log(JSON.stringify(myData));
 					$("#rulesMatchFound").html(  "0 values founded");
-					//console.log("data faliure"+ myData['msg']);
 				}
 			});//end of ajax get_affected*/
 		}
@@ -3569,7 +3528,6 @@ $(document).on({
 						valueThen = "";
 					}
 					var newThen = {"field": fieldsThen, "valueThen": valueThen};
-					//console.log("newThen "+ JSON.stringify(newThen));
 					attributesThenValues.push(newThen);
 				}
 			}
@@ -3613,7 +3571,6 @@ $(document).on({
 	});
 	$("#attrNameDelbtn").off("click");
 	$("#attrNameDelbtn").on("click", function(){
-		console.log("#attrNameDelbtn");	
 		$(this).parent('tr').remove();
 	});	
 });  // end of ready-state
@@ -3622,7 +3579,6 @@ $(document).on({
 function drawAttributeMenu
 (attrName, data_type, value_type, editable, value_unit, healthiness_criteria, value_refresh_rate,old_value_name, parent)
 {
-    console.log("Draw "+data_type);
     options="";
 	
     if (value_type!="" && value_type!= undefined) labelcheck= value_type;
@@ -3639,7 +3595,6 @@ function drawAttributeMenu
 
     myunits="";// <option value=\"none\"></option>";
     if (value_unit!="" && value_unit != undefined && value_unit != null){
-			console.log("UNIT");
 		labelcheck= value_unit;
 	}else {
 		labelcheck="";
@@ -3687,13 +3642,10 @@ function drawAttributeMenu
     //---end sara
 	
 	mydatatypes="";
-	console.log("datatype "+data_type);
     if (data_type!="" && data_type != undefined) {labelcheck= data_type;
-	console.log("aAA");}
 	else { //0910Fatima
         labelcheck="";
         mydatatypes += "<option value=' ' selected> </option>";
-		console.log("abc");
     }
     
     for (var n=0; n < gb_datatypes.length; n++)
@@ -3770,7 +3722,6 @@ function removeElementAt(parent,child) {
 	checkAtlistOneAttribute();
 }
 function verifyDevice(deviceToverify){
-    console.log("VERIFYING THE DEVICE");
     
 	var msg="";
     var regexpMAC = /^([0-9A-F]{2}[:-]){5}([0-9A-F]{2})$/;
@@ -3779,7 +3730,6 @@ function verifyDevice(deviceToverify){
     var regex_valueName=/[^a-z0-9._-]/gi;
    
     
-    console.log("First checking its properties validity");
     
     if(deviceToverify.name==undefined || deviceToverify.name.length<5 || deviceToverify.name == null){ msg+= "-name is mandatory, of 5 characters at least.";}
     if(regex_devName.test(deviceToverify.name)){ msg+= "-name cannot contain special characters. ";}
@@ -3797,7 +3747,6 @@ function verifyDevice(deviceToverify){
     var keysCheking= checkKeys(deviceToverify.k1, deviceToverify.k2);
     if (!keysCheking.isvalid){msg+=keysCheking.validity_msg}
 	
-    console.log(" msg "+ msg  );
 
     if(msg.length>0) answer.isvalid=false;
      
@@ -3806,12 +3755,10 @@ function verifyDevice(deviceToverify){
            msg+="-Your device should at least have 1 attributes.";
         }
         
-    console.log("Now we check the model conformity");
     var model_not_found=true;
 	
     if(deviceToverify.model!="custom"){
 		
-		console.log("The model is not custom, it is "+ deviceToverify.model);
         
         for(var i=0; i<modelsdata.length; i++){
                 
@@ -3823,10 +3770,6 @@ function verifyDevice(deviceToverify){
 			model_not_found=false;
             var modelAttributes= JSON.parse(modelsdata[i].attributes);
                 
-            console.log("model attributes " + JSON.stringify(modelAttributes));
-            console.log("deviceToVerify attributes " + JSON.stringify(deviceToverify.deviceValues));
-            console.log(Object.keys(modelAttributes).length);
-            console.log(Object.keys(deviceToverify.deviceValues).length);
 
             if(Object.keys(modelAttributes).length!=Object.keys(deviceToverify.deviceValues).length){
                    
@@ -3840,16 +3783,16 @@ function verifyDevice(deviceToverify){
                 for (var j=0; j<deviceToverify.deviceValues.length; j++){
                                 var found=0;
                                 for(var l= 0; l<modelAttributes.length; l++){
-                                 console.log(" attributes model "+ modelAttributes[l].value_name);   
-                                 console.log(" attributes device to verify "+deviceToverify.deviceValues[j].value_name);   
+                                // console.log(" attributes model "+ modelAttributes[l].value_name);   
+                                 //console.log(" attributes device to verify "+deviceToverify.deviceValues[j].value_name);   
                                     if(modelAttributes[l].value_name==deviceToverify.deviceValues[j].value_name){
                                         found=1;
-										console.log(modelAttributes[l].value_type!=deviceToverify.deviceValues[j].value_type );
-										console.log(modelAttributes[l].data_type!=deviceToverify.deviceValues[j].data_type );
-										console.log(modelAttributes[l].editable!=deviceToverify.deviceValues[j].editable);
-										console.log(modelAttributes[l].healthiness_criteria!=deviceToverify.deviceValues[j].healthiness_criteria);
-										console.log(modelAttributes[l].healthiness_value!=deviceToverify.deviceValues[j].healthiness_value);
-										console.log(modelAttributes[l].value_unit!=deviceToverify.deviceValues[j].value_unit);
+										//console.log(modelAttributes[l].value_type!=deviceToverify.deviceValues[j].value_type );
+										//console.log(modelAttributes[l].data_type!=deviceToverify.deviceValues[j].data_type );
+										//console.log(modelAttributes[l].editable!=deviceToverify.deviceValues[j].editable);
+										//console.log(modelAttributes[l].healthiness_criteria!=deviceToverify.deviceValues[j].healthiness_criteria);
+										//console.log(modelAttributes[l].healthiness_value!=deviceToverify.deviceValues[j].healthiness_value);
+										//console.log(modelAttributes[l].value_unit!=deviceToverify.deviceValues[j].value_unit);
                                         
                                         var msg_attr_detail=""
                                         
@@ -3884,13 +3827,6 @@ function verifyDevice(deviceToverify){
                     
                    
                    }
-            
-            
-            console.log("modelsdata[i].edge_gateway_type");
-                console.log(modelsdata[i].edge_gateway_type);
-                console.log("deviceToverify.edge_gateway_type");
-                console.log(deviceToverify.edge_gateway_type);
-                
                 var h3= (modelsdata[i].edge_gateway_type==deviceToverify.edge_gateway_type)||
                         (
                             (modelsdata[i].edge_gateway_type==undefined || modelsdata[i].edge_gateway_type=="" || modelsdata[i].edge_gateway_type== null)&&
@@ -3925,7 +3861,6 @@ function verifyDevice(deviceToverify){
             if(model_not_found){
                 deviceToverify.model="custom";
             }
-            console.log("model is custom so we check the values details");
             var all_attr_msg="";
             var all_attr_status="true";
             var healthiness_criteria_options=["refresh_rate", "different_values", "within_bounds"];
@@ -3936,9 +3871,6 @@ function verifyDevice(deviceToverify){
                 if(v==undefined){continue;}
                 var attr_status=true;
                 var attr_msg="";
-                console.log(v);
-                console.log(deviceToverify.deviceValues.length);
-                console.log(deviceToverify);
 				
 				//Sara3010
 				var empty_name = false;
@@ -4102,7 +4034,6 @@ function isLongitude(lng) {
 			var lng = e.latlng.lng;
 				lat = lat.toFixed(4);
 				lng = lng.toFixed(4);
-				console.log("Check the format:" + lat + " " + lng);
 				
 				 document.getElementById('inputLatitudeDevice').value = lat;
 				 document.getElementById('inputLongitudeDevice').value = lng;
@@ -4138,7 +4069,6 @@ function isLongitude(lng) {
 				var lng = e.latlng.lng;
 				lat = lat.toFixed(4);
 				lng = lng.toFixed(4);
-				console.log("Check the format:" + lat + " " + lng);
 				
 				document.getElementById('inputLatitudeDeviceM').value = lat;
 				document.getElementById('inputLongitudeDeviceM').value = lng;
@@ -4184,8 +4114,6 @@ function nodeJsTest(){
 				 	var content = mydata['content'];
 					
 					
-				    console.log("Success "+ JSON.stringify(content));
-				    console.log(typeof(parseInt(content)));
 					if(typeof(parseInt(content))=="number"){
                             insertValidDevices(parseInt(content));
                         }
@@ -4225,8 +4153,6 @@ function nodeJsTest(){
 				 };
 	alert("Request sent");	
 	$.post('../api/contextBrokerRetrieval_e.php', {'data' : test_data, 'data_from_nodeJs':1}, function(data) {
-			console.log("done");
-			console.log(data);
 		});
    /*$.ajax({
 			 url: "https://www.snap4city.org/iotdirectorytest/stubs/bulkload",
@@ -4241,7 +4167,6 @@ function nodeJsTest(){
 			 timeout: 0,
 			 success: function (mydata) 
 			 {
-					console.log("mydata "+JSON.stringify(mydata));
 				}
 				
              ,
@@ -4275,31 +4200,7 @@ function insertValidDevices(){
             var span = document.getElementsByClassName("close")[0];
             var spin = document.getElementById("loader_spin");
             var progress_ok=document.getElementById('progress_ok');
-            
-        
-        
-            console.log("done");
-			/*console.log(response_data);
-			response_data= JSON.parse(response_data);
-			console.log(response_data);
-			console.log(response_data['status']);
-			if(response_data['status']=="ok"){
-				
-                document.getElementById('myModalBody').innerHTML= "<p>Your valid devices have been uploaded.</p> ";
-                progress_modal.style.display = "block";
-                spin.style.display="none";
-                progress_ok.style.display="block";
-			}
-			else{
-				
-                document.getElementById('myModalBody').innerHTML= "<p>some problems occurred while uploading your valid devices.</p> ";
-                progress_modal.style.display = "block";
-                spin.style.display="none";
-                progress_ok.style.display="block";
-			}*/
-			
 		});
-    //alert("Request sent, processing ...");
     
     var progress_modal_b = document.getElementById('myModal_forbulkstatus');
     var span_b = document.getElementsByClassName("close")[0];
@@ -4339,7 +4240,6 @@ function stop_progress(){
 			 timeout: 0,
 			 success: function (mydata) 
 			 {
-                 console.log("bulk stop "+JSON.stringify(mydata));
                  if(mydata["status"]=='ok'){
                      is_processing=0;
                      refresh();
@@ -4417,7 +4317,6 @@ function checkBulkStatus(){
 			 timeout: 0,
 			 success: function (mydata) 
 			 {
-                 console.log("bulkstatus checked "+JSON.stringify(mydata));
                  if(mydata["status"]=='ok'){
                      if(mydata['is_bulk_processing']==1|| mydata['is_bulk_processing']=='1'){
                             
@@ -4460,14 +4359,6 @@ function checkBulkStatus(){
 
 function insertValidDevices_old(totalDevices){
 	
-    /*console.log("called");
-    var progress_modal = document.getElementById('myModal');
-    var span = document.getElementsByClassName("close")[0];
-    var spin = document.getElementById("loader_spin");
-    var progress_ok=document.getElementById('progress_ok');
-    progress_modal.style.display = "block";
-    spin.style.display="block";
-    progress_ok.style.display="none";*/
     var bulk_offset=10;
     var start_index=1;
     var end_index=bulk_offset;
@@ -4499,10 +4390,7 @@ function insertValidDevicesByPieces_parallel(start_index,end_index,totalDevices,
 	alert("Request sent, processing ...");	
 	//../api/contextBrokerRetrieval_e.php
 	$.post('../api/async_request_cb_retrieval_e.php', {'data' : data}, function(response_data) {
-			console.log("done bulkload");
 			response_data= JSON.parse(response_data);
-			console.log(response_data);
-			console.log(response_data['status']);
 			if(response_data['status']=="ok"){
 				alert("Your valid devices have been uploaded.");
 			}
@@ -4532,25 +4420,17 @@ function insertValidDevicesByPieces(start_index,end_index,totalDevices,bulk_offs
 			 timeout: 0,
 			 success: function (mydata) 
 			 {
-					console.log("mydata "+JSON.stringify(mydata));
-					console.log("mydata[content] "+JSON.stringify(mydata['content']));
 				//Sara3110 - To remove waiting message
 				//document.getElementById('myModalBody').innerHTML = "";
 				
 				if (mydata['content'] != undefined){
 				 	var content = mydata['content'];
 					content = content[0];
-					console.log("Success "+ JSON.stringify(content));
 					
 					if(content!=undefined){
 						var user_message="";
-						console.log("msg "+mydata["msg"]);
-					    console.log("content "+content);
 					
                         for(var i = 0; i < content.length; i++){
-						   console.log("for i "+i+" length "+content[i].inserted);
-						 /*Sara3110  if(mydata["msg"]=="" ||typeof mydata["msg"] === 'undefined' || mydata["msg"] === null)
-						   {*/
 								if(content[i].inserted=='ok'){
 									user_message="Device: "+content[i].device+" on context broker "+ content[i].cb +" uploaded";
 									
@@ -4625,7 +4505,6 @@ function insertValidDevicesByPieces(start_index,end_index,totalDevices,bulk_offs
                             async: true,
                             success: function (data) 
                             {
-                                console.log(JSON.stringify(data));
                                 if(data["status"] === 'ko')
                                 {
                                     user_message_old= document.getElementById('myModalBody').innerHTML;
@@ -4833,8 +4712,6 @@ function checkHeadersIfValid(csvheaders){
     
     var difference = new Set([...a].filter(x => !b.has(x)));
     
-    console.log("difference is ");
-    console.log(difference);
     
     if (difference.size==0){
         answer.isValid= true;
@@ -4862,11 +4739,7 @@ function checkHeadersIfValid(csvheaders){
 }
 
 function showValidityMsg(status, msg){
-    
-   console.log(msg);
     alert(msg);
-    
-    
 }
 
 /****added by Sara, copied from devices.js at line 3220 *********/

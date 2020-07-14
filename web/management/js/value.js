@@ -1,7 +1,29 @@
 
  var tableFirstLoad = true;
  var dataTable ="";
-     
+    
+	$.ajax({url: "../api/device.php",
+         data: {
+			 organization : organization, 
+			 action: 'get_param_values'
+			 },
+         type: "POST",
+         async: true,
+         dataType: 'json',
+         success: function (mydata)
+         {
+		   gb_datatypes= mydata["data_type"];
+		   gb_value_units= mydata["value_unit"];
+		   gb_value_types= mydata["value_type"];		   
+         },
+		 error: function (mydata)
+		 {
+		   console.log(JSON.stringify(mydata));
+		   alert("Network errors. <br/> Get in touch with the Snap4City Administrator<br/>"+ JSON.stringify(mydata));
+		 }
+	});
+
+ 
 function generateUUID() { // Public Domain/MIT
 		var d = new Date().getTime();
 		if (typeof performance !== 'undefined' && typeof performance.now === 'function'){
@@ -23,7 +45,7 @@ function download(sourcename, devicename, contextbroker) {
 						username: loggedUser,
 						organization : organization, 
                         filename: sourcename,
-                        devicename:devicename,
+                        id:devicename,
                         contextbroker: contextbroker
                 },
                 type: "POST",
@@ -64,8 +86,8 @@ function download(sourcename, devicename, contextbroker) {
 	
 function format ( d ) {
 	
-	console.log("formatttooooo");
-	console.log(d);
+	//console.log("formatttooooo");
+	//console.log(d);
 	
 	// `d` is the original data object for the row
 	var showKey="";
@@ -76,7 +98,17 @@ function format ( d ) {
 			'<div class="clearfix visible-xs"></div>' +
 			'<div class="col-xs-6 col-sm-6" style="background-color:#E6E6FA;"><b>K2:</b>' + "  " + d.k2  + '</div>' +	
 		'</div>' ;	  
-		}			
+		}	
+
+	var multitenancy = "";
+	if (d.service && d.servicePath){
+		multitenancy = '<div class="row">' + 
+			'<div id="service" class="col-xs-6 col-sm-6" style="background-color:#B3D9FF;"><b>Service/Tenant:</b>' + "  " + d.service + '</div>' +
+			'<div id="service" class="clearfix visible-xs"></div>' +
+			'<div class="col-xs-6 col-sm-6" style="background-color:#B3D9FF;"><b>ServicePath:</b>' + "  " + d.servicePath  + '</div>' +	
+		'</div>' ;
+	}
+		
 	var txtCert="";
 	if (d.privatekey!="" && d.privatekey!= null && (d.visibility =='MyOwnPublic' || d.visibility == 'MyOwnPrivate'))
 		txtCert  = '<div class="row">' +
@@ -121,7 +153,7 @@ function format ( d ) {
 					'<div class="clearfix visible-xs"></div>' +	
 				'</div>' + 	 showKey +
 
-				  txtCert + 
+				  txtCert + multitenancy +
 			'</div>' ;
 }
 
@@ -130,7 +162,7 @@ function format ( d ) {
 //DataTable fetch_data function 		
 	function fetch_data(destroyOld, selected)
 	{
-		    console.log("dentro builtMaintable");
+		    //console.log("dentro builtMaintable");
             if(destroyOld)
             {
                 $('#valuesTable').DataTable().clear().destroy();
@@ -256,7 +288,9 @@ function format ( d ) {
 				'data-mandatoryvalues="'+d.mandatoryvalues+'" ' +
 				'data-k1="'+d.k1+'" ' +
 				'data-k2="'+d.k2+'" ' +
-				'data-status1="'+d.status1+'">Edit</button>';
+				'data-status1="'+d.status1+'" '+
+		                'data-service="'+d.service+'" ' + 
+		                'data-servicePath="'+d.servicePath+'">Edit</button>';
 				} else { }
 				
 				}
@@ -272,6 +306,8 @@ function format ( d ) {
 				return '<button type="button" class="delDashBtn" ' +
 				'data-cb="'+d.cb+'" ' +
 				'data-device="'+d.device+'" ' +
+		                'data-service="'+d.service+'" ' + 
+                		'data-servicePath="'+d.servicePath+'" '+
 				'data-value_name="'+d.value_name+'">Delete</button>';
 				 } else { }
 				}
@@ -437,14 +473,15 @@ function format ( d ) {
 		  if (element.view=="view")
 		  {
 			  if (element[loggedRole]==1)  
-			   {   console.log(loggedRole + " " + element[loggedRole] + " " + element["class"]); 
+			   {   
+				//console.log(loggedRole + " " + element[loggedRole] + " " + element["class"]); 
 				   $(element["class"]).show();
 			   }			   
 			   else 
 			   { 
 				 $(element["class"]).hide();
-				 console.log($(element.class));
-				 console.log(loggedRole + " " + element[loggedRole] + " " + element["class"]);
+				 //console.log($(element.class));
+				 //console.log(loggedRole + " " + element[loggedRole] + " " + element["class"]);
 			   }
 			}
             else
@@ -540,13 +577,13 @@ function format ( d ) {
                     {        
                         var $dropdown = $("#selectContextBroker");        
                         $dropdown.empty();
+			$dropdown.append($("<option hidden disabled selected value=\"NOT VALID OPTION\"> -- select an option -- </option>"));
                         $.each(data['content'], function() {
-                            $dropdown.append($("<option />").val(this.name).text(this.name));        
+                            $dropdown.append($("<option data-protocol='"+this.protocol+"'/>").val(this.name).text(this.name));        
                         });
                         
                      $("#addValueModalTabs").show();
-			         $('#addValueModal div.modalCell').show();
-                    //$("#addValueModalFooter").hide();
+	             $('#addValueModal div.modalCell').show();
                      $("#addNewValueCancelBtn").show();
                      $("#addNewValueConfirmBtn").show();
                      $("#addNewValueOkBtn").hide();
@@ -558,8 +595,28 @@ function format ( d ) {
                      $("#addValueOkIcon").hide();
                      $("#addValueKoMsg").hide();
                      $("#addValueModal").modal('show');
-                        
-                        }
+                      
+			                     checkProtocol($('#selectContextBroker').children("option:selected").data("protocol"), 'add', 'value');
+ 
+			var $datatype=$("#selectDataType");
+			$datatype.empty();
+			$.each(gb_datatypes, function() {
+                            $datatype.append($("<option />").val(this).text(this));
+                        });
+
+			var $valuetype=$("#value_type-1");
+			$valuetype.empty();
+			$valuetype.append($("<option hidden disabled selected value=\"NOT VALID OPTION\"> -- select an option -- </option>"));
+                        $.each(gb_value_types, function() {
+                            $valuetype.append($("<option />").val(this.value).text(this.label));
+                        });
+			$("#value_type-1").parent().siblings().last().css("color", "red");
+                        $("#value_type-1").parent().siblings().last().html("Value type is mandatory");
+
+			$("#value_unit-1").parent().siblings().last().css("color", "#337ab7");
+		        $("#value_unit-1").parent().siblings().last().html("Ok");
+ 
+                    }
                     else{
                         console.log("error getting the context brokers "+data); 
                     }
@@ -572,117 +629,24 @@ function format ( d ) {
 
 	});
 
-                               
-
 	//$('#selectValueType, #selectValueTypeM').change(function() {		
 	//$("#selectValueType").add("#selectValueTypeM").change(function() {
-		$('#selectValueType').change(function() {
-		var valType = document.getElementById("selectValueType").value;
-			console.log(valType);
-				$.ajax({
-					url: "../api/value.php",
-					data: {
-						value_type: valType, 
-						action: "get_value_unit_data",
-						organization : organization, 
-						//Sara611 for logging
-						username: loggedUser
-					},
-					type: "POST",
-					async: true,
-					dataType: 'json',
-					success: function (data) 
-					{
-					  console.log(data);
-					if(data["status"] === 'ko')
-					{
-						  //data = data["content"];
-						  
-						  $("#addDeviceKoModalInnerDiv1").html(data["msg"]);
-						  $("#addDeviceKoModalInnerDiv1").html('<i class="fa fa-frown-o" style="font-size:42px"></i>');
-														
-						}
-					else (data["status"] === 'ok')
-					{
-						var data = data["content"];					
-						var value_unit_default=[];
-														
-							for (var i=0; i<data.length; i++){
-									 value_unit_default.push(data[i].value_unit_default);
-									}
-									
-					    document.getElementById("selectValueUnit").value = value_unit_default;
-							 //if ('#selectValueTypeM') document.getElementById("selectValueUnitM").value = value_unit_default;							  
-						    
-						}			  
-					},
-					error: function (data)
-					{
-					   console.log("Error ajax in retrieving value Unit");
-						console.log(JSON.stringify(data));
-						 alert("Network errors. <br/> Get in touch with the Snap4City Administrator<br/>"+ JSON.stringify(data));
-					}
-				});
-		
-	});
-
-	
-		$('#selectValueTypeM').change(function() {
-		var valTypeM = document.getElementById("selectValueTypeM").value;
-			console.log(valTypeM);
-				$.ajax({
-					url: "../api/value.php",
-					data: {
-						value_type: valTypeM, 
-						organization : organization, 
-						action: "get_value_unit_data"
-					},
-					type: "POST",
-					async: true,
-					dataType: 'json',
-					success: function (data) 
-					{
-					  console.log(data);
-					if(data["status"] === 'ko')
-					{
-						 alert("An error occured when reading the data. <br/> Get in touch with the Snap4City Administrator<br/>"+ data["msg"]);
-						//$("#addDeviceKoModalInnerDiv1").html(data["msg"]);
-						//$("#addDeviceKoModalInnerDiv1").html('<i class="fa fa-frown-o" style="font-size:42px"></i>');
-						  //data = data["content"];
-						 
-						}
-					else (data["status"] === 'ok')
-					{
-						var data = data["content"];					
-						var value_unit_default=[];
-														
-							for (var i=0; i<data.length; i++){
-									 value_unit_default.push(data[i].value_unit_default);
-									}
-									
-					    document.getElementById("selectValueUnitM").value = value_unit_default;
-
-						}			  
-					},
-					error: function (data)
-					{
-					   console.log("Error ajax in retrieving value Unit");
-						console.log(JSON.stringify(data));
-					   alert("Network errors. <br/> Get in touch with the Snap4City Administrator<br/>"+ JSON.stringify(data));
-					}
-				});
-		
-	});
-
 
         /*   ADD NEW VALUE CONFIRMATION */
 		
-		
         $('#addNewValueConfirmBtn').off("click");
         $("#addNewValueConfirmBtn").click(function(){
-			
-	       $("#addValueModalTabs").hide();
-			$('#addValueModal div.modalCell').hide();
+	
+            var deviceName = $('#inputNameDevice').val();
+            var service = $('#selectService').val();
+            var servicePath = $('#inputServicePathValue').val();
+
+	    if ($('#selectContextBroker').children("option:selected").data("protocol") === "ngsi w/MultiService"){
+                deviceName = service + "." + servicePath + "." + deviceName;
+            }
+		
+		$("#addValueModalTabs").hide();
+		$('#addValueModal div.modalCell').hide();
             //$("#addValueModalFooter").hide();
             $("#addNewValueCancelBtn").hide();
             $("#addNewValueConfirmBtn").hide();
@@ -699,52 +663,38 @@ function format ( d ) {
 					  username: loggedUser,
 					  organization : organization, 
 					  contextbroker: $('#selectContextBroker').val(),
-		 			  device: $('#inputNameDevice').val(),
+		 			  device: deviceName,
 					  value_name: $('#inputValueNameDevice').val(),
 					  data_type: $('#selectDataType').val(),
 					  organization : organization, 
-					  value_type: $('#selectValueType').val(),
+					  value_type: $('#value_type-1').val(),
 					  editable: $('#inputEditableValue').val(),
-					  value_unit: $('#selectValueUnit').val(),
+					  value_unit: $('#value_unit-1').val(),
 					  healthiness_criteria: $('#selectHealthinessCriteria').val(),
 					  healthiness_value: $('#inputHealthinessValue').val(),
-					  token : sessionToken					 
+					  token : sessionToken
 					  },
                  type: "POST",
                  async: true,
 				
                  success: function (data) 
                  {
-				 console.log("Elf result: " + JSON.stringify(data));
+				 //console.log("Elf result: " + JSON.stringify(data));
 				 
 					if(data["status"] === 'ko')
                     {
                         console.log("Error adding value");
                         console.log(data);
-						$('#addValueLoadingMsg').hide();
+			$('#addValueLoadingMsg').hide();
                         $('#addValueLoadingIcon').hide();
                         $('#addValueKoMsg').show();
-						$('#addValueKoMsg div:first-child').html(data["error_msg"]);
+			$('#addValueKoMsg div:first-child').html(data["error_msg"]);
                         $('#addValueKoIcon').show();
                         $("#addNewValueOkBtn").show();
-                        
-                        
-                      
-                        /*setTimeout(function(){
-							 $('#addValueModal').modal('hide');
-                                    
-                            $('#addValueKoMsg').hide();
-                            $('#addValueKoIcon').hide();
-                            $('#addValueModalTabs').show();
-                            $('#addValueModal div.modalCell').show();
-                            $('#addValueModalFooter').show();
-                        }, 3000);*/
                     }			 
 					else if (data["status"] === 'ok')
                     {
-						
-						
-						$('#addValueLoadingMsg').hide();
+			$('#addValueLoadingMsg').hide();
                         $('#addValueLoadingIcon').hide();
                         $('#addValueKoMsg').hide();
                         $('#addValueKoIcon').hide();
@@ -765,9 +715,9 @@ function format ( d ) {
 				        $('#inputNameDevice').val("");
 				        $('#inputValueNameDevice').val("");
 				        $('#selectDataType').val("");
-						$('#selectValueType').val("");
+						$('#value_type-1').val("");
 						$('#inputEditableValue').val("");
-						$('#selectValueUnit').val("");
+						$('#value_unit-1').val("");
 						$('#selectHealthinessCriteria').val("");
 						$('#inputHealthinessValue').val("");
 								  // $('#inputOrder').val();	
@@ -784,9 +734,9 @@ function format ( d ) {
 								  $('#inputNameDevice').val("");
 								  $('#inputValueNameDevice').val("");
 								  $('#selectDataType').val("");
-								  $('#selectValueType').val("");
+								  $('#value_type-1').val("");
 								  $('#inputEditableValue').val("");
-								  $('#selectValueUnit').val("");
+								  $('#value_unit-1').val("");
 								  $('#selectHealthinessCriteria').val("");
 								  $('#inputHealthinessValue').val("");
 								  // $('#inputOrder').val();		
@@ -806,24 +756,12 @@ function format ( d ) {
                  {
                      console.log("Error status -- Ko result: " +  data);
 
-						$('#addValueLoadingMsg').hide();
+			$('#addValueLoadingMsg').hide();
                         $('#addValueLoadingIcon').hide();
                         $('#addValueKoMsg').show();
-						$('#addValueKoMsg div:first-child').html(data["error_msg"]);
+			$('#addValueKoMsg div:first-child').html(data["error_msg"]);
                         $('#addValueKoIcon').show();
                         $("#addNewValueOkBtn").show();
-                     
-                     /*$('#addValueLoadingMsg').hide();
-                        $('#addValueLoadingIcon').hide();
-                        $('#addValueKoMsg').show();
-                        $('#addValueKoIcon').show();
-                        setTimeout(function(){
-                            $('#addValueKoMsg').hide();
-                            $('#addValueKoIcon').hide();
-                            $('#addValueModalTabs').show();
-                            $('#addValueModal div.modalCell').show();
-                            $('#addValueModalFooter').show();
-                        }, 3000);*/
                  }
              });
         });
@@ -853,8 +791,11 @@ function format ( d ) {
 		var value_name = $(this).parents("tr").find("td").eq(3).html();
 		var editable = $(this).parents("tr").find("td").eq(6).html();
 		 
-		$("#deleteValueModal div.modal-body").html('<div class="modalBodyInnerDiv"><span data-value_name = "' + value_name + '" data-cb = "' + cb + '" data-device = "' + device + '" data-editable = "' + editable +'">Do you want to confirm deletion of value <b>' + value_name + '</b> from Device <b>' + device + '</b>?</span></div>');
-		
+		var service = $(this).attr('data-service');
+        	var servicePath = $(this).attr('data-servicePath');
+		$("#deleteValueModal div.modal-body").html('<div class="modalBodyInnerDiv"><span data-value_name = "' + value_name + '" data-cb = "' + cb + '" data-device = "' + device + '" data-editable = "' + editable +'" data-service = "' + service + '" data-servicePath = "' + servicePath + '">Do you want to confirm deletion of value <b>' + value_name + '</b> from Device <b>' + device + '</b>?</span></div>');
+
+	
         
 		$("#deleteValueModalInnerDiv1").html('<h5>Device deletion in progress, please wait</h5>');
         $("#deleteValueModalInnerDiv2").html('<i class="fa fa-circle-o-notch fa-spin" style="font-size:36px"></i>');
@@ -875,7 +816,13 @@ function format ( d ) {
 		var cb = $("#deleteValueModal span").attr("data-cb");
 		var value_name   = $("#deleteValueModal span").attr("data-value_name");	
 		var editable = $("#deleteValueModal span").attr("data-editable");
-		
+	
+		var service = $("#deleteValueModal span").attr("data-service");
+	        var servicePath = $("#deleteValueModal span").attr("data-servicePath");
+        	if (service !== "null" && servicePath !== "null"){
+	            device = service + "." + servicePath + "." + device;
+        	}
+	
 		$("#deleteValueModal div.modal-body").html("");
 		$("#deleteValueOkBtn").hide();
 		$("#deleteValueCancelBtn").hide();
@@ -903,7 +850,7 @@ function format ( d ) {
 			
 			success: function (data) 
 			{
-				console.log(JSON.stringify(data));
+				//console.log(JSON.stringify(data));
                  $("#deleteValueOkBtn").show();
 				if(data["status"] === 'ko')
 				{
@@ -940,7 +887,7 @@ function format ( d ) {
 			error: function (data) 
 			{
 				$("#deleteValueOkBtn").show();
-                console.log(JSON.stringify(data));
+		                console.log(JSON.stringify(data));
 				$("#deleteValueModalInnerDiv1").html(data["error_msg"]);
 				$("#deleteValueModalInnerDiv2").html('<i class="fa fa-frown-o" style="font-size:42px"></i>');
                
@@ -1015,7 +962,22 @@ function format ( d ) {
 	  $('#inputHealthinessValueM').val($(this).attr('data-value_refresh_rate'));
 	  $('#inputOrderM').val($(this).attr('data-order'));
 	  
-
+	// Author: Antonino Mauro Liuzzo
+        var service = $(this).attr('data-service');
+        var servicePath = $(this).attr('data-servicePath');
+        if(service !== 'null' && servicePath !== 'null') {
+            // embed service and servicePath infos into name device input element
+            $('#inputNameDeviceM').attr('service', service);
+            $('#inputNameDeviceM').attr('servicePath', servicePath);
+            $('#editSelectService').val(service);
+            $('#editInputServicePathValue').val(servicePath);
+        } else {
+            // remove service and servicePath infos from name device input element
+            $('#inputNameDeviceM').removeAttr('service');
+            $('#inputNameDeviceM').removeAttr('servicePath');
+            $('#editSelectService').val("");
+            $('#editInputServicePathValue').val("");
+        }
 
 	});
 
@@ -1024,6 +986,13 @@ function format ( d ) {
 	$('#editValueConfirmBtn').off("click");
 	$("#editValueConfirmBtn").click(function(){
 
+		var deviceName = $('#inputNameDeviceM').val();
+	        var service = $('#inputNameDeviceM').attr('service');
+        	var servicePath = $('#inputNameDeviceM').attr('servicePath');
+
+	        if (service && servicePath){
+        	    deviceName = service + "." + servicePath + "." + deviceName;
+	        }
 		
 		$("#editValueModalTabs").hide();
 		$('#editValueModal div.modalCell').hide();
@@ -1046,7 +1015,7 @@ function format ( d ) {
 			  username: loggedUser,
 			  organization : organization, 
 			  contextbroker: $('#selectContextBrokerM').val(),
-			  device: $('#inputNameDeviceM').val(),
+			  device: deviceName,
 			  value_name: $('#inputValueNameDeviceM').val(),
 			  data_type: $('#selectDataTypeM').val(),
 			  value_type: $('#selectValueTypeM').val(),
@@ -1150,9 +1119,9 @@ function format ( d ) {
 			  $('#inputNameDevice').val("");
 			  $('#inputValueNameDevice').val("");
 			  $('#selectDataType').val("");
-			  $('#selectValueType').val("");
+			  $('#value_type-1').val("");
 			  $('#inputEditableValue').val("");
-			  $('#selectValueUnit').val("");
+			  $('#value_unit-1').val("");
 			  $('#selectHealthinessCriteria').val("");
 			  $('#inputHealthinessValue').val("");
 			  // $('#inputOrder').val();		
@@ -1214,7 +1183,7 @@ function format ( d ) {
                                 $dropdown.empty();
 				//adding empty to rootadmin
 				if ((loggedRole=='RootAdmin')||(loggedRole=='ToolAdmin')){
-					console.log("adding empty");
+					//console.log("adding empty");
 					$dropdown.append($("<option />").val("All groups").text("All groups"));
 				}
 				//add new ones
@@ -1372,82 +1341,6 @@ function format ( d ) {
 
 //   ========================================= START TO CHANGE THE VISIBILITY  & DELEGATION OF VALUE ============================================	
 
-/*
-		function delegateValue(id, contextbroker, valueName, visibility, uri, k1, k2) {
-			
-			$("#delegationsModal").modal('show');
-			$("#delegationHeadModalLabel").html('Device: ' + id + ' Value Name - ' + valueName);
-
-			//first of all check if this device is public or private
-			$.ajax({
-				url: '../api/device.php',
-				data:{
-					action: 'get_device',
-					id: id,
-					token : sessionToken
-				},
-				type: 'POST',
-				async: false,
-				datatype: 'json',
-				success: function (data){
-					if (data['status'] === 'ok'){
-						console.log(data);
-						if (data['content']['visibility']==='private'){
-							console.log('change of visibility is enabled');
-							//device belonging this sensor is PRIVATE, change of visibility is enabled
-							changeofvisibility(id, contextbroker, valueName, visibility, uri, k1, k2);
-						}
-						else {
-							console.log('change of visibility is NOT enabled');
-							//device belonging this sensor is PUBLIC, change of visibility is disabled
-							//disable all the context information
-							document.getElementById('delegationsCnt').style.visibility = 'hidden';
-							document.getElementById('delegationsCntGroup').style.visibility = 'hidden';
-							document.getElementById('newVisibilityPrivateBtn').style.visibility = 'hidden';
-							document.getElementById('newVisibilityPublicBtn').style.visibility = 'hidden';
-							document.getElementById('changeOwnershipLbl').style.visibility = 'hidden';
-							
-							//show a message 
-							$('#newVisibilityResultMsg').show();
-							$('#newVisibilityResultMsg').html('The device belonging this sensor is public. Change of visibility is disabled');
-							$('#newVisibilityPrivateBtn').addClass('disabled');
-						}
-						
-						$("#delegationsCancelBtn").off("click");
-						$("#delegationsCancelBtn").on('click', function(){
-								$('#newDelegation').val("");
-
-								$("#newVisibilityResultMsg").html("");
-								$("#newOwnershipResultMsg").html("");
-								location.reload();
-								$('#delegationsModal').modal('hide');
-								// buildMainTable(true);
-						});
-
-					}
-					else if (data['status'] === 'ko'){
-						console.log('response error');
-					}
-					else {
-						console.log('any error');
-					}
-				},
-				error: function (errdata){
-					console.log('error returned'.errdata);
-					$('#newVisibilityResultMsg').show();
-					$('#newVisibilityResultMsg').html('Error setting new visibility');
-					$('#newVisibilityPrivateBtn').addClass('disabled');
-
-					setTimeout(function()
-					{
-							$('#newVisibilityPrivateBtn').removeClass('disabled');
-							$('#newVisibilityResultMsg').html('');
-							$('#newVisibilityResultMsg').hide();
-					}, 3000);
-				}
-			});		
-		} //end of delegate function
-*/
 		function changeofvisibility(id, contextbroker, valueName, visibility, uri, k1, k2) {
                         //$('a[data-toggle="tab"]').on('shown.bs.tab', function (e) {
                                         //var target = $(e.target).attr("href");
@@ -1464,14 +1357,7 @@ function format ( d ) {
 								$("#visID").html("Visibility - Private");
 								$("#newVisibilityPrivateBtn").hide();
 								$("#newVisibilityPublicBtn").show();
-								//document.getElementById('newVisibilityPrivateBtn').style.visibility = 'hidden';
-								//document.getElementById('newVisibilityPublicBtn').style.visibility = 'show';
-					console.log("I am here "+ visibility);			
-                    //$('#newVisibilityPrivateBtn').addClass('disabled');
-								//$('#newVisibilityPublicBtn').removeClass('disabled');
 								
-								
-								//$("#delegationsModal").modal('show');
 								document.getElementById("delegationsCntGroup").style.visibility = 'show';	
 
 				} else // if (visibility=='MyOwnPublic'){
@@ -1479,13 +1365,8 @@ function format ( d ) {
 								newVisibility = 'private';
 								$('#visID').css('color', '#f3cf58');
 								$("#visID").html("Visibility - Public");
-								//document.getElementById('newVisibilityPrivateBtn').style.visibility = 'show';
-								//document.getElementById('newVisibilityPublicBtn').style.visibility = 'hidden';
 								$("#newVisibilityPrivateBtn").show();
 								$("#newVisibilityPublicBtn").hide();
-								console.log("I am here "+ visibility);
-								//$("#delegationsModal").modal('show');
-								//???document.getElementById("delegationsCntGroup").style.visibility = 'hidden';
 				}
                                         //var x = document.getElementsByName('newDelegation')[0].value;
 
@@ -1667,20 +1548,12 @@ function format ( d ) {
 											if (data["status"]=='ok')
 											{
 
-											console.log(JSON.stringify(data));
-																							delegations = data["delegation"];
-											// if (delegations[uri + "/" + valueName])
-											//          my_delegation = delegations[uri + "/" + valueName];
-											// else if (delegations[id + "/" + valueName])
-											//            my_delegation = delegations[id + "/" + valueName];
-											// else  my_delegation = delegations[id];
-											console.log(uri + "/" + valueName + "---" + JSON.stringify(delegations));
-											 $('#delegationsTable tbody').html("");
+											delegations = data["delegation"];
+											$('#delegationsTable tbody').html("");
 											$('#delegationsTableGroup tbody').html("");
 										for(var i = 0; i < delegations.length; i++)
 										{
 										if ((delegations[i].userDelegated!=null)&&(delegations[i].userDelegated !=="ANONYMOUS")) {
-                                                                               		//console.log("adding user delegation");
 	                                                                               $('#delegationsTable tbody').append('<tr class="delegationTableRow" data-delegationId="' + delegations[i].delegationId + '" data-delegated="' + delegations[i].userDelegated + '"><td class="delegatedName">' + delegations[i].userDelegated + '</td><td><i class="fa fa-remove removeDelegationBtn"></i></td></tr>');
                                                                        		}
 										else if (delegations[i].groupDelegated!=null){
@@ -1734,7 +1607,7 @@ function format ( d ) {
                                                            if (data["status"] === 'ok')
 														   {
                                                                 rowToRemove.remove();
-                                                                console.log("ermoving a row from the table");
+                                                                //console.log("ermoving a row from the table");
                                                             }
                                                             else
                                                             {
@@ -1749,7 +1622,7 @@ function format ( d ) {
                                                 });
 
                                                                                                $('#delegationsTableGroup tbody').on("click","i.removeDelegationBtnGroup",function(){
-                                                                                                       console.log("toremove:");
+                                                                                                       //console.log("toremove:");
                                                                                                        var rowToRemove = $(this).parents('tr');
                                                                                                        $.ajax({
                                                                                                                url: "../api/value.php",     //check the url
@@ -2021,7 +1894,7 @@ $('#delegationsModal').on('hidden.bs.modal', '.modal', function () {
 	 
 	  function getLatLong(id, cb){
 		     
-			console.log(id);
+			//console.log(id);
 			var id = id;
 				$.ajax({
 					url: "../api/value.php",
@@ -2037,7 +1910,7 @@ $('#delegationsModal').on('hidden.bs.modal', '.modal', function () {
 					dataType: 'json',
 					success: function (data) 
 					{
-					  console.log(data);
+					  //console.log(data);
 					  var mylat =[];
 					  var mylong=[];
 					  var id =[];
@@ -2291,8 +2164,8 @@ function drawMapAll(data, divName){
 
     function colorSelectedMarkers(selections, greenIcon){
                 green_marker_array=[];
-                console.log("selections are");
-                console.log(selections);
+                //console.log("selections are");
+                //console.log(selections);
                 for(var k in selections){
 
                     lat=Number(selections[k].latitude); 

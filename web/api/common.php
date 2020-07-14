@@ -1,53 +1,4 @@
 <?php
-/*
-function checkRegisterOwnerShipDevice($token, &$result) {
-        try
-        {
-                $url= $GLOBALS["ownershipURI"] . "ownership-api/v1/limits/?type=IOTID&accessToken=" . $token;
-                $options = array(
-                          'http' => array(
-                                          'header' => "Content-Type: application/json;charset=utf-8",
-                                          'header' => "Access-Control-Allow-Origin: *",
-                                          'method' => 'GET',
-                                         'ignore_errors' => true,
-                                          'timeout' => 30
-                          )
-                );
-                $context = stream_context_create($options);
-                $local_result = @file_get_contents($url, false, $context);
-                if(strpos($http_response_header[0], '200') !== false)
-                {
-                       if ((json_decode($local_result)->limits[0]->current)<(json_decode($local_result)->limits[0]->limit))
-                       {
-                               $result["status"]='ok';
-                               $result["msg"] .= "\n registration is possible";
-                               $result["log"] .= "\n registration is possible";
-                       }
-                       else
-                       {
-                               $result["status"]='ko';
-                                $result["error_msg"] .= "The registration is NOT possible. Reached limit of IoT Devices. ";
-                                $result["msg"] .= "\n The registration is NOT possible. Reached limit of IoT Devices (".json_decode($local_result)->limits[0]->limit.")";
-                                $result["log"] .= "\n The registration is NOT possible. Reached limit of IoT Devices (".json_decode($local_result)->limits[0]->limit.")";
-
-                       }
-                }
-                else
-                {
-                        $result["status"]='ko';
-                        $result["error_msg"] .= "Error returned in checkRegisterOwnership. ";
-                        $result["msg"] .= "\n Error returned in checkRegisterOwnership" . $local_result;
-                        $result["log"] .= "\n Error returner in checkRegisterOwnership". $local_result;
-                }
-        }
-        catch (Exception $ex)
-        {
-               $result["status"]='ko';
-               $result["error_msg"] .= 'General error in checkRegisterOwnership. ';
-               $result["msg"] .= '\n general error in checkRegisterOwnership';
-               $result["log"] .= '\n general error in checkRegisterOwnership' . $ex;
-        }
-}*/ 
 
 function checkRegisterOwnerShipObject($token,$object, &$result) {
         try
@@ -98,9 +49,10 @@ function checkRegisterOwnerShipObject($token,$object, &$result) {
         }
 } 
 
-function insert_device($link,$id,$devicetype,$contextbroker,$kind,$protocol,$format,$macaddress,$model,
-$producer,$latitude,$longitude,$visibility, $frequency, $k1, $k2, $edgegateway_type, $edgegateway_uri,
-$listAttributes,$subnature, $staticAttributes,$pathCertificate,$accessToken,&$result,$shouldbeRegistered='yes', $organization, $kbUrl="", $username="")
+function insert_device($link, $id, $devicetype, $contextbroker, $kind, $protocol, $format, $macaddress, $model,
+	$producer, $latitude, $longitude, $visibility, $frequency, $k1, $k2, $edgegateway_type, $edgegateway_uri,
+	$listAttributes, $subnature, $staticAttributes, $pathCertificate, $accessToken, &$result, $shouldbeRegistered='yes', 
+	$organization, $kbUrl="", $username="", $service="", $servicePath="")
 {
   checkRegisterOwnerShipObject($accessToken, 'IOTID', $result);
   if ($result["status"]=='ok')
@@ -110,7 +62,7 @@ $listAttributes,$subnature, $staticAttributes,$pathCertificate,$accessToken,&$re
 		AND id = '$id';";
     $s3 = mysqli_query($link, $selectDevicesDeleted);
     if($s3)
-	   {
+    {
       if(mysqli_num_rows($s3) == 0)
       {
  
@@ -142,31 +94,45 @@ $listAttributes,$subnature, $staticAttributes,$pathCertificate,$accessToken,&$re
 	{
 		registerKB($link, $id, $devicetype, $contextbroker, $kind, $protocol,
 		 $format, $macaddress, $model, $producer, $latitude, $longitude, $visibility, 
-		 $frequency, $listAttributes, $subnature, $staticAttributes,$result,'yes', $organization,$kbUrl); 
+		 $frequency, $listAttributes, $subnature, $staticAttributes,$result,'yes', $organization,$kbUrl, $service, $servicePath); 
 	}
 	else
 	{
 	 registerKB($link, $id, $devicetype, $contextbroker, $kind, $protocol,
 	 $format, $macaddress, $model, $producer, $latitude, $longitude, $visibility, 
-	 $frequency, $listAttributes, $subnature, $staticAttributes,$result,$shouldbeRegistered, $organization,$kbUrl); 
+	 $frequency, $listAttributes, $subnature, $staticAttributes,$result,$shouldbeRegistered, $organization,$kbUrl, $service, $servicePath); 
 	}
 
 	if ($result["status"]=='ko' ) return $result;
 	
-	if ($result["status"]=='ok' &&  $result["content"]==null)
-	{
-	 $q = "INSERT INTO devices(id, devicetype, contextBroker,  kind, protocol, format, macaddress, model, producer, latitude, longitude, visibility, frequency, privatekey, certificate, organization, subnature, static_attributes) " .
-		 "VALUES('$id', '$devicetype', '$contextbroker', '$kind', '$protocol', '$format', '$macaddress', '$model', '$producer', '$latitude', '$longitude', '$visibility', '$frequency', '$privatekey','$certificate', '$organization', '$subnature', '$staticAttributes')";
+	//TODO check if needed
+        $syntaxRes=0;
+        if ($protocol == 'ngsi w/MultiService'){
+		$id = $service . "." . $servicePath . "." . $id;
+ 	        $syntaxRes = servicePathSyntaxCheck($servicePath);
+                $service="'$service'";
+		$servicePath="'$servicePath'";
+        }
+        else {
+                $service="NULL";
+		$servicePath="NULL";
+        }
+
+	if ($syntaxRes == 0){
+
+	 if ($result["status"]=='ok' &&  $result["content"]==null)
+	 {
+	  $q = "INSERT INTO devices(id, devicetype, contextBroker,  kind, protocol, format, macaddress, model, producer, latitude, longitude, visibility, frequency, privatekey, certificate, organization, subnature, static_attributes, service, servicePath) " .
+		 "VALUES('$id', '$devicetype', '$contextbroker', '$kind', '$protocol', '$format', '$macaddress', '$model', '$producer', '$latitude', '$longitude', '$visibility', '$frequency', '$privatekey','$certificate', '$organization', '$subnature', '$staticAttributes', $service, $servicePath)";
 	 }
-	else {
-	$q = "INSERT INTO devices(id, devicetype, contextBroker,  kind, protocol, format, macaddress, model, producer, latitude, longitude,uri, visibility,  frequency, privatekey, certificate, mandatoryproperties,mandatoryvalues, organization, subnature, static_attributes) " .
-		 "VALUES('$id', '$devicetype', '$contextbroker', '$kind', '$protocol', '$format', '$macaddress', '$model', '$producer', '$latitude', '$longitude', '" . $result["content"] . "', '$visibility', '$frequency', '$privatekey','$certificate',1,1, '$organization', '$subnature', '$staticAttributes')";
-	}
+	 else {
+	  $q = "INSERT INTO devices(id, devicetype, contextBroker,  kind, protocol, format, macaddress, model, producer, latitude, longitude,uri, visibility,  frequency, privatekey, certificate, mandatoryproperties,mandatoryvalues, organization, subnature, static_attributes, service, servicePath) " .
+		 "VALUES('$id', '$devicetype', '$contextbroker', '$kind', '$protocol', '$format', '$macaddress', '$model', '$producer', '$latitude', '$longitude', '" . $result["content"] . "', '$visibility', '$frequency', '$privatekey','$certificate',1,1, '$organization', '$subnature', '$staticAttributes', $service, $servicePath)";
+	 }
 
-
-	$r = mysqli_query($link, $q);
-	if($r) 
-	{
+	 $r = mysqli_query($link, $q);
+	 if($r) 
+	 {
 		$result["msg"] .= "\n Device $contextbroker/$id correctly inserted with uri " . $result["content"];
 		$result["log"] .= "\r\n Device $contextbroker/$id correctly inserted with uri" . $result["content"] . "\r\n";
 		
@@ -180,7 +146,7 @@ $listAttributes,$subnature, $staticAttributes,$pathCertificate,$accessToken,&$re
 		if ($accessToken != "")
 		{
 			$ownmsg = array();
-            $eId=$organization.":".$contextbroker.":".$id;
+		        $eId=$organization.":".$contextbroker.":".$id;
 			$ownmsg["elementId"]=$eId;
 			$ownmsg["elementName"]=$id;				    
 			$ownmsg["elementUrl"]=$result["content"];
@@ -236,13 +202,19 @@ $listAttributes,$subnature, $staticAttributes,$pathCertificate,$accessToken,&$re
 		 {
 		   $result["status"]='ko';
 		 }
-	} 
-	else 
-	{
+	 } 
+	 else 
+	 {
 	   $result["status"]='ko';
 	   $result["error_msg"] .= "Problem in inserting the device $id in the database. "; 
 	   $result["msg"] .= "\n Problem in inserting the device $id:  <br/>" .  generateErrorMessage($link); 
 	   $result["log"] .= "\r\n Problem in inserting the device $id:  $q  " .  generateErrorMessage($link);  
+	 }
+	}
+	else
+	{
+		$result["status"]='ko';
+		$result["error_msg"] = $servicePath . " is NOT a valid servicePath";
 	}
       }
       else
@@ -261,7 +233,9 @@ $listAttributes,$subnature, $staticAttributes,$pathCertificate,$accessToken,&$re
            $result["log"] .= "\r\n Problem in inserting the device $id, related to the deleted_devices table:   " .  generateErrorMessage($link);  
     }
   }
-  // limits reached, error message are already thrown  
+  else{
+    // limits reached, error message are already thrown  
+  }
 }
 
 
@@ -282,9 +256,8 @@ function format_result($draw, $number_all_row, $number_filter_row, $data, $msg, 
 }
 
 
-function create_datatable_data($link,$request,$query,$where){
-
-	
+function create_datatable_data($link,$request,$query,$where)
+{
 	$columns=$request["columns"];
 	if(isset($request["search"]["value"]))
 	{
@@ -303,39 +276,11 @@ function create_datatable_data($link,$request,$query,$where){
 
 	if(isset($request["order"]))
 	{
-	  $query .= 'ORDER BY '.$columns[$request['order']['0']['column']]['name'] .' '.$request['order']['0']['dir'].' 
-			';
+		$query .= 'ORDER BY '.$columns[$request['order']['0']['column']]['name'] .' '.$request['order']['0']['dir'].'	';
 	}
-	else
-	{
-	 // $query .= 'ORDER BY name DESC ';
-	}
-	/* MM0310
-	$query1 = '';
-
-	if($request["length"] != -1)
-	{
-			$query1 = 'LIMIT ' . $request['start'] . ', ' . $request['length'];
-	}
-*/
-	// echo $query . "\n";
-	// echo $query . $query1 . "\n" . $request['order']['0']['column'] . . "\n" .;
 	
-	
-	// determine the result of the query without applying filters	
-	//MM0310 $res= mysqli_query($link, $query);
-    //MM0310if (!$res)	return null;
-	//MM0310$number_all_row = mysqli_num_rows($res);
-	
-	// determine the result of the query by applying the filters 
-	//MM0310 $result = mysqli_query($link, $query . $query1);
-//	echo $query;
 	$result = mysqli_query($link, $query);
 	return $result;
-	//MM0310if (!$result) return null;
-	
-	//MM0310 return array("result" => $result, "number_all_row" => $number_all_row);	
-
 }
 
 
@@ -869,9 +814,9 @@ function removeDelegationValue($token, $user, $delegationId, &$result) {
 	catch (Exception $ex)
 	{
 	$result["status"]='ko';
-	$result["error_msg"] .= 'Error in removing the delegation. ';
-	$result["msg"] .= '\n error in removing the delegation ';
-	$result["log"] .= '\n error in removing the delegation ' . $ex;
+	$result["error_msg"] .= 'catched Error in removing the delegation. ';
+	$result["msg"] .= '\n catched error in removing the delegation ';
+	$result["log"] .= '\n catched error in removing the delegation ' . $ex;
 	}
 }
 
@@ -999,7 +944,6 @@ function getDelegatedObject($token, $user, $object, &$result) {
 		{
           $url= $GLOBALS["delegationURI"] . "datamanager/api/v1/username/ANONYMOUS/delegated?accessToken=" . $token ."&sourceRequest=iotdirectory";
           $local_result = file_get_contents($url);
-
 		  if(strpos($http_response_header[0], '200') == true || strpos($http_response_header[0], '204') == true)
           {
 		    $lists = json_decode($local_result);
@@ -1042,6 +986,8 @@ function getDelegatedObject($token, $user, $object, &$result) {
        
 }
 
+
+//TODO show the k1 and k2 also if delegator==user (the owner of the delegation should be able to access k1 and k2 delegations)
 function getDelegatorDevice($token, $user, &$result, $eId) {
 	$local_result="";
         $mykeys = array();
@@ -1404,7 +1350,7 @@ function retrieveAvailableStaticAttribute($subnature, &$result){
 /* ****FUNCTIONS FOR THE REGISTRATION OF A DEVICE IN THE CONTEXT BROKER AND IN THE KNOWLEDGE BASE ****** */
 	
 	function insert_ngsi($name, $type, $contextbroker, $kind, $protocol, $format, $model, $latitude, $longitude,$visibility, $frequency, 
-$listnewAttributes, $ip, $port, &$result)
+$listnewAttributes, $ip, $port, &$result,  $service="", $servicePath="")
 	{
 	   $res = "ok";
 	   $msg_orion=array();
@@ -1439,14 +1385,21 @@ $listnewAttributes, $ip, $port, &$result)
 			// Setup cURL
 			$ch = curl_init($url_orion);
 			$authToken = 'OAuth 2.0 token here';
+			
+			$httpheader=array(
+                                        'Authorization: '.$authToken,
+                                        'Content-Type: application/json');
+			if ($service!="")	
+				array_push($httpheader,'Fiware-Service: ' . $service);
+			if ($servicePath!="")
+				array_push($httpheader,'Fiware-ServicePath: ' . $servicePath);
+
 			curl_setopt_array($ch, array(
-    			CURLOPT_POST => TRUE,
-    			CURLOPT_RETURNTRANSFER => TRUE,
-    			CURLOPT_HTTPHEADER => array(
-					'Authorization: '.$authToken,
-					'Content-Type: application/json'),
-				CURLOPT_POSTFIELDS => json_encode($msg_orion)
-		    ));
+    			  CURLOPT_POST => TRUE,
+    			  CURLOPT_RETURNTRANSFER => TRUE,
+    			  CURLOPT_HTTPHEADER => $httpheader, 
+			  CURLOPT_POSTFIELDS => json_encode($msg_orion)
+		    	));
 
 		    // Send the request
 		    $response_orion = curl_exec($ch);
@@ -1512,7 +1465,7 @@ $visibility, $frequency, $listnewAttributes, &$result)
 		{$error=true; $result["msg"].= "\n latitude not correct ";$result["error_msg"].= "latitude not correct. "; $result["log"].= "\n latitude not correct ";}
 	  if ($longitude < -180 && $longitude>180)
 		{$error=true; $result["msg"].= "\n longitude not correct ";$result["error_msg"].= "longitude not correct. ";$result["log"].= "\n longitude not correct ";}
-	  if (!($protocol=="ngsi" || $protocol=="mqtt" || $protocol=="amqp"))
+	  if (!($protocol=="ngsi" || $protocol=="mqtt" || $protocol=="amqp" || $protocol == "ngsi w/MultiService"))
 		{$error=true; $result["msg"].= "\n protocol not correct ";$result["error_msg"].= "protocol not correct. ";$result["log"].= "\n protocol not correct ";}
 	  if (count($listnewAttributes)==0)
 		{$error=true; $result["msg"].= "\n at list one attribute";$result["error_msg"].= " at least one attribute is required. ";$result["log"].= "\n at list one attribute";}
@@ -1583,7 +1536,7 @@ $visibility, $frequency, $listnewAttributes, $subnature, $staticAttr, &$result)
 			$result["msg"].= "\n longitude not correct ";
 			$result["log"].= "\n longitude not correct ";
 		}
-	  if (!($protocol=="ngsi" || $protocol=="mqtt" || $protocol=="amqp"))
+	  if (!($protocol=="ngsi" || $protocol=="mqtt" || $protocol=="amqp" || $protocol == "ngsi w/MultiService"))
 		{
 			$error=true; 
 			$result["error_msg"].= "protocol not correct. ";
@@ -1641,7 +1594,7 @@ $visibility, $frequency, $listnewAttributes, $subnature, $staticAttr, &$result)
 	}
 	
 	function registerKB($link, $name, $type, $contextbroker, $kind, $protocol, $format, $macaddress, $model, $producer, $latitude,
-			$longitude, $visibility, $frequency, $listnewAttributes, $subnature, $staticAttributes,&$result, $shouldbeRegistered, $organization, $kbUrl="")
+			$longitude, $visibility, $frequency, $listnewAttributes, $subnature, $staticAttributes,&$result, $shouldbeRegistered, $organization, $kbUrl="", $service="", $servicePath="")
 	{
 		$result["status"]='ok';
 		
@@ -1664,6 +1617,8 @@ $visibility, $frequency, $listnewAttributes, $subnature, $staticAttr, &$result)
 			  
 			$msg=array();
 			$msg["id"]= $name;
+			if ($rowCB["protocol"] == "ngsi w/MultiService") 
+				$msg["id"] = $service . "." . $servicePath . "." . $name;
 			$msg["type"]= $type;
 			$msg["kind"]= $kind;
 			$msg["protocol"]= $protocol;
@@ -1680,12 +1635,14 @@ $visibility, $frequency, $listnewAttributes, $subnature, $staticAttr, &$result)
 	
 			foreach(json_decode(stripcslashes($staticAttributes)) as $stAtt){
 				$msg[$stAtt[0]]=$stAtt[1];
-				error_log("Adding: ".$msg[$stAtt[0]]);
 			}
+
+
 
 			$msg["broker"]=array();
 			$msg["broker"]["name"]=$contextbroker;
 			$msg["broker"]["type"]=$rowCB["protocol"];
+
 			$msg["broker"]["ip"]=$rowCB["ip"];
 			$msg["broker"]["port"]=$rowCB["port"];
 			$msg["broker"]["login"]=($rowCB["login"]==null)?"":$rowCB["login"];
@@ -1730,7 +1687,7 @@ $visibility, $frequency, $listnewAttributes, $subnature, $staticAttr, &$result)
 						'header' => "Content-Type: application/json;charset=utf-8",
 						'header' => "Access-Control-Allow-Origin: *",
 						'method' => 'POST',
-						 'content' => $encoda,
+						'content' => $encoda,
 						'timeout' => 30
 					)
 				);
@@ -1759,6 +1716,9 @@ $visibility, $frequency, $listnewAttributes, $subnature, $staticAttr, &$result)
 								$res = insert_ngsi($name, $type, $contextbroker, $kind, $protocol, $format, $model, $latitude, $longitude, 
 										$visibility, $frequency, $listnewAttributes, $ip, $port, $result);
 								break;
+							case "ngsi w/MultiService":
+								$res = insert_ngsi($name, $type, $contextbroker, $kind, $protocol, $format, $model, $latitude, $longitude, 
+								$visibility, $frequency, $listnewAttributes, $ip, $port, $result, $service, $servicePath);
 							case "mqtt":
 								$res = insert_mqtt($name, $type, $contextbroker, $kind, $protocol, $format, $latitude, $longitude, 
 										$visibility, $frequency, $listnewAttributes, $ip, $port, $result);
@@ -1811,89 +1771,132 @@ $visibility, $frequency, $listnewAttributes, $subnature, $staticAttr, &$result)
                 
 	// ****FUNCTIONS FOR THE MODIFICATION OF THE REGISTRATION OF A DEVICE IN THE KNOWLEDGE BASE AND IN THE CONTEXT BROKER ****************** 
 				
-	function update_ngsi($name, $type, $contextbroker, $kind, $protocol, $format, $model, $latitude, $longitude, $visibility, $frequency, 
-$listnewAttributes, $ip, $port,$uri, &$result)
+	function update_ngsi($name, $type, $contextbroker, $kind, $protocol, $format, $model, $latitude, $longitude, $visibility, $frequency,
+		$listnewAttributes, $deletedAttributes, $ip, $port, $uri, &$result, $service="", $servicePath="" )
 	{
-	   $res = "ok";
-	   $msg_orion=array();
+		$res = "ok";
+		$msg_orion=array();
       
-	  // $msg_orion["id"]= $name;
-      // $msg_orion["type"]= $type;
-      $msg_orion["latitude"]=array();
-      $msg_orion["longitude"]=array();
-      $msg_orion["latitude"]["value"]= $latitude;
-      $msg_orion["longitude"]["value"]= $longitude;
-      $msg_orion["latitude"]["type"]= "float";
-      $msg_orion["longitude"]["type"]= "float";
-      $a=0;
-      while ($a < count($listnewAttributes))
-      {
-         $att=$listnewAttributes[$a];
-		 if (is_object($att))
-		 {
-			$msg_orion[$att->value_name]=array();
-			$msg_orion[$att->value_name]["value"]="";
-			$msg_orion[$att->value_name]["type"]=$att->data_type;
-		 }
-		 else
-		 {
-			 $msg_orion[$att["value_name"]]=array();
-			 $msg_orion[$att["value_name"]]["value"]="";
-		     $msg_orion[$att["value_name"]]["type"]=$att["data_type"];
-		 }			 
-         $a++;
-      }
-	  if ($model != null && $model != "")
-	  {
-	    $msg_orion["model"]=array();
-	    $msg_orion["model"]["value"]= $model;
- 	    $msg_orion["model"]["type"]= "string";
-      }  
-     
-	  $url_orion="http://$ip:$port/v2/entities/$name/attrs";
-      try
-         {
+		// $msg_orion["id"]= $name;
+		// $msg_orion["type"]= $type;
+		$msg_orion["latitude"]=array();
+		$msg_orion["longitude"]=array();
+		$msg_orion["latitude"]["value"]= $latitude;
+		$msg_orion["longitude"]["value"]= $longitude;
+		$msg_orion["latitude"]["type"]= "float";
+		$msg_orion["longitude"]["type"]= "float";
+		$a=0;
+		while ($a < count($listnewAttributes))
+		{
+			$att=$listnewAttributes[$a];
+			if (is_object($att))
+			{
+				$msg_orion[$att->value_name]=array();
+				$msg_orion[$att->value_name]["value"]="";
+				$msg_orion[$att->value_name]["type"]=$att->data_type;
+			 }
+			 else
+			 {
+				$msg_orion[$att["value_name"]]=array();
+				$msg_orion[$att["value_name"]]["value"]="";
+				$msg_orion[$att["value_name"]]["type"]=$att["data_type"];
+			}			 
+		        $a++;
+		}
+		if ($model != null && $model != "")
+		{
+			$msg_orion["model"]=array();
+			$msg_orion["model"]["value"]= $model;
+			$msg_orion["model"]["type"]= "string";
+		}  
+    		if ($protocol == "ngsi w/MultiService"){
+			// get the name from id
+			$name = explode(".", $name)[2];
+		}
+ 
+		$url_orion="http://$ip:$port/v2/entities/$name/attrs";
+		try
+		{
 			// Setup cURL
 			$ch = curl_init($url_orion);
 			$authToken = 'OAuth 2.0 token here';
+
+			$httpheader=array(
+                                        'Authorization: '.$authToken,
+                                        'Content-Type: application/json');
+                        if ($service!="")
+                                array_push($httpheader,'Fiware-Service: ' . $service);
+                        if ($servicePath!="")
+                                array_push($httpheader,'Fiware-ServicePath: ' . $servicePath);
+
 			curl_setopt_array($ch, array(
-    			CURLOPT_POST => TRUE,
-    			CURLOPT_RETURNTRANSFER => TRUE,
-    			CURLOPT_HTTPHEADER => array(
-					'Authorization: '.$authToken,
-					'Content-Type: application/json'),
+	    			CURLOPT_POST => TRUE,
+    				CURLOPT_RETURNTRANSFER => TRUE,
+    				CURLOPT_HTTPHEADER => $httpheader, 
 				CURLOPT_POSTFIELDS => json_encode($msg_orion)
-		    ));
+			));
 
-		    $response_orion = curl_exec($ch);
+			$response_orion = curl_exec($ch);
 
-		    // Check for errors
-		    if($response_orion === FALSE){
-    			// die(curl_error($ch));
+			// Check for errors
+			if($response_orion === FALSE){
 				$result["error_msg"].= "Error in the connection with the ngsi context broker. ";
 				$result["msg"].= "\n error in the connection with the ngsi context broker";
 				$result["log"].= "\n error in the connection with the ngsi context broker" . curl_error($ch);
 				$res='ko';
 			}
-            else
+			else
 			{
-		    // Decode the response
-		     $responseData = json_decode($response_orion, TRUE);
-			 $result["status"]='ok';
-		     $result["msg"] .= '\n response from the ngsi context broker ';
-			 $result["log"] .= '\n response from the ngsi context broker ' . $response_orion;
-			 $res='ok';
-            } 
-         }
-         catch (Exception $ex)
-         {
+				//eventually remove attributes TODO uniform with above
+				$b=0;
+		                while ($b < count($deletedAttributes))
+                		{
+		                        $att=$deletedAttributes[$b];
+					// Setup cURL
+		                        $ch = curl_init($url_orion."/".$att->value_name);
+
+		                        if ($service!="")
+                		                array_push($httpheader,'Fiware-Service: ' . $service);
+		                        if ($servicePath!="")
+                		                array_push($httpheader,'Fiware-ServicePath: ' . $servicePath);
+
+		                        curl_setopt_array($ch, array(
+                		                CURLOPT_CUSTOMREQUEST => "DELETE",
+                                		CURLOPT_RETURNTRANSFER => TRUE
+		                        ));
+
+                		        $response_orion = curl_exec($ch);
+				
+	
+					// Check for errors
+		                        if($response_orion === FALSE){
+                		                $result["error_msg"].= "Error in the DELETE connection with the ngsi context broker. ";
+                                		$result["msg"].= "\n error in the DELETE connection with the ngsi context broker";
+		                                $result["log"].= "\n error in the DELETE connection with the ngsi context broker" . curl_error($ch);
+                		                $res='ko';
+						break;
+		                        }
+                        		$b++;
+		                }		
+
+				if($response_orion !== FALSE)
+				{
+					$result["status"]='ok';
+					$result["msg"] .= '\n response from the ngsi context broker ';
+					$result["log"] .= '\n response from the ngsi context broker ' . $response_orion;
+					$res='ok';
+				}
+			} 
+		}
+		catch (Exception $ex)
+		{
 		       $result["status"]='ko';
 		       $result["error_msg"] .= ' Error in connecting with the ngsi context broker. ';
 		       $result["msg"] .= ' error in connecting with the ngsi context broker ';
 		       $result["log"] .= ' error in connecting with the ngsi context broker ' . $ex;
-			   $res="ko";
-            }
-            return $res;
+			$res="ko";
+		}
+		return $res;
 	}
 	
 	function update_mqtt($name, $type, $contextbroker, $kind, $protocol, $format, $latitude, $longitude, $visibility, $frequency, 
@@ -1909,16 +1912,13 @@ $listnewAttributes, $ip, $port,$uri,&$result)
 	}
 	
 function updateKB($link, $name, $type, $contextbroker, $kind, $protocol, $format, $macaddress, $model, $producer, $latitude, $longitude, 
-$visibility, $frequency, $attributes, $uri,$organization, $subnature, $staticAttributes, &$result) {
-  // $result=array();
+	$visibility, $frequency, $attributes, $deletedAttributes, $uri, $organization, $subnature, $staticAttributes, &$result, $service="", $servicePath="", $kbUrl="") 
+{
   $result["status"]='ok';
-  // $result["msg"]='';
-  // $result["log"]='';
         
   if (canBeRegistered($name, $type, $contextbroker, $kind, $protocol, $format, $macaddress, $model, $producer, $latitude, $longitude, 
 $visibility, $frequency, $attributes,  $subnature, $staticAttributes,$result))
   {
-		error_log("ccc");
 	  $query="SELECT * from contextbroker WHERE name = '$contextbroker'";
 	  $r = mysqli_query($link, $query);
 	 
@@ -1945,7 +1945,7 @@ $visibility, $frequency, $attributes,  $subnature, $staticAttributes,$result))
 	  $msg["latitude"]= $latitude;
 	  $msg["longitude"]= $longitude;
 	  $msg["frequency"]= $frequency;
-      $msg["organization"]= $organization;
+	  $msg["organization"]= $organization;
       
 	  // $msg["visibility"]= $visibility;
 	  $msg["ownership"]= $visibility;
@@ -1954,6 +1954,7 @@ $visibility, $frequency, $attributes,  $subnature, $staticAttributes,$result))
 	  $msg["broker"]=array();
 	  $msg["broker"]["name"]=$contextbroker;
 	  $msg["broker"]["type"]=$rowCB["protocol"];
+
 	  $msg["broker"]["ip"]=$rowCB["ip"];
 	  $msg["broker"]["port"]=$rowCB["port"];
 	  $msg["broker"]["login"]=($rowCB["login"]==null)?"":$rowCB["login"];
@@ -1968,7 +1969,6 @@ $visibility, $frequency, $attributes,  $subnature, $staticAttributes,$result))
 
                         foreach(json_decode(stripcslashes($staticAttributes)) as $stAtt){
                                 $msg[$stAtt[0]]=$stAtt[1];
-                                error_log("Adding: ".$msg[$stAtt[0]]);
                         }
  
 	  $myAttrs=array();
@@ -1988,21 +1988,22 @@ $visibility, $frequency, $attributes,  $subnature, $staticAttributes,$result))
 		$myAttrs[]=$myatt;
 	}
 
-	  $msg["attributes"]=$myAttrs;
+		$msg["attributes"]=$myAttrs;
 
-                        $encoda=json_encode($msg, JSON_UNESCAPED_SLASHES);
-                        error_log("Sending to insertKB:".$encoda);
-                        $encoda=str_replace('\\\\','\\\\u005C', $encoda);
-                        $encoda=str_replace('\"','\\\\u0022', $encoda);
-                        error_log("Sending to insertKB (after pulizia):".$encoda);
-
+                $encoda=json_encode($msg, JSON_UNESCAPED_SLASHES);
+                error_log("Sending to updateKB:".$encoda);
+                $encoda=str_replace('\\\\','\\\\u005C', $encoda);
+                $encoda=str_replace('\"','\\\\u0022', $encoda);
+                error_log("Sending to updateKB (after pulizia):".$encoda);
 	
-	  try
-	   {
-		 //$url= $GLOBALS["knowledgeBaseURI"] . "api/v1/iot/insert";
-		$url= $_SESSION['kbUrl']."iot/insert";
+		try
+		{
+			if ($kbUrl=="")	
+				$url= $_SESSION['kbUrl']."iot/insert";
+			else
+				$url= $kbUrl."iot/insert";
 
-		 $options = array(
+			$options = array(
 			  'http' => array(
 						  'header' => "Content-Type: application/json;charset=utf-8",
 						  'header' => "Access-Control-Allow-Origin: *",
@@ -2010,16 +2011,18 @@ $visibility, $frequency, $attributes,  $subnature, $staticAttributes,$result))
 			  'content' => $encoda,
 						  'timeout' => 30)
 			);
-		 $context = stream_context_create($options);
-		 $local_result = @file_get_contents($url, false, $context);
-	 } 
-	 catch (Exception $ex)
-	{
-	   $result["status"]='ko';
-	   $result["error_msg"] .= ' Error in connecting with KB. ';
-	   $result["msg"] .= ' error in connecting with KB ';
-	   $result["log"] .= ' error in connecting with KB ' . $ex;
-	 } 
+			$context = stream_context_create($options);
+			$local_result = @file_get_contents($url, false, $context);
+
+			error_log("Returning from insertKB:".$local_result);
+		} 
+		catch (Exception $ex)
+		{
+			$result["status"]='ko';
+			$result["error_msg"] .= ' Error in connecting with KB. ';
+			$result["msg"] .= ' error in connecting with KB ';
+			$result["log"] .= ' error in connecting with KB ' . $ex;
+		} 
 	 if ($local_result!="errore")
 	 {
 	   $result["status"]='ok';
@@ -2043,7 +2046,11 @@ $visibility, $frequency, $attributes,  $subnature, $staticAttributes,$result))
               {
                case "ngsi":
                     $res = update_ngsi($name, $type, $contextbroker, $kind, $protocol, $format, $model, $latitude, $longitude, $visibility, $frequency, 
-        $attributes, $ip, $port,$uri, $result);
+        $attributes, $deletedAttributes, $ip, $port, $uri, $result);
+                    break;
+		case "ngsi w/MultiService":
+			$res = update_ngsi($name, $type, $contextbroker, $kind, $protocol, $format, $model, $latitude, $longitude, $visibility, $frequency,
+        $attributes, $deletedAttributes, $ip, $port, $uri, $result, $service, $servicePath);
                     break;
                case "mqtt":
                     $res = update_mqtt($name, $type, $contextbroker, $kind, $protocol, $format, $latitude, $longitude, $visibility, 
@@ -2091,8 +2098,15 @@ $visibility, $frequency, $attributes,  $subnature, $staticAttributes,$result))
 
 
 	function delete_ngsi($name, $type, $contextbroker, $kind, $protocol, $format, $model, $latitude, $longitude, $visibility, $frequency, 
-$listnewAttributes, $ip, $port,$uri, &$result)
+$listnewAttributes, $ip, $port,$uri, &$result, $service="", $servicePath="")
 	{
+	if ($protocol == "ngsi w/MultiService"){
+		//dev_log("delete_ngsi: multiservice device detected");
+		// get the name from id
+		$name = explode(".", $name)[2];
+		//dev_log("delete_ngsi: device name: " . $name);
+	}
+
 	   $res = "ok";
 	   $url_orion="http://$ip:$port/v2/entities/$name";
       
@@ -2101,12 +2115,20 @@ $listnewAttributes, $ip, $port,$uri, &$result)
 			// Setup cURL
 			$ch = curl_init($url_orion);
 			$authToken = 'OAuth 2.0 token here';
+
+			$httpheader=array(
+                                        'Authorization: '.$authToken
+                                        );
+                        if ($service!="")
+                                array_push($httpheader,'Fiware-Service: ' . $service);
+                        if ($servicePath!="")
+                                array_push($httpheader,'Fiware-ServicePath: ' . $servicePath);
+
+
 			curl_setopt_array($ch, array(
     			CURLOPT_CUSTOMREQUEST => 'DELETE',
     			CURLOPT_RETURNTRANSFER => TRUE,
-    			CURLOPT_HTTPHEADER => array(
-					'Authorization: '.$authToken //, 'Content-Type: application/json'
-					),
+    			CURLOPT_HTTPHEADER =>$httpheader, 
 				// CURLOPT_POSTFIELDS => json_encode($msg_orion)
 		    ));
 
@@ -2162,17 +2184,14 @@ $listnewAttributes, $ip, $port,$uri, &$result)
 
 	
 	
-function deleteKB($link, $name, $contextbroker, $kbUrl="", &$result) {
+function deleteKB($link, $name, $contextbroker, $kbUrl="", &$result, $service="", $servicePath="") {
 	
-	//$result=array();
-    $result["status"]='ok';
-    // $result["msg"]='';
-    // $result["log"]='';
+	$result["status"]='ok';
   
 	$listnewAttributes=generateAttributes($link, $name, $contextbroker);
 	   
-	$query = "SELECT d.organization, d.uri, d.id, d.devicetype AS entityType, d.kind, d.format, d.macaddress, d.model, d.producer, d.protocol, d.longitude, 
-d.latitude, d.visibility, d.frequency, cb.name, cb.protocol as type, cb.ip, cb.port, cb.login, cb.password, cb.latitude as cblatitude, 
+	$query = "SELECT d.organization, d.uri, d.id, d.devicetype AS entityType, d.kind, d.format, d.macaddress, d.model, d.producer, d.protocol, d.longitude,d.subnature, d.static_attributes, 
+d.latitude, d.visibility, d.frequency, d.service, d.servicePath, cb.name, cb.protocol as type, cb.ip, cb.port, cb.login, cb.password, cb.latitude as cblatitude, 
 cb.longitude as cblongitude, cb.created, cb.kind as cbkind FROM devices d JOIN contextbroker cb ON d.contextBroker = cb.name WHERE d.deleted is null and 
 d.contextBroker='$contextbroker' and d.id='$name';";
 	   
@@ -2188,8 +2207,7 @@ d.contextBroker='$contextbroker' and d.id='$name';";
   
 	$row = mysqli_fetch_assoc($r_init);
 	$name =$row["id"];
-    $organization =$row["organization"];
-    
+        $organization =$row["organization"];
 	$type =$row["entityType"];
 	$kind =$row["kind"];
 	$protocol =$row["protocol"];
@@ -2200,22 +2218,24 @@ d.contextBroker='$contextbroker' and d.id='$name';";
 	$latitude =$row["latitude"];
 	$longitude =$row["longitude"];
 	$visibility = $row['visibility'];
-	// $owner= $row['owner'];
 	$frequency= $row['frequency'];
 	$ip=$row["ip"];
 	$port=$row["port"];
 	$uri=$row["uri"];
+	$subnature=$row["subnature"];
+	$staticAttributes=$row["static_attributes"];
 
 	$result["msg"] .="$name, $type, $contextbroker, $kind, $protocol, $format, $macaddress, $model, $producer, $latitude, $longitude, 
 $visibility, $frequency,". count($listnewAttributes);
     
-    if (canBeModified($name, $type, $contextbroker, $kind, $protocol, $format, $macaddress, $model, $producer, $latitude, $longitude, 
+	if (canBeModified($name, $type, $contextbroker, $kind, $protocol, $format, $macaddress, $model, $producer, $latitude, $longitude, 
 $visibility, $frequency, $listnewAttributes, $result))
 	  {
 		  /* msg for the Knowledge base + registration on the KB */
-		 // echo "entrato";
 		  $msg=array();
 		  $msg["id"]= $name;
+		  if ($protocol == "ngsi w/MultiService") 
+			$msg["id"] = $service . "." . $servicePath . "." . $name;
 		  $msg["type"]= $type;
 		  $msg["kind"]= $kind;
 		  $msg["protocol"]= $protocol;
@@ -2226,14 +2246,14 @@ $visibility, $frequency, $listnewAttributes, $result))
 		  $msg["latitude"]= $latitude;
 		  $msg["longitude"]= $longitude;
 		  $msg["frequency"]= $frequency;
-          $msg["organization"]= $organization;
-	 $msg["uri"]= $uri;
-	      
-          $msg["ownership"]= $visibility;
-	      // if ($msg["visibility"]=='private') $msg["owner"]=$owner;
+		  $msg["organization"]= $organization;
+		  $msg["uri"]= $uri;
+		  $msg["ownership"]= $visibility;
+		  
 		  $msg["broker"]=array();
 		  $msg["broker"]["name"]=$contextbroker;
 		  $msg["broker"]["type"]=$row["protocol"];
+
 		  $msg["broker"]["ip"]=$row["ip"];
 		  $msg["broker"]["port"]=$row["port"];
 		  $msg["broker"]["login"]=($row["login"]==null)?"":$row["login"];
@@ -2241,7 +2261,6 @@ $visibility, $frequency, $listnewAttributes, $result))
 		  $msg["broker"]["latitude"]=$row["cblatitude"];
 		  $msg["broker"]["longitude"]=$row["cblongitude"];
 		  $msg["broker"]["created"]=$row["created"];
-		   // $msg["attributes"]=array();
 		  
 		  $myAttrs=array();
 		  $i=1;
@@ -2253,23 +2272,33 @@ $visibility, $frequency, $listnewAttributes, $result))
 			$myatt["value_type"]=$att["value_type"];
 			$myatt["value_unit"]=$att["value_unit"];
 			$myatt["healthiness_criteria"]=$att["healthiness_criteria"];
-			if ($att["healthiness_criteria"]=="refresh_rate") $myatt["value_refresh_rate"]=$att["healthiness_value"];
+			if ($att["healthiness_criteria"]=="refresh_rate") 
+				$myatt["value_refresh_rate"]=$att["healthiness_value"];
 			else if ($att["healthiness_criteria"]=="different_values") $myatt["different_values"]=$att["healthiness_value"];
-					 else $myatt["value_bounds"]=$att["healthiness_value"];
+				 else $myatt["value_bounds"]=$att["healthiness_value"];
 			$myatt["order"]=$att["order"];
 			$myAttrs[]=$myatt;
-			
 		  }	 
 		  $msg["attributes"]=$myAttrs;
 		  
-		  try
-		   {
-			 //$url= $GLOBALS["knowledgeBaseURI"] . "api/v1/iot/delete";
-			 if($kbUrl==""){
-			 $url= $_SESSION['kbUrl']."iot/delete";
+		  $msg["subnature"]=$subnature;
+                  foreach(json_decode(stripcslashes($staticAttributes)) as $stAtt){
+                                $msg[$stAtt[0]]=$stAtt[1];
+                  }
+
+		  $encoda=json_encode($msg, JSON_UNESCAPED_SLASHES);
+                  error_log("Deleting to insertKB:".$encoda);
+                  $encoda=str_replace('\\\\','\\\\u005C', $encoda);
+                  $encoda=str_replace('\"','\\\\u0022', $encoda);
+                  error_log("Deleting to insertKB (after pulizia):".$encoda);
+
+		try
+		{
+			if($kbUrl=="") {
+				$url= $_SESSION['kbUrl']."iot/delete";
 			}
-			else{
-			 $url=$kbUrl."iot/delete";
+			else {
+				$url=$kbUrl."iot/delete";
 			}
 			 
 			 $options = array(
@@ -2277,76 +2306,78 @@ $visibility, $frequency, $listnewAttributes, $result))
 							  'header' => "Content-Type: application/json;charset=utf-8",
 							  'header' => "Access-Control-Allow-Origin: *",
 							  'method' => 'POST',
-				  'content' => json_encode($msg),
+							  'content' => $encoda,
 							  'timeout' => 30
 					  )
 				);
 			 $context = stream_context_create($options);
 			 $local_result = @file_get_contents($url, false, $context);
 
-		 } 
-		 catch (Exception $ex)
-		  {
+		} 
+		catch (Exception $ex)
+		{
 			$result["status"]='ko';
-		    $result["error_msg"] .= 'Error in connecting with KB. ';
-		    $result["msg"] .= ' error in connecting with KB ';
+			$result["error_msg"] .= 'Error in connecting with KB. ';
+			$result["msg"] .= ' error in connecting with KB ';
 			$result["log"] .= ' error in connecting with KB ' . $ex;
-		 } 	
+		} 	
 		/* registration of the device in the corresponding context broker */
-		 // echo "valore local_result" . $local_result;
 		if ($local_result!="errore")
-		 {
+		{
 		   $result["status"]='ok';
 		   $result["content"]=$local_result;
 		   // information to be passed to the interface
-           $result["visibility"] = $visibility;
+		   $result["visibility"] = $visibility;
 		   if($result["content"]==null) 
-			    $result["active"]=false; 
-		   else $result["active"]=true;
+			$result["active"]=false; 
+		   else 
+			$result["active"]=true;
 		   // end of information to be passed to the interface
 		   $result["msg"] .= "\n the device has been deleted from the KB";
 		   $result["log"] .= "\n the device has been deleted from the KB";
-		   // my_log($result);
             
-            if($row["cbkind"]!='external')
-            {
-                    switch ($protocol)
-                   {
-                    case "ngsi":
-                         $res = delete_ngsi($name, $type, $contextbroker, $kind, $protocol, $format, $model, $latitude, $longitude, 
-        $visibility, $frequency, $listnewAttributes, $ip, $port,$uri, $result);
-                         break;
-                    case "mqtt":
-                        $res = delete_mqtt($name, $type, $contextbroker, $kind, $protocol, $format, $latitude, $longitude, $visibility, 
-        $frequency, $listnewAttributes, $ip, $port,$uri, $result);
-                         break;
-                    case "amqp":
-                        $res = delete_amqp($name, $type, $contextbroker, $kind, $protocol, $format, $latitude, $longitude, $visibility, $frequency, 
-        $listnewAttributes, $ip, $port,$uri, $result);
-                        break;
-                  }
-                  if ($res=='ok')
-                  {
-                    $result["msg"] .= "\n ok deletion from the context broker";
-                    $result["log"] .= "\n ok deletion from the context broker";
-                  }
-                  else
-                  {
-                   $result["status"]='ko';
-                   $result["error_msg"] .= "No deletion from the context broker. ";
-                   $result["msg"] .= "\n no deletion from the context broker";
-                   $result["log"] .= "\n no deletion from the context broker";
-                  }
-            }
-            else{
-               $result["msg"] .= "\n context broker external, no deletion";
-			   $result["log"] .= "\n context broker external, no deletion";
- 
-            }
-		  return 1;
+	           if($row["cbkind"]!='external')
+        	   {
+                   	switch ($protocol)
+			{
+	                    case "ngsi":
+        	                 $res = delete_ngsi($name, $type, $contextbroker, $kind, $protocol, $format, $model, $latitude, $longitude, 
+				        $visibility, $frequency, $listnewAttributes, $ip, $port,$uri, $result);
+	                         break;
+			    case "ngsi w/MultiService":
+				$res = delete_ngsi($name, $type, $contextbroker, $kind, $protocol, $format, $model, $latitude, $longitude,
+				        $visibility, $frequency, $listnewAttributes, $ip, $port,$uri, $result, $service, $servicePath);
+				break;
+        	            case "mqtt":
+                	        $res = delete_mqtt($name, $type, $contextbroker, $kind, $protocol, $format, $latitude, $longitude, $visibility, 
+				        $frequency, $listnewAttributes, $ip, $port,$uri, $result);
+	                         break;
+        	            case "amqp":
+                		$res = delete_amqp($name, $type, $contextbroker, $kind, $protocol, $format, $latitude, $longitude, $visibility, $frequency, 
+				        $listnewAttributes, $ip, $port,$uri, $result);
+	                        break;
+        	          }
+                	  if ($res=='ok')
+	                  {
+        	            $result["msg"] .= "\n ok deletion from the context broker";
+                	    $result["log"] .= "\n ok deletion from the context broker";
+	                  }
+        	          else
+                	  {
+	                   $result["status"]='ko';
+        	           $result["error_msg"] .= "No deletion from the context broker. ";
+                	   $result["msg"] .= "\n no deletion from the context broker";
+	                   $result["log"] .= "\n no deletion from the context broker";
+        	          }
+            	}
+	        else{
+			$result["msg"] .= "\n context broker external, no deletion";
+			$result["log"] .= "\n context broker external, no deletion";
+            	}
+		return 1;
 	}
-    else
-    {
+	else
+	{
 	  $result["error_msg"].="Error in the validation w.r.t. the KB. ";
 	  $result["msg"].="\n error in the validation w.r.t. the KB";
 	  $result["log"].="\n error in the validation w.r.t. the KB";
@@ -2357,7 +2388,6 @@ $visibility, $frequency, $listnewAttributes, $result))
     $result["msg"].="   \n it cannot be modified";
 } // end of function deleteKB
 
-
 /* functions for insert/update/delete values from a specific device in the KB and context brokers */
 
 function modify_valueKB($link, $device, $contextbroker, $organization, &$result) {
@@ -2365,7 +2395,7 @@ function modify_valueKB($link, $device, $contextbroker, $organization, &$result)
     
 	$listnewAttributes=generateAttributes($link, $device, $contextbroker);
 	   
-	$query = "SELECT d.uri, d.id, d.devicetype AS entityType, d.kind, d.format, d.macaddress, d.model, d.producer, d.protocol, d.longitude, 
+	$query = "SELECT d.uri, d.id, d.devicetype AS entityType, d.kind, d.format, d.macaddress, d.model, d.producer, d.protocol, d.longitude,d.service, d.servicePath,
 d.latitude, d.visibility, d.frequency, cb.name, cb.protocol as type, cb.ip, cb.port, cb.login, cb.password, cb.latitude as cblatitude, 
 cb.longitude as cblongitude, cb.created FROM devices d JOIN contextbroker cb ON d.contextBroker = cb.name WHERE d.deleted is null and 
 d.contextBroker='$contextbroker' and d.id='$device';";
@@ -2397,7 +2427,8 @@ d.contextBroker='$contextbroker' and d.id='$device';";
 	$ip=$row["ip"];
 	$port=$row["port"];
 	$uri=$row["uri"];
-
+	$service=$row["service"];
+	$servicePath=$row["servicePath"];
 
 	if (canBeModified($device, $type, $contextbroker, $kind, $protocol, $format, $macaddress, $model, $producer, $latitude, $longitude, 
 $visibility, $frequency, $listnewAttributes, $result))
@@ -2419,7 +2450,6 @@ $visibility, $frequency, $listnewAttributes, $result))
 		  $msg["latitude"]= $latitude;
 		  $msg["longitude"]= $longitude;
 		  $msg["frequency"]= $frequency;
-	      // $msg["visibility"]= $visibility;
 		  $msg["ownership"]= $visibility;
 		  $msg["broker"]=array();
 		  $msg["broker"]["name"]=$contextbroker;
@@ -2485,6 +2515,10 @@ $visibility, $frequency, $listnewAttributes, $result))
 					$res = update_ngsi($device, $type, $contextbroker, $kind, $protocol, $format, $model, $latitude,
 $longitude, $visibility, $frequency, $listnewAttributes, $ip, $port,$uri, $result);
 					break;
+				case "ngsi w/MultiService":
+		                        $res = update_ngsi($device, $type, $contextbroker, $kind, $protocol, $format, $model, $latitude, 
+$longitude, $visibility, $frequency, $listnewAttributes, $ip, $port,$uri, $result, $service, $servicePath);
+                        break;
 				case "mqtt":
 					$res =update_mqtt($device, $type, $contextbroker, $kind, $protocol, $format, $latitude, $longitude, 
 $visibility, $frequency, $listnewAttributes, $ip, $port,$uri, $result);
@@ -2547,44 +2581,64 @@ function get_organization_info($organizationApiURI, $ou_tmp){
 
 //return subscription_id. can be FAILED
 //returning ok also if subscribe failed (beside try and catch)
-function nificallback_create($ip, $port, $name, $urlnificallback, &$result){
+function nificallback_create($ip, $port, $name, $urlnificallback, $protocol, $services, &$result){
 	$result["status"]='ok';
 	$result["content"]='FAILED';
 	$result["log"] .= "\n Received request of nificallback_create for ip:$ip port:$port cbname:$name";
-
+	$subscriptions=array();
 	try
         {
-		$msg = "{\"description\": \"$name nifi\",\"subject\": {	\"entities\": [{ \"idPattern\": \".*\",	\"typePattern\": \".*\"	}],\"condition\": {\"attrs\": []}},\"notification\": {	\"http\": {\"url\": \"$urlnificallback\" }},\"expires\": \"2030-01-01T00:00:00.00Z\"}";
-
-                $url="http://".$ip.":".$port."/v2/subscriptions";
-
-		$result["log"] .= "\n Payload to send is:".$msg;
-		$result["log"] .= "\n Post url is:".$url;
-
-                $options = array(
-                          'http' => array(
-                                          'header' => "Content-Type: application/json;charset=utf-8",
-                                          'method' => 'POST',
-		                          'ignore_errors' => true,
-                                          'timeout' => 30,
-					  'content' => $msg
-                          )
-                );
-                $context = stream_context_create($options);
-                $local_result = @file_get_contents($url, false, $context);
-
-		$result["log"] .= "\n Response is:".$local_result;
-
-                if(isset($http_response_header) && is_array($http_response_header) && strpos($http_response_header[0], '201') !== false)
-		{
-			$result["content"]=extract_subscription_id($http_response_header);
-			$result["log"] .= "\n Response subscription_id is:".$result["content"];
-                }
-		else 
-		{
-			$result["log"] .= "\n Error returned or not reachable";
+		$howmany=1;
+		if ($protocol == 'ngsi w/MultiService'){
+			$howmany= count($services)+1;//add scenario senza tenant 
 		}
-		//return status==ok even if the subscription failed
+
+		for ($i = 0; $i < $howmany; $i++) {
+
+			$msg = "{\"description\": \"$name nifi\",\"subject\": {	\"entities\": [{ \"idPattern\": \".*\",	\"typePattern\": \".*\"	}],\"condition\": {\"attrs\": []}},\"notification\": {	\"http\": {\"url\": \"$urlnificallback\" }},\"expires\": \"2030-01-01T00:00:00.00Z\"}";
+
+        	        $url="http://".$ip.":".$port."/v2/subscriptions";
+
+			$result["log"] .= "\n Payload to send is:".$msg;
+			$result["log"] .= "\n Post url is:".$url;
+
+			$http_headers = array("Content-Type: application/json;charset=utf-8");
+
+			if ($protocol == 'ngsi w/MultiService'){
+                                if ($i<$howmany-1) {//scenario senza tenant
+					array_push($http_headers, "Fiware-Service: ".$services[$i]);
+					array_push($http_headers, "Fiware-ServicePath: /#");
+				}
+                        }
+
+        	        $options = array(
+				'http' => array(
+                                          'header' => $http_headers,
+                                          'method' => 'POST',
+                                          'ignore_errors' => true,
+                                          'timeout' => 30,
+                                          'content' => $msg
+                        	)
+                	);
+		
+                	$context = stream_context_create($options);
+	                $local_result = @file_get_contents($url, false, $context);
+
+			$result["log"] .= "\n Response is:".$local_result;
+
+                	if(isset($http_response_header) && is_array($http_response_header) && strpos($http_response_header[0], '201') !== false)
+			{
+				$sub_id=extract_subscription_id($http_response_header);
+				array_push($subscriptions, $sub_id);
+				$result["log"] .= "\n Response subscription_id is:". $sub_id;
+	                }
+			else 
+			{
+				$result["log"] .= "\n Error returned or not reachable";
+			}
+			//return status==ok even if the subscription failed
+		}
+		$result["content"]=implode(",",$subscriptions);
         }
         catch (Exception $ex)
         {
@@ -2607,29 +2661,49 @@ function extract_subscription_id($headers)
 }
 
 //returning ok also if unsubscribe failed (beside try and catch)
-function nificallback_delete($ip, $port, $subscription_id, $name, &$result){
+function nificallback_delete($ip, $port, $subscription_id, $name, $protocol, $services, &$result){
 	$result["status"]='ok';
         $result["log"] .= " Received request of nificallback_delete for ip:$ip port:$port subscription_id:$subscription_id cbname:$name";
 
+	$subscriptions=explode(",",$subscription_id);
+
         try
         {
-                $url="http://".$ip.":".$port."/v2/subscriptions/".$subscription_id;
+		$howmany=1;
+                if ($protocol == 'ngsi w/MultiService'){
+                        $howmany= count($subscriptions);//add scenario senza tenant e senza tenant e senza servicePath
+                }
 
-                $result["log"] .= "\n Delete url is:".$url;
+		for ($i = 0; $i < $howmany; $i++) {
+	
+	                $url="http://".$ip.":".$port."/v2/subscriptions/".$subscriptions[$i];
 
-                $options = array(
-                          'http' => array(
+        	        $result["log"] .= "\n Delete url is:".$url;
+
+			$http_headers = array();//"Content-Type: application/json;charset=utf-8");
+
+                        if ($protocol == 'ngsi w/MultiService'){
+				if ($i<$howmany-1)//scenario senza tenant
+	                                array_push($http_headers, "Fiware-Service: ".$services[$i]);
+        	                        //array_push($http_headers, "Fiware-ServicePath: /#");
+                        }
+
+                	$options = array(
+                        	'http' => array(
+					  'header' => $http_headers,
                                           'method' => 'DELETE',
                                           'ignore_errors' => true,
                                           'timeout' => 30
-                          )
-                );
-                $context = stream_context_create($options);
-                $local_result = @file_get_contents($url, false, $context);
+                          	)
+	                );
 
-		$result["log"] .= "\n Response is:".$http_response_header[0]." ".$local_result;
+        	        $context = stream_context_create($options);
+                	$local_result = @file_get_contents($url, false, $context);
 
-		//return status==ok even if the subscription failed
+			$result["log"] .= "\n Response is: ".$local_result;
+	
+			//return status==ok even if the subscription failed
+		}
         }
         catch (Exception $ex)
         {
@@ -2640,28 +2714,399 @@ function nificallback_delete($ip, $port, $subscription_id, $name, &$result){
 	}
 }
 
+/**
+ * Returns 0 if the value if valid, 1 otherwise
+ */
+function servicePathSyntaxCheck($servicePath) {
+    // remove initial and final "/", if any
+    if ($servicePath[0] == "/") $servicePath = substr($servicePath, 1);
+    if ($servicePath[strlen($servicePath) -1] == "/") $servicePath = substr($servicePath, 0, -1);
 
+    // case: empty string
+    if ($servicePath == "") return 0;
 
-//sara2210 
-function logAction($link,$accessed_by,$target_entity_type,$access_type,$entity_name, $organization, 
-                   $notes,$result){
-	 $query = "INSERT INTO access_log(accessed_by,target_entity_type,
-			   access_type, entity_name, organization,notes,result) VALUES('$accessed_by','$target_entity_type', '$access_type', '$entity_name','$organization','$notes','$result')";
-     $res = mysqli_query($link, $query) or die(mysqli_error($link));
+    // case: servicePath is too long
+    if (strlen($servicePath) > 95) return 1;
+
+    // get single servicePath "levels"
+    $levels = explode("/", $servicePath);
+
+    // case: too many levels
+    if (count($levels) > 10) return 1;
+
+    for ($i = 0; $i < count($levels); $i++) {
+        // case: some level is too long
+        if (strlen($levels[$i]) > 50) return 1;
+
+        // case: there are some empty level
+        if ($levels[$i] == "") return 1;
+
+	// case: some level contains some semicolons
+	if(strpos($servicePath, ".") !== false) return 1;
+
+        // case: some level contains some whitespaces
+        if (preg_match("/\s/", $levels[$i])) return 1;
+    }
+
+    // case: everything is ok
+    return 0;
+}
+
+function get_all_models($username, $organization, $role, $accessToken, $link, &$result){
+
+        getOwnerShipObject($accessToken, "ModelID", $result);
+        getDelegatedObject($accessToken, $username, "ModelID", $result);
+
+        $res=array();
+        $q  = "SELECT * FROM model";
+        $r = mysqli_query($link, $q);
+
+        if($r)
+        {
+                while($row = mysqli_fetch_assoc($r))
+                {
+			$idTocheck=$row["organization"].":".$row["name"];
+						if (
+							($role=='RootAdmin')
+							||($role=='ToolAdmin')
+							||
+							(
+								($row["organization"]==$organization)&&
+								(
+									($row["visibility"]=='public'
+									||
+									(isset($result["delegation"][$idTocheck])&& $result["delegation"][$idTocheck]["kind"]=="anonymous")
+									)
+								)
+							)
+							||
+								(isset($result["delegation"][$idTocheck])&& $result["delegation"][$idTocheck]["kind"]!="anonymous")
+							||
+								(isset($result["keys"][$idTocheck]) && $result["keys"][$idTocheck]["owner"]==$username)
+			
+						)
+                        {
+                                array_push($res, $row);
+                        }
+                }
+                $result["status"]="ok";
+                $result["content"]=$res;
+                $result["log"]= "action=get_all_models \r\n";
+        }
+        else
+        {
+                $result["status"]="ko";
+                $result['msg'] = mysqli_error($link);
+                $result["log"]= "action=get_all_models -" . " error " .  mysqli_error($link)  . "\r\n";
+        }
+}
+
+function get_device($username, $organization, $role, $id, $cb,  $accessToken, $link, &$result){
+
+        getOwnerShipDevice($accessToken, $result);
+        getDelegatedDevice($accessToken, $username, $result);
+
+	unset($result['msg']);
+
+	$q = "SELECT d.`uri`, d.`devicetype`, d.`kind`,
+		CASE WHEN mandatoryproperties AND mandatoryvalues THEN \"active\" ELSE \"idle\" END AS status1,
+		d.`macaddress`, d.`model`, d.`producer`, d.`longitude`, d.`latitude`, d.`protocol`, d.`format`, d.`visibility`,
+		d.`frequency`, d.`created`, d.`privatekey`, d.`certificate`,d.`organization`, cb.`accesslink`, cb.`accessport`, 
+		cb.`sha`, d.`subnature`, d.`static_attributes` 
+		FROM `devices` d JOIN `contextbroker` cb ON (d.contextBroker=cb.name)
+		WHERE d.`contextBroker`='$cb' AND d.`id`='$id'";
+
+        $r = mysqli_query($link, $q);
+
+        if($r)
+        {
+                while($row = mysqli_fetch_assoc($r))//should be just one data
+                {
+			$eid=$row["organization"].":".$cb.":".$id;
+			if (
+				($role=='RootAdmin')
+				||
+                                (isset($result["delegation"][$eid]))//if there are any delegation (public or personal)
+                                ||
+                                (isset($result["keys"][$eid]) && $result["keys"][$eid]["owner"]==$username)
+                           )
+                        {
+				//it's permitted to access
+			
+				//in case of ownership or RootAdmin, enrich with k1, k2 credentials
+                                if  (($role=='RootAdmin') || (isset($result["keys"][$eid]) && $result["keys"][$eid]["owner"]==$username))
+                                {
+                                        $row["k1"]=$result["keys"][$eid]["k1"];
+                                        $row["k2"]=$result["keys"][$eid]["k2"];
+                                }
+				//in case of delegation, resetting privatekey info
+				else 
+				{
+					unset($row["sha"]);
+					unset($row["privatekey"]);
+					unset($row["certificate"]);
+	
+					//in case of personal delegation, enrich with k1, k2 delegation credentials
+					if ($result["delegation"][$eid]["kind"]!=="anonymous")
+					{
+						$row["k1"]= $result["delegation"][$eid]["k1"]; 
+	                                        $row["k2"]= $result["delegation"][$eid]["k2"];
+					}
+				}
+	                        $result["content"]=$row;        
+				$result["status"]="ok";
+		                $result["log"]= "action=get_device \r\n";
+				break;
+                        }
+                }
+        }
+        else
+        {
+                $result["status"]="ko";
+                $result['msg'] = mysqli_error($link);
+                $result["log"]= "action=get_device -" . " error " .  mysqli_error($link)  . "\r\n";
+        }
+	
+	unset($result["username"]);
+	unset($result["keys"]);
+	unset($result["delegation"]);
+}
+
+function get_all_contextbrokers($username, $organization, $loggedrole, $accessToken, $link, $length, $start, $draw, $request, &$result){
+	
+	getOwnerShipObject($accessToken, "BrokerID", $result);
+	getDelegatedObject($accessToken, $username, "BrokerID", $result);
+
+	$q = "SELECT * FROM contextbroker";
+	$r=create_datatable_data($link,$request,$q, '');
+	$selectedrows=-1;
+	if($length != -1)
+	{
+		$offset=$length;
+		$tobelimited=true;
+	}
+	else
+	{
+		$tobelimited=false;
+	}
+
+	if($r)
+	{
+		$data = array();
+		while($row = mysqli_fetch_assoc($r))
+		{
+			$idTocheck=$row["organization"].":".$row["name"];
+			if (
+				($loggedrole=='RootAdmin')
+				||
+				($loggedrole=='ToolAdmin')
+				||
+				(
+				 ($row["organization"]==$organization)&&
+				 (
+				  ($row["visibility"]=='public' || (isset($result["delegation"][$idTocheck])&& $result["delegation"][$idTocheck]["kind"]=="anonymous"))
+				 )  
+				)
+				||
+				(isset($result["delegation"][$idTocheck])&& $result["delegation"][$idTocheck]["kind"]!="anonymous")
+				||
+				(isset($result["keys"][$idTocheck]) && $result["keys"][$idTocheck]["owner"]==$username)
+			   )
+			{
+				$selectedrows++;
+				if (!$tobelimited || ($tobelimited && $selectedrows >= $start && $selectedrows < ($start+$offset)))
+				{
+					if (((isset($result["keys"][$idTocheck]))&&($loggedrole!=='RootAdmin')&&($loggedrole!=='ToolAdmin'))
+						||
+						((isset($result["keys"][$idTocheck]))&& ($result["keys"][$idTocheck]["owner"]==$username) && (($loggedrole==='RootAdmin')||($loggedrole==='ToolAdmin'))))
+					{
+						//it's mine
+						if ($row["visibility"]=="public")
+						{
+							$row["visibility"]= "MyOwnPublic";
+						}
+						else
+						{
+							if (isset($result["delegation"][$row["accesslink"]]) && $result["delegation"][$row["accesslink"]]["kind"]=="anonymous")
+								$row["visibility"]= "MyOwnPublic";
+							else
+								$row["visibility"]="MyOwnPrivate";
+						}
+					}
+					else
+					{
+						//it's not mine
+						if (isset($result["delegation"][$idTocheck]) && ($result["delegation"][$idTocheck]["kind"]=="anonymous"))
+						{
+							//it's delegated as public
+							$row["visibility"]='public';
+						}
+						else if (isset($result["delegation"][$idTocheck]))
+						{
+							//it's delegated personally
+							$row["visibility"]='delegated';
+						}
+						else
+						{
+							$row["visibility"]= $row["visibility"];
+						}
+					}
+
+					$row["owner"]='';
+					if(isset($result["keys"][$idTocheck]))
+						$row["owner"]=$result["keys"][$idTocheck]["owner"];
+
+					if ($row["protocol"] == "ngsi w/MultiService") 
+					{
+						// the CB supports MultiServices
+						$brokerName = $row["name"];
+						$servicesQueryString = "SELECT * FROM services WHERE broker_name = '$brokerName'";
+						$sqr = mysqli_query($link, $servicesQueryString);
+						if ($sqr) 
+						{
+							$row["services"] = array();
+							while ($servicesRow = mysqli_fetch_assoc($sqr)) {
+								array_push($row["services"], $servicesRow["name"]);
+							}
+						} 
+						else 
+						{
+							$output= format_result($draw, 0, 0, null, 'Error: errors in reading data about IOT Broker. <br/>' . generateErrorMessage($link), '\n\r Error: errors in reading data about IOT Broker.' . generateErrorMessage($link), 'ko');
+							logAction($link,$username,'contextbroker','get_all_contextbroker','',$organization,'Error: errors in reading data about IOT Broker.','faliure');
+						}
+					}
+					array_push($data, $row);
+				}
+			}
+		}
+
+		$result= format_result($draw, $selectedrows+1, $selectedrows+1, $data, "", "\r\n action=get_all_contextbroker \r\n", 'ok');
+		logAction($link,$username,'contextbroker','get_all_contextbroker','',$organization,'','success');
+	}
+	else
+	{
+		$result=format_result($draw, 0, 0, null, 'Error: errors in reading data about IOT Broker. <br/>' . generateErrorMessage($link), '\n\r Error: errors in reading data about IOT Broker.' . generateErrorMessage($link), 'ko');
+		logAction($link,$username,'contextbroker','get_all_contextbroker','',$organization,'Error: errors in reading data about IOT Broker.','faliure');
+	}
+
+}
+
+function get_user_info($accessToken, &$username, &$organization, $oidc, &$role, &$result, $ldapBaseName, $ldapServer, $ldapPort, $ldapAdminName, $ldapAdminPwd ){
+
+	$result["status"]="ok";
+
+	$oidc->setAccessToken($accessToken);
+
+        $userinfo=(array)$oidc->getAccessTokenPayload();
+	
+	if ($userinfo['preferred_username']!=null)
+		$username=$userinfo["preferred_username"];
+	else if ($userinfo["username"]!=null)
+		$username=$userinfo["username"];
+	else {
+		$result["status"]="ko";
+		$result['msg'] = "Username not found in AccessToken";
+		$result['error_msg'] .="Username not found in AccessToken";
+                $result["log"]= "action=get_user_info -" . " Username not found in AccessToken \r\n";
+	}
+
+	if ($result["status"]=="ok"){
+		
+		if (in_array("RootAdmin", $userinfo["roles"]))
+			$role="RootAdmin";
+		else if (in_array("ToolAdmin", $userinfo["roles"]))
+                        $role="ToolAdmin";
+		else if (in_array("AreaManager", $userinfo["roles"]))
+                        $role="AreaManager";
+		else if (in_array("Manager", $userinfo["roles"]))
+                        $role="Manager";
+		else {
+			$result["status"]="ko";
+                	$result['msg'] = "Role not found in AccessToken for user ".$username;
+			$result["error_msg"] .= "Role not found in AccessToken for user ".$username;
+                	$result["log"]= "action=get_user_info -" . " Role not found in AccessToken for user ".$username."\r\n";
+		}
+	}
+		
+	if ($result["status"]=="ok"){
+		$organization= findLdapOrganizationalUnit($username, $ldapBaseName, $ldapServer, $ldapPort, $ldapAdminName, $ldapAdminPwd);
+		if (empty($organization)){
+			$result["status"]="ko";
+                        $result['msg'] = "Organization not found in AccessToken for user ".$username;
+			$result['error_msg'] .= "Organization not found in AccessToken for user ".$username;
+                        $result["log"]= "action=get_user_info -" . " Organization not found in AccessToken for user ".$username."\r\n";
+		}
+	}
+}
+
+//TODO armonize with the code available in ssoLogin.php AND ldap.php in api
+function findLdapOrganizationalUnit($username, $ldapBaseName, $ldapServer, $ldapPort, $ldapAdminName, $ldapAdminPwd)
+{
+	$ldapUsername = "cn=". strtolower($username) . ",".$ldapBaseName;
+
+	$ds = ldap_connect($ldapServer, $ldapPort);
+	ldap_set_option($ds, LDAP_OPT_PROTOCOL_VERSION, 3);
+	$bind = ldap_bind($ds, $ldapAdminName, $ldapAdminPwd);
+
+        $result = ldap_search($ds, $ldapBaseName, '(&(objectClass=organizationalUnit)(l=' . $ldapUsername . '))');
+        $entries = ldap_get_entries($ds, $result);
+
+    	if (ldap_count_entries($ds,$result)==0){
+        	//TODO thrown an error or return an error
+	        return "";
+        }
+	else{
+        	$ou=$entries["0"]["ou"][0];
+		return $ou;
+	}
+}
+
+function missingParameters($requiredParams){
+	$toreturn = array();
+
+	foreach ($requiredParams as $param)
+		if (!isset($_REQUEST[$param]))
+			array_push($toreturn, $param);
+
+	return $toreturn;
+}
+
+//it does not throw any error... just return an empty string in case of trouble
+function getProtocol($contextBrokerName, $link)
+{
+	$toreturn="";
+
+	$q = "SELECT protocol FROM iotdb.contextbroker where name='$contextBrokerName'";
+
+        $r = mysqli_query($link, $q);
+
+        if($r)
+        {
+                while($row = mysqli_fetch_assoc($r))//should be just one data
+                {
+			if (isset($row["protocol"])) 
+			{
+				$toreturn=$row["protocol"];
+				break;
+			}
+                }
+	}
+	return $toreturn;
+}
+
+function logAction($link,$accessed_by,$target_entity_type,$access_type,$entity_name,$organization,$notes,$result){
+	$query = "INSERT INTO access_log(accessed_by,target_entity_type,access_type,entity_name,organization,notes,result) ".
+		 "VALUES('$accessed_by','$target_entity_type','$access_type','$entity_name','$organization','$notes','$result')";
+	$res = mysqli_query($link, $query) or die(mysqli_error($link));
 	if($res){
 		$result["msg"]="correctly logged\n" .$accessed_by. " ".$target_entity_type." ".$access_type. " ".$entity_name. 
 		" ".$notes;
-	 }
-	 else{
+	}
+	else{
 		$result["msg"]="error in inserting log\n"; 
-	 }
-	 return $result["msg"];
+	}
+	return $result["msg"];
 }
-//Sara2210 end
-  
-
-
-  
 ?>
 
 

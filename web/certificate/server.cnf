@@ -234,6 +234,7 @@ subjectAltName = @alternate_names
 
 [ alternate_names ]
 DNS.1  = $ENV::IOTDIR_SERVER_DNS_ALT
+IP.1 = $ENV::IOTDIR_SERVER_IP_ALT
 
 [ v3_ca ]
 

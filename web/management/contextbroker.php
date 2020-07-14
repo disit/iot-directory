@@ -290,7 +290,7 @@
 									 <thead>
 									  <tr>
 										<th></th>	
-									    <th data-cellTitle="name">IOT Broker</th>
+									    	<th data-cellTitle="name">IOT Broker</th>
 										<th data-cellTitle="accesslink">Access Link</th>
 										<th data-cellTitle="accessport">Access Port</th>
 										<th data-cellTitle="protocol">Protocol</th>
@@ -299,8 +299,7 @@
 										<th data-cellTitle="owner">Owner</th>
 										<th data-cellTitle="created">Created</th>
 										<th data-cellTitle="edit">Edit</th>
-										<th data-cellTitle="delete">Delete</th>		
-										<!-- <th data-cellTitle="stub">STUB</th> -->										
+										<th data-cellTitle="delete">Delete</th>
 									</tr>
 									 </thead>
 									</table>
@@ -345,6 +344,7 @@
                 <div id="addContextBrokerModalBody" class="modal-body modalBody">
                     <ul id="addContextBrokerModalTabs" class="nav nav-tabs nav-justified">
 			<li id='tab-addCB-1' class="active"><a data-toggle="tab" href="#infoTabCB">Info</a></li>
+			<li id="multiServiceTabSelector" class="hidden"><a data-toggle="tab" href="#serviceTenantTabCB">Multitenancy</a></li>
                         <li id='tab-addCB-2'><a data-toggle="tab" href="#geoPositionTabCB">Geo-Position</a></li>
                         <li id='tab-addCB-3'><a data-toggle="tab" href="#securityTabCB">Security</a></li>
 			<li id='tab-addCB-4'><a data-toggle="tab" href="#subscriptionTabCB">Subscription</a></li>
@@ -488,6 +488,25 @@
 							
                         </div>
                          
+			<!-- MultiService/Tenant tab -->
+			<div id="serviceTenantTabCB" class="tab-pane fade">
+				<div id="inputServiceCBMsg" style="margin-top: 10px;">&nbsp;</div>
+				<div class="row" id="serviceCBRow1">
+					<div class="col-xs-12 col-md-8 modalCell">          
+						<div class="modalFieldCnt">
+       			                                <input type="text" class="modalInputTxt" name="inputServiceCB" id="inputServiceCB" onkeyup="checkStrangeCharacters(this)" required>
+                        		        </div>
+                                    		<div class="modalFieldLabelCnt">Multitenancy</div>
+	                                </div>
+
+					<div class="col-xs-12 col-md-4 modalCell">
+        	                            <div class="modalFieldCnt">
+						<button type="text" id="addNewCBServiceBtn" class="btn confirmBtn">Add Service/Tenant</button>
+                	                    </div>
+                        	        </div>	
+				</div>
+			</div>
+
                         <!-- Geo-Position tab -->
                         <div id="geoPositionTabCB" class="tab-pane fade">
                             <div class="row">
@@ -636,14 +655,13 @@
                     </div>
                 </div>  
                 <div id="editContextBrokerModalBody" class="modal-body modalBody">
-                   <!--				   <form id="editUserForm" name="editUserForm" role="form" method="post" action="process-form.php" data-toggle="validator">-->
-                        
-					<ul id="editContextBrokerModalTabs" class="nav nav-tabs nav-justified">
-						<li id="tab-editCB-1" class="active"><a data-toggle="tab" href="#editInfoTabCB">Info</a></li>
-                        <li id="tab-editCB-2"><a data-toggle="tab" href="#editGeoPositionTabCB">Geo-Position</a></li>
-                        <li id="tab-editCB-3"><a data-toggle="tab" href="#editSecurityTabCB">Security</a></li>
-			<li id="tab-editCB-4"><a data-toggle="tab" href="#editSubscriptionTabCB">Subscription</a></li>
-                    </ul>
+                        <ul id="editContextBrokerModalTabs" class="nav nav-tabs nav-justified">
+				<li id="tab-editCB-1" class="active"><a data-toggle="tab" href="#editInfoTabCB">Info</a></li>
+				<li id="editMultiServiceTabSelector" class="hidden"><a data-toggle="tab" href="#editServiceTenantTabCB">Multitenancy</a></li>
+                        	<li id="tab-editCB-2"><a data-toggle="tab" href="#editGeoPositionTabCB">Geo-Position</a></li>
+	                        <li id="tab-editCB-3"><a data-toggle="tab" href="#editSecurityTabCB">Security</a></li>
+				<li id="tab-editCB-4"><a data-toggle="tab" href="#editSubscriptionTabCB">Subscription</a></li>
+                	</ul>
                     
                     <div class="tab-content">
                        
@@ -795,6 +813,10 @@
 							
                         </div>
                          
+			<div id="editServiceTenantTabCB" class="tab-pane fade">
+				<div id="editInputServiceCBMsg" style="margin-top: 10px;">&nbsp;</div>
+			</div>
+
                         <!-- Geo-Position tab -->
                         <div id="editGeoPositionTabCB" class="tab-pane fade">
                             <div class="row">

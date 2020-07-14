@@ -152,7 +152,7 @@ function showAddMyDeviceModal()
 	$("#inputLongitudeDeviceUser").on('keyup change', function(){checkDeviceLongitudeUser(); checkAddMyDeviceConditions(); });
 	$("#inputTypeDeviceUser").on('keyup change', function(){checkDeviceTypeUser(); checkAddMyDeviceConditions(); });
     
-    console.log("here");
+    //console.log("here");
 
 }
 
@@ -816,7 +816,7 @@ function checkAddDeviceConditions()
 		{
 			enableButton = false;
 			
-			console.log("need:" + key);
+			//console.log("need:" + key);
 			break;
 		}
 	}
@@ -848,7 +848,7 @@ function checkAddMyDeviceConditions()
             break;
         }
     }
-    console.log(JSON.stringify(addMyDeviceConditionsArray));
+    //console.log(JSON.stringify(addMyDeviceConditionsArray));
     if(enableButton)
     {
         $("#addNewDeviceConfirmBtn").attr("disabled", false);

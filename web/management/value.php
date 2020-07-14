@@ -200,8 +200,8 @@
 
         <script type="text/javascript" src="js/value.js"></script>
         <script type="text/javascript" src="js/fieldsManagement.js"></script>
-		
-		
+	<script type="text/javascript" src="js/common.js"></script>	
+
 		<!-- leaflet scripts -->
 		
 		<script type="text/javascript" src="../js/leaflet.js"></script>
@@ -438,7 +438,31 @@
                                     <div class="modalFieldLabelCnt">Device</div>
 									<div id="inputNameDeviceMsg" class="modalFieldMsgCnt">&nbsp;</div>
                                 </div>
-								
+
+				<!-- Start MultiService + ServicePath Section -->
+				<div class = "row" id = "multiServiceAndServicePath">
+					<div class="col-xs-12 col-md-6 modalCell">
+                                        	<div class="modalFieldCnt">
+		                                      <select id="selectService" name="selectService" class="modalInputTxt">
+							    <option value="" selected></option>
+								    <!-- other options will be created dynamically-->
+								    </select>
+                		                </div>
+                                        <div id="selectServiceLabel" class="modalFieldLabelCnt">Service/Tenant</div>
+					<div id="selectServiceMsg" class="modalFieldMsgCnt">&nbsp;</div>
+                                    </div>
+
+					<div class="col-xs-12 col-md-6 modalCell">          
+					    <div class="modalFieldCnt">
+                                        	    <input type="text" class="modalInputTxt" name="inputServicePathValue" id="inputServicePathValue">
+	                                    </div>
+                                        <div id="inputServicePathLabel" class="modalFieldLabelCnt">ServicePath</div>
+				    <div id="inputServicePathMsg" class="modalFieldMsgCnt">&nbsp;</div>
+                                    </div>
+			    </div>
+			    <!-- End MultiService + ServicePath Section -->
+							
+	
                                 <div class="col-xs-12 col-md-6 modalCell">
                                     <div class="modalFieldCnt">
                                         <input type="text" class="modalInputTxt" name="inputValueNameDevice" id="inputValueNameDevice" onkeyup="checkStrangeCharacters(this)"> 
@@ -450,7 +474,7 @@
 								<div class="col-xs-12 col-md-6 modalCell">
                                     <div class="modalFieldCnt">
                                         <select id="selectDataType" name="selectDataType" class="modalInputTxt">
-											<?php
+											<!--?php
 												$query = "SELECT data_type FROM data_types order by data_type";
 													 $result = mysqli_query($link, $query) or die(mysqli_error($link));
 														if($result){
@@ -461,7 +485,7 @@
 																}
 													 }
 													 
-											 ?>
+											 ?-->
 										</select>
                                     </div>
                                     <div class="modalFieldLabelCnt">Data Type</div>
@@ -478,8 +502,8 @@
 								
 								 <div class="col-xs-12 col-md-6 modalCell">
                                     <div class="modalFieldCnt">
-                                        <select id="selectValueType" name="selectValueType" class="modalInputTxt">
-											<?php
+                                        <select id="value_type-1" name="selectValueType" class="modalInputTxt" onchange=valueTypeChanged(-1)>
+											<!--?php
 												$query = "SELECT value_type FROM value_types ORDER BY value_type";
 												$result = mysqli_query($link, $query);
 
@@ -498,7 +522,7 @@
 													$label="ERROR";
 													echo "<option value='$label'>$label</option>";
 												}
-											?>
+											?-->
 										</select>
                                     </div>
                                     <div class="modalFieldLabelCnt">Value Type</div>
@@ -507,8 +531,8 @@
 								
 			                       <div class="col-xs-12 col-md-6 modalCell">
                                     <div class="modalFieldCnt">
-                                        <select id="selectValueUnit" name="selectValueUnit" class="modalInputTxt">
-											<?php
+                                        <select id="value_unit-1" name="selectValueUnit" class="modalInputTxt" onchange=valueUnitChanged(-1)>
+											<!--?php
 												$query = "SELECT DISTINCT value_unit_default FROM value_types ORDER BY value_unit_default"; 
 												$result = mysqli_query($link, $query) or die(mysqli_error($link));
 												$labels = array();
@@ -529,7 +553,7 @@
 													$label="ERROR";
 													echo "<option value='$label'>$label</option>";
 												}
-											?>
+											?-->
 										</select>							
                                     </div>
                                     <div class="modalFieldLabelCnt">Value Unit</div>
@@ -691,7 +715,28 @@
                                     <div class="modalFieldLabelCnt">Device</div>
 									<div id="inputNameDeviceMMsg" class="modalFieldMsgCnt" >&nbsp;</div>
                                 </div>
-								
+					
+					    <!-- Start MultiService + ServicePath Section -->
+							    <div class = "row" id = "multiServiceAndServicePath">
+								    <div class="col-xs-12 col-md-6 modalCell">
+                                        <div class="modalFieldCnt">
+                                            <input id="editSelectService" name="editSelectService" class="modalInputTxt" readonly>
+                                        </div>
+                                        <div id="selectServiceLabel" class="modalFieldLabelCnt">Service/Tenant</div>
+									    <div id="selectServiceMsg" class="modalFieldMsgCnt">&nbsp;</div>
+                                    </div>
+
+								    <div class="col-xs-12 col-md-6 modalCell">          
+									    <div class="modalFieldCnt">
+                                            <input type="text" class="modalInputTxt" name="editInputServicePathValue" id="editInputServicePathValue" readonly>
+                                        </div>
+                                        <div id="inputServicePathLabel" class="modalFieldLabelCnt">ServicePath</div>
+									    <div id="inputServicePathMsg" class="modalFieldMsgCnt">&nbsp;</div>
+                                    </div>
+							    </div>
+					   <!-- End MultiService + ServicePath Section -->
+
+			
                                 <div class="col-xs-12 col-md-6 modalCell">
                                     <div class="modalFieldCnt">
                                         <input type="text" class="modalInputTxt" name="inputValueNameDeviceM" id="inputValueNameDeviceM" onkeyup="checkStrangeCharacters(this)" readonly> 
@@ -703,7 +748,7 @@
 								<div class="col-xs-12 col-md-6 modalCell">
                                     <div class="modalFieldCnt">
                                         <select id="selectDataTypeM" name="selectDataTypeM" class="modalInputTxt">
-											<?php
+											<!--?php
 												$query = "SELECT data_type FROM data_types order by data_type";
 													 $result = mysqli_query($link, $query) or die(mysqli_error($link));
 														if($result){
@@ -714,7 +759,7 @@
 																}
 													 }
 													 
-											 ?>
+											 ?-->
 										</select>
                                     </div>
                                     <div class="modalFieldLabelCnt">Data Type</div>
@@ -724,7 +769,7 @@
 								 <div class="col-xs-12 col-md-6 modalCell">
                                     <div class="modalFieldCnt">
                                         <select id="selectValueTypeM" name="selectValueTypeM" class="modalInputTxt">
-											<?php
+											<!--?php
 												$query = "SELECT value_type FROM value_types ORDER BY value_type";
 												$result = mysqli_query($link, $query);
 
@@ -743,7 +788,7 @@
 													$label="ERROR";
 													echo "<option value='$label'>$label</option>";
 												}
-											?>
+											?-->
 										</select>
                                     </div>
                                     <div class="modalFieldLabelCnt">Value Type</div>
@@ -753,7 +798,7 @@
 									<div class="col-xs-12 col-md-6 modalCell">
                                     <div class="modalFieldCnt">
                                         <select id="selectValueUnitM" name="selectValueUnitM" class="modalInputTxt">
-											<?php
+											<!--?php
 												$query = "SELECT DISTINCT value_unit_default FROM value_types ORDER BY value_unit_default"; 
 												$result = mysqli_query($link, $query) or die(mysqli_error($link));
 												$labels = array();
@@ -774,7 +819,7 @@
 													$label="ERROR";
 													echo "<option value='$label'>$label</option>";
 												}
-											?>
+											?-->
 										</select>							
                                     </div>
                                     <div class="modalFieldLabelCnt">Value Unit</div>

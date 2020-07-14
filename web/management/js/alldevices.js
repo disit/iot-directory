@@ -51,11 +51,11 @@ var gb_old_cb="";
 		var list = document.getElementById(parent);
 		// var content = child.parentElement.parentElement.parentElement.innerHTML
 	  // console.log("elemento cancellato " + document.getElementById('deletedAttributes').innerHTML);
-        console.log(parent);
-        console.log(child);
-        console.log(child.parentElement);
-        console.log(child.parentElement.parentElement);
-        console.log(child.parentElement.parentElement.parentElement);
+        //console.log(parent);
+        //console.log(child);
+        //console.log(child.parentElement);
+        //console.log(child.parentElement.parentElement);
+        //console.log(child.parentElement.parentElement.parentElement);
         if (parent=="editlistAttributes") 
 		{     document.getElementById('deletedAttributes').appendChild(child.parentElement.parentElement.parentElement);}
         else list.removeChild(child.parentElement.parentElement.parentElement);
@@ -228,7 +228,14 @@ return "<div class=\"row\" style=\"border:2px solid blue;\" id=\"value"+indice+"
 			'<div class="col-xs-6 col-sm-6" style="background-color:#D6CADD;"><b>K2:</b>' + "  " + d.k2  + '</div>' +	
 		'</div>'; 	  
 		}
-	
+	var multitenancy = "";
+	if (d.service && d.servicePath){
+		multitenancy = '<div class="row">' + 
+			'<div class="col-xs-6 col-sm-6" style="background-color:#B3D9FF;"><b>Service/Tenant:</b>' + "  " + d.service + '</div>' +
+			'<div class="clearfix visible-xs"></div>' +
+			'<div class="col-xs-6 col-sm-6" style="background-color:#B3D9FF;"><b>ServicePath:</b>' + "  " + d.servicePath  + '</div>' +	
+		'</div>' ;
+	}	
 	
 	var txtCert="";
 		if (d.privatekey!= null && d.privatekey!="" && (d.visibility =='MyOwnPublic' || d.visibility == 'MyOwnPrivate'))
@@ -287,7 +294,7 @@ return "<div class=\"row\" style=\"border:2px solid blue;\" id=\"value"+indice+"
                         '<div class="col-xs-12 col-sm-12" style="background-color:#D6CADD;"><b>Device Uri:</b>' + "  <a href=\""+d.uri+"\">" + d.uri + '</a></div>' +
                         '<div class="clearfix visible-xs"></div>' +
                 '</div>'+
-		showKey + txtCert +
+		showKey + txtCert +multitenancy +
 	'</div>' ;
 	
 }
@@ -303,13 +310,13 @@ return "<div class=\"row\" style=\"border:2px solid blue;\" id=\"value"+indice+"
 				
             }
            
-			if (selected==null)
+			if (selected==null)//TODO uniform the two call below
 			{
 			  mydata = {action: "get_all_device_admin", token : sessionToken, username: loggedUser, organization : organization,  no_columns: ["position","status1", "owner","edit","delete","map"]};
 			}
 			else
 			{
-			  mydata = {action: "get_subset_device_admin", token : sessionToken, select : selected, username: loggedUser, organization : organization,  no_columns: ["position", "status1", "owner","edit","delete","map"]};
+			  mydata = {action: "get_all_device_admin", token : sessionToken, select : selected, username: loggedUser, organization : organization,  no_columns: ["position", "status1", "owner","edit","delete","map"]};
 			}
 													
 	  dataTable = $('#devicesTable').DataTable({
@@ -362,18 +369,18 @@ return "<div class=\"row\" style=\"border:2px solid blue;\" id=\"value"+indice+"
 				  //return row.visibility;
 				  				  
 				if (row.visibility=='MyOwnPrivate'){   
-					return '<button type="button"  class=\"myOwnPrivateBtn\" onclick="changeVisibility(\''+ row.id + '\',\''+ row.contextBroker + '\',\''+ row.organization + '\',\''+ row.visibility + '\',\''+ row.uri + '\',\''+ row.k1 + '\',\''+ row.k2 +'\',\''+ row.model +'\')">' + row.visibility + '</button>';		
+					return '<button type="button"  class=\"myOwnPrivateBtn\" onclick="changeVisibility(\''+ row.id + '\',\''+ row.contextBroker + '\',\''+ row.organization + '\',\''+ row.visibility + '\',\''+ row.uri + '\',\''+ row.k1 + '\',\''+ row.k2 +'\',\''+ row.model +'\',\''+ row.protocol +'\',\''+ row.service +'\',\''+ row.servicePath +'\')">' + row.visibility + '</button>';		
 					} 
 				else if (row.visibility=='MyOwnPublic'){
-					return '<button type="button"  class=\"myOwnPublicBtn\" onclick="changeVisibility(\''+ row.id + '\',\''+ row.contextBroker + '\',\''+ row.organization + '\',\''+ row.visibility + '\',\''+ row.uri + '\',\''+ row.k1 + '\',\''+ row.k2 +'\',\''+ row.model +'\')">' + row.visibility + '</button>';
+					return '<button type="button"  class=\"myOwnPublicBtn\" onclick="changeVisibility(\''+ row.id + '\',\''+ row.contextBroker + '\',\''+ row.organization + '\',\''+ row.visibility + '\',\''+ row.uri + '\',\''+ row.k1 + '\',\''+ row.k2 +'\',\''+ row.model +'\',\''+ row.protocol +'\',\''+ row.service +'\',\''+ row.servicePath +'\')">' + row.visibility + '</button>';
 					}
 				else if (row.visibility=='public' || row.visibility=='Public') 
 				{
-					return '<button type="button"  class=\"publicBtn\" onclick="changeVisibility(\''+ row.id + '\',\''+ row.contextBroker + '\',\''+ row.organization + '\',\''+ row.visibility + '\',\''+ row.uri + '\',\''+ row.k1 + '\',\''+ row.k2 +'\',\''+ row.model +'\')">' + row.visibility + '</button>';
+					return '<button type="button"  class=\"publicBtn\" onclick="changeVisibility(\''+ row.id + '\',\''+ row.contextBroker + '\',\''+ row.organization + '\',\''+ row.visibility + '\',\''+ row.uri + '\',\''+ row.k1 + '\',\''+ row.k2 +'\',\''+ row.model +'\',\''+ row.protocol +'\',\''+ row.service +'\',\''+ row.servicePath +'\')">' + row.visibility + '</button>';
 					}
 				else // value is private
 				{
-				  return '<button type="button"  class=\"delegatedBtn\" onclick="changeVisibility(\''+ row.id + '\',\''+ row.contextBroker + '\',\''+ row.organization + '\',\''+ row.visibility + '\',\''+ row.uri + '\',\''+ row.k1 + '\',\''+ row.k2 +'\',\''+ row.model +'\')">' + row.visibility + '</button>';								  
+				  return '<button type="button"  class=\"delegatedBtn\" onclick="changeVisibility(\''+ row.id + '\',\''+ row.contextBroker + '\',\''+ row.organization + '\',\''+ row.visibility + '\',\''+ row.uri + '\',\''+ row.k1 + '\',\''+ row.k2 +'\',\''+ row.model +'\',\''+ row.protocol +'\',\''+ row.service +'\',\''+ row.servicePath +'\')">' + row.visibility + '</button>';								  
 					}
 					
 				} },
@@ -420,9 +427,10 @@ return "<div class=\"row\" style=\"border:2px solid blue;\" id=\"value"+indice+"
 				'data-edgegateway_uri="'+d.edgegateway_uri+'" ' +
 				'data-k1="'+d.k1+'" ' +
 				'data-k2="'+d.k2+'" ' +
-                               'data-subnature="'+d.subnature+'" '+
-                               'data-static-attributes="'+btoa(d.staticAttributes)+'" '+
-
+                                'data-subnature="'+d.subnature+'" '+
+                                'data-static-attributes="'+btoa(d.staticAttributes)+'" '+
+				'data-service="'+d.service+'" ' +
+				'data-servicePath="'+d.servicePath+'" ' +
 				'data-status1="'+d.status1+'">Edit</button>';
 				//"data-created": row.created,
 				//"data-properties": row.properties,
@@ -442,7 +450,10 @@ return "<div class=\"row\" style=\"border:2px solid blue;\" id=\"value"+indice+"
 				'data-id="'+d.id+'" ' +
 				'data-contextBroker="'+d.contextBroker+'" ' +
 				'data-organization="'+d.organization+'" ' +
-                'data-uri="'+d.uri+'">Delete</button>';
+				'data-protocol="'+d.protocol+'" ' +
+				'data-service="'+d.service+'" ' +
+				'data-servicePath="'+d.servicePath+'" '+
+                		'data-uri="'+d.uri+'">Delete</button>';
 				}
             },
 			{
@@ -623,7 +634,7 @@ return "<div class=\"row\" style=\"border:2px solid blue;\" id=\"value"+indice+"
         
 		$("#addMyNewDevice").click(function() {
 		
-			console.log("add new device");	
+			//console.log("add new device");	
 			$("#displayAllDeviceRow").hide();
 			$("#addMyNewDeviceRow").show();
 
@@ -658,7 +669,7 @@ return "<div class=\"row\" style=\"border:2px solid blue;\" id=\"value"+indice+"
 		$('a[data-toggle="tab"]').on('shown.bs.tab', function (e) {
 			var target = $(e.target).attr("href");
 			if ((target == '#addGeoPositionTabDevice')) {
-				console.log("Elf: Add Device Map");
+				//console.log("Elf: Add Device Map");
 				var latitude = 43.78; 
 				var longitude = 11.23;
 				var flag = 0;
@@ -671,7 +682,7 @@ return "<div class=\"row\" style=\"border:2px solid blue;\" id=\"value"+indice+"
 		$('a[data-toggle="tab"]').on('shown.bs.tab', function (e) {
 			var target = $(e.target).attr("href");
 			if ((target == '#editGeoPositionTabDevice')) {
-				console.log("Elf : EditDeviceMap");
+				//console.log("Elf : EditDeviceMap");
 					var latitude = $("#inputLatitudeDeviceM").val(); 
 					var longitude = $("#inputLongitudeDeviceM").val();
 					var flag = 1;
@@ -699,16 +710,16 @@ return "<div class=\"row\" style=\"border:2px solid blue;\" id=\"value"+indice+"
 			   if (!(kind=="sensor" || kind=="actuator")) {var kindNote = ("\n kind not specified");}  else{kindNote = "&#10004;";}
 			   if ((latitude < -90 && latitude > 90) || (latitude=="" || latitude==null)) {var latitudeNote = ("\n latitude not correct ");} else{latitudeNote = "&#10004;";}
 			   if ((longitude < -180 && longitude > 180) || (longitude=="" || longitude==null)) {var longitudeNote = ("\n longitude not correct ");} else{longitudeNote = "&#10004;";}
-			   if (!(protocol=="ngsi" || protocol=="mqtt" || protocol=="amqp")) {var protocolNote = ("protocol not correct ");} else{protocolNote = "&#10004;";}
+			   if (!(protocol=="ngsi" || protocol=="mqtt" || protocol=="amqp" || protocol == "ngsi w/MultiService")) {var protocolNote = ("protocol not correct ");} else{protocolNote = "&#10004;";}
 		
-		console.log(id + contextbroker + type + kind + latitude + longitude + protocol);
+		//console.log(id + contextbroker + type + kind + latitude + longitude + protocol);
 	
 			if ((idNote == "&#10004;") && (contextbrokerNote == "&#10004;") && (typeNote == "&#10004;") && (kindNote == "&#10004;") && (latitudeNote == "&#10004;") && (longitudeNote == "&#10004;") && (protocolNote == "&#10004;")){var statusNote = "<button class=\"btn btn-success btn-round\"></button>";} else{statusNote= "<button class=\"btn btn-danger btn-round\"></button>";}
 		
 		var x =inputPropertiesDeviceMMsg.innerHTML;
 		
 		var div = document.createElement("div");
-		console.log("IPDMM:" + x);
+		//console.log("IPDMM:" + x);
 		
 		if (x =="&nbsp;"){
 			}
@@ -788,7 +799,7 @@ return "<div class=\"row\" style=\"border:2px solid blue;\" id=\"value"+indice+"
 		}
 
 		 
-	console.log(nameOpt[selectednameOpt].value + " " + gb_device + " " + gb_longitude + " " + gb_latitude);
+	//console.log(nameOpt[selectednameOpt].value + " " + gb_device + " " + gb_longitude + " " + gb_latitude);
 	
 		$.ajax({
 			url: "../api/model.php",
@@ -811,7 +822,7 @@ return "<div class=\"row\" style=\"border:2px solid blue;\" id=\"value"+indice+"
 
 				 else (data["status"] === 'ok')
 					{					
-						console.log(data.content.attributes);
+						//console.log(data.content.attributes);
 						
 						var model = data.content.name;
 						var type = data.content.devicetype;
@@ -828,7 +839,7 @@ return "<div class=\"row\" style=\"border:2px solid blue;\" id=\"value"+indice+"
 						// population of the value tab with the values taken from the db						
 						while (k < myattributes.length)
 						  {
-							console.log(myattributes.length + " " +k); 
+							//console.log(myattributes.length + " " +k); 
 							content = drawAttributeMenu(myattributes[k].value_name, 
 								 myattributes[k].data_type, myattributes[k].value_type, myattributes[k].editable, myattributes[k].value_unit, myattributes[k].healthiness_criteria, 
 								 myattributes[k].healthiness_value,  myattributes[k].value_name, 'addlistAttributes', indexValues);
@@ -853,7 +864,7 @@ return "<div class=\"row\" style=\"border:2px solid blue;\" id=\"value"+indice+"
 						$('#selectProtocolDevice').val(data.content.protocol);
 						$('#selectFormatDevice').val(data.content.format);
 
-						console.log(data.content.edgegateway_type);
+						//console.log(data.content.edgegateway_type);
 
 						$('#selectinputEdgeGatewayType').val(data.content.edgegateway_type);		
 
@@ -1024,7 +1035,7 @@ return "<div class=\"row\" style=\"border:2px solid blue;\" id=\"value"+indice+"
 			
 	$("#addAttrBtn").off("click");
 	$("#addAttrBtn").click(function(){
-	   console.log("#addAttrBtn");							   
+	   //console.log("#addAttrBtn");							   
 	   content = drawAttributeMenu("","", "", "", "", "", "300", "", 'addlistAttributes', indexValues);
 	indexValues=indexValues+1;
 	   $('#addlistAttributes').append(content);
@@ -1037,7 +1048,7 @@ return "<div class=\"row\" style=\"border:2px solid blue;\" id=\"value"+indice+"
 
 	$("#addSchemaTabDevice").off("click");
 	$("#addSchemaTabDevice").click(function(){				
-	   console.log("#addAttrMBtn");					
+	   //console.log("#addAttrMBtn");					
 	   //checkAtlistOneAttribute();
 	   // $("#addSchemaTabDevice #addlistAttributes .row input:even").each(function(){checkValueName();});
 	   checkAddDeviceConditions();
@@ -1069,7 +1080,7 @@ return "<div class=\"row\" style=\"border:2px solid blue;\" id=\"value"+indice+"
 			
 	$("#addAttrBtnUser").off("click");
 	$("#addAttrBtnUser").click(function(){
-	   console.log("#addAttrBtnUser");							   
+	   //console.log("#addAttrBtnUser");							   
 	   content = drawAttributeMenu("","", "", "", "", "", "300", "",  'addlistAttributes', indexValues);
 		indexValues=indexValues+1;
 	   $('#addlistAttributesUser').append(content);
@@ -1101,7 +1112,7 @@ return "<div class=\"row\" style=\"border:2px solid blue;\" id=\"value"+indice+"
 	$("#addAttrBtn").hide();
 	$('#addDeviceLoadingMsg').show();
 	$('#addDeviceLoadingIcon').show();
-	console.log("LISTA" + JSON.stringify(mynewAttributes));
+	//console.log("LISTA" + JSON.stringify(mynewAttributes));
 
 
 	 $.ajax({
@@ -1213,7 +1224,7 @@ return "<div class=\"row\" style=\"border:2px solid blue;\" id=\"value"+indice+"
 			}			 
 			else (mydata["status"] === 'ok')
 			{
-				console.log("Added Device");
+				//console.log("Added Device");
 				$('#addDeviceLoadingMsg').hide();
 				$('#addDeviceLoadingIcon').hide();
 				$('#addDeviceKoMsg').hide();
@@ -1310,26 +1321,13 @@ return "<div class=\"row\" style=\"border:2px solid blue;\" id=\"value"+indice+"
 		 }
 	 });
 });
-
-
-       /*  $('#selectionResults').change(function(){
-		   
-		   console.log("entrato selectionResult");
-		   console.log($(this).html());
-		   if ( $(this).html() == "")
-   		         buildMainTable(true);
-           else 
-		          buildMainTable(true, $(this).html());
-          $(this).html(""); 		   
-        });*/
-		
 	
 //Start Related to Delete Device
 	
 		// Delete lines related to attributes 
 	$("#attrNameDelbtn").off("click");
 	$("#attrNameDelbtn").on("click", function(){
-		console.log("#attrNameDelbtn");	
+		//console.log("#attrNameDelbtn");	
 		$(this).parent('tr').remove();
 		});	
 
@@ -1352,9 +1350,12 @@ return "<div class=\"row\" style=\"border:2px solid blue;\" id=\"value"+indice+"
 		var contextbroker = $(this).attr('data-contextbroker');
 		var dev_organization = $(this).attr('data-organization');
 		var uri = $(this).attr("data-uri");
+		var protocol = $(this).attr('data-protocol');
+		var service = $(this).attr('data-service');
+		var servicePath = $(this).attr('data-servicepath');
 		
-		$("#deleteDeviceModal div.modal-body").html('<div class="modalBodyInnerDiv"><span data-id = "' + id + '" data-contextbroker = "' + contextbroker + '" data-organization = "' + dev_organization + '"  data-uri ="' + uri +'">Do you want to confirm deletion of device <b>' + id + '</b>?</span></div>');
-		$("#deleteDeviceModalInnerDiv1").html('<h5>Device deletion in progress, please wait</h5>');
+		$("#deleteDeviceModal div.modal-body").html('<div class="modalBodyInnerDiv"><span data-id = "' + id + '" data-contextbroker = "' + contextbroker + '" data-organization = "' + dev_organization + '"  data-uri ="' + uri + '" data-service ="' + service + '" data-servicepath="' + servicePath + '" data-protocol="' + protocol + '">Do you want to confirm deletion of device <b>' + id + '</b>?</span></div>');
+	$("#deleteDeviceModalInnerDiv1").html('<h5>Device deletion in progress, please wait</h5>');
         $("#deleteDeviceModalInnerDiv2").html('<i class="fa fa-circle-o-notch fa-spin" style="font-size:36px"></i>');
         $("#deleteDeviceModalInnerDiv1").hide();
         $("#deleteDeviceModalInnerDiv2").hide();
@@ -1371,7 +1372,11 @@ return "<div class=\"row\" style=\"border:2px solid blue;\" id=\"value"+indice+"
 		var contextbroker = $("#deleteDeviceModal span").attr("data-contextBroker");
 		var dev_organization = $("#deleteDeviceModal span").attr("data-organization");
 		var uri = $("#deleteDeviceModal span").attr("data-uri");
-	   
+		var protocol = $("#deleteDeviceModal span").attr("data-protocol");	
+		var service = $("#deleteDeviceModal span").attr("data-service");
+		var servicePath = $("#deleteDeviceModal span").attr("data-servicepath");
+		if(service === "null") service = "";
+		if(servicePath === "null") servicePath = ""; 
  
 		$("#deleteDeviceModal div.modal-body").html("");
 		$("#deleteDeviceOkBtn").hide();
@@ -1392,14 +1397,17 @@ return "<div class=\"row\" style=\"border:2px solid blue;\" id=\"value"+indice+"
 				contextbroker : contextbroker,
 				organization : organization, 
 				dev_organization : dev_organization, 
-				token : sessionToken
+				token : sessionToken,
+				protocol: protocol,
+				service: service,
+				servicePath: servicePath
 				},
 			type: "POST",
 			datatype: "json",
 			async: true,
 			success: function (data) 
 			{
-				console.log(JSON.stringify(data));
+				//console.log(JSON.stringify(data));
                 $("#deleteDeviceOkBtn").show();
 				if(data["status"] === 'ko')
 				{
@@ -1472,7 +1480,7 @@ return "<div class=\"row\" style=\"border:2px solid blue;\" id=\"value"+indice+"
 
  $("#editSchemaTabDevice").off("click");
         $("#editSchemaTabDevice").on('click keyup', function(){
-           console.log("#editSchemaTabDevice");
+           //console.log("#editSchemaTabDevice");
 
            //checkEditAtlistOneAttribute();
            $("#editSchemaTabDevice #addlistAttributesM .row input:even").each(function(){checkEditValueName($(this));});
@@ -1524,8 +1532,8 @@ return "<div class=\"row\" style=\"border:2px solid blue;\" id=\"value"+indice+"
 	  var key2 = $(this).attr('data-k2');
 	  var gtw_type = $(this).attr('data-edgegateway_type');
 	  var gtw_uri = $(this).attr('data-edgegateway_uri');
-	var subnature= $(this).attr('data-subnature');
-	  console.log(key1 + key2);
+	  var subnature= $(this).attr('data-subnature');
+	  //console.log(key1 + key2);
 	  
 	  if (model == "custom")
 		   $("#editDeviceGenerateKeyBtn").show();
@@ -1553,10 +1561,11 @@ return "<div class=\"row\" style=\"border:2px solid blue;\" id=\"value"+indice+"
 		$('#selectEdgeGatewayTypeM').val(gtw_type);
 		$('#inputEdgeGatewayUriM').val(gtw_uri);	  
 
-                       $('#selectSubnatureM').val(subnature);
-			$('#selectSubnatureM').trigger('change');
-                       subnatureChanged(true, JSON.parse(atob($(this).attr("data-static-attributes"))));
+                $('#selectSubnatureM').val(subnature);
+		$('#selectSubnatureM').trigger('change');
+                subnatureChanged(true, JSON.parse(atob($(this).attr("data-static-attributes"))));
 
+		fillMultiTenancyFormSection($(this).attr('data-service'), $(this).attr('data-servicePath'), contextbroker, 'device');
 
 		showEditDeviceModal();
 
@@ -1567,7 +1576,10 @@ return "<div class=\"row\" style=\"border:2px solid blue;\" id=\"value"+indice+"
 				id: $(this).attr("data-id"),
 				organization : organization,
 				token : sessionToken, 
-				contextbroker: $(this).attr("data-contextBroker")
+				contextbroker: $(this).attr("data-contextBroker"),
+				protocol: $(this).attr('data-protocol'),
+				service: $(this).attr('data-service'),
+				servicePath: $(this).attr('data-servicePath')
 			},
 			type: "POST",
 			async: true,
@@ -1649,28 +1661,28 @@ showEditDeviceModal();
 	   // $("#editDeviceModalUpdating").show();
 		
 		mynewAttributes = [];
-        var regex=/[^a-z0-9_-]/gi;
-        var someNameisWrong=false;
+	        var regex=/[^a-z0-9_-]/gi;
+        	var someNameisWrong=false;
 		num1 = document.getElementById('addlistAttributesM').childElementCount;
 		//console.log(num1);
 		for (var m=0; m< num1; m++)
 		{
 		  //var selOpt= document.getElementById('addlistAttributesM').childNodes[m].childNodes[2].childNodes[0].childNodes[0].options;
 		  //var selIndex= document.getElementById('addlistAttributesM').childNodes[m].childNodes[2].childNodes[0].childNodes[0].selectedIndex;
-		var newatt= {value_name: document.getElementById('addlistAttributesM').childNodes[m].childNodes[0].childNodes[0].childNodes[0].value.trim(), 
+		  var newatt= {value_name: document.getElementById('addlistAttributesM').childNodes[m].childNodes[0].childNodes[0].childNodes[0].value.trim(), 
 					data_type:document.getElementById('addlistAttributesM').childNodes[m].childNodes[1].childNodes[0].childNodes[0].value.trim(),
 					value_type:document.getElementById('addlistAttributesM').childNodes[m].childNodes[2].childNodes[0].childNodes[0].value.trim(),
 					editable:document.getElementById('addlistAttributesM').childNodes[m].childNodes[4].childNodes[0].childNodes[0].value.trim(),
 					value_unit:document.getElementById('addlistAttributesM').childNodes[m].childNodes[3].childNodes[0].childNodes[0].value.trim(),
 					healthiness_criteria: document.getElementById('addlistAttributesM').childNodes[m].childNodes[5].childNodes[0].childNodes[0].value.trim(),
 					healthiness_value: document.getElementById('addlistAttributesM').childNodes[m].childNodes[6].childNodes[0].childNodes[0].value.trim(),
-                     old_value_name:document.getElementById('addlistAttributesM').childNodes[m].childNodes[7].childNodes[0].childNodes[0].value.trim()};
+                  			 old_value_name:document.getElementById('addlistAttributesM').childNodes[m].childNodes[7].childNodes[0].childNodes[0].value.trim()};
 			
             
-            if (newatt.value_name!=""&& !regex.test(newatt.value_name) && newatt.value_name.length>=3 &&newatt.data_type!="" && newatt.value_type!="" && newatt.editable!="" && newatt.value_unit!="" && newatt.healthiness_criteria!="" && newatt.healthiness_value!="") 
-                mynewAttributes.push(newatt);
-            else
-                someNameisWrong=true;
+	            if (newatt.value_name!=""&& !regex.test(newatt.value_name) && newatt.value_name.length>=3 &&newatt.data_type!="" && newatt.value_type!="" && newatt.editable!="" && newatt.value_unit!="" && newatt.healthiness_criteria!="" && newatt.healthiness_value!="") 
+        	        mynewAttributes.push(newatt);
+	            else
+        	        someNameisWrong=true;
             
           		 
 		}
@@ -1704,7 +1716,7 @@ showEditDeviceModal();
                old_value_name:document.getElementById('editlistAttributes').childNodes[j].childNodes[7].childNodes[0].childNodes[0].value
 				   };
 					
-            if(att.value_name!=""&& !regex.test(att.value_name) && att.value_name.length>= 3&& att.data_type!="" && att.value_type!="" && att.editable!="" && att.healthiness_criteria!="" && att.healthiness_value!="")
+            if(att.value_name!=""&& !regex.test(att.value_name) && att.value_name.length>= 2&& att.data_type!="" && att.value_type!="" && att.editable!="" && att.healthiness_criteria!="" && att.healthiness_value!="")
                    myAttributes.push(att);
                 else
                     someNameisWrong=true;
@@ -1738,7 +1750,7 @@ showEditDeviceModal();
 			   value_unit:selectOpt_value_unit[selectIndex_value_unit].value,
 			   healthiness_criteria: selectOpt_hc[selectIndex_hc].value,
 			   healthiness_value: document.getElementById('deletedAttributes').childNodes[j].childNodes[6].childNodes[0].childNodes[0].value.trim(),
-               old_value_name: document.getElementById('deletedAttributes').childNodes[j].childNodes[7].childNodes[0].childNodes[0].value
+               		   old_value_name: document.getElementById('deletedAttributes').childNodes[j].childNodes[7].childNodes[0].childNodes[0].value
                    };
                    mydeletedAttributes.push(att);
 		}
@@ -1751,7 +1763,7 @@ showEditDeviceModal();
 
 		
 		
-        $("#editDeviceModalTabs").hide();
+	        $("#editDeviceModalTabs").hide();
 		$('#editDeviceModal div.modalCell').hide();
 		//$("#editDeviceModalFooter").hide();
 		$("#editDeviceCancelBtn").hide();
@@ -1764,7 +1776,14 @@ showEditDeviceModal();
 		$('#editDeviceLoadingIcon').show();
 		// console.log(JSON.stringify(deviceJson));
         
-			
+		var service = $('#editSelectService').val();
+		var servicePath = $('#editInputServicePathDevice').val();
+
+		if ($('#selectProtocolDeviceM').val() === "ngsi w/MultiService"){
+			// servicePath value pre-processing
+			if (servicePath[0] !== "/" || servicePath === "") servicePath = "/" + servicePath;
+			if (servicePath[servicePath.length -1] === "/" && servicePath.length > 1) servicePath = servicePath.substr(0, servicePath.length -1);
+		}		
 		
 		 $.ajax({
 			 url: "../api/device.php",
@@ -1781,7 +1800,7 @@ showEditDeviceModal();
 		type: $('#inputTypeDeviceM').val(),
 		kind: $('#selectKindDeviceM').val(),
 		contextbroker: $('#selectContextBrokerM').val(),
-        gb_old_cb : gb_old_cb,
+        	gb_old_cb : gb_old_cb,
 		organization : organization, 
 		uri: $('#inputUriDeviceM').val(),
 		protocol: $('#selectProtocolDeviceM').val(),
@@ -1799,17 +1818,19 @@ showEditDeviceModal();
 		edgegateway_type : $("#selectEdgeGatewayTypeM").val(),
 		edgegateway_uri : $("#inputEdgeGatewayUriM").val(),
                 subnature: $('#selectSubnatureM').val(),
-                static_attributes: JSON.stringify(retrieveStaticAttributes("editlistStaticAttributes"))
+                static_attributes: JSON.stringify(retrieveStaticAttributes("editlistStaticAttributes")),
+		service : service,
+		servicePath : servicePath
 			 },
 			 type: "POST",
 			 async: true,
 			 success: function (data) 
 			 {
 			  
-		   console.log(JSON.stringify(data));
-            console.log("myAttributes " + JSON.stringify(myAttributes));
-		   console.log("mynewAttributes " + JSON.stringify(mynewAttributes));
-		   console.log("mydeletedAttributes " + JSON.stringify(mydeletedAttributes));
+		   //console.log(JSON.stringify(data));
+            //console.log("myAttributes " + JSON.stringify(myAttributes));
+		   //console.log("mynewAttributes " + JSON.stringify(mynewAttributes));
+		   //console.log("mydeletedAttributes " + JSON.stringify(mydeletedAttributes));
 			if(data["status"] === 'ko')
 			{
 				console.log("Error editing Device type");
@@ -1976,7 +1997,12 @@ document.getElementById('addlistAttributes').innerHTML = "";
 		{
 			document.getElementById("selectProtocolDevice").value = 'ngsi';
 			document.getElementById("selectFormatDevice").value = 'json';
-		} 
+		}
+		else if (valCB ==="ngsi w/MultiService")
+		{
+                        document.getElementById("selectProtocolDevice").value = 'ngsi w/MultiService';
+                        document.getElementById("selectFormatDevice").value = 'json';
+                }
 		else if(valCB ==='mqtt')
 		{
 			document.getElementById("selectProtocolDevice").value = 'mqtt';
@@ -2037,7 +2063,7 @@ document.getElementById('addlistAttributes').innerHTML = "";
 		if((dataTable.row( this ).index())%2 !== 0)
 		{
 			$('#devicesTable tbody').css("background", "rgba(0, 162, 211, 1)");
-			console.log( 'Row index: '+dataTable.row( this ).index() );
+			//console.log( 'Row index: '+dataTable.row( this ).index() );
 			$(this).find('td').eq(0).css("background-color", "rgb(230, 249, 255)");
 			$(this).find('td').eq(0).css("border-top", "none");
 		}
@@ -2074,7 +2100,7 @@ function updateGroupList(ouname){
                                 $dropdown.empty();
                                //adding empty to rootadmin
                                if ((loggedRole=='RootAdmin')||(loggedRole=='ToolAdmin')) {
-                                       console.log("adding empty");
+                                       //console.log("adding empty");
                                        $dropdown.append($("<option />").val("All groups").text("All groups"));
                                }
                                //add new ones
@@ -2223,7 +2249,7 @@ function updateGroupList(ouname){
 
 //   START TO CHANGE THE VISIBILITY  & OWNERSHIP 
 				
-	function changeVisibility(id, contextbroker, dev_organization, visibility, uri, k1, k2, model) {	   	   
+	function changeVisibility(id, contextbroker, dev_organization, visibility, uri, k1, k2, model, protocol, service, servicePath) {	   	   
 		$("#delegationsModal").modal('show');   
 	    $("#delegationHeadModalLabel").html("Device - " + id);   
 	    // document.getElementById('CurrentVisiblityTxt').value = "Current Visiblity: " + visibility; 			
@@ -2571,7 +2597,7 @@ function updateGroupList(ouname){
                                                            if (data["status"] === 'ok')
                                                                                                                   {
                                                                 rowToRemove.remove();
-                                                                console.log("ermoving a row from the table");
+                                                                //console.log("ermoving a row from the table");
                                                             }
                                                             else
                                                             {
@@ -3101,13 +3127,13 @@ $('a[data-toggle="tab"]').on('shown.bs.tab', function (e) {
 	if ((target == '#addSchemaTabDevice')) {	
 		if (num1 == 0) {
 			if (document.getElementById('#addAttrBtn').clicked == true) {
-				console.log(num1);
+				//console.log(num1);
 				$("#addlistAttributesMsg").css("color", "red");
 				message = 'At least one value is required/mandatory';
 				$('#addlistAttributesMsg').html(message);
 				$("#addNewDeviceConfirmBtn").attr("disabled", true);
 			} else if (document.getElementById('#addAttrBtn').clicked == false){
-				console.log("Clicked");
+				//console.log("Clicked");
 				$("#addlistAttributesMsg").css("color", "red");
 				message = 'Value Name is mandatory';
 				$('#addlistAttributesMsg').html(message);
@@ -3151,7 +3177,7 @@ $('a[data-toggle="tab"]').on('shown.bs.tab', function (e) {
                  async: true,
                  success: function (data) 
                  {
-				   console.log(data);
+				   //console.log(data);
 
                     if(data["status"] === 'ko')
                     {
@@ -3218,7 +3244,7 @@ $('a[data-toggle="tab"]').on('shown.bs.tab', function (e) {
                  async: true,
                  success: function (data) 
                  {
-				   console.log(data);
+				   //console.log(data);
 
                     if(data["status"] === 'ko')
                     {
@@ -3286,7 +3312,7 @@ function drawMap1(latitude,longitude,flag){
 			var lng = e.latlng.lng;
 				lat = lat.toFixed(5);
 				lng = lng.toFixed(5);
-				console.log("Check the format:" + lat + " " + lng);
+				//console.log("Check the format:" + lat + " " + lng);
 				
 				 document.getElementById('inputLatitudeDevice').value = lat;
 				 document.getElementById('inputLongitudeDevice').value = lng;
@@ -3322,7 +3348,7 @@ function drawMap1(latitude,longitude,flag){
 				var lng = e.latlng.lng;
 				lat = lat.toFixed(5);
 				lng = lng.toFixed(5);
-				console.log("Check the format:" + lat + " " + lng);
+				//console.log("Check the format:" + lat + " " + lng);
 				
 				document.getElementById('inputLatitudeDeviceM').value = lat;
 				document.getElementById('inputLongitudeDeviceM').value = lng;
@@ -3370,7 +3396,7 @@ function drawMapAll(data, divName){
     if (typeof map_all === 'undefined' || !map_all) {
             //map_all = L.map(divName).setView([latitude,longitude], 10);
            
-        console.log(gpsCentreLatLng);
+        //console.log(gpsCentreLatLng);
         var centerMapArr= gpsCentreLatLng.split(",",2);
         var centerLat= parseFloat(centerMapArr[0].trim());
         var centerLng= parseFloat(centerMapArr[1].trim());
@@ -3584,8 +3610,8 @@ function drawMapAll(data, divName){
 
     function colorSelectedMarkers(selections, greenIcon){
                 green_marker_array=[];
-                console.log("selections are");
-                console.log(selections);
+                //console.log("selections are");
+                //console.log(selections);
                 for(var k in selections){
 
                     lat=Number(selections[k].latitude); 

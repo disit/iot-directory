@@ -84,11 +84,9 @@ CREATE TABLE `contextbroker` (
   `version` varchar(50) DEFAULT NULL,
   `path` varchar(100) DEFAULT NULL,
   `kind` set('external','internal') DEFAULT NULL,
-  `subscription_id` varchar(40) DEFAULT NULL,
+  `subscription_id` varchar(255) DEFAULT NULL,
   `urlnificallback` varchar(100) DEFAULT NULL,
   PRIMARY KEY (`name`),
-  UNIQUE KEY `ip` (`ip`,`port`),
-  UNIQUE KEY `uri` (`uri`),
   KEY `protocol` (`protocol`),
   CONSTRAINT `contextbroker_ibfk_1` FOREIGN KEY (`protocol`) REFERENCES `protocols` (`name`) ON DELETE CASCADE ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
@@ -121,7 +119,7 @@ CREATE TABLE `defaultpolicy` (
 
 CREATE TABLE `deleted_devices` (
   `contextBroker` varchar(40) NOT NULL,
-  `id` varchar(120) NOT NULL,
+  `id` varchar(255) NOT NULL,
   `uri` text,
   `devicetype` varchar(80) NOT NULL,
   `kind` set('sensor','actuator') DEFAULT NULL,
@@ -143,6 +141,8 @@ CREATE TABLE `deleted_devices` (
   `organization` varchar(50) DEFAULT 'DISIT',
   `subnature` varchar(50) DEFAULT NULL,
   `static_attributes` text,
+  `service` varchar(25) DEFAULT NULL,
+  `servicePath` varchar(96) DEFAULT NULL,
   PRIMARY KEY (`id`,`contextBroker`),
   KEY `contextBroker` (`contextBroker`),
   KEY `protocol` (`protocol`),
@@ -154,7 +154,7 @@ CREATE TABLE `deleted_devices` (
 
 CREATE TABLE `deleted_event_values` (
   `cb` varchar(40) NOT NULL,
-  `device` varchar(120) NOT NULL,
+  `device` varchar(255) NOT NULL,
   `value_name` varchar(120) NOT NULL,
   `data_type` varchar(30) NOT NULL,
   `value_type` varchar(120) DEFAULT NULL,
@@ -173,7 +173,7 @@ CREATE TABLE `deleted_event_values` (
 
 CREATE TABLE `devices` (
   `contextBroker` varchar(40) NOT NULL,
-  `id` varchar(120) NOT NULL,
+  `id` varchar(255) NOT NULL,
   `uri` text,
   `devicetype` varchar(80) NOT NULL,
   `kind` set('sensor','actuator') NOT NULL DEFAULT 'sensor',
@@ -195,6 +195,8 @@ CREATE TABLE `devices` (
   `organization` varchar(50) DEFAULT 'DISIT',
   `subnature` varchar(50) DEFAULT NULL,
   `static_attributes` text,
+  `service` varchar(25) DEFAULT NULL,
+  `servicePath` varchar(96) DEFAULT NULL,
   PRIMARY KEY (`id`,`contextBroker`),
   KEY `contextBroker` (`contextBroker`),
   KEY `protocol` (`protocol`),
@@ -211,7 +213,7 @@ CREATE TABLE `edgegatewaytype` (
 
 CREATE TABLE `event_values` (
   `cb` varchar(40) NOT NULL,
-  `device` varchar(120) NOT NULL,
+  `device` varchar(255) NOT NULL,
   `value_name` varchar(120) NOT NULL,
   `data_type` varchar(30) NOT NULL,
   `value_type` varchar(120) DEFAULT NULL,
@@ -309,6 +311,8 @@ CREATE TABLE `model` (
   `visibility` set('public','private') DEFAULT 'public',
   `subnature` varchar(50) DEFAULT NULL,
   `static_attributes` text,
+  `service` varchar(25) DEFAULT NULL,
+  `servicePath` varchar(96) DEFAULT NULL,
   PRIMARY KEY (`id`),
   UNIQUE KEY `name` (`name`),
   UNIQUE KEY `id` (`id`),
@@ -316,11 +320,20 @@ CREATE TABLE `model` (
   CONSTRAINT `model_ibfk_1` FOREIGN KEY (`policy`) REFERENCES `defaultpolicy` (`policyname`) ON DELETE CASCADE ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
+CREATE TABLE `services` (
+  `id` int(32) NOT NULL AUTO_INCREMENT,
+  `name` varchar(25) NOT NULL,
+  `broker_name` varchar(40) NOT NULL,
+  PRIMARY KEY (`id`),
+  KEY `broker_name` (`broker_name`),
+  CONSTRAINT `broker_name_ibfk_1` FOREIGN KEY (`broker_name`) REFERENCES `contextbroker` (`name`) ON DELETE CASCADE ON UPDATE CASCADE
+) ENGINE=InnoDB AUTO_INCREMENT=5 DEFAULT CHARSET=utf8;
+
 CREATE TABLE `temporary_devices` (
   `username` varchar(100) CHARACTER SET latin1 DEFAULT NULL,
   `created` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
   `contextBroker` varchar(40) NOT NULL,
-  `id` varchar(120) NOT NULL,
+  `id` varchar(255) NOT NULL,
   `uri` text,
   `devicetype` varchar(80) DEFAULT NULL,
   `kind` set('sensor','actuator','') DEFAULT NULL,
@@ -345,6 +358,8 @@ CREATE TABLE `temporary_devices` (
   `organization` varchar(50) DEFAULT 'DISIT',
   `subnature` varchar(50) DEFAULT NULL,
   `static_attributes` text,
+  `service` varchar(25) DEFAULT NULL,
+  `servicePath` varchar(96) DEFAULT NULL,
   PRIMARY KEY (`id`,`contextBroker`),
   KEY `contextBroker` (`contextBroker`),
   KEY `protocol` (`protocol`),
@@ -355,7 +370,7 @@ CREATE TABLE `temporary_devices` (
 
 CREATE TABLE `temporary_event_values` (
   `cb` varchar(40) NOT NULL,
-  `device` varchar(120) NOT NULL,
+  `device` varchar(255) NOT NULL,
   `value_name` varchar(120) NOT NULL,
   `old_value_name` varchar(120) NOT NULL,
   `data_type` varchar(30) DEFAULT NULL,
@@ -469,6 +484,7 @@ INSERT INTO `protocols` (`name`) VALUES ('amqp');
 INSERT INTO `protocols` (`name`) VALUES ('coap');
 INSERT INTO `protocols` (`name`) VALUES ('mqtt');
 INSERT INTO `protocols` (`name`) VALUES ('ngsi');
+INSERT INTO `protocols` (`name`) VALUES ('ngsi w/MultiService');
 INSERT INTO `protocols` (`name`) VALUES ('sigfox');
 
 /*

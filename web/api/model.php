@@ -44,22 +44,23 @@ require '../sso/autoload.php';
 use Jumbojett\OpenIDConnectClient;
 
 
+$oidc = new OpenIDConnectClient($keycloakHostUri, $clientId, $clientSecret);
+
 if (isset($_REQUEST['nodered']))
 {
    if ($_REQUEST['token']!='undefined')
       $accessToken = $_REQUEST['token'];
-   else $accessToken = "";
+   else $accessToken = "";//TODO throw an error directly here, instead of checking the presence in any APIS
 } 
 else
 {
 if (isset($_REQUEST['token'])) {
-  $oidc = new OpenIDConnectClient($keycloakHostUri, $clientId, $clientSecret);
   $oidc->providerConfigParam(array('token_endpoint' => $keycloakHostUri.'/auth/realms/master/protocol/openid-connect/token'));
 
   $tkn = $oidc->refreshToken($_REQUEST['token']);
   $accessToken = $tkn->access_token;
 }
-else $accessToken ="";
+else $accessToken ="";//TODO throw an error directly here, instead of checking the presence in any APIS
 }
 
 $result=array("status"=>"","msg"=>"","content"=>"","error_msg"=>"","log"=>"");	
@@ -128,62 +129,43 @@ if ($action == "get_model")
 }
 else if ($action=="get_all_models")
 {
-    $username = mysqli_real_escape_string($link, $_REQUEST['username']);
-	$organization = mysqli_real_escape_string($link, $_REQUEST['organization']);
-    $loggedrole= mysqli_real_escape_string($link, $_REQUEST['loggedrole']);
-    
-    if (!empty($accessToken)) 
+	if (empty($accessToken))
 	{
-        getOwnerShipObject($accessToken, "ModelID", $result); #IOTModel 
-        getDelegatedObject($accessToken, $username, "ModelID", $result); #IOTModel
+                $result["status"]="ko";
+                $result['msg'] = "Access Token not present";
+		$result["error_msg"] .= "Problem getting the list of the avaialable models (Access Token not present). ";	
+                $result["log"]= "action=get_all_models - error AccessToken not present\r\n";
 	}
-
-    $res=array(); 
-    $q  = "SELECT * FROM model";
-    $r = mysqli_query($link, $q);
-
-	if($r) 
-	{
-		while($row = mysqli_fetch_assoc($r)) 
-		{
-			$idTocheck=$row["organization"].":".$row["name"];
-             if (
-                 ($loggedrole=='RootAdmin')
-                 ||($loggedrole=='ToolAdmin') 
-                 ||
-                 (
-                    ($row["organization"]==$organization)&&
-                    (   
-                        ($row["visibility"]=='public'  
-                         ||
-                         (isset($result["delegation"][$idTocheck])&& $result["delegation"][$idTocheck]["kind"]=="anonymous")
-                        )
-                    )
-                ) 
-                ||
-                    (isset($result["delegation"][$idTocheck])&& $result["delegation"][$idTocheck]["kind"]!="anonymous")
-                ||
-                    (isset($result["keys"][$idTocheck]) && $result["keys"][$idTocheck]["owner"]==$username)
-                    
-               )
-            {
-            array_push($res, $row);
-             }
-		}
-		$result["status"]="ok";
-		$result["content"]=$res;
-		$result["log"]= "action=get_all_models \r\n";
-	} 
-	else
-	{
-		$result["status"]="ko";
-		$result['msg'] = mysqli_error($link);
-		$result["log"]= "action=get_all_models -" . " error " .  mysqli_error($link)  . "\r\n";
+	else {
+		$username = mysqli_real_escape_string($link, $_REQUEST['username']);
+		$organization = mysqli_real_escape_string($link, $_REQUEST['organization']);
+		$loggedrole= mysqli_real_escape_string($link, $_REQUEST['loggedrole']);
+   
+		get_all_models($username, $organization, $loggedrole, $accessToken, $link, $result);
 	}
 	my_log($result);
-	mysqli_close($link);	
+	mysqli_close($link);
 }
+else if ($action=="get_all_models_simple")//simple require just the accesstoken, and not the role, username, organization
+{
+	if (empty($accessToken))
+        {
+                $result["status"]="ko";
+                $result['msg'] = "Access Token not present";
+                $result["error_msg"] .= "Problem getting the list of the avaialable models (Access Token not present). ";
+                $result["log"]= "action=get_all_models_simple - error AccessToken not present\r\n";
+        }
+        else {
+		//retrieve any parameteres from the accetoken
+		//TODO avoid passing all the parameters for LDAP
+		get_user_info($accessToken, $username, $organization, $oidc, $role, $result, $ldapBaseName, $ldapServer, $ldapPort, $ldapAdminName, $ldapAdminPwd);
 
+		if ($result["status"]=="ok")
+			get_all_models($username, $organization, $role, $accessToken, $link,$result);
+	}
+	my_log($result);
+	mysqli_close($link);
+}
 else if ($action=="get_all_models_DataTable")
 {
     $username = mysqli_real_escape_string($link, $_REQUEST['username']);
@@ -329,48 +311,68 @@ if ($action=="insert")
 	$organization= mysqli_real_escape_string($link, $_REQUEST['organization']);
 	$subnature=mysqli_real_escape_string($link, $_REQUEST['subnature']);
 	$staticAttributes= mysqli_real_escape_string($link, $_REQUEST['static_attributes']);
-
+	$service = mysqli_real_escape_string($link, $_REQUEST['service']);
+	$servicePath = mysqli_real_escape_string($link, $_REQUEST['servicePath']);
+	
 	checkRegisterOwnerShipObject($accessToken, 'ModelID', $result);
 	
-	 if ($result["status"]=='ok'){
+	if ($result["status"]=='ok'){
 	
+		//TODO check if needed
+		$syntaxRes=0;
+		if ($protocol == 'ngsi w/MultiService'){
+			$syntaxRes = servicePathSyntaxCheck($servicePath);
+			$service="'$service'";
+			$servicePath="'$servicePath'";
+		}
+		else {
+	                $service="NULL";
+			$servicePath="NULL";
+		}
 
-	$q = "INSERT INTO model(name, description, devicetype, kind, producer, frequency, contextbroker, protocol, format, healthiness_criteria, healthiness_value, kgenerator, attributes, edgegateway_type, organization, visibility, subnature, static_attributes ) " .
-		 "VALUES('$name', '$description', '$type', '$kind', '$producer', '$frequency', '$contextbroker', '$protocol', '$format', '$hc', '$hv', '$kgenerator', '$listAttributes', '$edgegateway_type', '$organization', 'private', '$subnature', '$staticAttributes')";
-	$r = mysqli_query($link, $q);
+		if($syntaxRes == 0){
 
-	if($r)
-	{
-		$result["status"]='ok';
-		$result["log"]= "action=insert " . $q   . " \r\n";
-        $ownmsg = array();
-			$ownmsg["elementId"]=$organization . ':' . $name; // I am using the new identifier
-			$ownmsg["elementName"]=$organization . ':' . $name;				    
-			$ownmsg["elementUrl"]=$organization . ':' . $name;
-            $ownmsg["elementType"]="ModelID"; #IOTModel
-			
+			$q = "INSERT INTO model(name, description, devicetype, kind, producer, frequency, contextbroker, protocol, format, healthiness_criteria, healthiness_value, kgenerator, attributes, edgegateway_type, organization, visibility, subnature, static_attributes, service, servicePath ) " .
+			 "VALUES('$name', '$description', '$type', '$kind', '$producer', '$frequency', '$contextbroker', '$protocol', '$format', '$hc', '$hv', '$kgenerator', '$listAttributes', '$edgegateway_type', '$organization', 'private', '$subnature', '$staticAttributes', $service, $servicePath)";
+			$r = mysqli_query($link, $q);
+
+			if($r)
+			{
+				$result["status"]='ok';
+				$result["log"]= "action=insert " . $q   . " \r\n";
+			        $ownmsg = array();
+				$ownmsg["elementId"]=$organization . ':' . $name; // I am using the new identifier
+				$ownmsg["elementName"]=$organization . ':' . $name;				    
+				$ownmsg["elementUrl"]=$organization . ':' . $name;
+			        $ownmsg["elementType"]="ModelID"; #IOTModel
         
-            registerOwnerShipObject($ownmsg, $accessToken, 'ModelID',$result); #IOTModel
-            if($result["status"]=='ok'){
-                logAction($link,$username,'model','insert',$name,$organization,'Registering the ownership of model','success');
-            }
-            else{
-                logAction($link,$username,'model','insert',$name,$organization,'Registering the ownership of model','failure');
-            }
+       				registerOwnerShipObject($ownmsg, $accessToken, 'ModelID',$result); #IOTModel
+				if($result["status"]=='ok'){
+			                logAction($link,$username,'model','insert',$name,$organization,'Registering the ownership of model','success');
+			        }
+			        else{
+			                logAction($link,$username,'model','insert',$name,$organization,'Registering the ownership of model','failure');
+			        }
 		
-		//Sara2510 - for logging purpose
-		logAction($link,$username,'model','insert',$name,$organization,'','success');
-	}
-	else
-	{
-		//Sara2510 - for logging purpose
-		logAction($link,$username,'model','insert',$name,$organization,'An error occurred when registering the Model','faliure');
-		 $result["status"]='ko';
-		 $result["msg"] = "Error: An error occurred when registering the Model $name. <br/>" .
+				//Sara2510 - for logging purpose
+				logAction($link,$username,'model','insert',$name,$organization,'','success');
+			}
+			else
+			{
+				//Sara2510 - for logging purpose
+				logAction($link,$username,'model','insert',$name,$organization,'An error occurred when registering the Model','faliure');
+				$result["status"]='ko';
+				$result["msg"] = "Error: An error occurred when registering the Model $name. <br/>" .
 						   mysqli_error($link) . 
 						   ' Please enter again the Model';
-		 $result["log"]= "action=insert -" . $q . " error " .  mysqli_error($link)  . "\r\n";
-	}
+				$result["log"]= "action=insert -" . $q . " error " .  mysqli_error($link)  . "\r\n";
+			}
+		}
+		else
+		{
+			$result["status"]='ko';
+			$result["error_msg"] = $servicePath . " is NOT a valid servicePath";
+		}
 	}
 	
 	echo json_encode($result);
@@ -400,42 +402,60 @@ if ($action=="update")
 	$hv = mysqli_real_escape_string($link, $_REQUEST['hv']);
 	$listAttributes= mysqli_real_escape_string($link, $_REQUEST['attributes']);
 	$organization= mysqli_real_escape_string($link, $_REQUEST['organization']);
-    $obj_organization = mysqli_real_escape_string($link, $_REQUEST['obj_organization']);
-	//MARCO $listdeleteAttributes= mysqli_real_escape_string($link, $_REQUEST['deleteattributes']);
-	//MARCO $listnewAttributes= mysqli_real_escape_string($link, $_REQUEST['newattributes']);
+	$obj_organization = mysqli_real_escape_string($link, $_REQUEST['obj_organization']);
 	$subnature= mysqli_real_escape_string($link, $_REQUEST['subnature']);	
 	$staticAttributes= mysqli_real_escape_string($link, $_REQUEST['static_attributes']);
+	$service = mysqli_real_escape_string($link, $_REQUEST['service']);
+	$servicePath = mysqli_real_escape_string($link, $_REQUEST['servicePath']);
 
-	$q = "UPDATE model SET name = '$name', attributes = '$listAttributes', description = '$description', devicetype = '$type', kind = '$kind',  producer= '$producer', frequency = '$frequency', contextbroker='$contextbroker', protocol = '$protocol', format = '$format', healthiness_criteria = '$hc', healthiness_value='$hv', kgenerator = '$kgenerator', edgegateway_type = '$edgegateway_type', subnature='$subnature', static_attributes='$staticAttributes' WHERE id = '$id'";
-	$r = mysqli_query($link, $q);
+	//TODO check if needed
+        $syntaxRes=0;
+        if ($protocol == 'ngsi w/MultiService'){
+		$syntaxRes = servicePathSyntaxCheck($servicePath);
+                $service="'$service'";
+		$servicePath="'$servicePath'";
+        }
+        else {
+                $service="NULL";
+		$servicePath="NULL";
+        }
 
-	if($r)
-	{
-		$ownmsg = array();
-        $ownmsg["elementId"]=$obj_organization . ':' . $name; // I am using the new identifier	
-        $ownmsg["elementName"]=$obj_organization . ':' . $name;				    
-        $ownmsg["elementUrl"]=$obj_organization . ':' . $name;
-        $ownmsg["elementType"]="ModelID";
-        registerOwnerShipObject($ownmsg, $accessToken, 'ModelID',$result);
+	if ($syntaxRes == 0){
+
+		$q = "UPDATE model SET name = '$name', attributes = '$listAttributes', description = '$description', devicetype = '$type', kind = '$kind',  producer= '$producer', frequency = '$frequency', contextbroker='$contextbroker', protocol = '$protocol', format = '$format', healthiness_criteria = '$hc', healthiness_value='$hv', kgenerator = '$kgenerator', edgegateway_type = '$edgegateway_type', subnature='$subnature', static_attributes='$staticAttributes' , service = $service, servicePath = $servicePath WHERE id = '$id'";
+	
+		$r = mysqli_query($link, $q);
+
+		if($r)
+		{
+			$ownmsg = array();
+		        $ownmsg["elementId"]=$obj_organization . ':' . $name; // I am using the new identifier	
+		        $ownmsg["elementName"]=$obj_organization . ':' . $name;				    
+		        $ownmsg["elementUrl"]=$obj_organization . ':' . $name;
+		        $ownmsg["elementType"]="ModelID";
+		        registerOwnerShipObject($ownmsg, $accessToken, 'ModelID',$result);
         
-        if($result["status"]=='ok'){
-            $result["log"]= "action=update " . $q   . " \r\n";
-            logAction($link,$username,'model','update',$name,$organization,'','success');
-        }
-        else{
-            logAction($link,$username,'model','update',$name,$organization,'in ownership registration','failure');
-        }
-		
-		
-	}
-	else
-	{
-		logAction($link,$username,'model','update',$name,$organization,'An error occurred when updating the model','faliure');
-		 $result["status"]='ko';
-		 $result["msg"] = "Error: An error occurred when updating the model $name. <br/>" .
+		        if($result["status"]=='ok'){
+		            $result["log"]= "action=update " . $q   . " \r\n";
+		            logAction($link,$username,'model','update',$name,$organization,'','success');
+		        }
+		        else{
+		            logAction($link,$username,'model','update',$name,$organization,'in ownership registration','failure');
+		        }
+		}
+		else
+		{
+			logAction($link,$username,'model','update',$name,$organization,'An error occurred when updating the model','faliure');
+			 $result["status"]='ko';
+			 $result["msg"] = "Error: An error occurred when updating the model $name. <br/>" .
 						   mysqli_error($link) .
 						   ' Please enter again the model';
-		 $result["log"]= "action=update -" . $q . " error " .  mysqli_error($link)  . "\r\n";				            
+			 $result["log"]= "action=update -" . $q . " error " .  mysqli_error($link)  . "\r\n";				            
+		}
+	}
+	else{	
+		$result["status"]='ko';
+		$result["error_msg"] = $servicePath . " is NOT a valid servicePath";
 	}
 	echo json_encode($result);
 	mysqli_close($link);

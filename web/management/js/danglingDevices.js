@@ -76,12 +76,12 @@ function download(sourcename, devicename, contextbroker) {
  	$.ajax({url: "../api/device.php",
          data: {
 			 token : sessionToken,
-             action: 'download',
+		         action: 'download',
 			 //Sara2510 - for logging purpose
 			 username: loggedUser,
 			 organization : organization, 		
 			 filename: sourcename,
-			 devicename:devicename,
+			 id:devicename,
              contextbroker:contextbroker
                          },
          type: "POST",
@@ -89,7 +89,7 @@ function download(sourcename, devicename, contextbroker) {
          dataType: 'json',
          success: function (mydata)
          {
-		console.log(mydata);
+		//console.log(mydata);
 		var element = document.createElement('a');
 		element.setAttribute('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent(mydata.msg));
     		element.setAttribute('download', sourcename.substr(sourcename.indexOf("/", 2)+1));
@@ -110,7 +110,7 @@ function download(sourcename, devicename, contextbroker) {
 function drawAttributeMenu
 (attrName, data_type, value_type, editable, value_unit, healthiness_criteria, value_refresh_rate, old_value_name, parent)
 {
-	console.log("parent1= "+parent);
+	//console.log("parent1= "+parent);
     if (attrName=="")
 		msg="<div style=\"color:red;\" class=\"modalFieldMsgCnt\"></div>";
 	else 
@@ -155,7 +155,7 @@ function drawAttributeMenu
 	  else mydatatypes += "<option value=\""+gb_datatypes[n]+"\">"+ gb_datatypes[n]+ "</option>";
 	}
 	
- console.log("parent2= "+parent);
+ //console.log("parent2= "+parent);
     return "<div class=\"row\" style=\"border:3px solid blue;\" ><div class=\"col-xs-6 col-md-3 modalCell\">" +
         "<div class=\"modalFieldCnt\"><input type=\"text\" class=\"modalInputTxt\""+
 		"name=\"" +  attrName +  "\"  value=\"" + attrName + "\">" + 
@@ -252,7 +252,7 @@ function drawAttributeMenu
 	var txtCert="";
 	if (d.privatekey!="" && d.privatekey!= null && (d.visibility =='MyOwnPublic' || d.visibility == 'MyOwnPrivate')){
 	
-	console.log(d.created);
+	//console.log(d.created);
 	x = new Date(d.created);
 	x.setFullYear(x.getFullYear() + 1);
 	//x.setDate(x.getDate()-1);
@@ -334,7 +334,7 @@ function drawAttributeMenu
 
 	function fetch_data(destroyOld, selected=null)
 	{
-		console.log("Enter:" + selected);
+		//console.log("Enter:" + selected);
 		if(destroyOld)
             {
 				$('#devicesTable').DataTable().clear().destroy();
@@ -473,14 +473,14 @@ function drawAttributeMenu
 		// Delete lines related to attributes 
 	$("#attrNameDelbtn").off("click");
 	$("#attrNameDelbtn").on("click", function(){
-		console.log("#attrNameDelbtn");	
+		//console.log("#attrNameDelbtn");	
 		$(this).parent('tr').remove();
 		});	
 		
 		//Delete device button 
 		
 	$('#devicesTable tbody').on('click', 'button.delDashBtn', function () {
-				console.log($(this));
+				//console.log($(this));
 
 		var id = $(this).attr('data-id');
 		var contextbroker = $(this).attr('data-contextbroker');
@@ -495,7 +495,7 @@ function drawAttributeMenu
 	$('#devicesTable tbody').on('hover', 'button.delDashBtn', function () {
 	//$('#devicesTable button.delDashBtn').off('hover');
 	//$('#devicesTable button.delDashBtn').hover(function(){
-		console.log($(this));
+		//console.log($(this));
 		$(this).css('background', '#ffcc00');
 		$(this).parents('tr').find('td').eq(1).css('background', '#ffcc00');
 	}, 
@@ -527,7 +527,7 @@ function drawAttributeMenu
 		if((dataTable.row( this ).index())%2 !== 0)
 		{
 			$('#devicesTable tbody').css("background", "rgba(0, 162, 211, 1)");
-			console.log( 'Row index: '+dataTable.row( this ).index() );
+			//console.log( 'Row index: '+dataTable.row( this ).index() );
 			$(this).find('td').eq(0).css("background-color", "rgb(230, 249, 255)");
 			$(this).find('td').eq(0).css("border-top", "none");
 		}
@@ -674,7 +674,7 @@ function drawAttributeMenu
  
 //Add MyNewDevice Button  
 	$("#addMyNewDevice").click(function() {	
-		console.log("add new device");	
+		//console.log("add new device");	
 		$("#displayAllDeviceRow").hide();
 		$("#addMyNewDeviceRow").show();
 
@@ -705,7 +705,7 @@ function drawAttributeMenu
 	$('a[data-toggle="tab"]').on('shown.bs.tab', function (e) {
 		var target = $(e.target).attr("href");
 		if ((target == '#addGeoPositionTabDevice')) {
-			console.log("Elf: Add Device Map");
+			//console.log("Elf: Add Device Map");
 			var latitude = 43.78; 
 			var longitude = 11.23;
 			var flag = 0;
@@ -718,7 +718,7 @@ function drawAttributeMenu
 	$('a[data-toggle="tab"]').on('shown.bs.tab', function (e) {
 		var target = $(e.target).attr("href");
 		if ((target == '#editGeoPositionTabDevice')) {
-			console.log("Elf : EditDeviceMap");
+			//console.log("Elf : EditDeviceMap");
 				var latitude = $("#inputLatitudeDeviceM").val(); 
 				var longitude = $("#inputLongitudeDeviceM").val();
 				var flag = 1;
@@ -747,16 +747,16 @@ function drawAttributeMenu
 			   if (!(kind=="sensor" || kind=="actuator")) {var kindNote = ("\n kind not specified");}  else{kindNote = "&#10004;";}
 			   if ((latitude < -90 && latitude > 90) || (latitude=="" || latitude==null)) {var latitudeNote = ("\n latitude not correct ");} else{latitudeNote = "&#10004;";}
 			   if ((longitude < -180 && longitude > 180) || (longitude=="" || longitude==null)) {var longitudeNote = ("\n longitude not correct ");} else{longitudeNote = "&#10004;";}
-			   if (!(protocol=="ngsi" || protocol=="mqtt" || protocol=="amqp")) {var protocolNote = ("protocol not correct ");} else{protocolNote = "&#10004;";}
+			   if (!(protocol=="ngsi" || protocol=="mqtt" || protocol=="amqp" || protocol == "ngsi w/MultiService")) {var protocolNote = ("protocol not correct ");} else{protocolNote = "&#10004;";}
 		
-		console.log(id + contextbroker + type + kind + latitude + longitude + protocol);
+		//console.log(id + contextbroker + type + kind + latitude + longitude + protocol);
 	
 			if ((idNote == "&#10004;") && (contextbrokerNote == "&#10004;") && (typeNote == "&#10004;") && (kindNote == "&#10004;") && (latitudeNote == "&#10004;") && (longitudeNote == "&#10004;") && (protocolNote == "&#10004;")){var statusNote = "<button class=\"btn btn-success btn-round\"></button>";} else{statusNote= "<button class=\"btn btn-danger btn-round\"></button>";}
 		
 		var x =inputPropertiesDeviceMMsg.innerHTML;
 		
 		var div = document.createElement("div");
-		console.log("IPDMM:" + x);
+		//console.log("IPDMM:" + x);
 		
 		if (x =="&nbsp;"){
 			}
@@ -823,7 +823,7 @@ function drawAttributeMenu
 					$("#KeyOneDeviceUser").val("");
 					$("#KeyTwoDeviceUser").val("");			
 			}
-			console.log(nameOpt[selectednameOpt].value + " " + gb_device + " " + gb_longitude + " " + gb_latitude);
+			//console.log(nameOpt[selectednameOpt].value + " " + gb_device + " " + gb_longitude + " " + gb_latitude);
 			
 			//if(nameOpt[selectednameOpt].value !="custom" && nameOpt[selectednameOpt].value!="")
 			//{ 
@@ -847,7 +847,7 @@ function drawAttributeMenu
 
 						 else (data["status"] === 'ok')
 							{					
-								console.log(data.content.attributes);
+								//console.log(data.content.attributes);
 								var model = data.content.name;
 								var type = data.content.devicetype;
 								var kind = data.content.kind;
@@ -863,7 +863,7 @@ function drawAttributeMenu
 								// population of the value tab with the values taken from the db						
 								while (k < myattributes.length)
 								  {
-									console.log(myattributes.length + " " +k); 
+									//console.log(myattributes.length + " " +k); 
 									content += drawAttributeMenu(myattributes[k].value_name, 
 										 myattributes[k].data_type, myattributes[k].value_type, myattributes[k].editable, myattributes[k].value_unit, myattributes[k].healthiness_criteria, 
 										 myattributes[k].healthiness_value, myattributes[k].old_value_name, 'addlistAttributes');
@@ -1031,7 +1031,7 @@ function drawAttributeMenu
 			async: true,
 			success: function (data) 
 			{
-				console.log(JSON.stringify(data));
+				//console.log(JSON.stringify(data));
 				if(data["status"] === 'ko')
 				{
 					$("#deleteDeviceModalInnerDiv1").html(data["msg"]);
@@ -1113,7 +1113,7 @@ function drawAttributeMenu
 			async: true,
 			success: function (data) 
 			{
-				console.log(JSON.stringify(data));
+				//console.log(JSON.stringify(data));
 				if(data["status"] === 'ko')
 				{
 					$("#deleteDeviceModalInnerDiv1").html(data["msg"]);
@@ -1330,7 +1330,7 @@ function updateGroupList(ouname){
                                 $dropdown.empty();
                                //adding empty to rootadmin
                                if ((loggedRole=='RootAdmin')||(loggedRole=='ToolAdmin')) {
-                                       console.log("adding empty");
+                                       //console.log("adding empty");
                                        $dropdown.append($("<option />").val("All groups").text("All groups"));
                                }
                                //add new ones
@@ -1480,13 +1480,13 @@ $(function(){
  // $('#value_type')[0].selectedIndex = 0;
   $('#value_type').change(function(){
       var index = $(this)[0].selectedIndex;
-      console.log(index);
+      //console.log(index);
       var opt = $(this)[0].options;
-        console.log(opt);
+        //console.log(opt);
       gb_valVT = opt[index].value;
       gb_valVU = opt[index].getAttribute("my_data");
       $('#value_unit')[0].selectedIndex = index;
-      console.log("Value Type= " + gb_valVT +  " Value Unit= " + gb_valVU);
+      //console.log("Value Type= " + gb_valVT +  " Value Unit= " + gb_valVU);
   });    
 });
 */
@@ -1494,13 +1494,12 @@ $(function(){
 $(document).on('change', '#value_type', function() {
 //$("#value_type").change(function() {
 	var index = document.getElementById("value_type").selectedIndex;
-	console.log(index);	
+	//console.log(index);	
 	var opt = document.getElementById("value_type").options;
 	var gb_valVU = opt[index].getAttribute("my_data");
 	document.getElementById("value_unit").value = gb_valVU ;
 	gb_valVT = opt[index].value;
-	console.log("Value Type= " + gb_valVT +  " Value Unit= " + gb_valVU);	
-	
+	//console.log("Value Type= " + gb_valVT +  " Value Unit= " + gb_valVU);	
 });
 	
 
@@ -1802,19 +1801,19 @@ $(document).on('change', '#value_type', function() {
                                                                                        if (data["status"]=='ok')
                                                                                        {
 
-                                                                                       console.log(JSON.stringify(data));
+                                                                                       //console.log(JSON.stringify(data));
                                                                                                                                                                                        delegations = data["delegation"];
                                                                                        $('#delegationsTable tbody').html("");
                                                                                        $('#delegationsTableGroup tbody').html("");
                                                                                for(var i = 0; i < delegations.length; i++)
                                                                                {
                                                                         if ((delegations[i].userDelegated !="ANONYMOUS")&&(delegations[i].userDelegated!=null)) {
-                                                                               console.log("adding user delegation");
+                                                                               //console.log("adding user delegation");
                                                                                $('#delegationsTable tbody').append('<tr class="delegationTableRow" data-delegationId="' + delegations[i].delegationId + '" data-delegated="' + delegations[i].userDelegated + '"><td class="delegatedName">' + delegations[i].userDelegated + '</td><td><i class="fa fa-remove removeDelegationBtn"></i></td></tr>');
 
                                                                        }
                                                                        else  if (delegations[i].groupDelegated !=null){
-                                                                               console.log("adding user delegation"+delegations[i]);
+                                                                               //console.log("adding user delegation"+delegations[i]);
 
                                                                                //extract cn and ou
                                                                                var startindex=delegations[i].groupDelegated.indexOf("cn=");
@@ -1854,7 +1853,7 @@ $(document).on('change', '#value_type', function() {
                                                            if (data["status"] === 'ok')
                                                                                                                   {
                                                                 rowToRemove.remove();
-                                                                console.log("ermoving a row from the table");
+                                                                //console.log("ermoving a row from the table");
                                                             }
                                                             else
                                                             {
@@ -1869,7 +1868,7 @@ $(document).on('change', '#value_type', function() {
                                                 });
 
                                                                               $('#delegationsTableGroup tbody').on("click","i.removeDelegationBtnGroup",function(){
-                                                                                                       console.log("toremove:");
+                                                                                                       //console.log("toremove:");
                                                                                                        var rowToRemove = $(this).parents('tr');
                                                                                                        $.ajax({
                                                                                                                url: "../api/device.php",     //check the url
@@ -1908,7 +1907,7 @@ $(document).on('change', '#value_type', function() {
                                             else
                                             {
                                               // hangling situation of error
-                                                console.log(json_encode(data));
+                                                //console.log(json_encode(data));
 
                                             }
 
@@ -2112,7 +2111,7 @@ $(document).on('change', '#value_type', function() {
 		var lng = e.latlng.lng;
 			lat = lat.toFixed(5);
 			lng = lng.toFixed(5);
-			console.log("Check the format:" + lat + " " + lng);
+			//console.log("Check the format:" + lat + " " + lng);
 			
 			 document.getElementById('inputLatitudeDevice').value = lat;
 			 document.getElementById('inputLongitudeDevice').value = lng;
@@ -2146,7 +2145,7 @@ $(document).on('change', '#value_type', function() {
 				var lng = e.latlng.lng;
 				lat = lat.toFixed(5);
 				lng = lng.toFixed(5);
-				console.log("Check the format:" + lat + " " + lng);
+				//console.log("Check the format:" + lat + " " + lng);
 				
 				document.getElementById('inputLatitudeDeviceM').value = lat;
 				document.getElementById('inputLongitudeDeviceM').value = lng;
@@ -2308,7 +2307,7 @@ function drawMap(latitude,longitude, id, devicetype, kind, divName){
             //Fatima2-moveAndupdate-1-line
             colorSelectedMarkers(resultsOut, greenIcon);
 			$('#devicesTable').DataTable().destroy();
-			console.log (JSON.stringify(resultsOut));
+			//console.log (JSON.stringify(resultsOut));
             fetch_data(true, JSON.stringify(resultsOut));
     //      console.log(resultsOut);
 
@@ -2329,7 +2328,7 @@ function drawMap(latitude,longitude, id, devicetype, kind, divName){
                         //Fatima2-moveAndupdate-1-line
                         colorSelectedMarkers(resultsOut, greenIcon);
 						$('#devicesTable').DataTable().destroy();
-						console.log (JSON.stringify(resultsOut));
+						//console.log (JSON.stringify(resultsOut));
                          fetch_data(true, JSON.stringify(resultsOut));
                         });
 						  
@@ -2415,8 +2414,8 @@ function drawMap(latitude,longitude, id, devicetype, kind, divName){
 
     function colorSelectedMarkers(selections, greenIcon){
                 green_marker_array=[];
-                console.log("selections are");
-                console.log(selections);
+                //console.log("selections are");
+                //console.log(selections);
                 for(var k in selections){
 
                     lat=Number(selections[k].latitude); 

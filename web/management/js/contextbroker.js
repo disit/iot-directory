@@ -21,15 +21,10 @@ function activateStub(button,cb,ip,port,protocol)
     
 	var data = "contextbroker=" + cb + "&ip=" + ip + "&port=" + port;
         var service = _serviceIP + "/stub/"+protocol;
-	console.log(data);
-	console.log(service);
 	var xhr = ajaxRequest();
 
 	xhr.addEventListener("readystatechange", function () {
 	  if (this.readyState === 4 && this.status == 200) {
-		console.log(this.responseText);
-                
-
 		$(button).css('border', '2px solid green');
 		//$(button).addClass("btn btn-success btn-circle");
 		// $("#" + cb + " > i").removeClass();
@@ -49,26 +44,14 @@ function aggiornaStub()
 {
     var service = _serviceIP + "/api/status";
 	var xhr = ajaxRequest();
-    // console.log("entratos"); 
-	// console.log("This is inside js " + service);
 	xhr.addEventListener("readystatechange", function () {
 	  if (this.readyState === 4 && this.status == 200) {
-		// console.log(this.responseText);
 		var activeStub = JSON.parse(JSON.parse(this.responseText).message);
-		console.log(activeStub);
 		for (var i=0; i < activeStub.length; i++)
 		{
 		    var cb=activeStub[i];
-			console.log(cb);
-			
-			
-			 //document.getElementById('cb').css('border', '2px solid green');
-			 //console.log(document.getElementById('cb').css('border'));
 				$("#" + cb).css('border', '2px solid green');
-			// 	console.log($("#" + cb).css('border'));
 		            $("#" + cb).prop('onclick',null).off('click');
-
-			
 		}
 	  }
 	});
@@ -130,20 +113,20 @@ function format ( d ) {
 		"processing" : true,
 		"serverSide" : true,
 		//"responsive" : true,
-		"responsive": {
-        details: false
-		},
+		//"responsive": {
+        	//details: false
+		//},
 		"paging"   : true,
 		"ajax" : {
 		 url:"../api/contextbroker.php",
 		 data: mydata,
 		//token : sessionToken,
 		 datatype: 'json',
-		 type: "POST", 
-		//"dataSrc": "";		 
+		 type: "POST" 
+		//"dataSrc": "";		
 		},
 		"columns": [
-          {
+	        {
 			"class":          "details-control",
 			"name": "position",
 			"orderable":      false,
@@ -151,16 +134,16 @@ function format ( d ) {
 			"defaultContent": "",
 			"render": function () {
 					 return '<i class="fa fa-plus-square" aria-hidden="true"></i>';
-				 },
-			width:"15px"
-            }, 	
+			 }//,
+			//"width":"10px"
+            	}, 	
 			{"name": "name", "data": function ( row, type, val, meta ) {
 			
 				return row.name;
 				} },			
 			{"name": "accesslink", "data": function ( row, type, val, meta ) {
 				  return row.accesslink;
-				} },	
+				}},	
 			{"name": "accessport", "data": function ( row, type, val, meta ) {
 			
 				  return row.accessport;
@@ -229,8 +212,7 @@ function format ( d ) {
 				'data-path="'+d.path+'" ' +
 				'data-sha="'+d.sha+'" '+
 				'data-urlnificallback="'+d.urlnificallback+'" '+
-				'data-subscription_id="'+d.subscription_id+'">Edit</button>';
-	
+				'data-subscription_id="'+d.subscription_id+'" '+ 'data-services="'+d.services+'">Edit</button>'; 
 				}
             },
 			{
@@ -244,17 +226,6 @@ function format ( d ) {
 				'data-name="'+d.name+'">Delete</button>';
 				}
             }
-			/*,
-			{
-                data: null,
-				"name": "stub",
-				"orderable":      false,
-                className: "center",
-                //defaultContent: '<button type="button" id="map" class="delDashBtn delete">Location</button>'
-				render: function(d) {
-				return '<button type="button" id ="' + d.name +'" class="viewDashBtn">Stub</button>';
-				}
-            } */
         ],
     "order" : [] 
 	  
@@ -413,14 +384,11 @@ function format ( d ) {
 		  {
 			  if (element[loggedRole]==1)  
 			   {   
-                                   console.log("yes " + loggedRole + " " + element[loggedRole] + " " + element["class"]); 
 				   $(element["class"]).show();
 			   }			   
 			   else 
 			   { 
 				 $(element["class"]).hide();
-				 // console.log($(element.class));
-				 console.log("no " + loggedRole + " " + element[loggedRole] + " " + element["class"]);
 			   }
 			}   
 		}
@@ -456,10 +424,16 @@ function format ( d ) {
             if (accesslink==""){
                 accesslink=$('#inputIpCB').val();
             }
+
+		var servicesArr = $('input[name="inputServiceCB"]');
+		var serviceValues = [];
+		for(let i = 0; i < servicesArr.length; i++){
+			if(servicesArr[i].value && !(serviceValues.includes(servicesArr[i].value))) serviceValues.push(servicesArr[i].value.trim());
+		}
 	
-				$.ajax({
-                 url: "../api/contextbroker.php",
-                 data:{
+		$.ajax({
+                	url: "../api/contextbroker.php",
+			data:{
 					action: "insert",
 					//Sara2610 - for logging purpose
 					username: loggedUser,
@@ -480,150 +454,82 @@ function format ( d ) {
 					accesslink: accesslink,
 					accessport: $('#inputAccessPortCB').val(),
 					sha: $('#inputSHACB').val(),
-					urlnificallback: $('#inputUrlOrionCallback').val()					
-										 
-				 },
-                 type: "POST",
-                 async: true,
-                 success: function (data) 
-                 {
+					urlnificallback: $('#inputUrlOrionCallback').val(),
+					services: JSON.stringify(serviceValues)					
+			},
+	                type: "POST",
+        	        async: true,
+                	success: function (data) 
+                 	{
                     if(data["status"] === 'ko')
                     {
-                        console.log("Error adding Context Broker");
-                        console.log(data);
-						$('#addContextBrokerModalTabs').hide();
-						$('#addContextBrokerModalBody').hide();	
-						$('#addContextBrokerModal div.modalCell').hide();
-						//$('#addContextBrokerModalFooter').hide();
-                        $('#addContextBrokerCancelBtn').hide();
-						$('#addContextBrokerConfirmBtn').hide();
-						$('#addContextBrokerOkBtn').show();
-						$('#addCBOkMsg').hide();
-						$('#addCBOkIcon').hide();	
-						$('#addCBLoadingMsg').hide();
+			$('#addContextBrokerModalTabs').hide();
+			$('#addContextBrokerModalBody').hide();	
+			$('#addContextBrokerModal div.modalCell').hide();
+    			$('#addContextBrokerCancelBtn').hide();
+			$('#addContextBrokerConfirmBtn').hide();
+			$('#addContextBrokerOkBtn').show();
+			$('#addCBOkMsg').hide();
+			$('#addCBOkIcon').hide();	
+			$('#addCBLoadingMsg').hide();
                         $('#addCBLoadingIcon').hide();
                         $('#addCBKoMsg').show();
-						$('#addCBKoMsg div:first-child').html(data["error_msg"]);
+			$('#addCBKoMsg div:first-child').html(data["error_msg"]);
                         $('#addCBKoIcon').show();
 						
-                        /*setTimeout(function(){
-							
-						$('#addCBKoMsg').hide();
-						$('#addCBKoIcon').hide();
-						$('#addContextBrokerModalTabs').show();
-						$('#addContextBrokerModal div.modalCell').show();
-						//$('#addContextBrokerModalFooter').show();
-                        $('#addContextBrokerCancelBtn').show();
-						$('#addContextBrokerConfirmBtn').show();
-							
-                        }, 3000);*/
                     }
                     else if (data["status"] === 'ok')
                     {
-						console.log("Added Context Broker");
                         $('#addCBLoadingMsg').hide();
                         $('#addCBLoadingIcon').hide();
-						$('#addCBKoMsg').hide();
-						$('#addCBKoIcon').hide();
-						
-						$('#addContextBrokerModalTabs').hide();
-						$('#addContextBrokerModalBody').hide();	
-						$('#addContextBrokerModal div.modalCell').hide();
-						//$('#addContextBrokerModalFooter').hide();
-						$('#addContextBrokerCancelBtn').hide();
-						$('#addContextBrokerConfirmBtn').hide();
+			$('#addCBKoMsg').hide();
+			$('#addCBKoIcon').hide();
+			$('#addContextBrokerModalTabs').hide();
+			$('#addContextBrokerModalBody').hide();	
+			$('#addContextBrokerModal div.modalCell').hide();
+			$('#addContextBrokerCancelBtn').hide();
+			$('#addContextBrokerConfirmBtn').hide();
                         $('#addContextBrokerOkBtn').show();
-						
-						
                         $('#addCBOkMsg').show();
                         $('#addCBOkIcon').show();
                         $('#addContextBrokerOkBtn').show();
-                        
-						
                         $('#dashboardTotNumberCnt .pageSingleDataCnt').html(parseInt($('#dashboardTotNumberCnt .pageSingleDataCnt').html()) + 1);
                         $('#dashboardTotActiveCnt .pageSingleDataCnt').html(parseInt($('#dashboardTotActiveCnt .pageSingleDataCnt').html()) + 1);
-                        
                         $('#contextBrokerTable').DataTable().destroy();
-							fetch_data(true);
+			fetch_data(true);
                        
                         $('#inputNameCB').val("");
-								$('#selectKindCB').val("");
-								$('#inputPathCB').val("");
-								$('#selectVisibilityCB').val("");
-								$('#inputVersionCB').val("");
-								$('#inputIpCB').val("");
-								$('#inputPortCB').val("");
-								$('#selectProtocolCB').val("NULL");
-								$('#inputUriCB').val("");
-								$('#inputLoginCB').val("");
-								$('#inputPasswordCB').val("");
-								$('#inputLatitudeCB').val("");
-								$('#inputLongitudeCB').val("");
-								$('#createdDateCB').val("");
-								$('#inputAccessLinkCB').val("");
-								$('#inputAccessPortCB').val("");
-								$('#inputSHACB').val("");
-                                  
-                       /* setTimeout(function(){
-                            $('#addContextBrokerModal').modal('hide');
-                            //buildMainTable(true);
-							$('#contextBrokerTable').DataTable().destroy();
-							fetch_data(true);
-							
-                            setTimeout(function(){
-								
-                                $('#addCBOkMsg').hide();
-                                $('#addCBOkIcon').hide();
-								
-								$('#inputNameCB').val("");
-								$('#selectKindCB').val("");
-								$('#inputPathCB').val("");
-								$('#selectVisibilityCB').val("");
-								$('#inputVersionCB').val("");
-								$('#inputIpCB').val("");
-								$('#inputPortCB').val("");
-								$('#selectProtocolCB').val("NULL");
-								$('#inputUriCB').val("");
-								$('#inputLoginCB').val("");
-								$('#inputPasswordCB').val("");
-								$('#inputLatitudeCB').val("");
-								$('#inputLongitudeCB').val("");
-								$('#createdDateCB').val("");
-								$('#inputAccessLinkCB').val("");
-								$('#inputAccessPortCB').val("");
-								$('#inputSHACB').val("");
-								
-											
-								$('#addContextBrokerModalTabs').show();
-                                $('#addContextBrokerModal div.modalCell').show();
-                                //$('#addContextBrokerModalFooter').show()
-                                $('#addContextBrokerCancelBtn').show();
-						        $('#addContextBrokerConfirmBtn').show();
-                            }, 500); 
-                        }, 3000);*/
+			$('#selectKindCB').val("");
+			$('#inputPathCB').val("");
+			$('#selectVisibilityCB').val("");
+			$('#inputVersionCB').val("");
+			$('#inputIpCB').val("");
+			$('#inputPortCB').val("");
+			$('#selectProtocolCB').val("NULL");
+			$('#inputUriCB').val("");
+			$('#inputLoginCB').val("");
+			$('#inputPasswordCB').val("");
+			$('#inputLatitudeCB').val("");
+			$('#inputLongitudeCB').val("");
+			$('#createdDateCB').val("");
+			$('#inputAccessLinkCB').val("");
+			$('#inputAccessPortCB').val("");
+			$('#inputSHACB').val("");
+                    	$('input[name="inputServiceCB"]').val("");              
                     }
                 },
                 error: function(data)
                 {
-					
-					console.log("Ko result: " + JSON.stringify(data));
-                     $("#addContextBrokerModal").modal('hide');
-					 
-					 $('#addContextBrokerModalTabs').hide();
-					 $('#addContextBrokerModalBody').hide();	
-					 $('#addContextBrokerModal div.modalCell').hide();
-					 $('#addContextBrokerModalFooter').hide();
-					 $('#addCBOkMsg').hide();
-					 $('#addCBOkIcon').hide();	
-					
-			
-					 $('#addCBKoMsg').show();
-					 $('#addCBKoIcon').show();
-                     //$("#addContextBrokerModal").show();
-                   //  $("#addContextBrokerModalFooter").show();
-					
+                     	$("#addContextBrokerModal").modal('hide');
+			$('#addContextBrokerModalTabs').hide();
+			$('#addContextBrokerModalBody').hide();	
+			$('#addContextBrokerModal div.modalCell').hide();
+			$('#addContextBrokerModalFooter').hide();
+			$('#addCBOkMsg').hide();
+			$('#addCBOkIcon').hide();	
+			$('#addCBKoMsg').show();
+			$('#addCBKoIcon').show();
                 }
-                 
              });
         });	
 
@@ -690,7 +596,6 @@ function format ( d ) {
 			
 			success: function (data) 
 			{
-				console.log(JSON.stringify(data));
 				$("#deleteContextBrokerOkBtn").show();
                 if(data["status"] === 'ko')
 				{
@@ -768,22 +673,21 @@ function format ( d ) {
 			$("#editContextBrokerModalUpdating").hide();
 			$("#editCBModalLoading").hide();
 			$("#editContextBrokerModalBody").show();
-			//$('#editContextBrokerModalBody div.modalCell').show();
 			$("#editContextBrokerModalFooter").show();
-            $("#editContextBrokerCancelBtn").show();
-            $("#editContextBrokerConfirmBtn").show();
+		        $("#editContextBrokerCancelBtn").show();
+		        $("#editContextBrokerConfirmBtn").show();
 			$("#editContextBrokerModal").modal('show');
 			$("#editCBModalLabel").html("Edit Context Broker - " + $(this).attr("data-name"));
-            $('#editContextBrokerLoadingMsg').hide();
-            $('#editContextBrokerLoadingIcon').hide();
-            $('#editContextBrokerOkMsg').hide();		
-            $('#editContextBrokerOkIcon').hide();
-            $('#editContextBrokerKoMsg').hide();
-            $('#editContextBrokerKoIcon').hide();
-            $('#editContextBrokerOkBtn').hide();
-		$("#inputUrlOrionCallbackM").show();
-                $("#urlOrionCallbackLabelM").show();
-                $("#selectUrlOrionCallbackMsgM").show();
+            		$('#editContextBrokerLoadingMsg').hide();
+		        $('#editContextBrokerLoadingIcon').hide();
+		        $('#editContextBrokerOkMsg').hide();		
+		        $('#editContextBrokerOkIcon').hide();
+		        $('#editContextBrokerKoMsg').hide();
+		        $('#editContextBrokerKoIcon').hide();
+		        $('#editContextBrokerOkBtn').hide();
+			$("#inputUrlOrionCallbackM").show();
+                	$("#urlOrionCallbackLabelM").show();
+	                $("#selectUrlOrionCallbackMsgM").show();
 
 			$("#inputNameCBM").val($(this).attr("data-name"));
 			$("#inputOrganizationCBM").val($(this).attr("data-organization"));
@@ -817,8 +721,9 @@ function format ( d ) {
 			{
 				$("#substatusCBMMsg").text("The automatic subscription failed");
 			}
-			else
-				$("#substatusCBMMsg").text("The subscription id is:"+$(this).attr("data-subscription_id"));
+			else {
+				$("#substatusCBMMsg").text("Subscription id:\n"+$(this).attr("data-subscription_id").replace(/,/g,"\n"));
+			}
 			$("#inputUrlOrionCallbackM").val($(this).attr("data-urlnificallback"));
 			if ($(this).attr("data-kind") === "internal" && $(this).attr("data-protocol"))
 			{
@@ -828,6 +733,7 @@ function format ( d ) {
 			{
 				$("#tab-editCB-4").hide();
 			}
+			editCBSManagementButtonPressed($(this).attr("data-services"));
 			showEditCbModal();
 	});
 
@@ -859,22 +765,25 @@ function format ( d ) {
 		                     
 		
 		
- $('#editContextBrokerConfirmBtn').off("click");
- $("#editContextBrokerConfirmBtn").click(function(){
-     
-     
+	$('#editContextBrokerConfirmBtn').off("click");
+	$("#editContextBrokerConfirmBtn").click(function(){
 		$("#editContextBrokerCancelBtn").hide();
 		$("#editContextBrokerConfirmBtn").hide();
 		$("#editContextBrokerModalBody").hide();
 		$('#editContextBrokerLoadingMsg').show();
 		$('#editContextBrokerLoadingIcon').show();
 
-             $.ajax({
-                 url: "../api/contextbroker.php",
-                 data:{
+		var servicesArr = $('input[name="editInputServiceCB"]');
+		var serviceValues = [];
+		for(let i = 0; i < servicesArr.length; i++){
+			if(servicesArr[i].value && !(serviceValues.includes(servicesArr[i].value))) serviceValues.push(servicesArr[i].value.trim());
+		}
+
+             	$.ajax({
+                	url: "../api/contextbroker.php",
+                	data:{
 					token : sessionToken,
 					action: "update",
-					//Sara2610 - For logging purpose
 					username: loggedUser,
 					organization : organization, 
 					obj_organization : $('#inputOrganizationCBM').val(), 
@@ -896,7 +805,8 @@ function format ( d ) {
 					accessport: $('#inputAccessPortCBM').val(),
 					apikey: $('#inputApiKeyCBM').val(),
 					sha: $('#inputSHACBM').val(),
-					urlnificallback: $('#inputUrlOrionCallbackM').val()
+					urlnificallback: $('#inputUrlOrionCallbackM').val(),
+					services: JSON.stringify(serviceValues)
 				 },
                  type: "POST",
                  async: true,
@@ -935,6 +845,9 @@ function format ( d ) {
 				else
 					$('#additionInfoOKedit').html('&nbsp;');
 
+				$('#editServiceCBRow1').remove();
+				$('div[name="additionalRow"]').remove();
+
                             $('#editContextBrokerLoadingMsg').hide();
                             $('#editContextBrokerLoadingIcon').hide();
                             $('#editContextBrokerOkMsg').show();
@@ -949,14 +862,6 @@ function format ( d ) {
                  },
                  error: function (data) 
                  {
-                     console.log("Ko result: " + data);
-                    /* $("#editContextBrokerModal").modal('hide');
-                     $("#editContextBrokerKoModalInnerDiv1").html(data["msg"]);
-                     $("#editContextBrokerKoModal").modal('show');
-                     $("#editContextBrokerModalUpdating").hide();
-                     $("#editContextBrokerModalBody").show();
-                     $("#editContextBrokerModalFooter").show();*/
-                     
                      $('#editContextBrokerLoadingMsg').hide();
                     $('#editContextBrokerLoadingIcon').hide();
                     $('#editContextBrokerOkMsg').hide();
@@ -974,7 +879,6 @@ function format ( d ) {
 		$('a[data-toggle="tab"]').on('shown.bs.tab', function (e) {
 			var target = $(e.target).attr("href");
 			if ((target == '#geoPositionTabCB')) {
-					console.log("Elf");
 					var latitude = 43.7800; 
 					var longitude = 11.2300;
 					var flag = 0;
@@ -987,7 +891,6 @@ function format ( d ) {
 		$('a[data-toggle="tab"]').on('shown.bs.tab', function (e) {
 			var target = $(e.target).attr("href");
 			if ((target == '#editGeoPositionTabCB')) {
-					console.log("Elf");
 					var latitude = $("#inputLatitudeCBM").val(); 
 					var longitude = $("#inputLongitudeCBM").val();                                        
 					var flag =1;
@@ -1023,6 +926,297 @@ function format ( d ) {
 	 // $("#addContextBrokerModal").modal('show');
 		
 	});
+
+	// BEGIN ADD BROKER MULTISERVICE SECTION
+	// Author: Antonino Mauro Liuzzo
+
+	function createServiceRowElem(initalValue, name){
+		// creation of the components of a row element
+		var row = document.createElement("div");
+		$(row).attr('class', 'row');
+		$(row).attr('name', 'additionalRow');
+
+		var modalCell1 = document.createElement("div");
+		$(modalCell1).attr('class', 'col-xs-12 col-md-8 modalCell');
+
+		var modalFieldCnt1 = document.createElement("div");
+		$(modalFieldCnt1).attr('class', 'modalFieldCnt');
+
+		var modalInputTxt = document.createElement("input");
+		$(modalInputTxt).attr('type', 'text');
+		$(modalInputTxt).attr('class', 'modalInputTxt ' + name);
+		$(modalInputTxt).attr('name', name);
+		$(modalInputTxt).attr('onkeyup', 'checkStrangeCharacters(this)');
+		$(modalInputTxt).val(initalValue);
+
+		var modalFieldLabelCnt = document.createElement("div");
+		$(modalFieldLabelCnt).attr('class', 'modalFieldLabelCnt');
+		$(modalFieldLabelCnt).text("Service/Tenant");
+
+		var modalCell2 = document.createElement("div");
+		$(modalCell2).attr('class', 'col-xs-12 col-md-4 modalCell');
+
+		var modalFieldCnt2 = document.createElement("div");
+		$(modalFieldCnt2).attr('class', 'modalFieldCnt');
+
+		var rmButton = document.createElement("button");
+		$(rmButton).attr('type', 'text');
+		$(rmButton).attr('name', 'removeCBServiceBtn');
+		$(rmButton).attr('class', 'btn btn-danger');
+		$(rmButton).text("Remove");
+
+		rmButton.addEventListener('click', function(){row.remove()});
+
+		// row element composition
+		$(row).append(modalCell1);
+		$(modalCell1).append(modalFieldCnt1);
+		$(modalFieldCnt1).append(modalInputTxt);
+		$(modalCell1).append(modalFieldLabelCnt);
+		$(row).append(modalCell2)
+		$(modalCell2).append(modalFieldCnt2);
+		$(modalFieldCnt2).append(rmButton);
+
+		return row;
+	}
+
+	/**
+	 * Add new Service/Tenant Text Field when the "Add Service/Tenant" is pressed
+	 */
+	$('#addNewCBServiceBtn').click(function(){
+		// get the service/tenant tab
+		var stTab = $('#serviceTenantTabCB').last();
+		// create a new row element
+		var row = createServiceRowElem('', 'inputServiceCB');
+		// append of the row element
+		stTab.append(row);
+	});
+
+	/**
+	 * Trigger the MultiService tab visibility
+	 * The MultiService tab is visible only if the ngsi w/MultiService protocol is selected
+	 * When the user choose another protocol, inserted values are saved, except for empty strings
+	 * If the user choose back ngsi w/MultiService, saved values are restored
+	 */
+	var oldServicesValues = [];
+
+	function addServicesVisibilityCheck(){
+		if($('#selectProtocolCB').val() !== "ngsi w/MultiService"){
+			// hide the MultiService selector
+			$('#multiServiceTabSelector').addClass("hidden");
+
+			// save the first Service row and clear the row
+			var rowValue = $('#serviceCBRow1').find('.modalInputTxt').val().trim();
+			if(rowValue !== "") oldServicesValues.push(rowValue);
+			$('#serviceCBRow1').find('.modalInputTxt').val('');
+
+			// save every additional row and remove them
+			var additionalRows = $('#serviceTenantTabCB div[name="additionalRow"]');
+			for(let i = 0; i < additionalRows.length; i++){
+				var rowValue = $(additionalRows[i]).find('.modalInputTxt').val().trim();
+				if(rowValue !== "") oldServicesValues.push(rowValue);
+				additionalRows[i].remove();
+			}
+		}else{
+			// show the MultiService selector
+			$('#multiServiceTabSelector').removeClass("hidden");
+			restoreServicesValuesAdd(oldServicesValues);
+			oldServicesValues = [];
+		}
+	}
+	$('#selectProtocolCB').change(addServicesVisibilityCheck);
+
+	function restoreServicesValuesAdd(servicesArray){
+		// restore the first row
+		$('#serviceCBRow1').find('.modalInputTxt').val(servicesArray[0]);
+
+		// restore additional rows
+		var stTab = $('#serviceTenantTabCB').last();
+		for(let i = 1; i < servicesArray.length; i++){
+			row = createServiceRowElem(servicesArray[i], 'inputServiceCB');
+			stTab.append(row);
+		}
+	}
+
+	// END ADD BROKER MULTISERVICE SECTION
+
+	// BEGIN EDIT BROKER MULTISERVICE SECTION
+	// Author: Antonino Mauro Liuzzo
+
+	function createFirstServiceRowElem(initalValue, name){
+		if($('#editServiceTenantTabCB').find('#editServiceCBRow1').length !== 0){
+			return null;
+		}
+
+		// creation of the components of a row element
+		var row = document.createElement("div");
+		$(row).attr('class', 'row');
+		$(row).attr('id', 'editServiceCBRow1');
+
+		var modalCell1 = document.createElement("div");
+		$(modalCell1).attr('class', 'col-xs-12 col-md-8 modalCell');
+
+		var modalFieldCnt1 = document.createElement("div");
+		$(modalFieldCnt1).attr('class', 'modalFieldCnt');
+
+		var modalInputTxt = document.createElement("input");
+		$(modalInputTxt).attr('type', 'text');
+		$(modalInputTxt).attr('class', 'modalInputTxt ' + name);
+		$(modalInputTxt).attr('name', name);
+		$(modalInputTxt).attr('name', name);
+		$(modalInputTxt).attr('onkeyup', 'checkStrangeCharacters(this)');
+		$(modalInputTxt).val(initalValue);
+
+		var modalFieldLabelCnt = document.createElement("div");
+		$(modalFieldLabelCnt).attr('class', 'modalFieldLabelCnt');
+		$(modalFieldLabelCnt).text("Service/Tenant");
+
+		var modalCell2 = document.createElement("div");
+		$(modalCell2).attr('class', 'col-xs-12 col-md-4 modalCell');
+
+		var modalFieldCnt2 = document.createElement("div");
+		$(modalFieldCnt2).attr('class', 'modalFieldCnt');
+
+		var rmButton = document.createElement("button");
+		$(rmButton).attr('type', 'text');
+		$(rmButton).attr('id', 'editAddNewCBServiceBtn');
+		$(rmButton).attr('class', 'btn confirmBtn');
+		$(rmButton).text("Add Service/Tenant");
+
+		rmButton.addEventListener('click', function(){
+			// get the service/tenant tab
+			var stTab = $('#editServiceTenantTabCB').last();
+			// create and append of the row element
+			stTab.append(createServiceRowElem('', 'editInputServiceCB'));
+		});
+
+		// row element composition
+		$(row).append(modalCell1);
+		$(modalCell1).append(modalFieldCnt1);
+		$(modalFieldCnt1).append(modalInputTxt);
+		$(modalCell1).append(modalFieldLabelCnt);
+		$(row).append(modalCell2)
+		$(modalCell2).append(modalFieldCnt2);
+		$(modalFieldCnt2).append(rmButton);
+
+		return row;
+
+	}
+
+	// Handle the Edit Button click event
+	function editCBSManagementButtonPressed(services){
+		/* services is initially a string with one of these values:
+		 *	- undefined -> if protocol !== "ngsi w/MultiService"
+		 * 	- a non empty of comma-separated values -> if protocol === "ngsi w/MultiService"
+		 */
+
+		// set the Info section as visible
+		$('#editMultiServiceTabSelector').removeClass('active');
+		$('#editGeoPositionTabSelector').removeClass('active');
+		$('#editSecurityTabSelector').removeClass('active');
+		$('#editInfoTabSelector').addClass('active');
+		$('#editServiceTenantTabCB').removeClass("active in");
+		$('#editGeoPositionTabCB').removeClass("active in");
+		$('#editSecurityTabCB').removeClass("active in");
+		$('#editInfoTabCB').addClass("active in");	
+
+		var protocol = $("#selectProtocolCBM").val();
+		if (protocol !== "ngsi w/MultiService") {
+
+			// hide the MultiServices tab
+			$('#editMultiServiceTabSelector').addClass("hidden");
+
+			// remove form elements
+			$('#editServiceCBRow1').remove();
+			$('div[name="additionalRow"]').remove();
+
+			// clear the message section
+			$('#editInputServiceCBMsg').removeClass('alert-info alert');
+			$('#editInputServiceCBMsg').html('');
+
+			return;
+		} else {
+
+			// create an array from 
+			services = services.split(",");
+
+			// show the MultiServices tab
+			$('#editMultiServiceTabSelector').removeClass("hidden");
+
+			// check if the first element has already been created
+			let firstRow = createFirstServiceRowElem(services[0], 'editInputServiceCB');
+
+			if (firstRow) {
+				// add first Services row element
+				$('#editServiceTenantTabCB').append(firstRow);
+
+				// add additional Services row elements
+				if (services.length > 1) {
+					for(let i = 1; i < services.length; i++){
+						// get the service/tenant tab
+						var stTab = $('#editServiceTenantTabCB').last();
+						// create and append of the row element
+						stTab.append(createServiceRowElem(services[i], 'editInputServiceCB'));
+					}
+				}
+			}
+		}
+	}
+
+	/**
+	 * Trigger the MultiService tab visibility
+	 * The MultiService tab is visible only if the ngsi w/MultiService protocol is selected
+	 * When the user choose another protocol, inserted values are saved, except for empty strings
+	 * If the user choose back ngsi w/MultiService, saved values are restored
+	 */
+	var editOldServicesValues = [];
+
+	function editServicesVisibilityCheck(){
+
+		if($('#selectProtocolCBM').val() !== "ngsi w/MultiService"){
+			// hide the MultiService selector
+			$('#editMultiServiceTabSelector').addClass("hidden");
+
+			// save the first Service row and clear the row
+			firstRow = $('#editServiceCBRow1').find('.modalInputTxt');
+			if (firstRow.length > 0) {
+				var rowValue = firstRow.val().trim();
+				if (rowValue !== "") editOldServicesValues.push(rowValue);
+				$('#editServiceCBRow1').remove();
+			}
+
+			// save every additional row and remove them
+			var additionalRows = $('#editServiceTenantTabCB div[name="additionalRow"]');
+			for(let i = 0; i < additionalRows.length; i++){
+				var rowValue = $(additionalRows[i]).find('.modalInputTxt').val().trim();
+				if(rowValue !== "") editOldServicesValues.push(rowValue);
+				additionalRows[i].remove();
+			}
+		}else{
+			// show the MultiService selector
+			$('#editMultiServiceTabSelector').removeClass("hidden");
+			// add first Services row element
+			$('#editServiceTenantTabCB').append(createFirstServiceRowElem('', 'editInputServiceCB'));
+			// restore elements
+			restoreServicesValuesEdit(editOldServicesValues);
+			editOldServicesValues = [];
+		}
+	}
+	$('#selectProtocolCBM').change(editServicesVisibilityCheck);
+
+	function restoreServicesValuesEdit(servicesArray){
+		// restore the first row
+		$('#editServiceCBRow1').find('.modalInputTxt').val(servicesArray[0]);
+
+		// restore additional rows
+		var stTab = $('#editServiceTenantTabCB').last();
+		for(let i = 1; i < servicesArray.length; i++){
+			row = createServiceRowElem(servicesArray[i], 'editInputServiceCB');
+			stTab.append(row);
+		}
+	}
+
+
+	// END EDIT BROKER MULTISERVICE SECTION
 
 	$('#contextBrokerTable thead').css("background", "rgba(0, 162, 211, 1)");
 	$('#contextBrokerTable thead').css("color", "white");
@@ -1093,9 +1287,8 @@ function format ( d ) {
 		//related to subscription tab
                 var kind_value = document.getElementById("selectKindCB").value;
 
-		console.log("prot value="+value+" kind value="+kind_value);
 
-                if(kind_value ==='internal' && value==='ngsi')
+                if(kind_value ==='internal' && value.indexOf('ngsi')!=-1)
                 {
                         $("#tab-addCB-4").show();
                 }
@@ -1148,10 +1341,9 @@ function format ( d ) {
 		//related to subscription tab
 		var protocol_value = document.getElementById("selectProtocolCB").value;
 
-		console.log("prot value="+protocol_value+" kind value="+value);
 
 
-		if(value ==='internal' && protocol_value==='ngsi')	
+		if(value ==='internal' && protocol_value.indexOf('ngsi')!=-1)	
 		{
 			$("#tab-addCB-4").show();
 		}
@@ -1168,9 +1360,8 @@ function format ( d ) {
                 //related to subscription tab
                 var kind_value = document.getElementById("selectKindCBM").value;
 
-                console.log("Mprot value="+value+" kind value="+kind_value);
 
-                if(kind_value ==='internal' && value==='ngsi')
+                if(kind_value ==='internal' && value.indexOf('ngsi')!=-1)
                 {
                         $("#tab-editCB-4").show();
                 }
@@ -1190,9 +1381,8 @@ function format ( d ) {
                 //related to subscription tab
                 var protocol_value = document.getElementById("selectProtocolCBM").value;
 
-                console.log("Mprot value="+protocol_value+" kind value="+value);
 
-                if(value ==='internal' && protocol_value==='ngsi')
+                if(value ==='internal' && protocol_value.indexOf('ngsi')!=-1)
                 {
                         $("#tab-editCB-4").show();
                 }
@@ -1259,7 +1449,6 @@ function updateGroupList(ouname){
                                 $dropdown.empty();
                                //adding empty to rootadmin
                                if ((loggedRole=='RootAdmin')||(loggedRole=='ToolAdmin')) {
-                                       console.log("adding empty");
                                        $dropdown.append($("<option />").val("All groups").text("All groups"));
                                }
                                //add new ones
@@ -1703,7 +1892,6 @@ function updateGroupList(ouname){
 		
                    if ((delegations[i].userDelegated !="ANONYMOUS")&&(delegations[i].userDelegated!=null)) {
 			   
-                       console.log("adding user delegation");
 			   
                        $('#delegationsTable tbody').append('<tr class="delegationTableRow" data-delegationId="' + delegations[i].delegationId + '" data-delegated="' + delegations[i].userDelegated + '"><td class="delegatedName">' + delegations[i].userDelegated + '</td><td><i class="fa fa-remove removeDelegationBtn"></i></td></tr>');
 
@@ -1712,7 +1900,6 @@ function updateGroupList(ouname){
 	   
                    else  if (delegations[i].groupDelegated !=null){
 			   
-                       console.log("adding user delegation"+delegations[i]);
                        //extract cn and ou
                        var startindex=delegations[i].groupDelegated.indexOf("cn=");
                        var endindex_gr= delegations[i].groupDelegated.indexOf(",");
@@ -1755,7 +1942,6 @@ function updateGroupList(ouname){
 						   if (data["status"] === 'ok')
 																				  {
 								rowToRemove.remove();
-								console.log("success removing delegation");
 							}
 							else
 							{
@@ -1769,7 +1955,6 @@ function updateGroupList(ouname){
 					});
                });
                     $('#delegationsTableGroup tbody').on("click","i.removeDelegationBtnGroup",function(){
-                        console.log("toremove:");
                         var rowToRemove = $(this).parents('tr');
                         $.ajax({
                             url: "../api/contextbroker.php",     //check the url
@@ -1980,7 +2165,6 @@ function updateGroupList(ouname){
 	
 		
 	function drawMap1(latitude,longitude, flag){	
-			console.log("Elf: Before Map loading");
             var marker;
             if (typeof map !== 'undefined') {
                 map.remove();
@@ -2003,7 +2187,6 @@ function updateGroupList(ouname){
 					var lng = e.latlng.lng;
 					lat = lat.toFixed(5);
 					lng = lng.toFixed(5);
-					console.log("Check the format:" + lat + " " + lng);
 				
 				
 				 document.getElementById('inputLatitudeCB').value = lat;
@@ -2043,7 +2226,6 @@ function updateGroupList(ouname){
 				var lng = e.latlng.lng;
 				lat = lat.toFixed(5);
 				lng = lng.toFixed(5);
-				console.log("Check the format:" + lat + " " + lng);
 				
 				document.getElementById('inputLatitudeCBM').value = lat;
 				document.getElementById('inputLongitudeCBM').value = lng;
@@ -2190,7 +2372,6 @@ function drawMapAll(data, divName){
              //Fatima2-moveAndupdate-1-line
              colorSelectedMarkers(resultsOut, greenIcon);
             fetch_data(true, JSON.stringify(resultsOut));
-    //      console.log(resultsOut);
 	  
 
          });
@@ -2205,7 +2386,6 @@ function drawMapAll(data, divName){
                     });
                     drawnItems.eachLayer(function(layer) {
                         var resultsOut=drawSelection(layer, TYPE, data);     
-                        //console.log(resultsOut);
                          $('#addMap1CB').modal('hide');
                             //Fatima2-moveAndupdate-1-line
                             colorSelectedMarkers(resultsOut, greenIcon);
@@ -2278,7 +2458,6 @@ function drawMapAll(data, divName){
                     m = L.marker([mylat,mylong], {icon: redIcon}).addTo(map_all).bindPopup(myname);
                    }     
                   
-            //console.log("Before My Marker: " + mylat);
                }
             }
             setTimeout(function(){ map_all.invalidateSize()}, 400);
@@ -2292,8 +2471,6 @@ function drawMapAll(data, divName){
 
     function colorSelectedMarkers(selections, greenIcon){
                 green_marker_array=[];
-                console.log("selections are");
-                console.log(selections);
                 for(var k in selections){
 
                     lat=Number(selections[k].latitude); 

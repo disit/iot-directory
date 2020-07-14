@@ -59,7 +59,6 @@ $.ajax({url: "../api/extractionRules.php",
 		   gb_datatypes= mydata["data_type"];
 		   gb_value_units= mydata["value_unit"];
 		   gb_value_types= mydata["value_type"];	
-           console.log(mydata);
          },
 		 error: function (mydata)
 		 {
@@ -185,7 +184,6 @@ function updateDeviceTimeout()
 
 function fetch_data(destroyOld, selected=null)
         {
-			console.log("usernametoDebug "+loggedUser);
          
 		 //data=[];
             
@@ -199,7 +197,6 @@ function fetch_data(destroyOld, selected=null)
 			if (selected==null)
 			{
 			  mydata = {action: "get_rules", username: loggedUser, organization:organization,loggedrole:loggedRole, no_columns: ["position","edit","delete"]}; 
-			  console.log("logged user" + loggedUser +  " organization "+ organization);
 			}
 			
             
@@ -325,19 +322,15 @@ $(document).ready(function ()
 //delete attributes
 	$("#attrNameDelbtn").off("click");
 	$("#attrNameDelbtn").on("click", function(){
-		console.log("#attrNameDelbtn");	
 		$(this).parent('tr').remove();
 	});	
 		
 		
 	//Delete device button 
 	$('#devicesTable tbody').on('click', 'button.delDashBtn', function () {
-		console.log($(this));
 
 		var id = $(this).attr('data-id');
-		console.log("id delete "+ id);
 		var contextbroker = $(this).attr('data-contextbroker');
-		console.log("contextbroker "+ contextbroker);
 		var uri = $(this).attr("data-uri");
         var status = $(this).attr("data-status1");
 
@@ -350,7 +343,6 @@ $(document).ready(function ()
 	$('#devicesTable tbody').on('hover', 'button.delDashBtn', function () {
 	//$('#devicesTable button.delDashBtn').off('hover');
 	//$('#devicesTable button.delDashBtn').hover(function(){
-		console.log($(this));
 		$(this).css('background', '#ffcc00');
 		$(this).parents('tr').find('td').eq(1).css('background', '#ffcc00');
 	}, 
@@ -373,7 +365,6 @@ $(document).ready(function ()
 		if((dataTable.row( this ).index())%2 !== 0)
 		{
 			$('#devicesTable tbody').css("background", "rgba(0, 162, 211, 1)");
-			console.log( 'Row index: '+dataTable.row( this ).index() );
 			$(this).find('td').eq(0).css("background-color", "rgb(230, 249, 255)");
 			$(this).find('td').eq(0).css("border-top", "none");
 		}
@@ -511,8 +502,6 @@ $(document).ready(function ()
     
 
         
-    console.log("ok I am building the main table z");
-   // buildMainTable(false);
 	
 
 
@@ -539,23 +528,12 @@ $(document).ready(function ()
 		var latitude = document.getElementById('inputLatitudeDeviceM').value;
 		var longitude = document.getElementById('inputLongitudeDeviceM').value;
 		var protocol = document.getElementById('selectProtocolDeviceM').value;
-		
-	/*   if (id==null || id=="") { var idNote = ("\n id not specified");} else{idNote = "&#10004;";}
-	   if (contextbroker==null || contextbroker=="") {var contextbrokerNote = ("cb not specified");} else{contextbrokerNote = "&#10004;";}
-	   if (type==null || type=="") {var typeNote = ("type not specified");} else{typeNote = "&#10004;";}
-	   if (!(kind=="sensor" || kind=="actuator")) {var kindNote = ("\n kind not specified");}  else{kindNote = "&#10004;";}
-	   if ((latitude < -90 && latitude > 90) || (latitude=="" || latitude==null)) {var latitudeNote = ("\n latitude not correct ");} else{latitudeNote = "&#10004;";}
-	   if ((longitude < -180 && longitude > 180) || (longitude=="" || longitude==null)) {var longitudeNote = ("\n longitude not correct ");} else{longitudeNote = "&#10004;";}
-	   if (!(protocol=="ngsi" || protocol=="mqtt" || protocol=="amqp")) {var protocolNote = ("protocol not correct ");} else{protocolNote = "&#10004;";}
-	*/	
-		console.log(id + contextbroker + type + kind + latitude + longitude + protocol);
 	
 			if ((idNote == "&#10004;") && (contextbrokerNote == "&#10004;") && (typeNote == "&#10004;") && (kindNote == "&#10004;") && (latitudeNote == "&#10004;") && (longitudeNote == "&#10004;") && (protocolNote == "&#10004;")){var statusNote = "<button class=\"btn btn-success btn-round\"></button>";} else{statusNote= "<button class=\"btn btn-danger btn-round\"></button>";}
 		
 		var x =inputPropertiesDeviceMMsg.innerHTML;
 		
 		var div = document.createElement("div");
-		console.log("IPDMM:" + x);
 		
 		if (x =="&nbsp;"){
 			}
@@ -591,10 +569,8 @@ $(document).ready(function ()
 // add lines related to attributes			
 	$("#addAttrBtn").off("click");
 	$("#addAttrBtn").click(function(){
-	   console.log("#addAttrBtn");							   
 	   content = drawAttributeMenu("","", "", "", "", "", " "," ",  'addlistAttributes');
 		// addDeviceConditionsArray['addlistAttributes'] = true;
-	   //console.log("contenuto drawAttr" +content);
 	   $('#addlistAttributes').append(content);
 	});			
 	
@@ -604,7 +580,6 @@ $(document).ready(function ()
 
 	$("#attrNameDelbtn").off("click");
 	$("#attrNameDelbtn").on("click", function(){
-		console.log("#attrNameDelbtn");	
 		$(this).parent('tr').remove();
 		});	
 					
@@ -628,7 +603,6 @@ $(document).ready(function ()
 			var contextbroker = $("#deleteDeviceModal span").attr("data-contextbroker");
             var uri = $("#deleteDeviceModal span").attr("data-uri");
             var status = $("#deleteDeviceModal span").attr("data-status1");
-            console.log("valori val "+id +" "+contextbroker + " " + status);
 	 
             $("#deleteDeviceModal div.modal-body").html("");
             $("#deleteDeviceCancelBtn").hide();
@@ -638,11 +612,6 @@ $(document).ready(function ()
 
             /*********Sara start - delete from json *****/
 			var toDelete = {id: id, uri: uri, contextBroker: contextbroker, status: status};
-			//deleteJSONvalues(toDelete);
-            console.log("GOING TO DELETE ");
-            console.log("id "+ id);
-            console.log("status"+status);
-			/****Sara end****/
             
             $.ajax({
                 url: "../api/extractionRules.php",
@@ -1003,7 +972,6 @@ $('#devicesTable thead').css("font-size", "1em");
 		var value_unit = $('#deviceValueUnit').val();
 		var structure_value = $('#structureValueFlag').val();
 		
-		console.log("confirm "+ data_type + " value type "+ value_type + " value unit "+ value_unit);
 		$("#addDeviceModalTabs").hide();
 		$("#addDeviceModalBody").hide();
 		$('#addDeviceModal div.modalCell').hide();
@@ -1118,8 +1086,6 @@ $('#devicesTable thead').css("font-size", "1em");
 				$('#deviceValueUnit').val("");
 				$('#structureValueFlag').val("");
 			
-				console.log("Error adding rule");
-				console.log(mydata);						
 				$("#addDeviceKoModal").modal('show');
 				$("#addDeviceOkModal").hide();
                 if(mydata["error_msg"]!='undefined' && mydata["error_msg"]!="")                

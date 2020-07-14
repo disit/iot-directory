@@ -38,6 +38,36 @@ function showEditCbModal()
 	checkEditCbLatitude();
 	checkEditCbLongitude();
 	checkEditCbUrlOrionCallback();
+
+    // --------check Edit CB service values
+    checkEditCbServices();
+
+    // Handle first service row
+    $("#editServiceTenantTabCB").find('input[name="editInputServiceCB"]').on('input', checkEditCbServices);
+    $("#editServiceTenantTabCB").find('input[name="editInputServiceCB"]').on('input', checkEditCbConditions);
+
+    // Handle change protocol
+    $('#selectProtocolCBM').on('change', checkEditCbServices);
+    $('#selectProtocolCBM').on('change', checkEditCbConditions);
+
+
+    // Handle the additional rows
+    $("#editServiceTenantTabCB").on('input', 'div[name="additionalRow"]', checkEditCbServices);
+    $("#editServiceTenantTabCB").on('input', 'div[name="additionalRow"]', checkEditCbConditions);
+
+    // Observe the Multi-Service/Tenant Tab for child element creation/removal
+    const targetNode = document.getElementById('editServiceTenantTabCB');
+    // Options for the observer (which mutations to observe)
+    const config = {childList: true};
+    // Callback function to execute when mutations are observed
+    const callback = function() {
+        checkEditCbServices();
+        checkEditCbConditions();
+    };
+    // Create an observer instance linked to the callback function
+    const observer = new MutationObserver(callback);
+    // Start observing the target node for configured mutations
+    observer.observe(targetNode, config);
 }
 
 function checkEditCbIp()
@@ -208,7 +238,7 @@ function checkEditCbpassword()
 function checkEditCbConditions()
 {
     var enableButton = true;
-    console.log(editCbConditionsArray);
+    //console.log(editCbConditionsArray);
     for(var key in editCbConditionsArray) 
     {
         if(editCbConditionsArray[key] === false)
@@ -217,7 +247,7 @@ function checkEditCbConditions()
             break;
         }
     }
-    console.log("value enabled" +  enableButton);
+    //console.log("value enabled" +  enableButton);
     if(enableButton)
     {
         $("#editContextBrokerConfirmBtn").attr("disabled", false);
@@ -236,9 +266,9 @@ function checkEditCbUrlOrionCallback()
     var protocol = document.getElementById("selectProtocolCBM").value;
     var url = document.getElementById("inputUrlOrionCallbackM").value;
 
-    console.log("kind:"+kind+" protocol:"+protocol+" value:"+url);
+    //console.log("kind:"+kind+" protocol:"+protocol+" value:"+url);
 
-    if ((kind === 'internal')&&(protocol === 'ngsi')){
+    if ((kind === 'internal')&&(protocol.indexOf('ngsi')!==-1)){
         if(url === '')
         {
                 message = 'Url Orion Callback is mandatory';
@@ -263,3 +293,80 @@ function checkEditCbUrlOrionCallback()
     $("#selectUrlOrionCallbackMsgM").html(message);
 }
 
+function checkEditCbServices(){
+    // console.log("checkEditCbServices");
+
+    // feedback message to the user
+    var message = null;
+    // service values
+    var values = [];
+    // check if the tab is hidden or not
+    var isHidden = $('#editMultiServiceTabSelector').hasClass('hidden');
+
+    // insert first row value 
+    // the undefined check is done to avoid an error occuring when an update is done
+    var firstValue = $('#editServiceCBRow1').find('input[name="editInputServiceCB"]').val();
+    if (firstValue !== undefined) values.push(firstValue.trim());
+    // get values of all the additional rows
+    $('#editServiceTenantTabCB div[name="additionalRow"]').find('input[name="editInputServiceCB"]').each(function(){
+        values.push($(this).val().trim());
+    });
+
+    // check if the MultiService tab is hidden
+    if (isHidden) {
+        editCbConditionsArray['inputServicesCBM'] = true;
+        return;
+    } else {
+
+        if (values.length == 1){
+            //console.log("un solo service");
+
+            var serviceRegex = /^([a-z]|_){1,25}$/;
+            if (values[0] !== "" && !serviceRegex.test(values[0])) {
+                message = `Check your values <br>
+                        <ul>
+                            <li>white spaces are not allowed</li>
+                            <li>use only lower case letters</li>
+                            <li>special characters are not allowed (except for "_")</li>
+                            <li>service/tenant name must not be longer than 25 characters</li>
+                        </ul>`;
+                editCbConditionsArray['inputServicesCBM'] = false;
+                $("#editInputServiceCBMsg").removeClass("alert alert-info");
+                $("#editInputServiceCBMsg").addClass("alert alert-danger");
+                $("#editInputServiceCBMsg").html(message);
+            } else {
+                message = 'Ok';
+                editCbConditionsArray['inputServicesCBM'] = true;
+                $("#editInputServiceCBMsg").removeClass("alert alert-danger");
+                $("#editInputServiceCBMsg").addClass("alert alert-info");
+                $("#editInputServiceCBMsg").html(message);
+            }
+        } else {
+            //console.log("più services");
+
+            for(const value of values){
+                var serviceRegex = /^([a-z]|_){1,25}$/;
+                if(!serviceRegex.test(value)){
+                    message = `Check your values <br>
+                        <ul>
+                            <li>white spaces are not allowed</li>
+                            <li>use only lower case letters</li>
+                            <li>special characters are not allowed (except for "_")</li>
+                            <li>service/tenant name must not be longer than 25 characters</li>
+                        </ul>`;
+                    editCbConditionsArray['inputServicesCBM'] = false;
+                    $("#editInputServiceCBMsg").removeClass("alert alert-info");
+                    $("#editInputServiceCBMsg").addClass("alert alert-danger");
+                    $("#editInputServiceCBMsg").html(message);
+                    break;
+                }else{
+                    message = 'Ok';
+                    editCbConditionsArray['inputServicesCBM'] = true;
+                    $("#editInputServiceCBMsg").removeClass("alert alert-danger");
+                    $("#editInputServiceCBMsg").addClass("alert alert-info");
+                    $("#editInputServiceCBMsg").html(message);
+                }
+            }
+        }
+    }
+} 

@@ -66,7 +66,7 @@ var dataTable ="";
 							action: 'download',
 							filename: sourcename,
 							organization : organization, 
-							devicename:devicename,
+							id:devicename,
                             contextbroker: contextbroker
 					},
 					type: "POST",
@@ -100,7 +100,16 @@ var dataTable ="";
 		'</div>'; 	  
 		}
 	else showKey=""; 
-	 
+	
+	var multitenancy = "";
+	if (d.service && d.servicePath){
+		multitenancy = '<div class="row">' + 
+			'<div class="col-xs-6 col-sm-6" style="background-color:#B3D9FF;"><b>Service/Tenant:</b>' + "  " + d.service + '</div>' +
+			'<div class="clearfix visible-xs"></div>' +
+			'<div class="col-xs-6 col-sm-6" style="background-color:#B3D9FF;"><b>ServicePath:</b>' + "  " + d.servicePath  + '</div>' +	
+		'</div>' ;
+	}
+ 
 	var txtCert="";
 		if (d.privatekey!="" && d.privatekey!= null&& (d.visibility =='MyOwnPublic' || d.visibility == 'MyOwnPrivate'))
 			txtCert  = '<div class="row">' +
@@ -167,7 +176,7 @@ var dataTable ="";
 			'<div class="col-xs-6 col-sm-6" style="background-color:#E6E6FA;"><b>Organization:</b>' + "  " + d.organization + '</div>' +
 			'<div class="clearfix visible-xs"></div>' +
 		'</div>'
-		+ showKey  + txtCert + 
+		+ showKey  + txtCert + multitenancy + 
 	'</div>' ;
       return result;
 	
@@ -213,7 +222,7 @@ var dataTable ="";
 			}
             
 		}
-		 console.log(JSON.stringify(mydata));
+		 //console.log(JSON.stringify(mydata));
 			 
        
 	  
@@ -290,6 +299,8 @@ var dataTable ="";
 				'data-device="'+d.device+'" ' +
 				'data-cb="'+d.cb+'" ' +
 				'data-editable="'+d.editable+'" ' +
+				'data-service="'+d.service+'" ' +
+				'data-servicePath="'+d.servicePath+'" '+
 				'data-value_name="'+d.value_name+'">Delete</button>';
 				}
             },
@@ -309,7 +320,7 @@ var dataTable ="";
    });
       
 	if (gb_delegateDelete) {   
-		console.log ("gb_delegateDelete" + true)	
+		//console.log ("gb_delegateDelete" + true)	
 		dataTable.columns( [4,6] ).visible( false );
 		gb_delegateDelete = false;	
 		
@@ -502,7 +513,7 @@ var dataTable ="";
                             //$dropdown.append($("<option />").val(this.name).text(this.name));        
                         });
                         
-                            console.log("add new device heree");	
+                            //console.log("add new device heree");	
                             $("#displayAllDeviceRow").hide();
                             gb_delegated = false;
                             $("#addMyNewDeviceRow").show();
@@ -515,7 +526,7 @@ var dataTable ="";
 				
                         }
                     else{
-                        console.log("error getting the models "+data); 
+                        //console.log("error getting the models "+data); 
                     }
                 },
                 error: function (data)
@@ -608,8 +619,8 @@ var dataTable ="";
 		  var frequency = $(this).parents('tr').attr('data-frequency');
 		  var visibility = $(this).parents('tr').attr('data-visibility');
 		  
-		  console.log(id);
-		  console.log(contextbroker);
+		  //console.log(id);
+		  //console.log(contextbroker);
 		
 		$('#inputNameDeviceM').val(id);
 		$('#selectContextBrokerM').val(contextbroker);
@@ -639,16 +650,19 @@ var dataTable ="";
 	//	$('#inputAttri:butesDeviceM').val($(this).parents('tr').attr('data-attributes'));
 	showEditDeviceModal();
 
-	console.log("editing?");
+	//console.log("editing?");
 
 	$.ajax({
 		url: "../api/device.php",
 		 data: {
-			  action: "get_device_attributes", 
+			   action: "get_device_attributes", 
 			   id: $(this).parents('tr').attr("data-id"),
 			   organization : organization,
- 			token : sessionToken,
-			   contextbroker: $(this).parents('tr').attr("data-contextBroker")
+ 			   token : sessionToken,
+			   contextbroker: $(this).parents('tr').attr("data-contextBroker"),
+	                   protocol: $(this).attr('data-protocol'),
+		           service: $(this).attr('data-service'),
+		           servicePath: $(this).attr('data-servicePath')
 			  },
 		type: "POST",
 		async: true,
@@ -701,8 +715,8 @@ var dataTable ="";
 
 		
 	$('#devicesTable tbody').on('click', 'button.delDashBtn', function () {
-				console.log($(this));
-				console.log("Deleted ID" + $(this).attr('data-device'));
+				//console.log($(this));
+				//console.log("Deleted ID" + $(this).attr('data-device'));
 
 		var device = $(this).attr('data-device');
 		var dev_organization = $(this).attr('data-organization');
@@ -735,7 +749,7 @@ var dataTable ="";
 		if((dataTable.row( this ).index())%2 !== 0)
 		{
 			$('#devicesTable tbody').css("background", "rgba(0, 162, 211, 1)");
-			console.log( 'Row index: '+dataTable.row( this ).index() );
+			//console.log( 'Row index: '+dataTable.row( this ).index() );
 			$(this).find('td').eq(0).css("background-color", "rgb(230, 249, 255)");
 			$(this).find('td').eq(0).css("border-top", "none");
 		}
@@ -827,7 +841,7 @@ var dataTable ="";
 
 		 // $("#addDeviceModal #inputModelDevice").val(nameOpt[selectednameOpt].value);
 		 
-		 console.log(nameOpt[selectednameOpt].value + " " + gb_device + " " + gb_longitude + " " + gb_latitude);
+		 //console.log(nameOpt[selectednameOpt].value + " " + gb_device + " " + gb_longitude + " " + gb_latitude);
 		 
 
 		 // $("#addDeviceModal #inputNameDevice").val(device);
@@ -857,13 +871,6 @@ var dataTable ="";
 
 				 else (data["status"] === 'ok')
 					{
-				
-						
-						console.log(data);
-						console.log(gb_latitude);
-						console.log (data.content.kind);
-						console.log(data.content.attributes);
-						
 						var model = data.content.name;
 						var type = data.content.devicetype;
 						var kind = data.content.kind;
@@ -887,7 +894,14 @@ var dataTable ="";
 						*/
 						var subnature=data.content.subnature;
 						var staticAttributes=data.content.static_attributes;				
-						
+						var service = data.content.service;
+						var servicePath = data.content.servicePath;
+
+						if ($('#selectProtocolDevice').val() === "ngsi w/MultiService"){
+				                    // servicePath value pre-processing
+				                    if (servicePath[0] !== "/" || servicePath === "") servicePath = "/" + servicePath;
+		                		    if (servicePath[servicePath.length -1] === "/" && servicePath.length > 1) servicePath = servicePath.substr(0, servicePath.length -1);
+			                        }	
 					
 				 $.ajax({
 					 url: "../api/device.php",
@@ -917,8 +931,9 @@ var dataTable ="";
 						  k2 : gb_k2,
 						  edgegateway_type:edgegateway_type,
 						  subnature: subnature,
-						  static_attributes:staticAttributes
-
+						  static_attributes:staticAttributes,
+						  service : service,
+			                          servicePath : servicePath
 						},
 						 type: "POST",
 						 async: true,
@@ -1024,14 +1039,14 @@ var dataTable ="";
 // add lines related to attributes USER 			
 	$("#addAttrBtnUser").off("click");
 	$("#addAttrBtnUser").click(function(){
-	   console.log("#addAttrBtnUser");							   
+	   //console.log("#addAttrBtnUser");							   
 	   content = drawAttributeMenuUser("","", "",  'addlistAttributesUser');
 	   $('#addlistAttributesUser').append(content);
 	});	
 	
 	$("#attrNameDelbtnUser").off("click");
 	$("#attrNameDelbtnUser").on("click", function(){
-		console.log("#attrNameDelbtnUser");	
+		//console.log("#attrNameDelbtnUser");	
 		$(this).parent('tr').remove();
 	});	
 
@@ -1039,7 +1054,7 @@ var dataTable ="";
 	$('a[data-toggle="tab"]').on('shown.bs.tab', function (e) {
 		var target = $(e.target).attr("href");
 		if ((target == '#addGeoPositionTabDevice')) {
-			console.log("Elf: Add Device Map");
+			//console.log("Elf: Add Device Map");
 			var latitude = 43.78; 
 			var longitude = 11.23;
 			var flag = 0;
@@ -1052,7 +1067,7 @@ var dataTable ="";
 	$('a[data-toggle="tab"]').on('shown.bs.tab', function (e) {
 		var target = $(e.target).attr("href");
 		if ((target == '#editGeoPositionTabDevice')) {
-			console.log("Elf : EditDeviceMap");
+			//console.log("Elf : EditDeviceMap");
 				var latitude = $("#inputLatitudeDeviceM").val(); 
 				var longitude = $("#inputLongitudeDeviceM").val();
 				var flag = 1;
@@ -1080,16 +1095,16 @@ var dataTable ="";
 			   if (!(kind=="sensor" || kind=="actuator")) {var kindNote = ("\n kind not specified");}  else{kindNote = "&#10004;";}
 			   if ((latitude < -90 && latitude > 90) || (latitude=="" || latitude==null)) {var latitudeNote = ("\n latitude not correct ");} else{latitudeNote = "&#10004;";}
 			   if ((longitude < -180 && longitude > 180) || (longitude=="" || longitude==null)) {var longitudeNote = ("\n longitude not correct ");} else{longitudeNote = "&#10004;";}
-			   if (!(protocol=="ngsi" || protocol=="mqtt" || protocol=="amqp")) {var protocolNote = ("protocol not correct ");} else{protocolNote = "&#10004;";}
+			   if (!(protocol=="ngsi" || protocol=="mqtt" || protocol=="amqp" || protocol == "ngsi w/MultiService")) {var protocolNote = ("protocol not correct ");} else{protocolNote = "&#10004;";}
 		
-		console.log(id + contextbroker + type + kind + latitude + longitude + protocol);
+		//console.log(id + contextbroker + type + kind + latitude + longitude + protocol);
 	
 			if ((idNote == "&#10004;") && (contextbrokerNote == "&#10004;") && (typeNote == "&#10004;") && (kindNote == "&#10004;") && (latitudeNote == "&#10004;") && (longitudeNote == "&#10004;") && (protocolNote == "&#10004;")){var statusNote = "<button class=\"btn btn-success btn-round\"></button>";} else{statusNote= "<button class=\"btn btn-danger btn-round\"></button>";}
 		
 		var x =inputPropertiesDeviceMMsg.innerHTML;
 		
 		var div = document.createElement("div");
-		console.log("IPDMM:" + x);
+		//console.log("IPDMM:" + x);
 		
 		if (x =="&nbsp;"){
 			}
@@ -1157,7 +1172,7 @@ var dataTable ="";
 			success: function (data) 
 			{
 				$("#deleteDeviceOkBtn").show();
-                console.log(JSON.stringify(data));
+                	//	console.log(JSON.stringify(data));
 				if(data["status"] === 'ko')
 				{
 					$("#deleteDeviceModalInnerDiv1").html(data["error_msg"]);
@@ -1213,7 +1228,7 @@ var dataTable ="";
                                                         async: true,
                                                         success: function (data) 
                                                         {
-                                                            console.log(JSON.stringify(data));
+                                                            //console.log(JSON.stringify(data));
                                                             if(data["status"] === 'ko')
                                                             {
                                                                console.log("error deleting the device, eventhough it was the last value deleted "); 
@@ -1440,7 +1455,7 @@ function updateGroupList(ouname){
                                 $dropdown.empty();
                                //adding empty to rootadmin
                                if ((loggedRole=='RootAdmin')||(loggedRole=='ToolAdmin')) {
-                                       console.log("adding empty");
+                                       //console.log("adding empty");
                                        $dropdown.append($("<option />").val("All groups").text("All groups"));
                                }
                                //add new ones
@@ -1738,7 +1753,7 @@ function updateGroupList(ouname){
 			var lng = e.latlng.lng;
 				lat = lat.toFixed(5);
 				lng = lng.toFixed(5);
-				console.log("Check the format:" + lat + " " + lng);
+				//console.log("Check the format:" + lat + " " + lng);
 				
 				 document.getElementById('inputLatitudeDevice').value = lat;
 				 document.getElementById('inputLongitudeDevice').value = lng;
@@ -1772,7 +1787,7 @@ function updateGroupList(ouname){
 				var lng = e.latlng.lng;
 				lat = lat.toFixed(5);
 				lng = lng.toFixed(5);
-				console.log("Check the format:" + lat + " " + lng);
+				//console.log("Check the format:" + lat + " " + lng);
 				
 				document.getElementById('inputLatitudeDeviceM').value = lat;
 				document.getElementById('inputLongitudeDeviceM').value = lng;
@@ -1831,7 +1846,7 @@ function drawMap(latitude,longitude, id, devicetype, kind, divName){
    var lng = e.latlng.lng;
     lat = lat.toFixed(5);
     lng = lng.toFixed(5);
-    console.log("Check the format:" + lat + " " + lng);
+    //console.log("Check the format:" + lat + " " + lng);
     
      document.getElementById('inputLatitudeDeviceUser').value = lat;
      document.getElementById('inputLongitudeDeviceUser').value = lng;
@@ -2217,8 +2232,8 @@ function drawMapAll_delegated(data, divName){
     
 function colorSelectedMarkers(selections, greenIcon){
                 green_marker_array=[];
-                console.log("selections are");
-                console.log(selections);
+                //console.log("selections are");
+                //console.log(selections);
                 for(var k in selections){
 
                     lat=Number(selections[k].latitude); 
@@ -2241,8 +2256,8 @@ function colorSelectedMarkers(selections, greenIcon){
 
 function colorSelectedMarkers_delegated(selections, greenIcon){
                 green_marker_array_d=[];
-                console.log("selections are");
-                console.log(selections);
+                //console.log("selections are");
+                //console.log(selections);
                 for(var k in selections){
 
                     lat=Number(selections[k].latitude); 
@@ -2388,7 +2403,7 @@ function changeVisibility(id, contextbroker, valueName, visibility, uri, k1, k2)
 								$("#newVisibilityPublicBtn").show();
 								//document.getElementById('newVisibilityPrivateBtn').style.visibility = 'hidden';
 								//document.getElementById('newVisibilityPublicBtn').style.visibility = 'show';
-					console.log("I am here "+ visibility);			
+					//console.log("I am here "+ visibility);			
                     //$('#newVisibilityPrivateBtn').addClass('disabled');
 								//$('#newVisibilityPublicBtn').removeClass('disabled');
 								
@@ -2405,7 +2420,7 @@ function changeVisibility(id, contextbroker, valueName, visibility, uri, k1, k2)
 								//document.getElementById('newVisibilityPublicBtn').style.visibility = 'hidden';
 								$("#newVisibilityPrivateBtn").show();
 								$("#newVisibilityPublicBtn").hide();
-								console.log("I am here "+ visibility);
+								//console.log("I am here "+ visibility);
 								//$("#delegationsModal").modal('show');
 								//???document.getElementById("delegationsCntGroup").style.visibility = 'hidden';
 				}
@@ -2596,7 +2611,7 @@ function changeVisibility(id, contextbroker, valueName, visibility, uri, k1, k2)
 											// else if (delegations[id + "/" + valueName])
 											//            my_delegation = delegations[id + "/" + valueName];
 											// else  my_delegation = delegations[id];
-											console.log(uri + "/" + valueName + "---" + JSON.stringify(delegations));
+											//console.log(uri + "/" + valueName + "---" + JSON.stringify(delegations));
 											 $('#delegationsTable tbody').html("");
 											$('#delegationsTableGroup tbody').html("");
 										for(var i = 0; i < delegations.length; i++)
@@ -2656,7 +2671,7 @@ function changeVisibility(id, contextbroker, valueName, visibility, uri, k1, k2)
                                                            if (data["status"] === 'ok')
 														   {
                                                                 rowToRemove.remove();
-                                                                console.log("ermoving a row from the table");
+                                                                //console.log("ermoving a row from the table");
                                                             }
                                                             else
                                                             {
@@ -2671,7 +2686,7 @@ function changeVisibility(id, contextbroker, valueName, visibility, uri, k1, k2)
                                                 });
 
                                                                                                $('#delegationsTableGroup tbody').on("click","i.removeDelegationBtnGroup",function(){
-                                                                                                       console.log("toremove:");
+                                                                                                       //console.log("toremove:");
                                                                                                        var rowToRemove = $(this).parents('tr');
                                                                                                        $.ajax({
                                                                                                                url: "../api/value.php",     //check the url
@@ -2733,7 +2748,7 @@ function changeVisibility(id, contextbroker, valueName, visibility, uri, k1, k2)
                                         $(document).on("click", "#newDelegationConfirmBtn", function(event){
                                                 //var id = document.getElementById("currDeviceId").value;
                                                 var newDelegation = document.getElementById('newDelegation').value;
-                                            console.log(newDelegation);
+                                            //console.log(newDelegation);
                                                 //alert("The owner is " + id + " The new owner is " + newDelegation);
                                                 newk1 = generateUUID();
                                             newk2 = generateUUID();

@@ -11,7 +11,7 @@ var previewFirstLoad=false;
 var previewValuesFirstLoad=false;
 
 var dataTable ="";
-requiredHeaders=["name", "devicetype", "macaddress", "frequency", "kind", "protocol", "format", "producer", /*"edge_gateway_type", "edge_gateway_uri",  commented by Sara*/ "latitude", "longitude", "value_name", "data_type", "value_type", "editable", "value_unit", "healthiness_criteria", "healthiness_value", "k1", "k2", "subnature", "static_attributes"];
+requiredHeaders=["name", "devicetype", "macaddress", "frequency", "kind", "protocol", "format", "producer", /*"edge_gateway_type", "edge_gateway_uri",  commented by Sara*/ "latitude", "longitude", "value_name", "data_type", "value_type", "editable", "value_unit", "healthiness_criteria", "healthiness_value", "k1", "k2", "subnature", "static_attributes", "service", "service_path"];
 
 var gb_datatypes ="";
 var gb_value_units ="";
@@ -92,7 +92,7 @@ $.ajax({
 	success: function (data)
 	{
 		modelsdata = data["content"];
-		console.log(modelsdata);
+		//console.log(modelsdata);
 	}
 });
 
@@ -145,7 +145,7 @@ function sendJsonToDb(jsondata){
 					var user_message="";
 					for(var i = 0; i < content.length; i++)
 					{
-						console.log("for i "+i+" length "+content[i].inserted);
+						//console.log("for i "+i+" length "+content[i].inserted);
 
 						if(content[i].inserted=='ok'){
 							
@@ -224,10 +224,10 @@ uploadDealcsv.prototype.getCsv = function(e)
 		{
 			myFile = this.files[0];
             
-			console.log(document.getElementById("labelinputFile").value);
+			//console.log(document.getElementById("labelinputFile").value);
             
             var extension= myFile.name.split('.').pop();
-            console.log(extension);
+            //console.log(extension);
             if(extension != "csv")
 			{
                 myFile=undefined;
@@ -264,7 +264,7 @@ uploadDealcsv.prototype.getParsecsvdata = function(data) {
 	
 //	let parsedata = [];
 
-	console.log(data);
+	//console.log(data);
 	var data2 = data;
 		
 	try{
@@ -274,23 +274,6 @@ uploadDealcsv.prototype.getParsecsvdata = function(data) {
 		data= data2;
 	}
 	
-/*	let newLinebrk = data.split("\n");
-		console.log(" new line brik "+newLinebrk.length);
-
-	for(let i = 0; i < newLinebrk.length; i++) {
-
-		line= newLinebrk[i].trim();
-		line= line.replace(";",",");
-		line= line.replace("\t",",");
-		console.log(line.length);
-          
-		if(line.length>0){
-			parsedata.push(CSVToArray2(line));
-			//parsedata.push(line.split(","));
-		}
-            
-	}//end for
- */      
 	jsondata = csvJSON(data);
 		//Sara2910 
 	if(jsondata.length == 0){
@@ -298,7 +281,7 @@ uploadDealcsv.prototype.getParsecsvdata = function(data) {
 	}
 	if(jsondata!=undefined /*Sara2910 */ && jsondata.length != 0){
 
-		console.log(jsondata);
+		//console.log(jsondata);
 		fileData=jsondata;
 
 		valuesData=[];
@@ -329,7 +312,7 @@ uploadDealcsv.prototype.getParsecsvdata = function(data) {
 			}
 
 			if(existsIndevices==0){
-				var vd= {"name":jElement.name, "devicetype":jElement.devicetype, "macaddress":jElement.macaddress, "frequency":jElement.frequency, "kind":jElement.kind, "protocol":jElement.protocol ,"format":jElement.format, "producer":jElement.producer, /*"edge_gateway_type":jElement.edge_gateway_type, "edge_gateway_uri":jElement.edge_gateway_uri, commented by Sara*/"latitude":jElement.latitude ,"longitude":jElement.longitude , "validity_msg":jElement.validity_msg,"k1":jElement.k1, "k2":jElement.k2, "subnature":jElement.subnature, "static_attributes":jElement.static_attributes,  "deviceValues":[{"value_name":jElement.value_name, "data_type":jElement.data_type, "value_type":jElement.value_type, "editable":jElement.editable, "value_unit":jElement.value_unit, "healthiness_criteria":jElement.healthiness_criteria ,"healthiness_value":jElement.healthiness_value}]};
+				var vd= {"name":jElement.name, "devicetype":jElement.devicetype, "macaddress":jElement.macaddress, "frequency":jElement.frequency, "kind":jElement.kind, "protocol":jElement.protocol ,"format":jElement.format, "producer":jElement.producer, /*"edge_gateway_type":jElement.edge_gateway_type, "edge_gateway_uri":jElement.edge_gateway_uri, commented by Sara*/"latitude":jElement.latitude ,"longitude":jElement.longitude , "validity_msg":jElement.validity_msg,"k1":jElement.k1, "k2":jElement.k2, "subnature":jElement.subnature, "static_attributes":jElement.static_attributes, "service":jElement.service, "service_path":jElement.service_path,"deviceValues":[{"value_name":jElement.value_name, "data_type":jElement.data_type, "value_type":jElement.value_type, "editable":jElement.editable, "value_unit":jElement.value_unit, "healthiness_criteria":jElement.healthiness_criteria ,"healthiness_value":jElement.healthiness_value}]};
 				devicesData.push(vd);
 			}
 
@@ -432,11 +415,11 @@ function csvJSON(csv){
 		var objString=JSON.stringify(obj).replace("\\r","");
 		obj=JSON.parse(objString);
 			
-		console.log(obj);
+		//console.log(obj);
 		result.push(obj);
 
 	}
-	console.log(result);
+	//console.log(result);
 
 	return result; //JavaScript object
 }
@@ -456,6 +439,15 @@ function updateDeviceTimeout()
 //---------------build the table-----------------------------//
 
 function format ( d ) {
+
+	var multitenancy = "";
+	if (d.service && d.servicePath){
+		multitenancy = '<div class="row">' + 
+		'<div id="service" class="col-xs-6 col-sm-6" style="background-color:#B3D9FF;"><b>Service/Tenant:</b>' + "  " + d.service + '</div>' +
+		'<div id="service" class="clearfix visible-xs"></div>' +
+		'<div class="col-xs-6 col-sm-6" style="background-color:#B3D9FF;"><b>ServicePath:</b>' + "  " + d.servicePath  + '</div>' +	
+		'</div>' ;
+	}
 		
   	return '<div class="container-fluid">' +
 	
@@ -493,7 +485,7 @@ function format ( d ) {
 		'<div class="col-xs-6 col-sm-6" style="background-color:#D6CADD;"><b>K1:</b>' + "  " + d.k1 + '</div>' +
 		'<div class="clearfix visible-xs"></div>' +
 		'<div class="col-xs-6 col-sm-6" style="background-color:#D6CADD;"><b>K2:</b>' + "  " + d.k2  + '</div>' +	
-	'</div>' + 
+	'</div>' +  multitenancy + 
 	'</div>' ;	
 }
 
@@ -598,6 +590,8 @@ function fetch_data(destroyOld, selected=null)
 			'data-attributes="'+d.attributes+'" ' +
                         'data-subnature="'+d.subnature+'" '+
                         'data-static-attributes="'+btoa(d.static_attributes)+'" '+
+			'data-service="'+d.service+'" ' + 
+	                'data-servicePath="'+d.servicePath+'" ' +
 			'data-status="'+d.status+'">Edit</button>';
 			
 			}
@@ -661,7 +655,7 @@ function buildPreview(attributesIf, destroyOld, selected=null)
 	},
 	"columns": [
 	{"name": "id", "data": function ( row, type, val, meta ) {
-		console.log("Name buildtable "+ row.name);
+		//console.log("Name buildtable "+ row.name);
 		return row.name;
 		} 
 	},			
@@ -837,7 +831,7 @@ $(document).ready(function ()
 
 	$('#devicesTable tbody').on('hover', 'button.delDashBtn', function () {
 
-		console.log($(this));
+		//console.log($(this));
 		$(this).css('background', '#ffcc00');
 		$(this).parents('tr').find('td').eq(1).css('background', '#ffcc00');
 	}, 
@@ -854,7 +848,7 @@ $(document).ready(function ()
 		if((dataTable.row( this ).index())%2 !== 0)
 		{
 			$('#devicesTable tbody').css("background", "rgba(0, 162, 211, 1)");
-			console.log( 'Row index: '+dataTable.row( this ).index() );
+			//console.log( 'Row index: '+dataTable.row( this ).index() );
 			$(this).find('td').eq(0).css("background-color", "rgb(230, 249, 255)");
 			$(this).find('td').eq(0).css("border-top", "none");
 		}
@@ -1007,7 +1001,7 @@ $(document).ready(function ()
 	$('a[data-toggle="tab"]').on('shown.bs.tab', function (e) {
 		var target = $(e.target).attr("href");
 		if ((target == '#addGeoPositionTabDevice')) {
-			console.log("Elf: Add Device Map");
+			//console.log("Elf: Add Device Map");
 			var latitude = 43.78; 
 			var longitude = 11.23;
 			var flag = 0;
@@ -1019,7 +1013,7 @@ $(document).ready(function ()
 	$('a[data-toggle="tab"]').on('shown.bs.tab', function (e) {
 		var target = $(e.target).attr("href");
 		if ((target == '#editGeoPositionTabDevice')) {
-			console.log("Elf : EditDeviceMap");
+			//console.log("Elf : EditDeviceMap");
 			var latitude = $("#inputLatitudeDeviceM").val(); 
 			var longitude = $("#inputLongitudeDeviceM").val();
 			var flag = 1;
@@ -1047,7 +1041,7 @@ $(document).ready(function ()
 			if (!(kind=="sensor" || kind=="actuator")) {var kindNote = ("\n kind not specified");}  else{kindNote = "&#10004;";}
 			if ((latitude < -90 && latitude > 90) || (latitude=="" || latitude==null)) {var latitudeNote = ("\n latitude not correct ");} else{latitudeNote = "&#10004;";}
 			if ((longitude < -180 && longitude > 180) || (longitude=="" || longitude==null)) {var longitudeNote = ("\n longitude not correct ");} else{longitudeNote = "&#10004;";}
-			if (!(protocol=="ngsi" || protocol=="mqtt" || protocol=="amqp")) {var protocolNote = ("protocol not correct ");} else{protocolNote = "&#10004;";}
+			if (!(protocol=="ngsi" || protocol=="mqtt" || protocol=="amqp" || protocol == "ngsi w/MultiService")) {var protocolNote = ("protocol not correct ");} else{protocolNote = "&#10004;";}
 				
 			if ((idNote == "&#10004;") && (contextbrokerNote == "&#10004;") && (typeNote == "&#10004;") && (kindNote == "&#10004;") && (latitudeNote == "&#10004;") && (longitudeNote == "&#10004;") && (protocolNote == "&#10004;")){var statusNote = "<button class=\"btn btn-success btn-round\"></button>";} else{statusNote= "<button class=\"btn btn-danger btn-round\"></button>";}
 			
@@ -1121,7 +1115,7 @@ $(document).ready(function ()
 			
 					$("#KeyOneDeviceUser").val(gb_key1);
 					$("#KeyTwoDeviceUser").val(gb_key2);
-					console.log("normal" +nameOpt[selectednameOpt].getAttribute("data_key")+gb_key1+gb_key2);							 
+					//console.log("normal" +nameOpt[selectednameOpt].getAttribute("data_key")+gb_key1+gb_key2);							 
 				}								 
 			}
 			if (nameOpt[selectednameOpt].getAttribute("data_key")=="special" && ownerSelect[ownerOpt].value=='private')
@@ -1132,10 +1126,10 @@ $(document).ready(function ()
 					$("#sigFoxDeviceUserMsg").html("Generate in your SigFox server the keys and report them here.  Details on <a href=\"https://www.snap4city.org/drupal/node/76\">info</a>");
 					$("#KeyOneDeviceUser").val("");
 					$("#KeyTwoDeviceUser").val("");
-					console.log("special "+ nameOpt[selectednameOpt].getAttribute("data_key")+gb_key1+gb_key2);							
+					//console.log("special "+ nameOpt[selectednameOpt].getAttribute("data_key")+gb_key1+gb_key2);							
 				}
 			}
-			console.log(nameOpt[selectednameOpt].value + " " + gb_device + " " + gb_longitude + " " + gb_latitude);
+			//console.log(nameOpt[selectednameOpt].value + " " + gb_device + " " + gb_longitude + " " + gb_latitude);
 			
 			if(nameOpt[selectednameOpt].value !="custom")
 			{ 
@@ -1156,7 +1150,7 @@ $(document).ready(function ()
 						}
 						else (data["status"] === 'ok')
 						{					
-							console.log("maroc" + data.content.attributes);
+							//nnconsole.log("maroc" + data.content.attributes);
 									
 							var model = data.content.name;
 							var type = data.content.devicetype;
@@ -1173,7 +1167,7 @@ $(document).ready(function ()
 									// population of the value tab with the values taken from the db						
 							while (k < myattributes.length)
 							{
-								console.log(myattributes.length + " " +k); 
+								//console.log(myattributes.length + " " +k); 
 								content += drawAttributeMenu(myattributes[k].value_name, 
 									 myattributes[k].data_type, myattributes[k].value_type, myattributes[k].editable, myattributes[k].value_unit, myattributes[k].healthiness_criteria, 
 									 myattributes[k].healthiness_value, myattributes[k].value_name,
@@ -1257,7 +1251,7 @@ $(document).ready(function ()
 // add lines related to attributes			
 	$("#addAttrBtn").off("click");
 	$("#addAttrBtn").click(function(){
-	   console.log("#addAttrBtn");							   
+	   //console.log("#addAttrBtn");							   
 	   content = drawAttributeMenu("","", "", "", "", "", " "," ",  'addlistAttributes',indexValues);
    		indexValues=indexValues+1;
 	   $('#addlistAttributes').append(content);
@@ -1270,7 +1264,7 @@ $(document).ready(function ()
 
 	$("#addSchemaTabDevice").off("click");
         $("#addSchemaTabDevice").on('click keyup', function(){
-                console.log("#addSchemaTabDevice");
+                //console.log("#addSchemaTabDevice");
 
                 //checkAtlistOneAttribute();
                 $("#addSchemaTabDevice #addlistAttributes .row input:even").each(function(){checkValueNameM($(this));});
@@ -1284,7 +1278,7 @@ $(document).ready(function ()
 
 	$("#attrNameDelbtn").off("click");
 	$("#attrNameDelbtn").on("click", function(){
-		console.log("#attrNameDelbtn");	
+		//console.log("#attrNameDelbtn");	
 		$(this).parent('tr').remove();
 		});	
 					
@@ -1306,7 +1300,7 @@ $(document).ready(function ()
 		var contextbroker = $("#deleteDeviceModal span").attr("data-contextbroker");
 		var uri = $("#deleteDeviceModal span").attr("data-uri");
 		var status = $("#deleteDeviceModal span").attr("data-status");
-		console.log("valori val "+id +" "+contextbroker + " " + status);
+		//console.log("valori val "+id +" "+contextbroker + " " + status);
  
 		$("#deleteDeviceModal div.modal-body").html("");
 		$("#deleteDeviceCancelBtn").hide();
@@ -1317,9 +1311,9 @@ $(document).ready(function ()
 		/*********Sara start - delete from json *****/
 		var toDelete = {id: id, uri: uri, contextBroker: contextbroker, status: status};
 		//deleteJSONvalues(toDelete);
-		console.log("GOING TO DELETE ");
-		console.log("id "+ id);
-		console.log("status"+status);
+		//console.log("GOING TO DELETE ");
+		//console.log("id "+ id);
+		//console.log("status"+status);
 		/****Sara end****/
             
 		$.ajax({
@@ -1340,7 +1334,7 @@ $(document).ready(function ()
 			async: true,
 			success: function (data) 
 			{
-				console.log(JSON.stringify(data));
+				//console.log(JSON.stringify(data));
 				if(data["status"] === 'ko')
 				{
 					$("#deleteDeviceModalInnerDiv1").html(data["msg"]);
@@ -1355,7 +1349,7 @@ $(document).ready(function ()
 					$("#deleteDeviceModalInnerDiv1").html('Device &nbsp; <b>' + id + '</b> &nbsp;deleted successfully');
 					$("#deleteDeviceModalInnerDiv2").html('<i class="fa fa-check" style="font-size:42px"></i>');
 					
-					console.log(status);
+					//console.log(status);
 					if(status=='valid')
 					$('#dashboardTotActiveCnt .pageSingleDataCnt').html(parseInt($('#dashboardTotActiveCnt .pageSingleDataCnt').html()) - 1);
 					else          
@@ -1413,7 +1407,7 @@ $(document).ready(function ()
 			async: true,
 			success: function (data) 
 			{
-				console.log(JSON.stringify(data));
+				//console.log(JSON.stringify(data));
 				if(data["status"] === 'ko')
 				{
 					$("#deleteAllDevModalInnerDiv1").html(data["msg"]);
@@ -1471,7 +1465,7 @@ $(document).ready(function ()
 // add lines related to attributes in case of edit
 	$("#addAttrMBtn").off("click");
 	$("#addAttrMBtn").click(function(){				
-	   console.log("#addAttrMBtn");					
+	   //console.log("#addAttrMBtn");					
 	   content = drawAttributeMenu("","", "", "", "", "", "300"," ",'addlistAttributesM', indexValues);
 		indexValues=indexValues+1;
 		editDeviceConditionsArray['addlistAttributesM'] = true;
@@ -1486,7 +1480,7 @@ $(document).ready(function ()
 
         $("#editSchemaTabDevice").off("click");
         $("#editSchemaTabDevice").on('click keyup', function(){
-           console.log("#editSchemaTabDevice");
+           //console.log("#editSchemaTabDevice");
 
            //checkEditAtlistOneAttribute();
            $("#editSchemaTabDevice #addlistAttributesM .row input:even").each(function(){checkEditValueName($(this));});
@@ -1573,8 +1567,7 @@ $(document).ready(function ()
                 $('#selectSubnatureM').trigger('change');
 		subnatureChanged(true, JSON.parse(atob($(this).attr("data-static-attributes"))));
 
-		console.log('edge_gateway_type');  
-
+		fillMultiTenancyFormSection($(this).attr('data-service'), $(this).attr('data-servicePath'), contextbroker, 'contextbroker');
 
 
 		//UserEditKey();
@@ -1644,7 +1637,7 @@ $(document).ready(function ()
 			async: true,
 			dataType: 'json',
 			success: function (mydata){
-				console.log("contenent logg "+JSON.stringify(mydata['content']));
+				//console.log("contenent logg "+JSON.stringify(mydata['content']));
 
 				var row = null;
 				$("#editUserPoolsTable tbody").empty();
@@ -1746,7 +1739,7 @@ $(document).ready(function ()
 				   //sara start				   
 				   old_value_name:getText(document.getElementById('editlistAttributes').childNodes[j].childNodes[7].childNodes[0].childNodes[0])
 				};
-				console.log("edit attr----------------------"+getText(document.getElementById('editlistAttributes').childNodes[j].childNodes[7].childNodes[0].childNodes[0]));
+				//console.log("edit attr----------------------"+getText(document.getElementById('editlistAttributes').childNodes[j].childNodes[7].childNodes[0].childNodes[0]));
 				
 				   //sara end
 				myAttributes.push(att);
@@ -1783,7 +1776,7 @@ $(document).ready(function ()
 				   old_value_name: document.getElementById('deletedAttributes').childNodes[j].childNodes[7].childNodes[0].childNodes[0]
 				};
 				
-				console.log(document.getElementById('editlistAttributes').childNodes[j].childNodes[7].childNodes[0].childNodes[0]);	
+				//console.log(document.getElementById('editlistAttributes').childNodes[j].childNodes[7].childNodes[0].childNodes[0]);	
 			
 				   //sara end
 				mydeletedAttributes.push(att);
@@ -1816,23 +1809,43 @@ $(document).ready(function ()
 				arrayAttributes.push(mynewAttributes[i]);
 			}
 			
-			console.log("arrayAttributes "+JSON.stringify(arrayAttributes));
+			//console.log("arrayAttributes "+JSON.stringify(arrayAttributes));
+
+                var service = $('#editSelectService').val();
+                var servicePath = $('#editInputServicePathCB').val();
+
+                if ($('#selectProtocolDeviceM').val() === "ngsi w/MultiService"){
+                        // servicePath value pre-processing
+                        if (servicePath[0] !== "/" || servicePath === "") servicePath = "/" + servicePath;
+                        if (servicePath[servicePath.length -1] === "/" && servicePath.length > 1) servicePath = servicePath.substr(0, servicePath.length -1);
+                }
+
+
 
             //UPDATE FUNCTION
-			var updatedDevice={"contextbroker":$('#selectContextBrokerM').val(),"name":$('#inputNameDeviceM').val(),"devicetype":$('#inputTypeDeviceM').val(),"model":$('#selectModelDeviceM').val(),"macaddress":$('#inputMacDeviceM').val(),"frequency":$('#inputFrequencyDeviceM').val(),"kind":$('#selectKindDeviceM').val(),"protocol":$('#selectProtocolDeviceM').val(),"format":$('#selectFormatDeviceM').val(),"latitude":$('#inputLatitudeDeviceM').val(),"longitude":$('#inputLongitudeDeviceM').val(),"visibility":$('#selectVisibilityDeviceM').val(),"k1":$('#KeyOneDeviceUserM').val(), "k2":$('#KeyTwoDeviceUserM').val(), "subnature":$('#selectSubnatureM').val(), "static_attributes":JSON.stringify(retrieveStaticAttributes("editlistStaticAttributes")),"producer":$('#inputProducerDeviceM').val(),"edge_gateway_type":$('#selectEdgeGatewayTypeM').val(),"edge_gateway_uri": $('#inputEdgeGatewayUriM').val(), "deviceValues":arrayAttributes};
+			var updatedDevice={"contextbroker":$('#selectContextBrokerM').val(),"name":$('#inputNameDeviceM').val(),"devicetype":$('#inputTypeDeviceM').val(),"model":$('#selectModelDeviceM').val(),"macaddress":$('#inputMacDeviceM').val(),"frequency":$('#inputFrequencyDeviceM').val(),"kind":$('#selectKindDeviceM').val(),"protocol":$('#selectProtocolDeviceM').val(),"format":$('#selectFormatDeviceM').val(),"latitude":$('#inputLatitudeDeviceM').val(),"longitude":$('#inputLongitudeDeviceM').val(),"visibility":$('#selectVisibilityDeviceM').val(),"k1":$('#KeyOneDeviceUserM').val(), "k2":$('#KeyTwoDeviceUserM').val(), "subnature":$('#selectSubnatureM').val(), "static_attributes":JSON.stringify(retrieveStaticAttributes("editlistStaticAttributes")),"service":service, "service_path":servicePath, "producer":$('#inputProducerDeviceM').val(),"edge_gateway_type":$('#selectEdgeGatewayTypeM').val(),"edge_gateway_uri": $('#inputEdgeGatewayUriM').val(), "deviceValues":arrayAttributes};
 			 
 			var device_status = 'invalid';
 			var verify = verifyDevice(updatedDevice);
-			console.log("verify "+JSON.stringify(verify));
+			//console.log("verify "+JSON.stringify(verify));
 			if(verify.isvalid){
 				device_status='valid';
 			}
-			console.log(device_status);
-			console.log(verify.message);
-			console.log("attributes "+JSON.stringify(myAttributes));
+			//console.log(device_status);
+			//console.log(verify.message);
+			//console.log("attributes "+JSON.stringify(myAttributes));
         
-		console.log("old_id"+gb_old_id);
-		console.log("old_cb"+gb_old_cb);
+		//console.log("old_id"+gb_old_id);
+		//console.log("old_cb"+gb_old_cb);
+
+		var service = $('#editSelectService').val();
+		var servicePath = $('#editInputServicePathCB').val();
+
+		if ($('#selectProtocolDeviceM').val() === "ngsi w/MultiService"){
+			// servicePath value pre-processing
+			if (servicePath[0] !== "/" || servicePath === "") servicePath = "/" + servicePath;
+			if (servicePath[servicePath.length -1] === "/" && servicePath.length > 1) servicePath = servicePath.substr(0, servicePath.length -1);
+		}
  
 		$.ajax({
             url: "../api/bulkDeviceLoad.php",
@@ -1866,14 +1879,16 @@ $(document).ready(function ()
 		    k1: updatedDevice.k1, //MM2909 this value need to be acquired from the 
 		    k2: updatedDevice.k2,  //MM2909
 			subnature:updatedDevice.subnature, 
-			static_attributes:updatedDevice.static_attributes
+			static_attributes:updatedDevice.static_attributes,
+			service : service,
+			servicePath : servicePath
 /***********************Sara end*************/
 		    },
             type: "POST",
             async: true,
             success: function (data) 
             {
-				console.log("Marco edit Data " + JSON.stringify(data));
+				//console.log("Marco edit Data " + JSON.stringify(data));
 
 				if(data["status"] === 'ko')
                 {
@@ -2276,7 +2291,7 @@ $(document).on({
 			}
 
 			var newIf={"field": fieldIf, "operator" : operatorIf, "value": valueIf};
-			console.log("newIf "+ JSON.stringify(newIf));
+			//console.log("newIf "+ JSON.stringify(newIf));
 			attributesIf.push(newIf);
 		}
 		
@@ -2309,7 +2324,7 @@ $(document).on({
             success: function (myData) 
             {
 
-				console.log("data success "+ myData['content']);
+				//console.log("data success "+ myData['content']);
 				$("#devicesFound").html( myData['content'] + " devices founded");
 				
 				if(attributesIf.length==0){
@@ -2360,8 +2375,8 @@ $(document).on({
 			success: function (myData) 
 			{
 				let myDataP = myData['content'];
-				console.log(JSON.stringify(myDataP));
-				console.log("INDICE "+ pos + " field if "+ fieldIf);
+				//console.log(JSON.stringify(myDataP));
+				//console.log("INDICE "+ pos + " field if "+ fieldIf);
 
 				if(fieldIf.localeCompare("healthiness_value")==0 && healthinessValueIsPresent(id)==0){
 					var num1 = document.getElementById(id).tBodies[0].childElementCount;
@@ -2510,7 +2525,7 @@ $(document).on({
 	});
 	$("#attrNameDelbtn").off("click");
 	$("#attrNameDelbtn").on("click", function(){
-		console.log("#attrNameDelbtn");	
+		//console.log("#attrNameDelbtn");	
 		$(this).parent('tr').remove();
 	});	
 	$("#editDeviceOkModalDoneBtn").off("click");
@@ -2619,9 +2634,9 @@ $('#addifBlockBtnValue').click(function(){
 $(document).on({
 	change: function () {
 		var rowIndex = $(this).parents('tr').index();
-		console.log("row index" + rowIndex);
+		//console.log("row index" + rowIndex);
 		var fieldIf= document.getElementById('ifBlockTableValue').tBodies[0].rows.item(rowIndex).cells.item(1).childNodes[0].value;
-		console.log("fieldIf" + fieldIf);
+		//console.log("fieldIf" + fieldIf);
 		switch(fieldIf){
 			case "cb":
 				fieldIf = "contextBroker";
@@ -2672,7 +2687,7 @@ $(document).on({
 		$('#ifBlockTableValue .fieldTdValue .fieldIfValue').on('input',function (e) {
 		
 			var rowIndex = $(this).parents('tr').index();
-			console.log("row index" + rowIndex);
+			//console.log("row index" + rowIndex);
 			var fieldIf= document.getElementById('ifBlockTableValue').tBodies[0].rows.item(rowIndex).cells.item(1).childNodes[0].value;
 			getFields(fieldIf,rowIndex,'ifBlockTableValue');
 		})
@@ -2685,7 +2700,7 @@ $(document).on({
 
 	$('#addDecisionBlockBtnValue').off("click");
 	$('#addDecisionBlockBtnValue').click(function(){
-		console.log("update value");
+		//console.log("update value");
 
 		var row = $('<tr id="thenHV'+idCounterThen+'"><td><h3><span class="label label-success">Then</span></h3></td><td class="fieldTdThenValue"><select class="fieldThenValue"><option value="empty">--Select an option--</option><option value="data_type">Data type</option><option value="value_type">Value type</option><option value="value_unit">Value unit</option><option value="editable">Editable</option>	<option value="healthiness_criteria">Healthiness criteria</option><option value="healthiness_value">Healthiness value</option></select></td></td><td class="fieldNameValue"><input type="text" class="fieldNameIfValue" value="Empty"><td><i class="fa fa-minus"></i></td></tr>');
 		$('#decisionBlockTableValue tbody').append(row);
@@ -2807,7 +2822,7 @@ $(document).on({
 				async: true,
 				success: function (myData) 
 				{
-					console.log("data success "+ myData['content']);
+					//console.log("data success "+ myData['content']);
 					$("#valueFound").html( myData['content'] + " values founded");
 				//	document.getElementById('devicesFound').value = myData['content'] + " devices found";
 					
@@ -2913,7 +2928,7 @@ $(document).on({
 	});
 	$("#attrNameDelbtn").off("click");
 	$("#attrNameDelbtn").on("click", function(){
-		console.log("#attrNameDelbtn");	
+		//console.log("#attrNameDelbtn");	
 		$(this).parent('tr').remove();
 	});	
 
@@ -3102,24 +3117,18 @@ function removeElementAt(parent,child) {
        checkEditAtlistOneAttribute();
 }
 function verifyDevice(deviceToverify){
-	console.log("VERIFYING THE DEVICE");
-	
 	var msg="";
 	var regexpMAC = /^([0-9A-F]{2}[:-]){5}([0-9A-F]{2})$/;
-    var regex_devName=/[^a-z0-9:._-]/gi;
-    var regex_valueName=/[^a-z0-9._-]/gi;
+	var regex_devName=/[^a-z0-9:._-]/gi;
+	var regex_valueName=/[^a-z0-9._-]/gi;
     
 	var answer={"isvalid":true, "message":"Your device is valid"};
-   
-	
-	console.log("First checking its properties validity");
 	
 	if(deviceToverify.name==undefined || deviceToverify.name.length<5){ msg+= "-name is mandatory, of 5 characters at least.";}
 	if(regex_devName.test(deviceToverify.name)){ msg+= "-name cannot contain special characters. ";}
 	if(deviceToverify.devicetype==undefined || deviceToverify.devicetype=="" || deviceToverify.devicetype.indexOf(' ')>=0){msg+="-devicetype is mandatory.";}
 	if(deviceToverify.macaddress!=undefined && deviceToverify.macaddress!="" &&!regexpMAC.test(deviceToverify.macaddress)){msg+="-Mac format should be Letter (A-F) and number (eg. 3D:F2:C9:A6:B3:4F).";}
 	if(deviceToverify.frequency==undefined ||deviceToverify.frequency=="" || !isFinite(deviceToverify.frequency)){msg+= "-frequency is mandatory, and should be numeric.";}
-	console.log(" frequency to verify "+ deviceToverify);
 	if(deviceToverify.kind==undefined || deviceToverify.kind==""){msg+="-kind is mandatory.";}
 	if(deviceToverify.protocol==undefined || deviceToverify.protocol==""){msg+="-protocol is mandatory.";}
 	if(deviceToverify.format==undefined || deviceToverify.format==""){msg+="-format is mandatory.";}
@@ -3128,14 +3137,13 @@ function verifyDevice(deviceToverify){
 	if(deviceToverify.k1==undefined || deviceToverify.k1==""){msg+="-k1 is mandatory.";}
 	if(deviceToverify.k2==undefined || deviceToverify.k2==""){msg+="-k2 is mandatory.";}
 
-				//verify consistency subnature and its attributes
-				if (deviceToverify.subnature!==""){
-                                        console.log("verify consistency of "+ deviceToverify.static_attributes+" against subnature:"+deviceToverify.subnature);
-                                        if (!verifySubnature(deviceToverify.subnature, deviceToverify.static_attributes)){
-                                                answer.isvalid=false;
-                                                msg+="-The static attributes of the device do not comply with its subnature ("+deviceToverify.subnature+")";
-                                        }
-                                }
+	//verify consistency subnature and its attributes
+	if (deviceToverify.subnature!==""){
+        	if (!verifySubnature(deviceToverify.subnature, deviceToverify.static_attributes)){
+                	answer.isvalid=false;
+                        msg+="-The static attributes of the device do not comply with its subnature ("+deviceToverify.subnature+")";
+                }
+        }
 	  
 	if(msg.length>0) answer.isvalid=false;
 	 
@@ -3143,49 +3151,27 @@ function verifyDevice(deviceToverify){
 		   answer.isvalid=false;
 		   msg+="-Your device should at least have 1 attributes.";
 		}
-		
-	console.log("Now we check the model conformity");
-
-
 	
 	if(deviceToverify.model!="custom"){
 		
-		console.log("The model is not custom, it is "+ deviceToverify.model);
-	
 		for(var i=0; i<modelsdata.length; i++){
-				
 				
 			if(modelsdata[i].name!=deviceToverify.model){
 					continue;
-				}
+			}
 			
 			var modelAttributes= JSON.parse(modelsdata[i].attributes);
-				
-			console.log("model attributes " + JSON.stringify(modelAttributes));
-			console.log("deviceToVerify attributes " + JSON.stringify(deviceToverify.deviceValues));
-			console.log(Object.keys(modelAttributes).length);
-			console.log(Object.keys(deviceToverify.deviceValues).length);
 
 			if(Object.keys(modelAttributes).length!=Object.keys(deviceToverify.deviceValues).length){
-				   
 				answer.isvalid=false;
 				msg+="-Your device has different number of attributes than the selected model ";
-				   }
-				
+			}
 			else{
 				for (var j=0; j<deviceToverify.deviceValues.length; j++){
 								var found=0;
 								for(var l= 0; l<modelAttributes.length; l++){
-								 console.log(" attributes model "+ modelAttributes[l].value_name);   
-								 console.log(" attributes device to verify "+deviceToverify.deviceValues[j].value_name);   
 									if(modelAttributes[l].value_name==deviceToverify.deviceValues[j].value_name){
 										found=1;
-										console.log(modelAttributes[l].value_type!=deviceToverify.deviceValues[j].value_type );
-										console.log(modelAttributes[l].data_type!=deviceToverify.deviceValues[j].data_type );
-										console.log(modelAttributes[l].editable!=deviceToverify.deviceValues[j].editable);
-										console.log(modelAttributes[l].healthiness_criteria!=deviceToverify.deviceValues[j].healthiness_criteria);
-										console.log(modelAttributes[l].healthiness_value!=deviceToverify.deviceValues[j].healthiness_value);
-										console.log(modelAttributes[l].value_unit!=deviceToverify.deviceValues[j].value_unit);
 										
 										var msg_attr_detail=""
 										
@@ -3215,17 +3201,7 @@ function verifyDevice(deviceToverify){
 								}
 
 							}
-						
-				
-					
-				   
 				   }
-			
-			
-			console.log("modelsdata[i].edge_gateway_type");
-				console.log(modelsdata[i].edge_gateway_type);
-				console.log("deviceToverify.edge_gateway_type");
-				console.log(deviceToverify.edge_gateway_type);
 				
 				var h3= (modelsdata[i].edge_gateway_type==deviceToverify.edge_gateway_type)||
 						(
@@ -3233,13 +3209,17 @@ function verifyDevice(deviceToverify){
 							(deviceToverify.edge_gateway_type==undefined || deviceToverify.edge_gateway_type=="" || deviceToverify.edge_gateway_type== null)
 							
 						);
-					 
 					   
-				if(modelsdata[i].contextbroker!=deviceToverify.contextbroker){ answer.isvalid=false; 
-																			  msg+="-The device property: context broker does not comply with its model." ;} 
+				if(modelsdata[i].contextbroker!=deviceToverify.contextbroker){ 
+					answer.isvalid=false; 
+					msg+="-The device property: context broker does not comply with its model." ;
+				} 
+
 				if(modelsdata[i].devicetype!=deviceToverify.devicetype) {
-				answer.isvalid=false;
-				   msg+="-The device property: type does not comply with its model." ;}
+					answer.isvalid=false;
+					msg+="-The device property: type does not comply with its model." ;
+				}
+
 				if(!h3){ answer.isvalid=false; 
 						msg+="-The device property: edge gateway type does not comply with its model." ;}
 				if(modelsdata[i].format!=deviceToverify.format){ answer.isvalid=false;
@@ -3254,35 +3234,30 @@ function verifyDevice(deviceToverify){
 															msg+="-The device property: protocol does not comply with its model." ;}}
 				if(modelsdata[i].subnature!=deviceToverify.subnature){{ answer.isvalid=false;
                                                                                                                         msg+="-The device property: subnature does not comply with its model." ;}}
-				
-				if(modelsdata[i].static_attributes!=deviceToverify.static_attributes){{ answer.isvalid=false;
-                                                                                                                        msg+="-The device property: static_attributes does not comply with its model." ;}}	
-							  
-			}
 			
+				//if(modelsdata[i].static_attributes!=deviceToverify.static_attributes){{ answer.isvalid=false;
+                                //                                                                                        msg+="-The device property: static_attributes does not comply with its model." ;}}
+
+				if ((modelsdata[i].service!==null)&&(modelsdata[i].service!=deviceToverify.service)){{ answer.isvalid=false;
+                                                                                                                        msg+="-The device property: service does not comply with its model." ;}}
+
+				if ((modelsdata[i].servicePath!==null)&&(modelsdata[i].servicePath!=deviceToverify.service_path)){{ answer.isvalid=false;
+                                                                                                                        msg+="-The device property: servicePath does not comply with its model." ;}}
+			}
 		}
-		
 		else{
-			console.log("model is custom so we check the values details "+deviceToverify.deviceValues.length);
 			var all_attr_msg="";
 			var all_attr_status="true";
 			var healthiness_criteria_options=["refresh_rate", "different_values", "within_bounds"];
 
 			for (var i=0; i<deviceToverify.deviceValues.length; i++){
 				var v=deviceToverify.deviceValues[i];
-				console.log("for");
 
 				if(v==undefined){
-					console.log("undefined");
-				continue;}
+					continue;
+				}
 				var attr_status=true;
 				var attr_msg="";
-				console.log(v);
-				console.log(deviceToverify.deviceValues.length);
-				console.log(deviceToverify);
-								console.log("data type deb " + v.data_type);
-				console.log("value_unit  dev"+v.value_unit);
-				//Sara3010
 				var empty_name = false;
 				var strangeChar_name = false;
 
@@ -3296,22 +3271,15 @@ function verifyDevice(deviceToverify){
                 }
 				//set default values
 				if(v.data_type==undefined || v.data_type==""|| gb_datatypes.indexOf(v.data_type)<0){
-						console.log("data type "+v.data_type + " gb "+ gb_datatypes.indexOf(v.data_type));
-					   
 					   attr_status=false;
 						attr_msg = attr_msg+ " data_type";
 				}
-				//Sara3010 - Start
 				if(v.value_unit==undefined || v.value_unit==""){
 						attr_status=false;
 						attr_msg = attr_msg+ " value_unit";
 				}				
-				//Sara3010 - End
-				console.log("------------------------------------");
-				console.log("gb " + gb_value_types.indexOf(v.value_type).value);
 
 				if(v.value_type==undefined || v.value_type==""|| gb_value_types.indexOf(v.value_type).value<0){
-						console.log("valie")
 						attr_status=false;
 						attr_msg =attr_msg+ " value_type";
 				}
@@ -3329,40 +3297,31 @@ function verifyDevice(deviceToverify){
 				}
 
 				if (attr_status==false){
-					
 					all_attr_status=false;
-					//Sara3010
 					if(empty_name){
 						all_attr_msg= "The attribute name cannot be empty";
 						if(attr_msg != ""){
 							all_attr_msg= all_attr_msg+", other errors in: "+attr_msg;
 						}
 					}
-                    else if(strangeChar_name){
-                        all_attr_msg= "The attribute name "+v.value_name+" cannot contain strange characters. ";
+			                else if(strangeChar_name){
+                        			all_attr_msg= "The attribute name "+v.value_name+" cannot contain strange characters. ";
 						if(attr_msg != ""){
 							all_attr_msg= all_attr_msg+", other errors in: "+attr_msg;
 						}
-                    }
+			                }
 					else{
 						all_attr_msg= "For the attribute: "+ v.value_name+", error in: "+attr_msg;
 					}
-					
-					
-					
-					
 				}
-
 			}
 
 			if(!all_attr_status){
 				answer.isvalid=false;
 				msg= msg+ " -"+all_attr_msg;
 		}
-		}
-	//}
+	}
 	
-	//answer.isvalid=true;
 	if(answer.isvalid){
 		return answer;
 	}
@@ -3370,7 +3329,6 @@ function verifyDevice(deviceToverify){
 		answer.message=msg;
 		return answer;
 	}
-	
 }
 
 function drawMap(latitude,longitude, id, devicetype, kind, divName){ 
@@ -3423,7 +3381,7 @@ function isLongitude(lng) {
 			var lng = e.latlng.lng;
 				lat = lat.toFixed(4);
 				lng = lng.toFixed(4);
-				console.log("Check the format:" + lat + " " + lng);
+				//console.log("Check the format:" + lat + " " + lng);
 				
 				 document.getElementById('inputLatitudeDevice').value = lat;
 				 document.getElementById('inputLongitudeDevice').value = lng;
@@ -3459,7 +3417,7 @@ function isLongitude(lng) {
 				var lng = e.latlng.lng;
 				lat = lat.toFixed(4);
 				lng = lng.toFixed(4);
-				console.log("Check the format:" + lat + " " + lng);
+				//console.log("Check the format:" + lat + " " + lng);
 				
 				document.getElementById('inputLatitudeDeviceM').value = lat;
 				document.getElementById('inputLongitudeDeviceM').value = lng;
@@ -3505,8 +3463,8 @@ function nodeJsTest(){
 					var content = mydata['content'];
 					
 					
-					console.log("Success "+ JSON.stringify(content));
-					console.log(typeof(parseInt(content)));
+					//console.log("Success "+ JSON.stringify(content));
+					//console.log(typeof(parseInt(content)));
 					if(typeof(parseInt(content))=="number"){
 							insertValidDevices(parseInt(content));
 						}
@@ -3547,15 +3505,12 @@ function nodeJsTest(){
 				 };
 	alert("Request sent");	
 	$.post('../api/bulkDeviceLoad.php', {'data' : test_data, 'data_from_nodeJs':1}, function(data) {
-			console.log("done");
-			console.log(data);
+			//console.log("done");
+			//console.log(data);
 		});   
 }
 
 function insertValidDevices(){
-	
-	
-	
 	
 	var data={
 				  action: "bulkload", 
@@ -3615,7 +3570,6 @@ function stop_progress(){
 			 timeout: 0,
 			 success: function (mydata) 
 			 {
-				 console.log("bulk stop "+JSON.stringify(mydata));
 				 if(mydata["status"]=='ok'){
 					 is_processing=0;
 					 refresh();
@@ -3777,19 +3731,14 @@ function insertValidDevicesByPieces_parallel(start_index,end_index,totalDevices,
 	alert("Request sent, processing ...");	
 	//../api/bulkDeviceLoad.php
 	$.post('../api/async_request.php', {'data' : data}, function(response_data) {
-			console.log("done");
 			response_data= JSON.parse(response_data);
-			console.log(response_data);
-			console.log(response_data['status']);
 			if(response_data['status']=="ok"){
 				alert("Your valid devices have been uploaded.");
 			}
 			else{
 				alert("some problems occurred while uploading your valid devices");
 			}
-			
 		});
-	
 }
 
 function insertValidDevicesByPieces(start_index,end_index,totalDevices,bulk_offset){
@@ -3810,23 +3759,20 @@ function insertValidDevicesByPieces(start_index,end_index,totalDevices,bulk_offs
 			 timeout: 0,
 			 success: function (mydata) 
 			 {
-					console.log("mydata "+JSON.stringify(mydata));
-					console.log("mydata[content] "+JSON.stringify(mydata['content']));
 				//Sara3110 - To remove waiting message
 				//document.getElementById('myModalBody').innerHTML = "";
 				
 				if (mydata['content'] != undefined){
 					var content = mydata['content'];
 					content = content[0];
-					console.log("Success "+ JSON.stringify(content));
 					
 					if(content!=undefined){
 						var user_message="";
-						console.log("msg "+mydata["msg"]);
-						console.log("content "+content);
+						//console.log("msg "+mydata["msg"]);
+						//console.log("content "+content);
 					
 						for(var i = 0; i < content.length; i++){
-						   console.log("for i "+i+" length "+content[i].inserted);
+						   //console.log("for i "+i+" length "+content[i].inserted);
 						 /*Sara3110  if(mydata["msg"]=="" ||typeof mydata["msg"] === 'undefined' || mydata["msg"] === null)
 						   {*/
 								if(content[i].inserted=='ok'){
@@ -4106,25 +4052,37 @@ function checkHeadersIfValid(csvheaders){
 			b.add("healthiness_value");
 			continue;
 		}
- if(h.trim().toLowerCase().indexOf("subnature")>-1 && h.trim().toLowerCase().indexOf("subnature")>-1){
+ if(h.trim().toLowerCase().indexOf("subnature")>-1){
                         found=found+1;
                         csvheaders[i]="subnature";
                         b.add("subnature");
                         continue;
                 }
- if(h.trim().toLowerCase().indexOf("static_attributes")>-1 && h.trim().toLowerCase().indexOf("static_attributes")>-1){
+ if(h.trim().toLowerCase().indexOf("static_attributes")>-1){
                         found=found+1;
                         csvheaders[i]="static_attributes";
                         b.add("static_attributes");
                         continue;
                 }
-		
+ if(h.trim().toLowerCase().indexOf("service")>-1 && h.trim().toLowerCase().indexOf("path")>-1){//before next one 
+                        found=found+1;
+                        csvheaders[i]="service_path";
+                        b.add("service_path");
+                        continue;
+                }
+ if(h.trim().toLowerCase().indexOf("service")>-1){
+                        found=found+1;
+                        csvheaders[i]="service";
+                        b.add("service");
+                        continue;
+                }
+	
 	}
 	
 	var difference = new Set([...a].filter(x => !b.has(x)));
 	
-	console.log("difference is ");
-	console.log(difference);
+	//console.log("difference is ");
+	//console.log(difference);
 	
 	if (difference.size==0){
 		answer.isValid= true;
@@ -4152,11 +4110,8 @@ function checkHeadersIfValid(csvheaders){
 }
 
 function showValidityMsg(status, msg){
-	
-   console.log(msg);
+	//console.log(msg);
 	alert(msg);
-	
-	
 }
 
 /****added by Sara, copied from devices.js at line 3220 *********/

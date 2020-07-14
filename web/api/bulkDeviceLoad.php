@@ -173,8 +173,11 @@ if ($action=="insert"){
 			        $subnature=mysqli_real_escape_string($link, ($device["subnature"]));
 			        $staticAttributes= mysqli_real_escape_string($link, ($device["static_attributes"]));
 
+                                $service=mysqli_real_escape_string($link, ($device["service"]));
+                                $servicePath= mysqli_real_escape_string($link, ($device["service_path"]));
+
 			$q = "INSERT INTO temporary_devices(username, contextBroker, devicetype, id, kind, macaddress,
-				model,latitude, longitude, protocol,producer, format, frequency, visibility,status, k1,k2,edge_gateway_type,edge_gateway_uri, validity_msg, organization, subnature, static_attributes)
+				model,latitude, longitude, protocol,producer, format, frequency, visibility,status, k1,k2,edge_gateway_type,edge_gateway_uri, validity_msg, organization, subnature, static_attributes, service, servicePath)
 				VALUES('$username','$contextbroker', '".$device["devicetype"]."', '$id','".($device["kind"])."',
 				'".($device["macaddress"])."','".($device["model"])."','".($device["latitude"])."',
 				'".($device["longitude"])."',
@@ -182,7 +185,7 @@ if ($action=="insert"){
 				'".($device["format"])."', '".($device["frequency"])."',
 				'$visibility','".($device["status"])."',
 				'".($device["k1"])."','".($device["k2"])."',
-				'$edge_gateway_type','$edge_gateway_uri','".($device["validity_msg"])."', '$organization', '".$subnature."', '".$staticAttributes."')";
+				'$edge_gateway_type','$edge_gateway_uri','".($device["validity_msg"])."', '$organization', '".$subnature."', '".$staticAttributes."','".$service."', '".$servicePath."'            )";
 
 				$r = mysqli_query($link, $q);
 				if($r){
@@ -487,6 +490,9 @@ else if ($action=="update")
 
                                 $subnature=mysqli_real_escape_string($link, ($_REQUEST["subnature"]));
                                 $staticAttributes= mysqli_real_escape_string($link, ($_REQUEST["static_attributes"]));
+				$service=mysqli_real_escape_string($link, ($_REQUEST["service"]));
+                                $servicePath= mysqli_real_escape_string($link, ($_REQUEST["servicePath"]));
+
 	
 	//Sara2510 - for logging purpose
 	$deviceName= $old_id . " ".$old_contextbroker; 
@@ -527,7 +533,7 @@ else if ($action=="update")
 		if($s1 && $s2 && $s3){
 			if($notDuplicate){
 	
-			$q = "UPDATE temporary_devices SET id='$id',contextBroker='$contextbroker',devicetype='$devicetype',kind='$kind',protocol='$protocol',format='$format',macaddress='$macaddress',model='$model',producer='$producer',latitude='$latitude',longitude='$longitude',status='$status',validity_msg='$validity_msg',frequency = '$frequency',visibility = '$visibility',organization='$organization',k1 = '$k1',k2 = '$k2',edge_gateway_type='$edge_gateway_type',edge_gateway_uri = '$edge_gateway_uri', subnature='$subnature', static_attributes='$staticAttributes' WHERE id='$old_id' and contextBroker='$old_contextbroker';";
+			$q = "UPDATE temporary_devices SET id='$id',contextBroker='$contextbroker',devicetype='$devicetype',kind='$kind',protocol='$protocol',format='$format',macaddress='$macaddress',model='$model',producer='$producer',latitude='$latitude',longitude='$longitude',status='$status',validity_msg='$validity_msg',frequency = '$frequency',visibility = '$visibility',organization='$organization',k1 = '$k1',k2 = '$k2',edge_gateway_type='$edge_gateway_type',edge_gateway_uri = '$edge_gateway_uri', subnature='$subnature', static_attributes='$staticAttributes', service='$service', servicePath='$servicePath'  WHERE id='$old_id' and contextBroker='$old_contextbroker';";
 	
 			$r = mysqli_query($link, $q);
 
@@ -730,7 +736,7 @@ else if ($action=="bulkload")
 	
 	$q = "SELECT contextBroker, id, devicetype, model, status, macaddress,frequency,kind, 
 	 protocol,format,latitude, longitude, visibility, k1, k2,producer, edge_gateway_type, edge_gateway_uri, 
-	 validity_msg, subnature, static_attributes FROM temporary_devices WHERE username = '$username' 
+	 validity_msg, subnature, static_attributes, service, servicePath FROM temporary_devices WHERE username = '$username' 
 	 AND deleted IS null AND organization='$organization' AND  should_be_registered='yes';";
 	$r = mysqli_query($link, $q);	
 	
@@ -816,11 +822,14 @@ else if ($action=="bulkload")
 						//static att has to be escaped for compatibility to insert device without bulk. removing here and there this escape can eventually semplify the scenario
 						$staticATT=mysqli_real_escape_string($link, $row["static_attributes"]);
 
+						//error_log("service:".$row["service"]);
+						//error_log("serviceP:".$row["servicePath"]);
+
 						insert_device($link, $row["id"],$row["devicetype"],$row["contextBroker"],$row["kind"],$row["protocol"],$row["format"],
 						$row["macaddress"],$row["model"],$row["producer"],$row["latitude"],$row["longitude"],
 						$row["visibility"], $row["frequency"], $row["k1"], $row["k2"], $row["edge_gateway_type"],
 						$row["edge_gateway_uri"],json_decode(json_encode($deviceattributes)),$row["subnature"], $staticATT ,$pathCertificate,
-						$accessToken,$result,'yes',$organization,$kbUrl,$username);
+						$accessToken,$result,'yes',$organization,$kbUrl,$username, $row["service"], $row["servicePath"]);
                         
                         echo_log("isterted returns");
 						

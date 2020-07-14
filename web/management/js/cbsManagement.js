@@ -46,6 +46,38 @@ function showAddCbModal()
 	checkCbUrlOrionCallback();
 	
 	$("#addContextBrokerModal").modal('show');
+
+
+    // --------check Add CB service values
+    checkCbServices();
+
+    // Handle first service row
+    $("#serviceTenantTabCB #inputServiceCB").on('input', checkCbServices);
+    $("#serviceTenantTabCB #inputServiceCB").on('input', checkAddCbConditions);
+
+    // Handle change protocol
+    $('#selectProtocolCB').on('change', checkCbServices);
+    $('#selectProtocolCB').on('change', checkAddCbConditions);
+
+    // Handle the additional rows
+    $("#serviceTenantTabCB").on('input', 'div[name="additionalRow"]', checkCbServices);
+    $("#serviceTenantTabCB").on('input', 'div[name="additionalRow"]', checkAddCbConditions);
+
+    // Observe the Multi-Service/Tenant Tab for child element creation/removal
+    const targetNode = document.getElementById('serviceTenantTabCB');
+    // Options for the observer (which mutations to observe)
+    const config = {childList: true};
+    // Callback function to execute when mutations are observed
+    const callback = function() {
+        checkCbServices();
+        checkAddCbConditions();
+    };
+    // Create an observer instance linked to the callback function
+    const observer = new MutationObserver(callback);
+    // Start observing the target node for configured mutations
+    observer.observe(targetNode, config);
+
+    checkAddCbConditions();
 }
 
 function checkCbName()
@@ -271,7 +303,7 @@ function checkAddCbConditions()
             break;
         }
     }
-    console.log("value enabled" +  enableButton);
+    //console.log("value enabled" +  enableButton);
     if(enableButton)
     {
         $("#addContextBrokerConfirmBtn").attr("disabled", false);
@@ -290,9 +322,9 @@ function checkCbUrlOrionCallback()
     var protocol = document.getElementById("selectProtocolCB").value;
     var url = document.getElementById("inputUrlOrionCallback").value;
 
-    console.log("kind:"+kind+" protocol:"+protocol+" value:"+url);
+    //console.log("kind:"+kind+" protocol:"+protocol+" value:"+url);
 
-    if ((kind === 'internal')&&(protocol === 'ngsi')){
+    if ((kind === 'internal')&&(protocol.indexOf('ngsi')!==-1)){
 	if(url === '')
 	{
 		message = 'Url Orion Callback is mandatory';
@@ -318,3 +350,80 @@ function checkCbUrlOrionCallback()
 
     $("#selectUrlOrionCallbackMsg").html(message);
 }
+
+function checkCbServices(){
+
+    // feedback message to the user
+    var message = null;
+    // service values
+    var values = [];
+    // check if the tab is hidden or not
+    var isHidden = $('#multiServiceTabSelector').hasClass('hidden');
+
+    // insert first row value
+    values.push(document.getElementById("inputServiceCB").value.trim());
+    // get values of all the additional rows
+    $('#serviceTenantTabCB div[name="additionalRow"]').find('input[name="inputServiceCB"]').each(function(){
+        values.push($(this).val().trim());
+    });
+
+    // check if the MultiService tab is hidden
+    if(isHidden){
+        addCbConditionsArray['inputServicesCB'] = true;
+        return;
+    }else{
+
+        if (values.length == 1) {
+            //console.log("un solo service");
+
+            var serviceRegex = /^([a-z]|_){1,25}$/;
+            if(values[0] !== "" && !serviceRegex.test(values[0])){
+                message = `Check your values <br>
+                        <ul>
+                            <li>white spaces are not allowed</li>
+                            <li>use only lower case letters</li>
+                            <li>special characters are not allowed (except for "_")</li>
+                            <li>service/tenant name must not be longer than 25 characters</li>
+                        </ul>`;
+                addCbConditionsArray['inputServicesCB'] = false;
+                $("#inputServiceCBMsg").removeClass("alert alert-info");
+                $("#inputServiceCBMsg").addClass("alert alert-danger");
+                $("#inputServiceCBMsg").html(message);
+            } else {
+                message = 'Ok';
+                addCbConditionsArray['inputServicesCB'] = true;
+                $("#inputServiceCBMsg").removeClass("alert alert-danger");
+                $("#inputServiceCBMsg").addClass("alert alert-info");
+                $("#inputServiceCBMsg").html(message);
+            }
+        } else {
+            //console.log("più services");
+
+            var serviceRegex = /^([a-z]|_){1,25}$/;
+            for(const value of values){
+                if(!serviceRegex.test(value)){
+                    message = `Check your values <br>
+                        <ul>
+                            <li>white spaces are not allowed</li>
+                            <li>use only lower case letters</li>
+                            <li>special characters are not allowed (except for "_")</li>
+                            <li>service/tenant name must not be longer than 50 characters</li>
+                        </ul>`;
+                    addCbConditionsArray['inputServicesCB'] = false;
+                    $("#inputServiceCBMsg").removeClass("alert alert-info");
+                    $("#inputServiceCBMsg").addClass("alert alert-danger");
+                    $("#inputServiceCBMsg").html(message);
+                    break;
+                } else {
+                    message = 'Ok';
+                    addCbConditionsArray['inputServicesCB'] = true;
+                    $("#inputServiceCBMsg").removeClass("alert alert-danger");
+                    $("#inputServiceCBMsg").addClass("alert alert-info");
+                    $("#inputServiceCBMsg").html(message);
+                }
+            }
+        }
+    }
+
+    //console.log(addCbConditionsArray['inputServicesCB']);
+} 

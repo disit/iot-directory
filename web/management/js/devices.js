@@ -131,41 +131,13 @@ function removeElementAt(parent,child) {
 }
 
 
-/*
-$(function(){
-  var api = 'https://helsinki.snap4city.org/ServiceMap/api/v1/value_type/';
-  $.getJSON({
-    dataType: 'json',
-    url: api,
-    success : function(data){
-      //console.log(data);
-       if(data) {
-          console.log("in");
-          $.each(data, function (index, value) {
-            $('#value_type').append('<option my_data="'+value.value_unit+'">'+value.value_type+'</option>');
-            $('#value_unit').append($('<option>', { 
-                value: value.value_unit,
-                text : value.value_unit 
-              }));
-           });
-       }
-   },
-   error: function (data)
-         {
-		console.log(data);
-         }
-  });        
-});
-
-*/
-
-
+//NEEDED SOMEWHERE??
 const url = 'https://helsinki.snap4city.org/ServiceMap/api/v1/value_type/';
   fetch(url)
   .then((resp) => resp.json())
   .then(function(data) {
     if(data) {
-          console.log("in");
+          //console.log("in");
           $.each(data, function (index, value) {
             //$('#value_type').append('<option my_data="'+value.value_unit+'">'+value.value_type+'</option>');
 			//valueTypeOpt += '<option my_data="'+value.value_unit+'">'+value.value_type+'</option>';
@@ -185,12 +157,12 @@ function download(sourcename, devicename, contextbroker) {
  	$.ajax({url: "../api/device.php",
          data: {
 			 token : sessionToken,
-             action: 'download',
+		         action: 'download',
 			 //Sara2510 - for logging purpose
 			 username: loggedUser,
 			 organization : organization, 		
 			 filename: sourcename,
-			 devicename:devicename,
+			 id:devicename,
              contextbroker:contextbroker
                          },
          type: "POST",
@@ -198,7 +170,7 @@ function download(sourcename, devicename, contextbroker) {
          dataType: 'json',
          success: function (mydata)
          {
-		console.log(mydata);
+		//console.log(mydata);
 		var element = document.createElement('a');
 		element.setAttribute('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent(mydata.msg));
     		element.setAttribute('download', sourcename.substr(sourcename.indexOf("/", 2)+1));
@@ -343,7 +315,16 @@ function drawAttributeMenu
  
  
   function format ( d ) {
-	  
+	 
+var multitenancy = "";
+	if (d.service && d.servicePath){
+		multitenancy = '<div class="row">' + 
+			'<div class="col-xs-6 col-sm-6" style="background-color:#B3D9FF;"><b>Service/Tenant:</b>' + "  " + d.service + '</div>' +
+			'<div class="clearfix visible-xs"></div>' +
+			'<div class="col-xs-6 col-sm-6" style="background-color:#B3D9FF;"><b>ServicePath:</b>' + "  " + d.servicePath  + '</div>' +	
+		'</div>' ;
+	}
+ 
 	  var showKey="";
 	  
 	  if (d.visibility =='MyOwnPublic' || d.visibility == 'MyOwnPrivate' || d.visibility=='delegated'){
@@ -432,7 +413,7 @@ function drawAttributeMenu
 		'<div class="row">' +
 			'<div class="col-xs-6 col-sm-6" style="background-color:#E6E6FA;"><b>Organization:</b>' + "  " + d.organization + '</div>' +
 			'<div class="clearfix visible-xs"></div>' +
-		'</div>' + txtCert +
+		'</div>' + txtCert +multitenancy
 	'</div>' ;
 	
 }
@@ -442,20 +423,20 @@ function drawAttributeMenu
 
 	function fetch_data(destroyOld, selected=null)
 	{
-		console.log("Enter:" + selected);
+		//console.log("Enter:" + selected);
 		if(destroyOld)
             {
 				$('#devicesTable').DataTable().clear().destroy();
                 tableFirstLoad = true;			
             }
            
-			if (selected==null)
+			if (selected==null)//TODO uniform these below calls
 			{
 			  mydata = {action: "get_all_device",username: loggedUser, organization : organization,  token : sessionToken,  loggedrole:loggedRole, no_columns: ["position","d.visibility","status1","edit","delete","map"]}; 
 			}
 			else
 			{
-			  mydata = {action: "get_subset_device",username: loggedUser, organization : organization,   token : sessionToken, loggedrole:loggedRole, select : selected, no_columns: ["position","d.visibility","status1","edit","delete","map"]};
+			  mydata = {action: "get_all_device",username: loggedUser, organization : organization,   token : sessionToken, loggedrole:loggedRole, select : selected, no_columns: ["position","d.visibility","status1","edit","delete","map"]};
 			}
     
         var page_length=10;    
@@ -513,10 +494,10 @@ function drawAttributeMenu
 				  //return row.visibility;
 				  				  
 				if (row.visibility=='MyOwnPrivate'){   
-					return '<button type="button"  class=\"myOwnPrivateBtn\" onclick="changeVisibility(\''+ row.id + '\',\''+ row.contextBroker + '\',\''+ row.organization + '\',\''+ row.visibility + '\',\''+ row.uri + '\',\''+ row.k1 + '\',\''+ row.k2 +'\',\''+ row.model +'\')">' + row.visibility + '</button>';																				
+					return '<button type="button"  class=\"myOwnPrivateBtn\" onclick="changeVisibility(\''+ row.id + '\',\''+ row.contextBroker + '\',\''+ row.organization + '\',\''+ row.visibility + '\',\''+ row.uri + '\',\''+ row.k1 + '\',\''+ row.k2 +'\',\''+ row.model +'\',\''+ row.protocol +'\',\''+ row.service +'\',\''+ row.servicePath +'\')">' + row.visibility + '</button>';																				
 					} 
 				else if (row.visibility=='MyOwnPublic'){
-					return '<button type="button"  class=\"myOwnPublicBtn\" onclick="changeVisibility(\''+ row.id + '\',\''+ row.contextBroker + '\',\''+ row.organization + '\',\''+ row.visibility + '\',\''+ row.uri + '\',\''+ row.k1 + '\',\''+ row.k2 +'\',\''+ row.model +'\')">' + row.visibility + '</button>';
+					return '<button type="button"  class=\"myOwnPublicBtn\" onclick="changeVisibility(\''+ row.id + '\',\''+ row.contextBroker + '\',\''+ row.organization + '\',\''+ row.visibility + '\',\''+ row.uri + '\',\''+ row.k1 + '\',\''+ row.k2 +'\',\''+ row.model +'\',\''+ row.protocol +'\',\''+ row.service +'\',\''+ row.servicePath +'\')">' + row.visibility + '</button>';
 					}
 				else if (row.visibility=='public') 
 				{
@@ -562,8 +543,11 @@ function drawAttributeMenu
 				'data-edgegateway_uri="'+d.edgegateway_uri+'" ' +
 				'data-k1="'+d.k1+'" ' +
 				'data-k2="'+d.k2+'" ' +
-                               'data-subnature="'+d.subnature+'" '+
+                                'data-subnature="'+d.subnature+'" '+
+				'data-service="'+d.service+'" ' +
+				'data-servicePath="'+d.servicePath+'" '+
                                'data-static-attributes="'+btoa(d.staticAttributes)+'" '+
+
 				'data-status1="'+d.status1+'">Edit</button>';
 				 } else { }
 				
@@ -581,6 +565,9 @@ function drawAttributeMenu
 				'data-id="'+d.id+'" ' +
 				'data-contextBroker="'+d.contextBroker+'" ' +
 				'data-organization="'+d.organization+'" ' +
+				'data-protocol="'+d.protocol+'" ' +
+                                'data-service="'+d.service+'" ' +
+                                'data-servicePath="'+d.servicePath+'" '+
 				'data-uri="'+d.uri+'">Delete</button>';
 				 } else { }
 				}
@@ -688,7 +675,7 @@ function drawAttributeMenu
 	// Add lines related to attributes			
 	$("#addAttrBtn").off("click");
 	$("#addAttrBtn").click(function(){
-		console.log("#addAttrBtn");									
+		//console.log("#addAttrBtn");									
 		
 		content = drawAttributeMenu("","", "", "", "", "", "300", "", 'addlistAttributes', indexValues);
 		indexValues=indexValues+1;
@@ -701,7 +688,7 @@ function drawAttributeMenu
 	
 	$("#addSchemaTabDevice").off("click");
 	$("#addSchemaTabDevice").on('click keyup', function(){				
-		console.log("#addSchemaTabDevice");	
+		//console.log("#addSchemaTabDevice");	
   
 		//checkAtlistOneAttribute();
 		$("#addSchemaTabDevice #addlistAttributes .row input:even").each(function(){checkValueName($(this));});
@@ -717,7 +704,7 @@ function drawAttributeMenu
 	// Add lines related to attributes in case of edit
 	$("#addAttrMBtn").off("click");
 	$("#addAttrMBtn").click(function(){				
-		console.log("#addAttrMBtn");					
+		//console.log("#addAttrMBtn");					
 	   
 		content = drawAttributeMenu("","", "", "", "", "", "300","", 'addlistAttributesM', indexValues)
 		indexValues=indexValues+1;
@@ -732,7 +719,7 @@ function drawAttributeMenu
 	
         $("#editSchemaTabDevice").off("click");
         $("#editSchemaTabDevice").on('click keyup', function(){
-           console.log("#editSchemaTabDevice");
+           //console.log("#editSchemaTabDevice");
 
            //checkEditAtlistOneAttribute();
            $("#editSchemaTabDevice #addlistAttributesM .row input:even").each(function(){checkEditValueName($(this));});
@@ -790,7 +777,8 @@ if (currentEditId!==id){
 	  var key2 = $(this).attr('data-k2');
 	  var gtw_type = $(this).attr('data-edgegateway_type');
 	  var gtw_uri = $(this).attr('data-edgegateway_uri');
-		var subnature= $(this).attr('data-subnature');
+	  var subnature= $(this).attr('data-subnature');
+	  fillMultiTenancyFormSection($(this).attr('data-service'), $(this).attr('data-servicePath'), contextbroker, 'device');
 	  //console.log(key1 + key2);
 
 	  if (model == "custom")
@@ -830,10 +818,13 @@ if (currentEditId!==id){
 			url: "../api/device.php",
 			data: {
 				action: "get_device_attributes", 
-                id: $(this).attr("data-id"),
+                		id: $(this).attr("data-id"),
 				organization : organization, 
 				contextbroker: $(this).attr("data-contextBroker"),
-                token : sessionToken, 
+		                token : sessionToken,
+				protocol: $(this).attr('data-protocol'),
+				service: $(this).attr('data-service'),
+				servicePath: $(this).attr('data-servicePath') 
 			},
 			type: "POST",
 			async: true,
@@ -845,7 +836,7 @@ if (currentEditId!==id){
 					myattributes=mydata['content'];
 					content="";
 					k=0;
-				console.log("adding new attribute for id:"+id);
+				//console.log("adding new attribute for id:"+id);
 				while (k < myattributes.length)
 				{
 					// console.log(k); 
@@ -917,21 +908,25 @@ showEditDeviceModal();
 		// Delete lines related to attributes 
 	$("#attrNameDelbtn").off("click");
 	$("#attrNameDelbtn").on("click", function(){
-		console.log("#attrNameDelbtn");	
+		//console.log("#attrNameDelbtn");	
 		$(this).parent('tr').remove();
 		});	
 		
 		//Delete device button 
 		
 	$('#devicesTable tbody').on('click', 'button.delDashBtn', function () {
-				console.log($(this));
+	//		console.log($(this));
 
 		var id = $(this).attr('data-id');
 		var contextbroker = $(this).attr('data-contextbroker');
 		var dev_organization = $(this).attr('data-organization');
 		var uri = $(this).attr("data-uri");
+		var protocol = $(this).attr('data-protocol');
+		var service = $(this).attr('data-service');
+		var servicePath = $(this).attr('data-servicepath');
 
-		$("#deleteDeviceModal div.modal-body").html('<div class="modalBodyInnerDiv"><span data-id = "' + id + '" data-contextbroker = "' + contextbroker+ '" data-organization = "' + dev_organization + '"  data-uri ="' + uri +'">Do you want to confirm deletion of device <b>' + id + '</b>?</span></div>');
+				$("#deleteDeviceModal div.modal-body").html('<div class="modalBodyInnerDiv"><span data-id = "' + id + '" data-contextbroker = "' + contextbroker+ '" data-organization = "' + dev_organization + '"  data-uri ="' + uri + '" data-service ="' + service + '" data-servicepath="' + servicePath + '" data-protocol="' + protocol + '">Do you want to confirm deletion of device <b>' + id + '</b>?</span></div>');
+
 		$("#deleteDeviceModalInnerDiv1").html('<h5>Device deletion in progress, please wait</h5>');
         $("#deleteDeviceModalInnerDiv2").html('<i class="fa fa-circle-o-notch fa-spin" style="font-size:36px"></i>');
         $("#deleteDeviceModalInnerDiv1").hide();
@@ -946,7 +941,7 @@ showEditDeviceModal();
 	$('#devicesTable tbody').on('hover', 'button.delDashBtn', function () {
 	//$('#devicesTable button.delDashBtn').off('hover');
 	//$('#devicesTable button.delDashBtn').hover(function(){
-		console.log($(this));
+		//console.log($(this));
 		$(this).css('background', '#ffcc00');
 		$(this).parents('tr').find('td').eq(1).css('background', '#ffcc00');
 	}, 
@@ -1004,7 +999,7 @@ showEditDeviceModal();
 		if((dataTable.row( this ).index())%2 !== 0)
 		{
 			$('#devicesTable tbody').css("background", "rgba(0, 162, 211, 1)");
-			console.log( 'Row index: '+dataTable.row( this ).index() );
+			//console.log( 'Row index: '+dataTable.row( this ).index() );
 			$(this).find('td').eq(0).css("background-color", "rgb(230, 249, 255)");
 			$(this).find('td').eq(0).css("border-top", "none");
 		}
@@ -1191,7 +1186,7 @@ showEditDeviceModal();
  
 //Add MyNewDevice Button  
 	$("#addMyNewDevice").click(function() {	
-		console.log("add new device");	
+		//console.log("add new device");	
 		$("#displayAllDeviceRow").hide();
 		$("#addMyNewDeviceRow").show();
 
@@ -1222,7 +1217,7 @@ showEditDeviceModal();
 	$('a[data-toggle="tab"]').on('shown.bs.tab', function (e) {
 		var target = $(e.target).attr("href");
 		if ((target == '#addGeoPositionTabDevice')) {
-			console.log("Elf: Add Device Map");
+			//console.log("Elf: Add Device Map");
 			var latitude = $("#inputLatitudeDevice").val(); 
             var longitude = $("#inputLongitudeDevice").val();
             if(latitude=="" || longitude==""){
@@ -1245,7 +1240,7 @@ showEditDeviceModal();
 	$('a[data-toggle="tab"]').on('shown.bs.tab', function (e) {
 		var target = $(e.target).attr("href");
 		if ((target == '#editGeoPositionTabDevice')) {
-			console.log("Elf : EditDeviceMap");
+			//console.log("Elf : EditDeviceMap");
 				var latitude = $("#inputLatitudeDeviceM").val(); 
 				var longitude = $("#inputLongitudeDeviceM").val();
 				var flag = 1;
@@ -1274,16 +1269,16 @@ showEditDeviceModal();
 			   if (!(kind=="sensor" || kind=="actuator")) {var kindNote = ("\n kind not specified");}  else{kindNote = "&#10004;";}
 			   if ((latitude < -90 && latitude > 90) || (latitude=="" || latitude==null)) {var latitudeNote = ("\n latitude not correct ");} else{latitudeNote = "&#10004;";}
 			   if ((longitude < -180 && longitude > 180) || (longitude=="" || longitude==null)) {var longitudeNote = ("\n longitude not correct ");} else{longitudeNote = "&#10004;";}
-			   if (!(protocol=="ngsi" || protocol=="mqtt" || protocol=="amqp")) {var protocolNote = ("protocol not correct ");} else{protocolNote = "&#10004;";}
+			   if (!(protocol=="ngsi" || protocol=="mqtt" || protocol=="amqp" || protocol == "ngsi w/MultiService")) {var protocolNote = ("protocol not correct ");} else{protocolNote = "&#10004;";}
 		
-		console.log(id + contextbroker + type + kind + latitude + longitude + protocol);
+		//console.log(id + contextbroker + type + kind + latitude + longitude + protocol);
 	
 			if ((idNote == "&#10004;") && (contextbrokerNote == "&#10004;") && (typeNote == "&#10004;") && (kindNote == "&#10004;") && (latitudeNote == "&#10004;") && (longitudeNote == "&#10004;") && (protocolNote == "&#10004;")){var statusNote = "<button class=\"btn btn-success btn-round\"></button>";} else{statusNote= "<button class=\"btn btn-danger btn-round\"></button>";}
 		
 		var x =inputPropertiesDeviceMMsg.innerHTML;
 		
 		var div = document.createElement("div");
-		console.log("IPDMM:" + x);
+		//console.log("IPDMM:" + x);
 		
 		if (x =="&nbsp;"){
 			}
@@ -1352,7 +1347,7 @@ showEditDeviceModal();
 					$("#KeyOneDeviceUser").val("");
 					$("#KeyTwoDeviceUser").val("");			
 			}
-			console.log(nameOpt[selectednameOpt].value + " " + gb_device + " " + gb_longitude + " " + gb_latitude);
+			//console.log(nameOpt[selectednameOpt].value + " " + gb_device + " " + gb_longitude + " " + gb_latitude);
 			
 			//if(nameOpt[selectednameOpt].value !="custom" && nameOpt[selectednameOpt].value!="")
 			//{ 
@@ -1376,7 +1371,7 @@ showEditDeviceModal();
 
 						 else (data["status"] === 'ok')
 							{					
-								console.log(data.content.attributes);
+						//		console.log(data.content.attributes);
 								var model = data.content.name;
 								var type = data.content.devicetype;
 								var kind = data.content.kind;
@@ -1392,7 +1387,7 @@ showEditDeviceModal();
 								// population of the value tab with the values taken from the db						
 								while (k < myattributes.length)
 								  {
-									console.log(myattributes.length + " " +k); 
+									//console.log(myattributes.length + " " +k); 
 									content += drawAttributeMenu(myattributes[k].value_name, 
 										 myattributes[k].data_type, myattributes[k].value_type, myattributes[k].editable, myattributes[k].value_unit, myattributes[k].healthiness_criteria, 
 										 myattributes[k].healthiness_value, myattributes[k].old_value_name, 'addlistAttributes', indexValues);
@@ -1433,6 +1428,12 @@ showEditDeviceModal();
 								addDeviceConditionsArray['inputMacDevice'] = true;
 								checkMAC(); 
 								checkAtlistOneAttribute();
+								checkAddDeviceConditions();
+
+								getServicesByCBName($('#selectContextBroker').val(), 'add', data.content.service);
+								checkProtocol($('#selectProtocolDevice').val(), 'add', 'device');
+								$('#inputServicePathDevice').val(data.content.servicePath);
+								checkServicePath($('#inputServicePathDevice').val(), 'add', 'device');
 								checkAddDeviceConditions();
 							}
 					 },
@@ -1551,7 +1552,7 @@ showEditDeviceModal();
 		   healthiness_criteria: document.getElementById('addlistAttributes').childNodes[m].childNodes[5].childNodes[0].childNodes[0].value.trim(),
 		  healthiness_value: document.getElementById('addlistAttributes').childNodes[m].childNodes[6].childNodes[0].childNodes[0].value.trim()};
 	
-		console.log("new att:"+JSON.stringify(newatt));
+		//console.log("new att:"+JSON.stringify(newatt));
 	
 		if (newatt.value_name!=""&& !regex.test(newatt.value_name) && newatt.data_type!="" && newatt.value_type!="" && newatt.editable!="" && newatt.healthiness_criteria!="" && newatt.healthiness_value!="") 
             mynewAttributes.push(newatt);
@@ -1570,20 +1571,27 @@ showEditDeviceModal();
 	$("#addDeviceOkMsg").hide();
 	$("#addDeviceOkIcon").hide();
 	$("#addDeviceKoMsg").hide();
-    $("#addDeviceKoIcon").hide();
+	$("#addDeviceKoIcon").hide();
 	$('#addDeviceLoadingMsg').show();
 	$('#addDeviceLoadingIcon').show();
 		
-	console.log("LISTA" + JSON.stringify(mynewAttributes));
+	//console.log("LISTA" + JSON.stringify(mynewAttributes));
 	var d = new Date();
 	var t = d.getTime();
-	console.log("time before the insert request in milliseconds");
-	console.log(t);
-	console.log($('#inputLatitudeDevice'));
-	console.log($('#inputLatitudeDevice').val());
-	console.log($('#selectContextBroker'));
+	//console.log("time before the insert request in milliseconds");
+	//console.log(t);
+	//console.log($('#inputLatitudeDevice'));
+	//console.log($('#inputLatitudeDevice').val());
+	//console.log($('#selectContextBroker'));
 	
-	
+	var service = $('#selectService').val();
+	var servicePath = $('#inputServicePathDevice').val();
+
+	if ($('#selectProtocolDevice').val() === "ngsi w/MultiService"){
+		// servicePath value pre-processing
+		if (servicePath[0] !== "/" || servicePath === "") servicePath = "/" + servicePath;
+		if (servicePath[servicePath.length -1] === "/" && servicePath.length > 1) servicePath = servicePath.substr(0, servicePath.length -1);
+	}
 
 	$.ajax({
 		 url: "../api/device.php",
@@ -1612,8 +1620,10 @@ showEditDeviceModal();
 			  k2 : $("#KeyTwoDeviceUser").val(),
 			  edgegateway_type : $("#selectEdgeGatewayType").val(),
 			  edgegateway_uri : $("#inputEdgeGatewayUri").val(),	  
-				subnature: $('#selectSubnature').val(),
-                                static_attributes: JSON.stringify(retrieveStaticAttributes("addlistStaticAttributes")) 
+			  subnature: $('#selectSubnature').val(),
+                          static_attributes: JSON.stringify(retrieveStaticAttributes("addlistStaticAttributes")),
+			  service : service,
+			  servicePath : servicePath 
 			 },
 		 type: "POST",
 		 async: true,
@@ -1623,9 +1633,9 @@ showEditDeviceModal();
 		 {
 			var d = new Date();
 			var t = d.getTime();
-			console.log("time after a successful insert request in milliseconds");
-			console.log(t);
-			console.log(mydata["msg"]);
+			//console.log("time after a successful insert request in milliseconds");
+			//console.log(t);
+			//console.log(mydata["msg"]);
 			if(mydata["status"] === 'ko')
 			{
 				console.log("Error adding Device type");
@@ -1672,8 +1682,8 @@ showEditDeviceModal();
 			}			 
 			else if (mydata["status"] === 'ok')
 			{
-				console.log("Success adding Device");
-				console.log(JSON.stringify(mydata));
+				//console.log("Success adding Device");
+				//console.log(JSON.stringify(mydata));
 				$('#addDeviceLoadingMsg').hide();
 				$('#addDeviceLoadingIcon').hide();
 							
@@ -1770,7 +1780,7 @@ showEditDeviceModal();
 		//add lines related to attributes - addAttrBtnUser		
 	$("#addAttrBtnUser").off("click");
 	$("#addAttrBtnUser").click(function(){
-	   console.log("#addAttrBtnUser");							   
+	   //console.log("#addAttrBtnUser");							   
 	   content = drawAttributeMenu("","", "", "", "", "", "300", "", 'addlistAttributes', indexValues);
 	indexValues=indexValues+1;
 	   $('#addlistAttributesUser').append(content);
@@ -1787,10 +1797,16 @@ showEditDeviceModal();
 		var dev_organization  = $("#deleteDeviceModal span").attr("data-organization");
 		var contextbroker = $("#deleteDeviceModal span").attr("data-contextBroker");
 		var uri = $("#deleteDeviceModal span").attr("data-uri");
-	
+		var protocol = $("#deleteDeviceModal span").attr('data-protocol');
+		var service = $("#deleteDeviceModal span").attr('data-service');
+		var servicePath = $("#deleteDeviceModal span").attr('data-servicepath');
+		if(service === "null") service = "";
+		if(servicePath === "null") servicePath = "";
+
+
 		$("#deleteDeviceModal div.modal-body").html("");
 		$("#deleteDeviceOkBtn").hide();
-        $("#deleteDeviceCancelBtn").hide();
+        	$("#deleteDeviceCancelBtn").hide();
 		$("#deleteDeviceConfirmBtn").hide();
 		$("#deleteDeviceModalInnerDiv1").show();
 		$("#deleteDeviceModalInnerDiv2").show();
@@ -1806,14 +1822,17 @@ showEditDeviceModal();
 				id: id, 
 				uri : uri,
 				contextbroker : contextbroker,
-				token : sessionToken
+				token : sessionToken,
+				service: service,
+				servicePath: servicePath,
+				protocol: protocol
 				},
 			type: "POST",
 			datatype: "json",
 			async: true,
 			success: function (data) 
 			{
-				console.log(JSON.stringify(data));
+				//console.log(JSON.stringify(data));
                 $("#deleteDeviceOkBtn").show();
 				if(data["status"] === 'ko')
 				{
@@ -1995,6 +2014,14 @@ showEditDeviceModal();
 		$('#editDeviceLoadingIcon').show();
 		// console.log(JSON.stringify(deviceJson));
 
+		var service = $('#editSelectService').val();
+		var servicePath = $('#editInputServicePathDevice').val();
+
+		if ($('#selectProtocolDeviceM').val() === "ngsi w/MultiService"){
+			// servicePath value pre-processing
+			if (servicePath[0] !== "/" || servicePath === "") servicePath = "/" + servicePath;
+			if (servicePath[servicePath.length -1] === "/" && servicePath.length > 1) servicePath = servicePath.substr(0, servicePath.length -1);
+		}
 				
 	$.ajax({
 		 url: "../api/device.php",
@@ -2027,18 +2054,19 @@ showEditDeviceModal();
 			k2: $('#KeyTwoDeviceUserM').val(),
 			edgegateway_type : $("#selectEdgeGatewayTypeM").val(),
 			edgegateway_uri : $("#inputEdgeGatewayUriM").val(),
-                                  subnature: $('#selectSubnatureM').val(),
-                                static_attributes: JSON.stringify(retrieveStaticAttributes("editlistStaticAttributes"))
-
+                        subnature: $('#selectSubnatureM').val(),
+                        static_attributes: JSON.stringify(retrieveStaticAttributes("editlistStaticAttributes")),
+			service : service,
+			servicePath : servicePath
 		},
 		 type: "POST",
 		 async: true,
 		 success: function (data) 
 		 {
-		   console.log(JSON.stringify(data));
-            console.log("myAttributes " + JSON.stringify(myAttributes));
-		   console.log("mynewAttributes " + JSON.stringify(mynewAttributes));
-		   console.log("mydeletedAttributes " + JSON.stringify(mydeletedAttributes));
+		   //console.log(JSON.stringify(data));
+            		//console.log("myAttributes " + JSON.stringify(myAttributes));
+		   //console.log("mynewAttributes " + JSON.stringify(mynewAttributes));
+		   //console.log("mydeletedAttributes " + JSON.stringify(mydeletedAttributes));
 			if(data["status"] === 'ko')
 			{
 				console.log("Error editing Device type");
@@ -2198,7 +2226,7 @@ showEditDeviceModal();
 		var opt = document.getElementById("selectContextBroker").options;
 		var valCB= opt[index].getAttribute("my_data");
 		var valkind= opt[index].getAttribute("data_kind");
-		 console.log("protocol" + JSON.stringify(valCB));
+		 //console.log("protocol" + JSON.stringify(valCB));
 
 
 		if(valkind=="external"){
@@ -2268,6 +2296,11 @@ showEditDeviceModal();
                 document.getElementById("selectProtocolDevice").value = 'ngsi';
                 document.getElementById("selectFormatDevice").value = 'json';
             } 
+		else if(valCB ==='ngsi w/MultiService')
+            {
+                document.getElementById("selectProtocolDevice").value = 'ngsi w/MultiService';
+                document.getElementById("selectFormatDevice").value = 'json';
+            }
             else if(valCB ==='mqtt')
             {
                 document.getElementById("selectProtocolDevice").value = 'mqtt';
@@ -2313,6 +2346,11 @@ showEditDeviceModal();
 			document.getElementById("selectProtocolDeviceM").value = 'ngsi';
 			document.getElementById("selectFormatDeviceM").value = 'json';
 		} 
+		else if(valCB ==='ngsi w/MultiService')
+                {
+                        document.getElementById("selectProtocolDeviceM").value = 'ngsi w/MultiService';
+                        document.getElementById("selectFormatDeviceM").value = 'json';
+                }
 		else if(valCB ==='mqtt')
 		{
 			document.getElementById("selectProtocolDeviceM").value = 'mqtt';
@@ -2392,7 +2430,7 @@ function updateGroupList(ouname){
                                 $dropdown.empty();
                                //adding empty to rootadmin
                                if ((loggedRole=='RootAdmin')||(loggedRole=='ToolAdmin')) {
-                                       console.log("adding empty");
+                                       //console.log("adding empty");
                                        $dropdown.append($("<option />").val("All groups").text("All groups"));
                                }
                                //add new ones
@@ -2542,13 +2580,13 @@ $(function(){
  // $('#value_type')[0].selectedIndex = 0;
   $('#value_type').change(function(){
       var index = $(this)[0].selectedIndex;
-      console.log(index);
+      //console.log(index);
       var opt = $(this)[0].options;
-        console.log(opt);
+        //console.log(opt);
       gb_valVT = opt[index].value;
       gb_valVU = opt[index].getAttribute("my_data");
       $('#value_unit')[0].selectedIndex = index;
-      console.log("Value Type= " + gb_valVT +  " Value Unit= " + gb_valVU);
+      //console.log("Value Type= " + gb_valVT +  " Value Unit= " + gb_valVU);
   });    
 });
 */
@@ -2586,7 +2624,7 @@ $("#addNewDeviceCheckExternalBtn").on('click', function(){
 		datatype: 'json',
 		success: function (data)
 		{
-			console.log("success");
+			//nconsole.log("success");
 			var content = data["content"];
 			for(let i = 0; i < content.length; i++){
 				if(content[i].name == contextbroker){
@@ -2609,8 +2647,8 @@ $("#addNewDeviceCheckExternalBtn").on('click', function(){
 					if($('#selectModelDevice').val() === undefined || $('#selectModelDevice').val().length<1){
 					   model="custom";
 					}
-					console.log("ACTIVATE STUD "+ kind);
-					console.log("full link "+ accesslink+path);
+					//console.log("ACTIVATE STUD "+ kind);
+					//console.log("full link "+ accesslink+path);
 					activateStub(contextbroker,device_name,ipa,"extract",user,accesslink,accessport,model,edge_gateway_type,edge_gateway_uri,path,apikey,kind, latid, longi);			
 				}
 			}
@@ -2627,7 +2665,7 @@ $("#addNewDeviceCheckExternalBtn").on('click', function(){
 });  // end of ready-state
 function activateStub(cb,deviceName, ipa,protocol,user,accesslink,accessport,model,edge_type,edge_uri,path, apikey,kind, latid, longi)
 {
-	console.log("log "+ cb + " "+ipa+" "+accesslink+" "+accessport+" "+model+ " api "+ apikey + " organization "+ organization + " kind "+kind);
+	//console.log("log "+ cb + " "+ipa+" "+accesslink+" "+accessport+" "+model+ " api "+ apikey + " organization "+ organization + " kind "+kind);
 	var data;
 	if(apikey !== null || apikey !== undefined){
 		data = "contextbroker=" + cb + "&device_name="+ deviceName +"&ip=" + ipa + "&user=" +user+ "&al="+accesslink + "&ap="+accessport+"&model="+model+ "&edge_gateway_type="+edge_type+"&edge_gateway_uri="+edge_uri+"&organization="+organization+"&path="+path+"&kind="+kind+"&apikey="+apikey;
@@ -2637,16 +2675,16 @@ function activateStub(cb,deviceName, ipa,protocol,user,accesslink,accessport,mod
 	}
 	var service = _serviceIP + "/api/"+protocol;
 	
-	console.log(data);
-	console.log(service);
+	//console.log(data);
+	//console.log(service);
 	var xhr = ajaxRequest();
 
 	xhr.addEventListener("readystatechange", function () {
 	  if (this.readyState === 4 && this.status == 200) {
-		console.log("RESPONSE TEXT"+this.responseText);
+		//console.log("RESPONSE TEXT"+this.responseText);
 		var resp= JSON.parse(this.responseText)
-          console.log(resp);
-          console.log(resp.message);
+          //console.log(resp);
+          //console.log(resp.message);
         
         $("#addDeviceCheckExternalLoadingIcon").hide();
           
@@ -2664,48 +2702,45 @@ function activateStub(cb,deviceName, ipa,protocol,user,accesslink,accessport,mod
         }
         else{  
             var msg= JSON.parse(resp.message);
-            console.log(msg);
-            console.log(msg.name);
-            console.log(msg.frequency);
-            console.log(msg.devicetype);
+            //console.log(msg);
+            //console.log(msg.name);
+            //console.log(msg.frequency);
+            //console.log(msg.devicetype);
           
          $("#addNewDeviceCheckExternalBtn").hide();
             $("#addNewDeviceConfirmBtn").show();
             //$("#selectContextBrokerMsg").show();
             
-			$('#inputTypeDevice').val(msg.devicetype);
+		$('#inputTypeDevice').val(msg.devicetype);
             $("#inputTypeDevice").attr("disabled", false);
-			$('#inputMacDevice').val("");
+		$('#inputMacDevice').val("");
             $("#inputMacDevice").attr("disabled", false);
-			//$('#selectEdgeGatewayType').val("");
+		//$('#selectEdgeGatewayType').val("");
             //$("#selectEdgeGatewayType").attr("disabled", true);
-			//$('#inputEdgeGatewayUri').val("");
+		//$('#inputEdgeGatewayUri').val("");
             //$("#inputEdgeGatewayUri").attr("disabled", true);
-			$('#inputProducerDevice').val("");
+		$('#inputProducerDevice').val("");
             $("#inputProducerDevice").attr("disabled", false);
-			$('#inputFrequencyDevice').val(msg.frequency);
+		$('#inputFrequencyDevice').val(msg.frequency);
             $("#inputFrequencyDevice").attr("disabled", false);
-			$('#KeyOneDeviceUser').val("");
+		$('#KeyOneDeviceUser').val("");
             $("#KeyOneDeviceUser").attr("disabled", false);
-			$('#KeyTwoDeviceUser').val("");
+		$('#KeyTwoDeviceUser').val("");
             $("#KeyTwoDeviceUser").attr("disabled", false);
-			console.log(msg.latitude);
+		//console.log(msg.latitude);
 			if (msg.latitude!==undefined)
 				$('#inputLatitudeDevice').val(msg.latitude);
 			else{ 
 				$('#inputLatitudeDevice').val(latid);
 				msg.latitude=latid;
 			}
-			console.log(latid);
 		            $("#inputLatitudeDevice").attr("disabled", false);
-			console.log(msg.longitude);
 			if (msg.longitude!==undefined)
 				$('#inputLongitudeDevice').val(msg.longitude);
 			else {
 				$('#inputLongitudeDevice').val(longi);
 				msg.longitude=longi;
 			}
-			console.log(longi);
             $("#inputLongitudeDevice").attr("disabled", false);
             drawMap1(msg.latitude, msg.longitude, 2);
             
@@ -2723,7 +2758,6 @@ function activateStub(cb,deviceName, ipa,protocol,user,accesslink,accessport,mod
 				k=0;
 				while (k < myattributes.length)
 				{
-					// console.log(k); 
 					content += drawAttributeMenu(myattributes[k].value_name, 
 					myattributes[k].data_type, myattributes[k].value_type, myattributes[k].editable, myattributes[k].value_unit, myattributes[k].healthiness_criteria, 
 					myattributes[k].healthiness_value, myattributes[k].value_name, 'addlistAttributes', indexValues);
@@ -2753,7 +2787,7 @@ function activateStub(cb,deviceName, ipa,protocol,user,accesslink,accessport,mod
 	
 //   START TO CHANGE THE VISIBILITY  & OWNERSHIP 
 				
-	function changeVisibility(id, contextbroker, dev_organization, visibility, uri, k1, k2, model) {	   	   
+	function changeVisibility(id, contextbroker, dev_organization, visibility, uri, k1, k2, model, protocol, service, servicePath) {	   	   
 		$("#delegationsModal").modal('show');   
 	    $("#delegationHeadModalLabel").html("Device - " + id);   
 	    // document.getElementById('CurrentVisiblityTxt').value = "Current Visiblity: " + visibility; 			
@@ -2793,6 +2827,9 @@ function activateStub(cb,deviceName, ipa,protocol,user,accesslink,accessport,mod
 					token : sessionToken,
 					k1: k1,
 					k2: k2,
+					protocol:protocol,
+					service:service,
+					servicePath:servicePath
 				},
 				type: "POST",
 				async: true,
@@ -2871,6 +2908,9 @@ function activateStub(cb,deviceName, ipa,protocol,user,accesslink,accessport,mod
 					token : sessionToken,
 					k1: k1,
 					k2: k2,
+					protocol:protocol,
+                                        service:service,
+                                        servicePath:servicePath
 					},
 					type: "POST",
 					async: true,
@@ -2938,13 +2978,16 @@ function activateStub(cb,deviceName, ipa,protocol,user,accesslink,accessport,mod
 				 contextbroker: contextbroker,
 				 uri: uri,
 				 organization : organization, 
-                 dev_organization:dev_organization,
+		                 dev_organization:dev_organization,
 				 owner: loggedUser,
 				 newOwner:  $('#newOwner').val(),
 				 token : sessionToken,
 				 k1: k1new,
 				 k2: k2new,
-				model:model
+			  	 model:model,
+                                        protocol:protocol,
+                                        service:service,
+                                        servicePath:servicePath
 			 },	
 			type: "POST",
 			async: true,
@@ -3036,6 +3079,9 @@ function activateStub(cb,deviceName, ipa,protocol,user,accesslink,accessport,mod
                dev_organization:dev_organization,
                user : loggedUser,
                token : sessionToken,
+		protocol:protocol,
+                service:service,
+                servicePath:servicePath	
                                     },
                                     type: "POST",
                                     async: true,
@@ -3091,7 +3137,10 @@ function activateStub(cb,deviceName, ipa,protocol,user,accesslink,accessport,mod
 								uri:uri,
 								userDelegated: $(this).parents('tr').attr('data-delegated'),
 								 id: id,                                 
-								contextbroker: contextbroker
+								contextbroker: contextbroker,
+								protocol:protocol,
+			                                        service:service,
+                        			                servicePath:servicePath
                                                         },
                                                         type: "POST",
                                                         async: true,
@@ -3101,7 +3150,7 @@ function activateStub(cb,deviceName, ipa,protocol,user,accesslink,accessport,mod
                                                            if (data["status"] === 'ok')
                                                                                                                   {
                                                                 rowToRemove.remove();
-                                                                console.log("ermoving a row from the table");
+                                                                //console.log("ermoving a row from the table");
                                                             }
                                                             else
                                                             {
@@ -3128,8 +3177,10 @@ function activateStub(cb,deviceName, ipa,protocol,user,accesslink,accessport,mod
 															uri:uri,
 							                                                                groupDelegated: $(this).parents('tr').attr('data-delegated'),
 							                                                                 id: id,
-							                                                                contextbroker: contextbroker
-
+							                                                                contextbroker: contextbroker,
+															protocol:protocol,
+										                                        service:service,
+										                                        servicePath:servicePath
                                                                                                                },
                                                                                                                type: "POST",
                                                                                                                async: true,
@@ -3190,7 +3241,10 @@ function activateStub(cb,deviceName, ipa,protocol,user,accesslink,accessport,mod
                                                           token : sessionToken,
                                                           delegated_user: newDelegation,
                                                           k1: newk1,
-                                                          k2: newk2
+                                                          k2: newk2,
+							protocol:protocol,
+                                        		service:service,
+		                                        servicePath:servicePath	
                                                         },
                                                         type: "POST",
                                                         async: true,
@@ -3279,7 +3333,10 @@ function activateStub(cb,deviceName, ipa,protocol,user,accesslink,accessport,mod
                                                                                                        token : sessionToken,
                                                                                                        delegated_group: delegatedDN,
                                                                                                        k1: newk1,
-                                                                                                       k2: newk2
+                                                                                                       k2: newk2,
+													protocol:protocol,
+								                                        service:service,
+								                                        servicePath:servicePath
                                                                                                },
                                                                                                type: "POST",
                                                                                                async: true,
@@ -3362,13 +3419,13 @@ function activateStub(cb,deviceName, ipa,protocol,user,accesslink,accessport,mod
            
             
             map1.on("click", function (e) {	
-                console.log($('#inputLatitudeDevice').is(':disabled'));
+                //console.log($('#inputLatitudeDevice').is(':disabled'));
                 if(!$('#inputLatitudeDevice').is(':disabled')){ 
                     var lat = e.latlng.lat;
                     var lng = e.latlng.lng;
                     lat = lat.toFixed(5);
                     lng = lng.toFixed(5);
-                    console.log("Check the format:" + lat + " " + lng);
+                    //console.log("Check the format:" + lat + " " + lng);
 
                      document.getElementById('inputLatitudeDevice').value = lat;
                      document.getElementById('inputLongitudeDevice').value = lng;
@@ -3399,13 +3456,13 @@ function activateStub(cb,deviceName, ipa,protocol,user,accesslink,accessport,mod
 	
 			map1.on("click", function (e) {
 				
-				console.log($('#inputLatitudeDevice').is(':disabled'));
+				//console.log($('#inputLatitudeDevice').is(':disabled'));
                 if(!$('#inputLatitudeDevice').is(':disabled')){
                     var lat = e.latlng.lat;
                     var lng = e.latlng.lng;
                     lat = lat.toFixed(5);
                     lng = lng.toFixed(5);
-                    console.log("Check the format:" + lat + " " + lng);
+                    //console.log("Check the format:" + lat + " " + lng);
 
                     document.getElementById('inputLatitudeDeviceM').value = lat;
                     document.getElementById('inputLongitudeDeviceM').value = lng;
@@ -3436,13 +3493,13 @@ function activateStub(cb,deviceName, ipa,protocol,user,accesslink,accessport,mod
 	
 			map1.on("click", function (e) {
 				
-				console.log($('#inputLatitudeDevice').is(':disabled'));
+				//console.log($('#inputLatitudeDevice').is(':disabled'));
                 if(!$('#inputLatitudeDevice').is(':disabled')){
                     var lat = e.latlng.lat;
                     var lng = e.latlng.lng;
                     lat = lat.toFixed(5);
                     lng = lng.toFixed(5);
-                    console.log("Check the format:" + lat + " " + lng);
+                    //console.log("Check the format:" + lat + " " + lng);
 
                     document.getElementById('inputLatitudeDevice').value = lat;
                     document.getElementById('inputLongitudeDevice').value = lng;
@@ -3604,9 +3661,9 @@ function drawMap(latitude,longitude, id, devicetype, kind, divName){
             //Fatima2-moveAndupdate-1-line
             colorSelectedMarkers(resultsOut, greenIcon);
 			$('#devicesTable').DataTable().destroy();
-			console.log (JSON.stringify(resultsOut));
+			//console.log (JSON.stringify(resultsOut));
             fetch_data(true, JSON.stringify(resultsOut));
-    //      console.log(resultsOut);
+    //      //console.log(resultsOut);
 
          });
 
@@ -3625,7 +3682,7 @@ function drawMap(latitude,longitude, id, devicetype, kind, divName){
                         //Fatima2-moveAndupdate-1-line
                         colorSelectedMarkers(resultsOut, greenIcon);
 						$('#devicesTable').DataTable().destroy();
-						console.log (JSON.stringify(resultsOut));
+						//console.log (JSON.stringify(resultsOut));
                          fetch_data(true, JSON.stringify(resultsOut));
                         });
 						  
@@ -3711,8 +3768,8 @@ function drawMap(latitude,longitude, id, devicetype, kind, divName){
 
     function colorSelectedMarkers(selections, greenIcon){
                 green_marker_array=[];
-                console.log("selections are");
-                console.log(selections);
+                //console.log("selections are");
+                //console.log(selections);
                 for(var k in selections){
 
                     lat=Number(selections[k].latitude); 

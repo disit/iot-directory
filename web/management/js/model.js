@@ -57,8 +57,8 @@ $.ajax({
 });
 
 //export model for sensor
-function exporta(name,devicetype, frequency, kind, protocol, format, producer, attributes, subnature, staticAttributes){
-	var txt="name,device type,mac,frequency,kind,protocol,format,producer,lat,long,value name,data_type,value_type,editable,value_unit,healthiness_criteria,healthiness_value,k1,k2,subnature,static_attributes\r\n";
+function exporta(name,devicetype, frequency, kind, protocol, format, producer, attributes, subnature, staticAttributes, service, servicePath){
+	var txt="name,device type,mac,frequency,kind,protocol,format,producer,lat,long,value name,data_type,value_type,editable,value_unit,healthiness_criteria,healthiness_value,k1,k2,subnature,static_attributes,service,service_path\r\n";
 
 	var arr=JSON.parse(atob(attributes));
 	for (var i = 0; i < arr.length; i++){
@@ -75,10 +75,17 @@ function exporta(name,devicetype, frequency, kind, protocol, format, producer, a
 			value=value+attrValue+",";
 		}
 
+		if (service==="null")
+			service="";
+		if (servicePath==="bnVsbA==")
+			var servicePa="\"\"";
+		else
+			var servicePa="\""+atob(servicePath).replace(/"/g, "\"\"")+"\"";
+
 		//TODO: also other fields probably need to be escaped like above (for other special character, live COMMA, SEMICOLON, ...)
 		var staticAtt="\""+atob(staticAttributes).replace(/"/g, "\"\"")+"\"";
 
-		var txt=txt+value+"<K1>,<K2>,"+subnature+","+staticAtt+"\r\n";
+		var txt=txt+value+"<K1>,<K2>,"+subnature+","+staticAtt+","+service+","+servicePa+"\r\n";
 	}
 
 	var txt=txt+"\r\n";
@@ -237,6 +244,17 @@ function drawAttributeMenu
 }		
   
 function format ( d ) {
+
+var multitenancy = "";
+	if (d.service && d.servicePath){
+		multitenancy = '<div class="row">' + 
+			'<div class="col-xs-6 col-sm-6" style="background-color:#B3D9FF;"><b>Service/Tenant:</b>' + "  " + d.service + '</div>' +
+			'<div class="clearfix visible-xs"></div>' +
+			'<div class="col-xs-6 col-sm-6" style="background-color:#B3D9FF;"><b>ServicePath:</b>' + "  " + d.servicePath  + '</div>' +	
+		'</div>' ;
+	}
+
+
 		// `d` is the original data object for the row
   	return '<div class="container-fluid">' +
 	'<div class="row">' +
@@ -248,9 +266,9 @@ function format ( d ) {
 		'<div class="col-xs-6 col-sm-6" style="background-color:#E6E6FA;"><b>Link:</b>' + "  " + d.link + '</div>' +
 		'<div class="clearfix visible-xs"></div>' +
 		'<div class="col-xs-6 col-sm-6" style="background-color:#E6E6FA;"><b>Key Generator:</b>' + "  " + d.kgenerator + '</div>' +
-	'</div>' + 
+	'</div>' + multitenancy+ 
 	'<div class="row">' +
-                '<div class="col-xs-6 col-sm-6" style="background-color:#E6E6FA;"><button class="btn btn-warning" onclick="exporta(\''+d.name+'\',\''+d.devicetype+'\',\''+d.frequency+'\',\''+d.kind+'\',\''+d.protocol+'\',\''+d.format+'\',\''+d.producer+'\',\''+btoa(d.attributes)+'\',\''+d.subnature+'\',\''+btoa(d.static_attributes)+'\');return true;"><b>export</b></button></div>' +
+                '<div class="col-xs-6 col-sm-6" style="background-color:#E6E6FA;"><button class="btn btn-warning" onclick="exporta(\''+d.name+'\',\''+d.devicetype+'\',\''+d.frequency+'\',\''+d.kind+'\',\''+d.protocol+'\',\''+d.format+'\',\''+d.producer+'\',\''+btoa(d.attributes)+'\',\''+d.subnature+'\',\''+btoa(d.static_attributes)+'\',\''+d.service+'\',\''+btoa(d.servicePath)+'\');return true;"><b>export</b></button></div>' +
         '</div>' + 
     '</div>' ;
 }
@@ -268,7 +286,6 @@ function format ( d ) {
   {
 	  
 	  
-	  console.log("Enter:" + selected);
 		if(destroyOld)
             {
 				$('#modelTable').DataTable().clear().destroy();
@@ -387,6 +404,8 @@ function format ( d ) {
 				'data-k2="'+d.k2+'" ' +
 				'data-subnature="'+d.subnature+'" '+
 				'data-static-attributes="'+btoa(d.static_attributes)+'" '+
+				'data-service="'+d.service+'" ' + 
+				'data-servicePath="'+d.servicePath+'" '+ 
 				'data-policy="'+d.policy+'">Edit</button>';
 				
 				}
@@ -595,11 +614,9 @@ function format ( d ) {
 		/* add lines related to attributes*/			
 			$("#addAttrBtn").off("click");
 			$("#addAttrBtn").click(function(){
-			   console.log("#addAttrBtn");							   
 			   content = drawAttributeMenu("","", "", "", "", "", "300",  'addlistAttributes', indexValues);
 				indexValues=indexValues+1;
 				// addDeviceConditionsArray['addlistAttributes'] = true;
-			   //console.log("contenuto drawAttr" +content);
 			   $('#addlistAttributes').append(content);
 
 		checkAtlistOneAttribute();
@@ -609,7 +626,6 @@ function format ( d ) {
 
 		$("#addSchemaTabModel").off("click");
 	        $("#addSchemaTabModel").on('click keyup', function(){
-        	        console.log("#addSchemaTabDevice");
 
                 	//checkAtlistOneAttribute();
 	                $("#addSchemaTabModel #addlistAttributes .row input:even").each(function(){checkModelValueName($(this));});
@@ -681,23 +697,29 @@ function format ( d ) {
             
             if(!someNameisWrong){
                 
-            document.getElementById('addlistAttributes').innerHTML = "";			
+			document.getElementById('addlistAttributes').innerHTML = "";			
 		
-		
-            $("#addModelModalTabs").hide();
-            $('#addModelModalBody').hide();
+			$("#addModelModalTabs").hide();
+			$('#addModelModalBody').hide();
 			$('#addModelModal div.modalCell').hide();
-           //$("#addModelModalFooter").hide();
-			//$("#addAttrBtn").hide();
-            $('#addNewModelCancelBtn').hide();
-            $('#addNewModelConfirmBtn').hide();
-            $('#addNewModelOkBtn').hide();
+            		$('#addNewModelCancelBtn').hide();
+		        $('#addNewModelConfirmBtn').hide();
+			$('#addNewModelOkBtn').hide();
 			$('#addModelOkMsg').hide();
 			$('#addModelOkIcon').hide();	
 			$('#addModelKoMsg').hide();
 			$('#addModelKoIcon').hide();	
 			$('#addModelLoadingMsg').show();
-            $('#addModelLoadingIcon').show();    
+			$('#addModelLoadingIcon').show();    
+
+			var service = $('#selectService').val();
+			var servicePath = $('#inputServicePathModel').val();
+
+			if ($('#selectProtocolModel').val() === "ngsi w/MultiService"){
+				// servicePath value pre-processing
+				if (servicePath[0] !== "/" || servicePath === "") servicePath = "/" + servicePath;
+				if (servicePath[servicePath.length -1] === "/" && servicePath.length > 1) servicePath = servicePath.substr(0, servicePath.length -1);
+			}
 	
              $.ajax({
                  url: "../api/model.php",
@@ -724,8 +746,10 @@ function format ( d ) {
 					  hc: $('#selectHCModel').val(),
 					  hv: $('#inputHVModel').val(),
 					  subnature: $('#selectSubnature').val(),		
-					  token : sessionToken,
-					static_attributes: JSON.stringify(retrieveStaticAttributes("addlistStaticAttributes"))
+					  static_attributes: JSON.stringify(retrieveStaticAttributes("addlistStaticAttributes")),
+					  service: service,
+					  servicePath: servicePath,
+					  token : sessionToken
 					 },
                  type: "POST",
                  async: true,
@@ -853,7 +877,6 @@ function format ( d ) {
 
 	$("#attrNameDelbtn").off("click");
 	$("#attrNameDelbtn").on("click", function(){
-		console.log("#attrNameDelbtn");	
 		$(this).parent('tr').remove();
 		});	
 				
@@ -874,7 +897,6 @@ function format ( d ) {
             var name = $("#deleteModelModal span").attr("data-name");
 			
 			//Sara2510 - for logging purpose
-			console.log("name "+name);
             /*$("#deleteModelModal div.modal-body").html("");
             $("#deleteModelCancelBtn").hide();
             $("#deleteModelConfirmBtn").hide();
@@ -907,7 +929,6 @@ function format ( d ) {
                 async: true,
                 success: function (data) 
                 {
-					console.log(JSON.stringify(data));
                     $("#deleteModelOkBtn").show();
                     
                     if(data["status"] === 'ko')
@@ -964,7 +985,6 @@ function format ( d ) {
 		//add lines related to attributes in case of edit
 	$("#addAttrMBtn").off("click");
 	$("#addAttrMBtn").click(function(){				
-	   console.log("#addAttrMBtn");					
 	   content = drawAttributeMenu("","", "", "", "", "", "300", 'addlistAttributesM', indexValues);
 	   indexValues=indexValues+1;
 		//editDeviceConditionsArray['addlistAttributesM'] = true;
@@ -977,7 +997,6 @@ function format ( d ) {
 	
 	 $("#editSchemaTabModel").off("click");
                 $("#editSchemaTabModel").on('click keyup', function(){
-                        console.log("#editSchemaTabDevice");
 
                         //checkAtlistOneAttribute();
                         $("#editSchemaTabModel #addlistAttributesM .row input:even").each(function(){checkModelValueNameM($(this));});
@@ -1048,6 +1067,7 @@ function format ( d ) {
 			$('#selectSubnatureM').val(subnature);
 			$('#selectSubnatureM').trigger('change');
 			subnatureChanged(true, JSON.parse(atob($(this).attr("data-static-attributes"))));	
+			fillMultiTenancyFormSection($(this).attr('data-service'), $(this).attr('data-servicePath'), contextbroker, 'model');
 			
                         showEditModelModal();
 		
@@ -1070,12 +1090,10 @@ function format ( d ) {
 		  var myattributes  = JSON.parse(mydata.content.attributes);
 		  
 		  
-		  console.log(myattributes);
 		  content="";
 		  k=0;
 		  while (k < myattributes.length)
 		  {
-			// console.log(k); 
 			content = drawAttributeMenu(myattributes[k].value_name, 
 				 myattributes[k].data_type, myattributes[k].value_type, myattributes[k].editable, myattributes[k].value_unit, myattributes[k].healthiness_criteria, 
 				 myattributes[k].healthiness_value, 'editlistAttributes', indexValues);
@@ -1090,8 +1108,6 @@ function format ( d ) {
 		 },
 		 error: function (data)
 				{
-				   console.log("Get values pool KO");
-				   console.log(JSON.stringify(data));
 				   alert("Error in reading data from the database<br/> Please get in touch with the Snap4city Administrator");
 				   
 					$('#inputNameModelM').val("");
@@ -1132,7 +1148,6 @@ function format ( d ) {
 		var regex=/[^a-z0-9_-]/gi;
         var someNameisWrong=false;
         num1 = document.getElementById('addlistAttributesM').childElementCount;
-		//console.log(num1);
 		for (var m=0; m< num1; m++)
 		{
 		  //var selOpt= document.getElementById('addlistAttributesM').childNodes[m].childNodes[2].childNodes[0].childNodes[0].options;
@@ -1226,18 +1241,24 @@ function format ( d ) {
 		   document.getElementById('deletedAttributes').innerHTML = "";  
 
 		
-		$("#editModelModalTabs").hide();
-		$('#editModelModal div.modalCell').hide();
-		//$("#editModelModalFooter").hide();
-		$("#addAttrMBtn").hide();
-		$('#editModelLoadingMsg').show();
-		$('#editModelLoadingIcon').show();
-		// console.log(JSON.stringify(deviceJson));
-        $("#editModelCancelBtn").hide();
-		$("#editModelConfirmBtn").hide();
-		$("#editModelModalBody").hide();
+			$("#editModelModalTabs").hide();
+			$('#editModelModal div.modalCell').hide();
+			//$("#editModelModalFooter").hide();
+			$("#addAttrMBtn").hide();
+			$('#editModelLoadingMsg').show();
+			$('#editModelLoadingIcon').show();
+	        	$("#editModelCancelBtn").hide();
+			$("#editModelConfirmBtn").hide();
+			$("#editModelModalBody").hide();
 
-			
+			var service = $('#editSelectService').val();
+			var servicePath = $('#editInputServicePathModel').val();
+
+			if ($('#selectProtocolModelM').val() === "ngsi w/MultiService"){
+				// servicePath value pre-processing
+				if (servicePath[0] !== "/" || servicePath === "") servicePath = "/" + servicePath;
+				if (servicePath[servicePath.length -1] === "/" && servicePath.length > 1) servicePath = servicePath.substr(0, servicePath.length -1);
+			}	
 		
 		 $.ajax({
 			 url: "../api/model.php",
@@ -1268,7 +1289,9 @@ function format ( d ) {
 				  hc: $('#selectHCModelM').val(),
 				  hv: $('#inputHVModelM').val(),
 				  subnature: $('#selectSubnatureM').val(),
-				static_attributes: JSON.stringify(retrieveStaticAttributes("editlistStaticAttributes"))
+				  static_attributes: JSON.stringify(retrieveStaticAttributes("editlistStaticAttributes")),
+				  service: service,
+				  servicePath: servicePath
 				 },
 			 type: "POST",
 			 async: true,
@@ -1441,19 +1464,22 @@ function format ( d ) {
 		checkAddModelConditions();
         });
 
-  $("#selectContextBroker").change(function() {
+	$("#selectContextBroker").change(function() {
 	
 		var index = document.getElementById("selectContextBroker").selectedIndex;
 		var opt = document.getElementById("selectContextBroker").options;
 		var valCB= opt[index].getAttribute("my_data");
 
-		console.log("index:"+index+" opt:"+opt+" valCB:"+valCB);
-		
 		if(valCB ==='ngsi')
 		{
 			document.getElementById("selectProtocolModel").value = 'ngsi';
 			document.getElementById("selectFormatModel").value = 'json';
 		} 
+		else if(valCB ==='ngsi w/MultiService')
+                {
+                        document.getElementById("selectProtocolModel").value = 'ngsi w/MultiService';
+                        document.getElementById("selectFormatModel").value = 'json';
+                }
 		else if(valCB ==='mqtt')
 		{
 			document.getElementById("selectProtocolModel").value = 'mqtt';
@@ -1473,6 +1499,43 @@ function format ( d ) {
 		checkModelSelectionCB_all();			
 		checkAddModelConditions();
 	});
+
+	$("#selectContextBrokerM").change(function() {
+
+                var index = document.getElementById("selectContextBrokerM").selectedIndex;
+                var opt = document.getElementById("selectContextBrokerM").options;
+                var valCB= opt[index].getAttribute("my_data");
+
+
+                if(valCB ==='ngsi')
+                {
+                        document.getElementById("selectProtocolModelM").value = 'ngsi';
+                        document.getElementById("selectFormatModelM").value = 'json';
+                }
+                else if(valCB ==='ngsi w/MultiService')
+                {
+                        document.getElementById("selectProtocolModelM").value = 'ngsi w/MultiService';
+                        document.getElementById("selectFormatModelM").value = 'json';
+                }
+                else if(valCB ==='mqtt')
+                {
+                        document.getElementById("selectProtocolModelM").value = 'mqtt';
+                        document.getElementById("selectFormatModelM").value = 'csv';
+                }
+                else if (valCB ==='amqp')
+                {
+                        document.getElementById("selectProtocolModelM").value = 'amqp';
+                        document.getElementById("selectFormatModelM").value = 'csv';
+                }
+                else
+                {
+                        //alert("This is a new contextBroker");
+                        console.log("an error occurred");
+                }
+
+                checkModelSelectionCBM_all();
+                checkEditModelConditions();
+        });
 	
 	
 	$('#modelTable thead').css("background", "rgba(0, 162, 211, 1)");
@@ -1989,7 +2052,6 @@ function updateGroupList(ouname){
 		
                    if ((delegations[i].userDelegated !="ANONYMOUS")&&(delegations[i].userDelegated!=null)) {
 			   
-                       console.log("adding user delegation");
 			   
                        $('#delegationsTable tbody').append('<tr class="delegationTableRow" data-delegationId="' + delegations[i].delegationId + '" data-delegated="' + delegations[i].userDelegated + '"><td class="delegatedName">' + delegations[i].userDelegated + '</td><td><i class="fa fa-remove removeDelegationBtn"></i></td></tr>');
 
@@ -1998,7 +2060,6 @@ function updateGroupList(ouname){
 	   
                    else  if (delegations[i].groupDelegated !=null){
 			   
-                       console.log("adding user delegation"+delegations[i]);
                        //extract cn and ou
                        var startindex=delegations[i].groupDelegated.indexOf("cn=");
                        var endindex_gr= delegations[i].groupDelegated.indexOf(",");
@@ -2041,7 +2102,6 @@ function updateGroupList(ouname){
 						   if (data["status"] === 'ok')
 																				  {
 								rowToRemove.remove();
-								console.log("success removing delegation");
 							}
 							else
 							{
@@ -2055,7 +2115,6 @@ function updateGroupList(ouname){
 					});
                });
                     $('#delegationsTableGroup tbody').on("click","i.removeDelegationBtnGroup",function(){
-                        console.log("toremove:");
                         var rowToRemove = $(this).parents('tr');
                         $.ajax({
                             url: "../api/contextbroker.php",     //check the url
