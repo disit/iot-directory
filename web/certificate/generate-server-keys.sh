@@ -7,6 +7,7 @@ export IOTDIR_SERVER_COMMON_NAME=iotobsf
 export IOTDIR_SERVER_EMAIL_ADDRESS=your@server.email
 export IOTDIR_SERVER_CRL_URI=URI:http://dashboard/example_ca.crl
 export IOTDIR_SERVER_DNS_ALT=iotobsf
+export IOTDIR_SERVER_IP_ALT=<ip_address>
 export IOTDIR_SERVER_PASSWORD=<server_password>
 export IOTDIR_SERVER_PK12_PASSWORD=<pk12_password>
 export IOTDIR_CA_PASSWORD=<ca_password>
