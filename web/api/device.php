@@ -63,7 +63,8 @@ require '../sso/autoload.php';
 use Jumbojett\OpenIDConnectClient;
 
 $oidc = new OpenIDConnectClient($keycloakHostUri, $clientId, $clientSecret);
-
+$oidc->providerConfigParam(array('token_endpoint' => $keycloakHostUri.'/auth/realms/master/protocol/openid-connect/token',
+                                        'userinfo_endpoint'=>$keycloakHostUri.'/auth/realms/master/protocol/openid-connect/userinfo'));
 if (isset($_REQUEST['nodered']))
 {
 	if ((isset($_REQUEST['token']))&&($_REQUEST['token']!='undefined'))
@@ -74,7 +75,6 @@ else
 {
 	if (isset($_REQUEST['token'])) 
 	{
-		$oidc->providerConfigParam(array('token_endpoint' => $keycloakHostUri.'/auth/realms/master/protocol/openid-connect/token'));
 		$tkn = $oidc->refreshToken($_REQUEST['token']);
 		$accessToken = $tkn->access_token;
 	}
@@ -224,7 +224,7 @@ if ($action=="insert")
 else if ($action=="update")
 {
 	$missingParams=missingParameters(array('id', 'type', 'contextbroker', 'gb_old_cb', 'kind', 'format', 'model', 'producer',
-		'latitude', 'longitude', 'k1', 'k2', 'frequency', 'uri', 'dev_organization'));
+		'latitude', 'longitude', 'k1', 'k2', 'frequency'));
  
 	if (empty($accessToken))
 	{
@@ -275,8 +275,8 @@ else if ($action=="update")
 			else $producer="";
 			$latitude= mysqli_real_escape_string($link, $_REQUEST['latitude']);  
 			$longitude = mysqli_real_escape_string($link, $_REQUEST['longitude']);  
-			$uri = mysqli_real_escape_string($link, $_REQUEST['uri']);
-			$dev_organization = mysqli_real_escape_string($link, $_REQUEST['dev_organization']);
+			//$uri = mysqli_real_escape_string($link, $_REQUEST['uri']);
+			//$dev_organization = mysqli_real_escape_string($link, $_REQUEST['dev_organization']);
 			if (isset($_REQUEST['k1'])) $k1= $_REQUEST['k1'];
 			else $k1= "";
 			if (isset($_REQUEST['k2'])) $k2= $_REQUEST['k2'];
@@ -320,24 +320,49 @@ else if ($action=="update")
 			}
 			else
 			{
-				if ($protocol == "ngsi w/MultiService") {
-					// Create a new id
-					$id = $service . "." . $servicePath . "." . $id;
-				}
-
-				$notDuplicate = true;
-				$selectDevices = "SELECT contextBroker, id FROM devices WHERE contextBroker = '$contextbroker' AND id = '$id';";		
-				$s1 = mysqli_query($link, $selectDevices);
-				$notDuplicate = (mysqli_num_rows($s1) != 0);
-
-				if($notDuplicate)
+				//id management
+				if ($protocol == "ngsi w/MultiService")	$id = $service . "." . $servicePath . "." . $id;
+				get_device($username, $role, $id, $contextbroker,  $accessToken, $link, $result);
+				
+				if (empty($result["content"]))
 				{
-				 updateKB($link, $id, $devicetype, $contextbroker, $kind, $protocol, $format, $macaddress, $model, $producer, $latitude, $longitude,
+					$result["status"]="ko";
+    	            $result['msg'] = "Unrecognized device";
+        	        $result["error_msg"] .= "Problem in update device (Unrecognized device)";
+            	    $result["log"]= "action=update - error Unrecognized device\r\n";
+                	my_log($result);
+	                mysqli_close($link);
+				}
+				else
+				{
+				$dev_organization=$result["content"]["organization"];
+				$uri=$result["content"]["uri"];				
+				$eId=$dev_organization.":".$contextbroker.":".$id;
+				
+				if (!enforcementRights($username, $accessToken, $role, $eId, 'IOTID','write', $result))
+				{
+					$result["status"]="ko";
+					$result['msg'] = "Not ownership or enough right to update";
+					$result["error_msg"] .= "Problem in update device ()";
+					$result["log"] .= "action=update - error Not ownership or enough right to update\r\n";
+					my_log($result);
+					mysqli_close($link);
+            	}
+				else
+				{
+ 				 $notDuplicate = true;
+				 $selectDevices = "SELECT contextBroker, id FROM devices WHERE contextBroker = '$contextbroker' AND id = '$id';";		
+				 $s1 = mysqli_query($link, $selectDevices);
+				 $notDuplicate = (mysqli_num_rows($s1) != 0);
+
+				 if($notDuplicate)
+				 {
+				  updateKB($link, $id, $devicetype, $contextbroker, $kind, $protocol, $format, $macaddress, $model, $producer, $latitude, $longitude,
 					$visibility, $frequency, $merge, $listdeleteAttributes, $uri, $dev_organization, $subnature, $staticAttributes, $result, 
 					$service, $servicePath, retrieveKbUrl($organizationApiURI, $dev_organization)); 
 
-				 if ($result["status"]=='ko')
-				 {
+				  if ($result["status"]=='ko')
+				  {
 		        	  logAction($link,$username,'device','update',$id . " ".$contextbroker,$organization,'','faliure');
 			          $result["status"]='ko';
 			          $result["error_msg"] .= "Problem in updating the device in the KB $id. ";
@@ -378,7 +403,6 @@ else if ($action=="update")
 					else $result["active"]=true;
 		
 					$ownmsg = array();
-        	       	$eId=$dev_organization.":".$contextbroker.":".$id;
 					$ownmsg["elementId"]= $eId;
 					$ownmsg["elementName"]=$id;				    
 					$ownmsg["elementUrl"]=$result["content"];
@@ -502,17 +526,19 @@ else if ($action=="update")
 			          $result["log"] .= "\n Problem in updating the device value $id:" . $q . " " . generateErrorMessage($link);
 		        	  my_log($result);
 			          mysqli_close($link);
+				  }
+				 }  
+				 else
+			  	 {
+					logAction($link,$username,'device','update',$id . " ".$contextbroker,$organization,'','failure');		
+					$result["status"]='ko';
+					$result["error_msg"] .= "Problem in updating the device $id. "; 
+					$result["msg"] .= "\n Problem in updating the device $id: Not Present"; 
+					$result["log"] .= "\n Problem in updating the device $id: Not Present"; 
+					my_log($result);
+					mysqli_close($link); 
 				}
-				  }  
-				  else
-			  	{
-				logAction($link,$username,'device','update',$id . " ".$contextbroker,$organization,'','failure');		
-				$result["status"]='ko';
-				$result["error_msg"] .= "Problem in updating the device $id. "; 
-				$result["msg"] .= "\n Problem in updating the device $id: Not Present"; 
-				$result["log"] .= "\n Problem in updating the device $id: Not Present"; 
-				my_log($result);
-				mysqli_close($link); 
+				}
 				}
 			}
 		}
@@ -520,7 +546,7 @@ else if ($action=="update")
 }  
 else if ($action=="delete")
 {
-	$missingParams=missingParameters(array('id', 'contextbroker', 'uri', 'dev_organization'));
+	$missingParams=missingParameters(array('id', 'contextbroker'));
 
 	if (empty($accessToken))
 	{
@@ -553,8 +579,8 @@ else if ($action=="delete")
         {
 			$id = $_REQUEST['id'];
 			$cb = $_REQUEST['contextbroker'];
-			$url = $_REQUEST['uri']; 
-			$dev_organization = mysqli_real_escape_string($link, $_REQUEST['dev_organization']);
+			//$url = $_REQUEST['uri']; 
+			//$dev_organization = mysqli_real_escape_string($link, $_REQUEST['dev_organization']);
 			if (isset($_REQUEST['service'])) $service = mysqli_real_escape_string($link, $_REQUEST['service']);
 			else $service ="";	
 			if (isset($_REQUEST['servicePath'])) $servicePath = mysqli_real_escape_string($link, $_REQUEST['servicePath']);
@@ -571,47 +597,69 @@ else if ($action=="delete")
 			}
 			else
 			{
-				if ($protocol == "ngsi w/MultiService") {
-					// Create a new id
-					$id = $service . "." . $servicePath . "." . $id;
-				}
+				//id management
+				if ($protocol == "ngsi w/MultiService") $id = $service . "." . $servicePath . "." . $id;
+				get_device($username, $role, $id, $cb,  $accessToken, $link, $result);
+				
+				if (empty($result["content"]))
+                {
+                    $result["status"]="ko";
+                    $result['msg'] = "Unrecognized device";
+                    $result["error_msg"] .= "Problem in delete device (Unrecognized device)";
+                    $result["log"]= "action=delete - error Unrecognized device\r\n";
+                }
+                else
+                {
+				$dev_organization=$result["content"]["organization"];
+				//$url=$result["content"]["uri"];				
+				$eId=$dev_organization.":".$cb.":".$id;
 
-	     		deleteKB($link, $id, $cb, retrieveKbUrl($organizationApiURI, $dev_organization), $result, $service, $servicePath);	   
+				if (!enforcementRights($username, $accessToken, $role, $eId, 'IOTID','write', $result))
+				{
+					$result["status"]="ko";
+					$result['msg'] = "Not ownership or enough right to delete";
+					$result["error_msg"] .= "Problem in delete device (Not ownership or enough right to delete)";
+					$result["log"]= "action=delete - error Not ownership or enough right to delete\r\n";		
+				}
+				else
+				{
+		     		deleteKB($link, $id, $cb, retrieveKbUrl($organizationApiURI, $dev_organization), $result, $service, $servicePath);	   
 	
-				if ($result["status"]=='ko') return $result;
+					if ($result["status"]=='ko') return $result;
 			
-				$q1 = "UPDATE devices SET deleted = '". date("Y/m/d") . "' WHERE id = '$id' and contextBroker='$cb';";
-				$q2 = "INSERT INTO deleted_devices select * from devices WHERE id = '$id' and contextBroker='$cb'and deleted IS NOT NULL;";
-				$q3 = "INSERT INTO deleted_event_values (select cb,device,value_name,data_type,value_type,editable,value_unit,healthiness_criteria,
-					value_refresh_rate, different_values,value_bounds, event_values.order from event_values where  device = '$id' and cb='$cb' );";
-				$q4 = "DELETE FROM devices WHERE id = '$id' and contextBroker='$cb' and deleted IS NOT NULL;";
+					$q1 = "UPDATE devices SET deleted = '". date("Y/m/d") . "' WHERE id = '$id' and contextBroker='$cb';";
+					$q2 = "INSERT INTO deleted_devices select * from devices WHERE id = '$id' and contextBroker='$cb'and deleted IS NOT NULL;";
+					$q3 = "INSERT INTO deleted_event_values (select cb,device,value_name,data_type,value_type,editable,value_unit,healthiness_criteria,
+						value_refresh_rate, different_values,value_bounds, event_values.order from event_values where  device = '$id' and cb='$cb' );";
+					$q4 = "DELETE FROM devices WHERE id = '$id' and contextBroker='$cb' and deleted IS NOT NULL;";
      
-				$r1 = mysqli_query($link, $q1);
-				if ($r1)
-				{
-					$r2 = mysqli_query($link, $q2);
-					if($r2)
+					$r1 = mysqli_query($link, $q1);
+					if ($r1)
 					{
-						$r3 = mysqli_query($link, $q3);
-						if($r3)
+						$r2 = mysqli_query($link, $q2);
+						if($r2)
 						{
-							$r4 = mysqli_query($link, $q4);
-                   				}
-		               		}
-        		    	}
-				if($r4)
-				{
-					logAction($link,$username,'device','delete',$id . " ".$cb,$organization,'','success');	
-					$result["status"]='ok';
-					$eId=$dev_organization.":".$cb.":".$id;
-					removeOwnerShipDevice($eId,$accessToken,$result);
-			 	}
-	 			else
-		 		{
-			  		logAction($link,$username,'device','delete',$id . " ".$cb,$organization,'','faliure');	
-					$result["status"]='ko';
-					$result["msg"] .= "\n Problem in deleting the device $id: " . generateErrorMessage($link); 
-					$result["log"] .= "\n Problem in deleting the device $id: " . $query . " " . generateErrorMessage($link); 
+							$r3 = mysqli_query($link, $q3);
+							if($r3)
+							{
+								$r4 = mysqli_query($link, $q4);
+           					}
+               			}
+       		    	}
+					if($r4)
+					{
+						logAction($link,$username,'device','delete',$id . " ".$cb,$organization,'','success');	
+						$result["status"]='ok';
+						removeOwnerShipDevice($eId,$accessToken,$result);
+				 	}
+		 			else
+			 		{
+				  		logAction($link,$username,'device','delete',$id . " ".$cb,$organization,'','faliure');	
+						$result["status"]='ko';
+						$result["msg"] .= "\n Problem in deleting the device $id: " . generateErrorMessage($link); 
+						$result["log"] .= "\n Problem in deleting the device $id: " . $query . " " . generateErrorMessage($link); 
+					}
+				}
 				}
 			}
 		}
@@ -619,9 +667,10 @@ else if ($action=="delete")
 	my_log($result);
 	mysqli_close($link);
 }
+//in case of RootAdmin, use the username of the owner of the device
 else if ($action =='change_visibility')
 {
-	$missingParams=missingParameters(array('id', 'contextbroker', 'visibility', 'uri', 'dev_organization'));
+	$missingParams=missingParameters(array('id', 'contextbroker', 'visibility'));
 
 	if (empty($accessToken))
 	{
@@ -655,8 +704,8 @@ else if ($action =='change_visibility')
 			$id = mysqli_real_escape_string($link, $_REQUEST['id']);
 			$contextbroker = mysqli_real_escape_string($link, $_REQUEST['contextbroker']);
 			$visibility = mysqli_real_escape_string($link, $_REQUEST['visibility']);
-			$uri = mysqli_real_escape_string($link, $_REQUEST['uri']);
-			$dev_organization = mysqli_real_escape_string($link, $_REQUEST['dev_organization']);
+			//$uri = mysqli_real_escape_string($link, $_REQUEST['uri']);
+			//$dev_organization = mysqli_real_escape_string($link, $_REQUEST['dev_organization']);
 			if (isset($_REQUEST['service'])) $service = mysqli_real_escape_string($link, $_REQUEST['service']);
 		    else $service ="";
 		    if (isset($_REQUEST['servicePath'])) $servicePath = mysqli_real_escape_string($link, $_REQUEST['servicePath']);
@@ -673,88 +722,108 @@ else if ($action =='change_visibility')
 			}
 			else
 			{
-				if ($protocol == "ngsi w/MultiService") 
+				//id management
+				if ($protocol == "ngsi w/MultiService")	$id = $service . "." . $servicePath . "." . $id;
+				get_device($username, $role, $id, $contextbroker,  $accessToken, $link, $result);
+				if (empty($result["content"]))
+                {
+                    $result["status"]="ko";
+                    $result['msg'] = "Unrecognized device";
+                    $result["error_msg"] .= "Problem in change visibility (Unrecognized device)";
+                    $result["log"]= "action=change_visibility - error Unrecognized device\r\n";
+                }
+                else
+                {
+				$dev_organization=$result["content"]["organization"];
+				$uri=$result["content"]["uri"];
+				$eId=$dev_organization.":".$contextbroker.":".$id;
+
+				if (!enforcementRights($username, $accessToken, $role, $eId, 'IOTID','write', $result))
 				{
-					// Create a new id
-					$id = $service . "." . $servicePath . "." . $id;
+					$result["status"]="ko";
+					$result['msg'] = "Not ownership or enough right to update";
+					$result["error_msg"] .= "Problem in change visibility (Not ownership or enough right to update)";
+					$result["log"]= "action=change_visibility - error Not ownership or enough right to update\r\n";
 				}
-
-				$q = "UPDATE devices SET  visibility = '$visibility' WHERE id='$id' and contextBroker='$contextbroker'";
-				$r = mysqli_query($link, $q);
-			
-				if($r) 
+				else
 				{
-					logAction($link,$username,'device','change_visibility',$id . " ".$contextbroker,$organization,'new visibility '.$visibility,'success');			
-		
-					$result["status"]='ok'; 
-					$result["msg"] .= "\n Device Visibility correctly updated"; 
-					$result["log"] .= "\n Device $id: Visibility correctly updated"; 
-		
-					// information to be passed to the interface
-					$result["visibility"] = $visibility;
-
-					//retrieve any values of this this device
-		        	$q1 = "SELECT * FROM event_values WHERE cb = '$contextbroker' and device='$id'";
-	        		$values = mysqli_query($link, $q1);
-
-		        	$eid=$dev_organization.":".$contextbroker.":".$id; 
-					if ($visibility==='public')
-					{
-						//make public the device
-						delegateDeviceValue($eid, $contextbroker, NULL, $username, "ANONYMOUS", "", $accessToken, "", "", $result);
+					$q = "UPDATE devices SET  visibility = '$visibility' WHERE id='$id' and contextBroker='$contextbroker'";
+					$r = mysqli_query($link, $q);
 			
-						//make public any values of this device
-            			while($value = mysqli_fetch_assoc($values))
-						{
-            		    	delegateDeviceValue($uri ."/" . $value["value_name"], $contextbroker, $value["value_name"], $username, "ANONYMOUS", "", $accessToken, "", "", $result);           
-						}
-					}
-					else 
+					if($r) 
 					{
-						getDelegatorDevice($accessToken, $username, $result, $eid);
-						$delegated=$result["delegation"];
-				        $found=false;
-				        $i=0;
-				        while (!$found && $i < count($delegated))
-				        {
-				                if (isset($delegated[$i]["userDelegated"]) && $delegated[$i]["userDelegated"]=='ANONYMOUS')
+						logAction($link,$username,'device','change_visibility',$id . " ".$contextbroker,$organization,'new visibility '.$visibility,'success');			
+		
+						$result["status"]='ok'; 
+						$result["msg"] .= "\n Device Visibility correctly updated"; 
+						$result["log"] .= "\n Device $id: Visibility correctly updated"; 
+		
+						// information to be passed to the interface
+						$result["visibility"] = $visibility;
+
+						//retrieve any values of this this device
+			        	$q1 = "SELECT * FROM event_values WHERE cb = '$contextbroker' and device='$id'";
+	    	    		$values = mysqli_query($link, $q1);
+
+						if ($visibility==='public')
+						{
+							//make public the device
+							delegateDeviceValue($eId, $contextbroker, NULL, $username, "ANONYMOUS", "", $accessToken, "", "", $result);
+			
+							//make public any values of this device
+            				while($value = mysqli_fetch_assoc($values))
+							{
+	            		    	delegateDeviceValue($uri ."/" . $value["value_name"], $contextbroker, $value["value_name"], $username, "ANONYMOUS", "", $accessToken, "", "", $result);           
+							}
+						}
+						else 
+						{
+							getDelegatorDevice($accessToken, $username, $result, $eId);
+							$delegated=$result["delegation"];
+					        $found=false;
+					        $i=0;
+					        while (!$found && $i < count($delegated))
+					        {
+				    		    if (isset($delegated[$i]["userDelegated"]) && $delegated[$i]["userDelegated"]=='ANONYMOUS')
 		                		{
 		                	        	$found=true;
 	        		                	$delegationId= $delegated[$i]["delegationId"];
         	        			}
 		                		$i++;
-				        }
-				        if ($found)
-				        {
-							removeDelegationValue($accessToken, $username, $delegationId, $result);
-				        }
-		                //retrieve any public values
-           		        getDelegatedDevice($accessToken, "ANONYMOUS", $result);
-						$publicElement=$result["delegation"];
-						//remove public from any values of this device (if was public)
-		                while($value = mysqli_fetch_assoc($values))
-                        {
-                       		foreach ($publicElement as $public =>$public_value)
-		                    {
-                	            if ($uri ."/" . $value["value_name"] === $public)
-								{
-                               		removeDelegationValue($accessToken, $username, $public_value['delegationId'], $result);
-		                        }
-                		    }
-		                }
-						unset($result["delegation"]);
+					        }
+					        if ($found)
+					        {
+								removeDelegationValue($accessToken, $username, $delegationId, $result);
+					        }
+			                //retrieve any public values
+        	   		        getDelegatedDevice($accessToken, "ANONYMOUS", $result);
+							$publicElement=$result["delegation"];
+							//remove public from any values of this device (if was public)
+		            	    while($value = mysqli_fetch_assoc($values))
+                        	{
+                       			foreach ($publicElement as $public =>$public_value)
+			                    {
+    	            	            if ($uri ."/" . $value["value_name"] === $public)
+									{
+            	                   		removeDelegationValue($accessToken, $username, $public_value['delegationId'], $result);
+		        	                }
+                			    }
+		                	}
+							unset($result["delegation"]);
+						}
+						$result["status"]="ok";
+						$result["msg"]="The delegation to anonymous has been changed";
+						$result["log"]="The delegation to anonymous has been changed";
 					}
-					$result["status"]="ok";
-					$result["msg"]="The delegation to anonymous has been changed";
-					$result["log"]="The delegation to anonymous has been changed";
+					else 
+					{
+						logAction($link,$username,'device','change_visibility',$id . " ".$contextbroker,$organization,'new visibility '.$visibility,'failure');			
+			
+						$result["status"]='ko';
+						$result["msg"] .= "\n Problem in changing the visibility of the device $id: " . generateErrorMessage($link); 
+						$result["log"] .= "\n Problem in changing the visibility of the device $id: " . generateErrorMessage($link); 
+					}
 				}
-				else 
-				{
-					logAction($link,$username,'device','change_visibility',$id . " ".$contextbroker,$organization,'new visibility '.$visibility,'failure');			
-		
-					$result["status"]='ko';
-					$result["msg"] .= "\n Problem in changing the visibility of the device $id: " . generateErrorMessage($link); 
-					$result["log"] .= "\n Problem in changing the visibility of the device $id: " . generateErrorMessage($link); 
 				}
 			}
 		}
@@ -764,7 +833,7 @@ else if ($action =='change_visibility')
 }
 else if ($action =='change_owner')
 {
-	$missingParams=missingParameters(array('id', 'contextbroker', 'newOwner', 'k1', 'k2', 'model', 'uri',  'dev_organization'));
+	$missingParams=missingParameters(array('id', 'contextbroker', 'newOwner', 'k1', 'k2', 'model'));
 
 	if (empty($accessToken))
 	{
@@ -803,8 +872,8 @@ else if ($action =='change_owner')
 			$k1 = mysqli_real_escape_string($link, $_REQUEST['k1']);
 			$k2 = mysqli_real_escape_string($link, $_REQUEST['k2']);
 			$model = mysqli_real_escape_string($link, $_REQUEST['model']);
-			$url =  mysqli_real_escape_string($link, $_REQUEST['uri']);
-			$dev_organization =  mysqli_real_escape_string($link, $_REQUEST['dev_organization']);
+			//$url =  mysqli_real_escape_string($link, $_REQUEST['uri']);
+			//$dev_organization =  mysqli_real_escape_string($link, $_REQUEST['dev_organization']);
 			if (isset( $_REQUEST['edgegateway_type'])) $edgegateway_type = $_REQUEST['edgegateway_type'];
 			else $edgegateway_type="";
 			if (isset( $_REQUEST['edgegateway_uri'])) $edgegateway_uri = $_REQUEST['edgegateway_uri'];
@@ -825,77 +894,98 @@ else if ($action =='change_owner')
 			}
 			else
 			{
-				if ($protocol == "ngsi w/MultiService") {
-					// Create a new id
-					$id = $service . "." . $servicePath . "." . $id;
+				//id management
+				if ($protocol == "ngsi w/MultiService") $id = $service . "." . $servicePath . "." . $id;
+				get_device($currentowner, $role, $id, $cb,  $accessToken, $link, $result);
+				if (empty($result["content"]))
+                {
+                    $result["status"]="ko";
+                    $result['msg'] = "Unrecognized device";
+                    $result["error_msg"] .= "Problem in change owner (Unrecognized device)";
+                    $result["log"]= "action=change_owner - error Unrecognized device\r\n";
+                }
+                else
+                {
+				$dev_organization=$result["content"]["organization"];
+				$url=$result["content"]["uri"];
+				$eId=$dev_organization.":".$cb.":".$id;				
+
+				if (!enforcementRights($username, $accessToken, $role, $eId, 'IOTID','write', $result))
+				{
+					$result["status"]="ko";
+					$result['msg'] = "Not ownership or enough right to update";
+					$result["error_msg"] .= "Problem in change owner(Not ownership or enough right to update)";
+					$result["log"]= "action=change_owner - error Not ownership or enough right to update\r\n";
 				}
+				else
+				{
+					//for change ownership, a new certificate has to be created (if model is authenticated)
+					$errorThrown=false;
+			        if (registerCertificatePrivateKey($link, $cb, $id, $model, $pathCertificate, $result, $currentowner))
+		    	    {
+						$privatekey = $id . "-key.pem";
+						$certificate = $id . "-crt.pem";
+						$publickey = $id . "-pubkey.pem";
 
-				//for change ownership, a new certificate has to be created (if model is authenticated)
-				$errorThrown=false;
-		        if (registerCertificatePrivateKey($link, $cb, $id, $model, $pathCertificate, $result, $currentowner))
-		        {
-					$privatekey = $id . "-key.pem";
-					$certificate = $id . "-crt.pem";
-					$publickey = $id . "-pubkey.pem";
+						//update also local db information
+						$q = "UPDATE devices SET privatekey='".$privatekey."', certificate='".$certificate."' where id='".$id."';";
+						$r = mysqli_query($link, $q);
+						if($r)
+						{
+							logAction($link,$currentowner,'device','change_owner',$id . " ".$cb,$organization,'new owner: '.$newuser,'success');			
 
-					//update also local db information
-					$q = "UPDATE devices SET privatekey='".$privatekey."', certificate='".$certificate."' where id='".$id."';";
-					$r = mysqli_query($link, $q);
-					if($r)
+							$result["msg"] .= "\n cert correctly updated";
+							$result["log"] .= "\r\n cert correctly updated\r\n";
+						}
+						else 
+						{
+							logAction($link,$currentowner,'device','change_owner',$id . " ".$cb,$organization,'new owner: '.$newuser,'faliure');
+				
+							$result["msg"] .= "\n cert NOT correctly updated";
+							$result["log"] .= "\r\n cert NOT correctly updated\r\n";
+							$errorThrown=true;
+						}
+	        		}
+		        	else
+	        		{
+						$privatekey = "";
+						$certificate = "";
+				        $publickey = "";
+	        		}	
+	
+					if (!$errorThrown)
 					{
-						logAction($link,$currentowner,'device','change_owner',$id . " ".$cb,$organization,'new owner: '.$newuser,'success');			
-
-						$result["msg"] .= "\n cert correctly updated";
-						$result["log"] .= "\r\n cert correctly updated\r\n";
+						$ownmsg = array();
+						$ownmsg["elementId"]=$eId;
+						$ownmsg["elementName"]=$id;				    
+						$ownmsg["elementUrl"]=$url;
+						$ownmsg["deleted"]= date("Y/m/d");
+						$ownmsg["username"]=$currentowner;
+						$ownmsg["elementDetails"]=array();
+						$ownmsg["elementDetails"]["k1"]= $k1;
+						$ownmsg["elementDetails"]["k2"]= $k2;
+						if ($edgegateway_type!="") $ownmsg["elementDetails"]["edgegateway_type"]= $edgegateway_type;
+						if ($edgegateway_uri!="") $ownmsg["elementDetails"]["edgegateway_uri"]= $edgegateway_uri;								
+						$ownmsg["elementDetails"]["contextbroker"]=$cb;
+						registerOwnerShipDevice($eId, $ownmsg, $accessToken, $result);//delete old ownership
+						unset($ownmsg["deleted"]);
+						$ownmsg["username"]=$newuser;
+						if ($publickey!="") 
+						{
+        	        		$pub_key_str=str_replace("\n", "", file_get_contents($pathCertificate."/".$publickey));
+            	            $ownmsg["elementDetails"]["publickey"]= substr($pub_key_str, 26, 736);
+	            	    }
+						registerOwnerShipDevice($eId, $ownmsg, $accessToken, $result);//insert new ownership
+						$result["status"]='ok';
+		
+						logAction($link,$currentowner,'device','change_owner',$id . " ".$cb,$organization,'new owner: '.$newuser,'success');	
 					}
 					else 
 					{
 						logAction($link,$currentowner,'device','change_owner',$id . " ".$cb,$organization,'new owner: '.$newuser,'faliure');
-				
-						$result["msg"] .= "\n cert NOT correctly updated";
-						$result["log"] .= "\r\n cert NOT correctly updated\r\n";
-						$errorThrown=true;
+						$result["status"]='ko';
 					}
-	        	}
-		        else
-        		{
-					$privatekey = "";
-					$certificate = "";
-			        $publickey = "";
-	        	}	
-	
-				if (!$errorThrown)
-				{
-					$ownmsg = array();
-			        $eId=$dev_organization.":".$cb.":".$id;
-					$ownmsg["elementId"]=$eId;
-					$ownmsg["elementName"]=$id;				    
-					$ownmsg["elementUrl"]=$url;
-					$ownmsg["deleted"]= date("Y/m/d");
-					$ownmsg["username"]=$currentowner;
-					$ownmsg["elementDetails"]=array();
-					$ownmsg["elementDetails"]["k1"]= $k1;
-					$ownmsg["elementDetails"]["k2"]= $k2;
-					if ($edgegateway_type!="") $ownmsg["elementDetails"]["edgegateway_type"]= $edgegateway_type;
-					if ($edgegateway_uri!="") $ownmsg["elementDetails"]["edgegateway_uri"]= $edgegateway_uri;								
-					$ownmsg["elementDetails"]["contextbroker"]=$cb;
-					registerOwnerShipDevice($eId, $ownmsg, $accessToken, $result);//delete old ownership
-					unset($ownmsg["deleted"]);
-					$ownmsg["username"]=$newuser;
-					if ($publickey!="") 
-					{
-                		$pub_key_str=str_replace("\n", "", file_get_contents($pathCertificate."/".$publickey));
-                        $ownmsg["elementDetails"]["publickey"]= substr($pub_key_str, 26, 736);
-	                }
-					registerOwnerShipDevice($eId, $ownmsg, $accessToken, $result);//insert new ownership
-					$result["status"]='ok';
-		
-					logAction($link,$currentowner,'device','change_owner',$id . " ".$cb,$organization,'new owner: '.$newuser,'success');	
 				}
-				else 
-				{
-					logAction($link,$currentowner,'device','change_owner',$id . " ".$cb,$organization,'new owner: '.$newuser,'faliure');
-					$result["status"]='ko';
 				}
 			}
 		}
@@ -923,65 +1013,101 @@ else if($action == 'get_device_attributes')
 	}
 	else
 	{
-		$id = mysqli_real_escape_string($link, $_REQUEST['id']);
-		$cb = mysqli_real_escape_string($link, $_REQUEST['contextbroker']);
-		if (isset($_REQUEST['service'])) $service = mysqli_real_escape_string($link, $_REQUEST['service']);
-		else $service = "";
-		if (isset($_REQUEST['servicePath'])) $servicePath = mysqli_real_escape_string($link, $_REQUEST['servicePath']);
-		else $servicePath="";
+		 //retrieve username, organization and role from the accetoken
+        //TODO avoid passing all the parameters for LDAP
+        get_user_info($accessToken, $username, $organization, $oidc, $role, $result, $ldapBaseName, $ldapServer, $ldapPort, $ldapAdminName, $ldapAdminPwd);
 
-		$protocol = getProtocol($cb, $link);
-
-		if (empty($protocol))//it also ensure the contextbroker name is valid
+        if ($result["status"]!="ok")
         {
-			$result["status"]="ko";
-            $result['msg'] = "Unrecognized contextbroker/protocol";
-            $result["error_msg"] .= "Problem in get device attributes (Unrecognized contextbroker/protocol)";
-            $result["log"]= "action=get_device_attributes - error Unrecognized contextbroker/protocol\r\n";
-		}
-		else
-		{
-			if($protocol == "ngsi w/MultiService"){
-				// Create a new id
-				$id = $service . "." . $servicePath . "." . $id;
-			}    
-		
-			$q1 = "SELECT * FROM event_values WHERE cb = '$cb' AND device = '$id'";
-			$r1 = mysqli_query($link, $q1);
-			$attributes = array();
-			if($r1)
-			{
-				while($row = mysqli_fetch_assoc($r1))
-				{ 
-					  $rec=array();
-					  $rec["cb"]=$row["cb"];
-					  $rec["device"]=$row["device"];
-					  $rec["value_name"]=$row["value_name"];
-					  $rec["data_type"]=$row["data_type"];
-					  $rec["value_type"]=$row["value_type"];
-					  $rec["editable"]=$row["editable"];
-					  $rec["value_unit"]=$row["value_unit"];
-					  $rec["order"]=$row["order"];
-					  $rec["healthiness_criteria"]=$row["healthiness_criteria"];
-					  if($rec["healthiness_criteria"]=="refresh_rate") 
-			          $rec["healthiness_value"]=$row["value_refresh_rate"];
-					  if($rec["healthiness_criteria"]=="different_values") 
-			          $rec["healthiness_value"]=$row["different_values"];
-               		  if($rec["healthiness_criteria"]=="within_bounds") 
-			          $rec["healthiness_value"]=$row["value_bounds"];						  
-					  array_push($attributes, $rec);
-               	}
-				$result['status'] = 'ok';
-				$result['content'] = $attributes;
-				$result['log'] .= "\n\r action:get_device_attributes. access to " . $q1;
+            $result["status"]="ko";
+            $result['msg'] = "Cannot retrieve user information";
+            $result["error_msg"] .= "Problem changing owner (Cannot retrieve user information)";
+            $result["log"]= "action=change_owner - error Cannot retrieve user information\r\n";
+        }
+        else
+        {
+
+			$id = mysqli_real_escape_string($link, $_REQUEST['id']);
+			$cb = mysqli_real_escape_string($link, $_REQUEST['contextbroker']);
+			if (isset($_REQUEST['service'])) $service = mysqli_real_escape_string($link, $_REQUEST['service']);
+			else $service = "";
+			if (isset($_REQUEST['servicePath'])) $servicePath = mysqli_real_escape_string($link, $_REQUEST['servicePath']);
+			else $servicePath="";
+
+			$protocol = getProtocol($cb, $link);
+
+			if (empty($protocol))//it also ensure the contextbroker name is valid
+	        {
+				$result["status"]="ko";
+        	    $result['msg'] = "Unrecognized contextbroker/protocol";
+	            $result["error_msg"] .= "Problem in get device attributes (Unrecognized contextbroker/protocol)";
+    	        $result["log"]= "action=get_device_attributes - error Unrecognized contextbroker/protocol\r\n";
 			}
 			else
 			{
-				$result['status'] = 'ko'; // . $q1 . generateErrorMessage($link);
-				$result['msg'] = 'Error: errors in reading data about devices. <br/>' .  generateErrorMessage($link);
-				$result['log'] .= '\n\naction:get_device_attributes. Error: errors in reading data about devices. ' . generateErrorMessage($link);				  
-			}
-    	}
+				//id management
+				if($protocol == "ngsi w/MultiService")	$id = $service . "." . $servicePath . "." . $id;
+				get_device($username, $role, $id, $cb,  $accessToken, $link, $result);
+				if (empty($result["content"]))
+                {
+                    $result["status"]="ko";
+                    $result['msg'] = "Unrecognized device";
+                    $result["error_msg"] .= "Problem in get_device_attribute (Unrecognized device)";
+                    $result["log"]= "action=get_device_attributes - error Unrecognized device\r\n";
+                }
+                else
+                {
+				$dev_organization=$result["content"]["organization"];
+				$eId=$dev_organization.":".$cb.":".$id;
+
+				if (!enforcementRights($username, $accessToken, $role, $eId, 'IOTID','read', $result))
+				{	
+					$result["status"]="ko";
+					$result['msg'] = "Not ownership or enough right to update";
+					$result["error_msg"] .= "Problem in get device attributes (Not ownership or enough right to update)";
+					$result["log"]= "action=get_device_attributes - error Not ownership or enough right to update\r\n";
+				}
+				else
+				{
+					$q1 = "SELECT * FROM event_values WHERE cb = '$cb' AND device = '$id'";
+					$r1 = mysqli_query($link, $q1);
+					$attributes = array();
+					if($r1)
+					{
+						while($row = mysqli_fetch_assoc($r1))
+						{ 
+							  $rec=array();
+							  $rec["cb"]=$row["cb"];
+							  $rec["device"]=$row["device"];
+							  $rec["value_name"]=$row["value_name"];
+							  $rec["data_type"]=$row["data_type"];
+							  $rec["value_type"]=$row["value_type"];
+							  $rec["editable"]=$row["editable"];
+							  $rec["value_unit"]=$row["value_unit"];
+							  $rec["order"]=$row["order"];
+							  $rec["healthiness_criteria"]=$row["healthiness_criteria"];
+							  if($rec["healthiness_criteria"]=="refresh_rate") 
+				        	  $rec["healthiness_value"]=$row["value_refresh_rate"];
+							  if($rec["healthiness_criteria"]=="different_values") 
+					          $rec["healthiness_value"]=$row["different_values"];
+    		           		  if($rec["healthiness_criteria"]=="within_bounds") 
+					          $rec["healthiness_value"]=$row["value_bounds"];						  
+							  array_push($attributes, $rec);
+	               		}
+						$result['status'] = 'ok';
+						$result['content'] = $attributes;
+						$result['log'] .= "\n\r action:get_device_attributes. access to " . $q1;
+					}
+					else
+					{
+						$result['status'] = 'ko'; // . $q1 . generateErrorMessage($link);
+						$result['msg'] = 'Error: errors in reading data about devices. <br/>' .  generateErrorMessage($link);
+						$result['log'] .= '\n\naction:get_device_attributes. Error: errors in reading data about devices. ' . generateErrorMessage($link);				  
+					}
+				}
+				}
+    		}
+		}
 	}
 	my_log($result);
 	mysqli_close($link);
@@ -1036,8 +1162,8 @@ else if ($action == 'get_available_static')
         {
                 $newresult["status"]="ko";
                 $newresult['msg'] = "Missing Parameters";
-                $newresult["error_msg"] .= "Problem getting all the device attr information (Missing parameters: ".implode(", ",$missingParams)." )";
-                $newresult["log"]= "action=get_device_attributes - error Missing Parameters: ".implode(", ",$missingParams)." \r\n";
+                $newresult["error_msg"] .= "Problem getting available static (Missing parameters: ".implode(", ",$missingParams)." )";
+                $newresult["log"]= "action=get_available_static - error Missing Parameters: ".implode(", ",$missingParams)." \r\n";
         }
 	else {
 		$subnature = mysqli_real_escape_string($link, $_REQUEST['subnature']);
@@ -1178,13 +1304,50 @@ else if (($action == "get_device_simple")||($action == "get_device"))
 		{
 			$id = mysqli_real_escape_string($link, $_REQUEST['id']);
         	$cb = mysqli_real_escape_string($link, $_REQUEST['contextbroker']);
-			if (isset($_REQUEST['service'])) $service = mysqli_real_escape_string($link, $_REQUEST['service']);//can be not present in case the cb is not multiservice
-		    if (isset($_REQUEST['servicePath'])) $servicePath = mysqli_real_escape_string($link, $_REQUEST['servicePath']);//can be not present in case the cb is not multiservice
+			if (isset($_REQUEST['service'])) $service = mysqli_real_escape_string($link, $_REQUEST['service']);
+            else $service = "";
+            if (isset($_REQUEST['servicePath'])) $servicePath = mysqli_real_escape_string($link, $_REQUEST['servicePath']);
+            else $servicePath="";
 
-			if (isset($service) && isset($servicePath))// if multiservice the id is updated accordly
-		 	   $id = $service . "." . $servicePath . "." . $id;
+			$protocol = getProtocol($cb, $link);
 
-            get_device($username, $organization, $role, $id, $cb, $accessToken, $link, $result);
+            if (empty($protocol))//it also ensure the contextbroker name is valid
+            {
+                $result["status"]="ko";
+                $result['msg'] = "Unrecognized contextbroker/protocol";
+                $result["error_msg"] .= "Problem getting device information (Unrecognized contextbroker/protocol)";
+                $result["log"]= "action=get_device - error Unrecognized contextbroker/protocol\r\n";
+            }
+            else
+            {
+				//id management
+				if($protocol == "ngsi w/MultiService")  $id = $service . "." . $servicePath . "." . $id;
+				get_device($username, $role, $id, $cb,  $accessToken, $link, $result);
+				if (empty($result["content"]))
+                {
+                    $result["status"]="ko";
+                    $result['msg'] = "Unrecognized device";
+                    $result["error_msg"] .= "Problem in getting device information  (Unrecognized device)";
+                    $result["log"]= "action=get_device - error Unrecognized device\r\n";
+                }
+                else
+                {
+					$dev_organization=$result["content"]["organization"];
+					$eId=$dev_organization.":".$cb.":".$id;
+
+					if (!enforcementRights($username, $accessToken, $role, $eId, 'IOTID','read', $result))
+					{
+						$result["status"]="ko";
+						$result['msg'] = "Not ownership or enough right to update";
+						$result["error_msg"] .= "Problem in getting device information (Not ownership or enough right to update)";
+						$result["log"]= "action=get_device - error Not ownership or enough right to update\r\n";
+					}
+					else
+					{								
+			            get_device($username, $role, $id, $cb, $accessToken, $link, $result);
+					}
+				}
+			}
 		}
 	}
     my_log($result);
@@ -1389,6 +1552,7 @@ else if ($action == "get_all_device")
 	mysqli_close($link);
 }
 //TODO can be unified with get_all_device
+//assurance on ADMIN is guarranteed by getOwnerShipDevice
 else if($action == "get_all_device_admin")
 {
 	if (empty($accessToken))
@@ -1854,55 +2018,97 @@ else if ($action == 'download')
         else
         {
 			$result["log"]="\r\n download invoked\n";
+			
+			$id = mysqli_real_escape_string($link, $_REQUEST['id']);
+			$contextbroker = mysqli_real_escape_string($link, $_REQUEST['contextbroker']);
+			$filename = mysqli_real_escape_string($link, $_REQUEST['filename']);
 
-			$contextbroker = mysqli_real_escape_string($link, @$_REQUEST['contextbroker']);
-			$eID=$organization.":".$contextbroker.":".$_REQUEST['id'];
-			//TODO support Multi-tenancy scenario
 
-			$url= $GLOBALS["ownershipURI"] . "ownership-api/v1/list/?type=IOTID&accessToken=" . $accessToken . "&elementId=".$eID;
-			$local_result = file_get_contents($url);
-			if(strpos($http_response_header[0], '200') === false)
+			$protocol = getProtocol($contextbroker, $link);
+	
+			if (empty($protocol))//it also ensure the contextbroker name is valid
             {
-				$result["status"]='ko';
-				$result["msg"] .= "\n error in acceding the ownership";
-				$result["log"] .= "\n error in acceding the ownership";
-			}
-			else
-			{
-				if (strpos($_REQUEST['filename'], $_REQUEST['id']) === false)
-				{
-					logAction($link,$currentUser,'devices','download',$_REQUEST['id'] . " ". $_REQUEST["filename"] . " filename was tempered",$organization,'','faliure');
-									
-					$result["status"]='ko';
-					$result["msg"] .= "\n the filename was tempered";
-					$result["log"] .= "\n the filename was tempered";
+                $result["status"]="ko";
+                $result['msg'] = "Unrecognized contextbroker/protocol";
+                $result["error_msg"] .= "Problem in download (Unrecognized contextbroker/protocol)";
+                $result["log"]= "action=download - error Unrecognized contextbroker/protocol\r\n";
+            }
+            else
+            {
+				//id management
+				if($protocol == "ngsi w/MultiService")  $id = $service . "." . $servicePath . "." . $id;
+				get_device($currentUser, $role, $id, $contextbroker,  $accessToken, $link, $result);
+				if (empty($result["content"]))
+                {
+                    $result["status"]="ko";
+                    $result['msg'] = "Unrecognized device";
+                    $result["error_msg"] .= "Problem in download (Unrecognized device)";
+                    $result["log"]= "action=download - error Unrecognized device\r\n";
+                }
+                else
+                {
+				$dev_organization=$result["content"]["organization"];
+				$eId=$dev_organization.":".$contextbroker.":".$id;
+
+				if (!enforcementRights($username, $accessToken, $role, $eId, 'IOTID','read', $result))
+				{	
+					$result["status"]="ko";
+					$result['msg'] = "Not ownership or enough right to update";
+					$result["error_msg"] .= "Problem in download (Not ownership or enough right to update)";
+					$result["log"]= "action=download - error Not ownership or enough right to update\r\n";
 				}
-				else
+				else 
 				{
-					if (strpos($local_result, $_REQUEST['id']) === false)
-					{		
-						logAction($link,$currentUser,'devices','download',$_REQUEST['id'] . " ". $_REQUEST["filename"]. " you don't own the requested device",$organization,'',success);
+					//TODO support Multi-tenancy scenario
+					//TODO remove this check... this is already enforced above
+					$url= $GLOBALS["ownershipURI"] . "ownership-api/v1/list/?type=IOTID&accessToken=" . $accessToken . "&elementId=".$eId;
+					$local_result = file_get_contents($url);
+					if(strpos($http_response_header[0], '200') === false)
+		            {
 						$result["status"]='ko';
-						$result["msg"] .= "\n you don't own the requested device";
-						$result["log"] .= "\n you don't own the requested device";
+						$result["msg"] .= "\n error in acceding the ownership";
+						$result["log"] .= "\n error in acceding the ownership";
 					}
 					else
 					{
-						$result['status'] = 'ok';
-						$result['msg'] = file_get_contents($pathCertificate.$_REQUEST['filename']);
-						$result['log']='\r\n download success';
-						logAction($link,$currentUser,'devices','download',$_REQUEST['id'] . " ". $_REQUEST["filename"],$organization,'','success');
-      	        	}
+						if (strpos($filename, $id) === false)
+						{
+							logAction($link,$currentUser,'devices','download',$id . " ". $filename . " filename was tempered",$organization,'','faliure');
+											
+							$result["status"]='ko';
+							$result["msg"] .= "\n the filename was tempered";
+							$result["log"] .= "\n the filename was tempered";
+						}
+						else
+						{
+							if (strpos($local_result, $id) === false)
+							{		
+								logAction($link,$currentUser,'devices','download',$id . " ". $filename. " you don't own the requested device",$organization,'',success);
+								$result["status"]='ko';
+								$result["msg"] .= "\n you don't own the requested device";
+								$result["log"] .= "\n you don't own the requested device";
+							}
+							else
+							{
+								$result['status'] = 'ok';
+								$result['msg'] = file_get_contents($pathCertificate.$filename);
+								$result['log']='\r\n download success';
+								logAction($link,$currentUser,'devices','download',$id . " ". $filename,$organization,'','success');
+      			        	}
+						}
+			        }	
+					}	
 				}
-   	        }		
+			}
 		}
 	}
+
 	my_log($result);
 	mysqli_close($link);
 }
 else if($action == "get_delegations")
 {
-	$missingParams=missingParameters(array('id', 'contextbroker', 'uri', 'dev_organization'));
+	$missingParams=missingParameters(array('id', 'contextbroker'));
 
 	if (empty($accessToken))
     {
@@ -1933,9 +2139,9 @@ else if($action == "get_delegations")
 		}
         else
         {
-			$uri =  mysqli_real_escape_string($link, $_REQUEST['uri']);
+			//$uri =  mysqli_real_escape_string($link, $_REQUEST['uri']);
 			$cb = mysqli_real_escape_string($link, $_REQUEST['contextbroker']);
-			$dev_organization = mysqli_real_escape_string($link, $_REQUEST['dev_organization']);
+			//$dev_organization = mysqli_real_escape_string($link, $_REQUEST['dev_organization']);
 			$id = mysqli_real_escape_string($link, $_REQUEST['id']);
 			if (isset($_REQUEST['service'])) $service = mysqli_real_escape_string($link, $_REQUEST['service']);
             else $service ="";
@@ -1953,24 +2159,43 @@ else if($action == "get_delegations")
 			}
 			else
 			{
-				if ($protocol == "ngsi w/MultiService") 
-				{
-					// Create a new id
-					$id = $service . "." . $servicePath . "." . $id;
-				}   
- 
-				$eid=$dev_organization.":".$cb.":".$id;
-
-				getDelegatorDevice($accessToken, $user, $result, $eid);
+				//id management
+				if ($protocol == "ngsi w/MultiService")	$id = $service . "." . $servicePath . "." . $id;
+				get_device($user, $role, $id, $cb,  $accessToken, $link, $result);
+				if (empty($result["content"]))
+                {
+                    $result["status"]="ko";
+                    $result['msg'] = "Unrecognized device";
+                    $result["error_msg"] .= "Problem in retrieve delegation (Unrecognized device)";
+                    $result["log"]= "action=get_delegations - error Unrecognized device\r\n";
+                }
+                else
+                {
+					$dev_organization=$result["content"]["organization"];
+					$eId=$dev_organization.":".$cb.":".$id;			
+				
+					if (!enforcementRights($username, $accessToken, $role, $eId, 'IOTID','read', $result))
+					{
+						$result["status"]="ko";
+						$result['msg'] = "Not ownership or enough right to update";
+						$result["error_msg"] .= "Problem in retrieve delegations (Not ownership or enough right to update)";
+						$result["log"]= "action=get_delegations - error Not ownership or enough right to update\r\n";
+					}
+					else
+					{ 
+						getDelegatorDevice($accessToken, $user, $result, $eId);
+					}
+				}
 			}
 		}
 	}
 	my_log($result);
 	mysqli_close($link);
 }
+//TODO in case of RootAdmin, use the username of the owner of the device
 else if($action == "add_delegation")
 {
-	$missingParams=missingParameters(array('id', 'contextbroker', 'uri', 'dev_organization', 'k1', 'k2'));
+	$missingParams=missingParameters(array('id', 'contextbroker', 'k1', 'k2'));
 
 	if (empty($accessToken))
     {
@@ -2002,9 +2227,9 @@ else if($action == "add_delegation")
         else
         {
 			$cb = mysqli_real_escape_string($link, $_REQUEST['contextbroker']);
-			$dev_organization = mysqli_real_escape_string($link, $_REQUEST['dev_organization']);
+			//$dev_organization = mysqli_real_escape_string($link, $_REQUEST['dev_organization']);
 			$id = mysqli_real_escape_string($link, $_REQUEST['id']);
-			$uri =  mysqli_real_escape_string($link, $_REQUEST['uri']);
+			//$uri =  mysqli_real_escape_string($link, $_REQUEST['uri']);
 			$delegated_user = (isset($_REQUEST['delegated_user']))?mysqli_real_escape_string($link, $_REQUEST['delegated_user']):"";
 			$delegated_group= (isset($_REQUEST['delegated_group']))?mysqli_real_escape_string($link, $_REQUEST['delegated_group']):"";
 			$k1 = mysqli_real_escape_string($link, $_REQUEST['k1']);
@@ -2025,35 +2250,54 @@ else if($action == "add_delegation")
 			}
 			else
 			{
-				if ($protocol == "ngsi w/MultiService") 
+				//id management
+				if ($protocol == "ngsi w/MultiService")	$id = $service . "." . $servicePath . "." . $id;
+				get_device($user, $role, $id, $cb,  $accessToken, $link, $result);
+				if (empty($result["content"]))
+                {
+                    $result["status"]="ko";
+                    $result['msg'] = "Unrecognized device";
+                    $result["error_msg"] .= "Problem in adding delegations (Unrecognized device)";
+                    $result["log"]= "action=add_delegations - error Unrecognized device\r\n";
+                }
+                else
+                {
+				$dev_organization=$result["content"]["organization"];
+				$uri=$result["content"]["uri"];
+				$eId=$dev_organization.":".$cb.":".$id;
+
+				if (!enforcementRights($username, $accessToken, $role, $eId, 'IOTID','write', $result))
 				{
-					// Create a new id
-					$id = $service . "." . $servicePath . "." . $id;
+					$result["status"]="ko";
+					$result['msg'] = "Not ownership or enough right to update";
+					$result["error_msg"] .= "Problem in adding delegation (Not ownership or enough right to update)";
+					$result["log"]= "action=add_delegations - error Not ownership or enough right to update\r\n";
 				}
-
-				$delId= $dev_organization.":".$cb.":".$id;
-
-				if (($delegated_user != "" || $delegated_group != "") && $user != "")
+				else
 				{
-					//retrieve any values of this this device
-		        	$q1 = "SELECT * FROM event_values WHERE cb = '$cb' and device='$id'";
-	        		$values = mysqli_query($link, $q1);
-	
-					//delegate any values of this device
-					while($value = mysqli_fetch_assoc($values))
+					if (($delegated_user != "" || $delegated_group != "") && $user != "")
 					{
-						delegateDeviceValue($uri ."/" . $value["value_name"], $cb, $value["value_name"], $user, $delegated_user, $delegated_group, $accessToken, $k1, $k2, $result);
-					}
+						//retrieve any values of this this device
+			        	$q1 = "SELECT * FROM event_values WHERE cb = '$cb' and device='$id'";
+	        			$values = mysqli_query($link, $q1);
+	
+						//delegate any values of this device
+						while($value = mysqli_fetch_assoc($values))
+						{
+							delegateDeviceValue($uri ."/" . $value["value_name"], $cb, $value["value_name"], $user, $delegated_user, $delegated_group, $accessToken, $k1, $k2, $result);
+						}
 
-					//delegate the device
-        	        delegateDeviceValue($delId, $cb, NULL, $user, $delegated_user, $delegated_group, $accessToken, $k1, $k2, $result);
+						//delegate the device
+    	    	        delegateDeviceValue($eId, $cb, NULL, $user, $delegated_user, $delegated_group, $accessToken, $k1, $k2, $result);
+					}
+		    	    else
+	    	    	{
+						$result["status"]='ko';
+						$result["msg"]='\n the function delegate_value has been called without specifying mandatory parameters';
+						$result["log"]='\n the function delegate_value has been called without specifying mandatory parameters';
+			        }
 				}
-		        else
-	    	    {
-					$result["status"]='ko';
-					$result["msg"]='\n the function delegate_value has been called without specifying mandatory parameters';
-					$result["log"]='\n the function delegate_value has been called without specifying mandatory parameters';
-		        }
+				}
 			}
 		}
 	}
@@ -2062,7 +2306,7 @@ else if($action == "add_delegation")
 }
 else if($action == "remove_delegation")
 {
-	$missingParams=missingParameters(array('id', 'contextbroker', 'uri', 'delegationId'));
+	$missingParams=missingParameters(array('id', 'contextbroker', 'delegationId'));
 
 	if (empty($accessToken))
     {
@@ -2094,7 +2338,7 @@ else if($action == "remove_delegation")
 		else
 		{
 			$delegationId = mysqli_real_escape_string($link, $_REQUEST['delegationId']);
-			$uri = mysqli_real_escape_string($link, $_REQUEST['uri']);
+			//$uri = mysqli_real_escape_string($link, $_REQUEST['uri']);
 			if (isset($_REQUEST['userDelegated'])) $userDelegated = mysqli_real_escape_string($link, $_REQUEST['userDelegated']);
 			if (isset($_REQUEST['groupDelegated']))
 			{
@@ -2128,44 +2372,65 @@ else if($action == "remove_delegation")
 			}
 			else
 			{
-				if ($protocol == "ngsi w/MultiService") 
-				{
-					// Create a new id
-					$id = $service . "." . $servicePath . "." . $id;
-				}
+				//id management
+				if ($protocol == "ngsi w/MultiService") $id = $service . "." . $servicePath . "." . $id;
+				get_device($user, $role, $id, $cb,  $accessToken, $link, $result);
+				if (empty($result["content"]))
+                {
+                    $result["status"]="ko";
+                    $result['msg'] = "Unrecognized device";
+                    $result["error_msg"] .= "Problem in remove_delegations (Unrecognized device)";
+                    $result["log"]= "action=remove_delegations - error Unrecognized device\r\n";
+                }
+                else
+                {
+					$dev_organization=$result["content"]["organization"];
+					$uri=$result["content"]["uri"];
+					$eId=$dev_organization.":".$cb.":".$id;
 
-				//remove delegation the device
-				removeDelegationValue($accessToken, $user, $delegationId, $result);
-
-				//retrieve any values of this device
-				$q1 = "SELECT * FROM event_values WHERE cb = '$cb' and device='$id'";
-		        $values = mysqli_query($link, $q1);
-
-				//retrieve any delegation made on values of this this device
-				while($value = mysqli_fetch_assoc($values))
-				{
-					getDelegatorDevice($accessToken, $user, $result, $uri ."/" . $value["value_name"]);
-					$delegated=$result["delegation"];
-					$i=0;
-					while ($i < count($delegated))
+					if (!enforcementRights($username, $accessToken, $role, $eId, 'IOTID','write', $result))
 					{
-					
-						if (isset($delegated[$i]["userDelegated"]) && (isset($userDelegated)) && $delegated[$i]["userDelegated"]==$userDelegated)
+						$result["status"]="ko";
+						$result['msg'] = "Not ownership or enough right to update";
+						$result["error_msg"] .= "Problem in remove delegations (Not ownership or enough right to update)";
+						$result["log"]= "action=remove_delegations - error Not ownership or enough right to update\r\n";
+					}
+					else
+					{
+						//remove delegation the device
+						removeDelegationValue($accessToken, $user, $delegationId, $result);
+
+						//retrieve any values of this device
+						$q1 = "SELECT * FROM event_values WHERE cb = '$cb' and device='$id'";
+			    	    $values = mysqli_query($link, $q1);
+
+						//retrieve any delegation made on values of this this device
+						while($value = mysqli_fetch_assoc($values))
 						{
-							$delegationId= $delegated[$i]["delegationId"];
-							removeDelegationValue($accessToken, $user, $delegationId, $result);
+							getDelegatorDevice($accessToken, $user, $result, $uri ."/" . $value["value_name"]);
+							$delegated=$result["delegation"];
+							$i=0;
+							while ($i < count($delegated))
+							{
+								if (isset($delegated[$i]["userDelegated"]) && (isset($userDelegated)) && $delegated[$i]["userDelegated"]==$userDelegated)
+								{
+									$delegationId= $delegated[$i]["delegationId"];
+									removeDelegationValue($accessToken, $user, $delegationId, $result);
+								}
+								else if (isset($delegated[$i]["groupDelegated"]) && (isset($groupDelegated)) && $delegated[$i]["groupDelegated"]==$groupDelegated)
+		    	        	    {
+        	                	    $delegationId= $delegated[$i]["delegationId"];
+            	   		        	removeDelegationValue($accessToken, $user, $delegationId, $result);
+		        		        }
+								$i++;
+							}
 						}
-						else if (isset($delegated[$i]["groupDelegated"]) && (isset($groupDelegated)) && $delegated[$i]["groupDelegated"]==$groupDelegated)
-	    	            {
-                            $delegationId= $delegated[$i]["delegationId"];
-               		        removeDelegationValue($accessToken, $user, $delegationId, $result);
-	        	        }
-						$i++;
 					}
 				}
 			}
 		}
 	}
+
 	my_log($result);
 	mysqli_close($link);
 }

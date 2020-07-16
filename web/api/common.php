@@ -913,7 +913,8 @@ function getDelegatedDevice($token, $user, &$result) {
        // return $listCondDevice;
 }
 
-function getDelegatedObject($token, $user, $object, &$result) {
+function getDelegatedObject($token, $user, $object, &$result) 
+{
 	$local_result="";
     $mykeys = array();
 	try
@@ -984,6 +985,44 @@ function getDelegatedObject($token, $user, $object, &$result) {
 		   $result["log"] .= '\n errors in reading delegations personal' . $local_result . $url ."------" . $http_response_header[0];
 	   }	   
        
+}
+
+//this function reuse an existent function
+//TODO use the check apis from mypersonaldata
+function checkDelegationObject($username, $token, $elementId, $elementType, &$result)
+{
+	error_log("elementID".$elementId);	
+
+    $toreturn=false;
+
+	getDelegatedObject($token, $username, $elementType, $result);
+
+	error_log("DELEG:".json_encode($result));
+
+	if ($result["status"]=="ok")
+	{
+
+        if (isset($result["delegation"][$elementId])){
+					error_log("TRUE");
+                    $toreturn=true;
+		}
+
+		
+		$result["status"]='ok';
+		$result["msg"] .= '\n check delegation '.$toreturn;
+		$result["log"] .= '\n check delegation '.$toreturn;
+	}
+	else
+	{
+            $result["status"]='ko';
+            $result["error_msg"] = 'Error in accessing the delegation. ';
+            $result["msg"] = '\n error in accessing the delegation';
+            $result["log"] = '\n error in accessing the delegation';
+	}
+
+	unset($result["delegation"]);
+
+    return $toreturn;
 }
 
 
@@ -1127,96 +1166,97 @@ function getDelegatorObject($token, $user, &$result,$object, $delegationId) {
 	
 }
 
-function getOwnerShipDevice($token, &$result) {
+function getOwnerShipDevice($token, &$result) 
+{
 	$listCondDevice = "";
-        $local_result="";
-        $mykeys = array();
+	$local_result="";
+	$mykeys = array();
 	try
 	{
-	 $url= $GLOBALS["ownershipURI"] . "ownership-api/v1/list/?type=IOTID&accessToken=" . $token;
+		$url= $GLOBALS["ownershipURI"] . "ownership-api/v1/list/?type=IOTID&accessToken=" . $token;
 
-     $local_result = file_get_contents($url);
-     $result["log"] .= $local_result;
-	if(strpos($http_response_header[0], '200') == true || strpos($http_response_header[0], '204') == true)
-	{
-
-		$lists = json_decode($local_result);
-		for ($i=0;$i < count($lists); $i++)
+		$local_result = file_get_contents($url);
+		$result["log"] .= $local_result;
+		if(strpos($http_response_header[0], '200') == true || strpos($http_response_header[0], '204') == true)
 		{
-          if (!isset($lists[$i]->deleted))
-          {
-              
-                  if(strpos($lists[$i]->elementId,":")>0){
-                      $org=substr($lists[$i]->elementId,0,strpos($lists[$i]->elementId,":"));
-                      $cb_name=substr($lists[$i]->elementId,strpos($lists[$i]->elementId,":")+1, strlen($lists[$i]->elementId));
-                      $cb=substr($cb_name,0,strpos($cb_name,":"));
-                      $name=substr($cb_name,strpos($cb_name,":")+1, strlen($cb_name));
-                  }
-                  else{
-                      $name=$lists[$i]->elementId;
-                  }
+
+			$lists = json_decode($local_result);
+			for ($i=0;$i < count($lists); $i++)
+			{
+				if (!isset($lists[$i]->deleted))
+				{
+					if(strpos($lists[$i]->elementId,":")>0)
+					{
+						$org=substr($lists[$i]->elementId,0,strpos($lists[$i]->elementId,":"));
+						$cb_name=substr($lists[$i]->elementId,strpos($lists[$i]->elementId,":")+1, strlen($lists[$i]->elementId));
+						$cb=substr($cb_name,0,strpos($cb_name,":"));
+						$name=substr($cb_name,strpos($cb_name,":")+1, strlen($cb_name));
+					}
+					else
+					{
+						$name=$lists[$i]->elementId;
+					}
              
-              $listCondDevice .= " (id = '" . $name . "' AND contextbroker = '" . 
-$lists[$i]->elementDetails->contextbroker . "') ";
-			  if ($i != count($lists)-1) $listCondDevice .= " OR ";
+					$listCondDevice .= " (id = '" . $name . "' AND contextbroker = '" . $lists[$i]->elementDetails->contextbroker . "') ";
+					if ($i != count($lists)-1) $listCondDevice .= " OR ";
               
-			              $gtwtype = "";
-                          $gtwuri = ""; 						  
-			              if (isset($lists[$i]->elementDetails->edgegateway_type)) $gtwtype=$lists[$i]->elementDetails->edgegateway_type;
-						  if (isset($lists[$i]->elementDetails->edgegateway_uri)) $gtwuri=$lists[$i]->elementDetails->edgegateway_uri;
+					$gtwtype = "";
+					$gtwuri = ""; 						  
+					if (isset($lists[$i]->elementDetails->edgegateway_type)) $gtwtype=$lists[$i]->elementDetails->edgegateway_type;
+					if (isset($lists[$i]->elementDetails->edgegateway_uri)) $gtwuri=$lists[$i]->elementDetails->edgegateway_uri;
 						 
-                          $mykeys[$lists[$i]->elementId]= array("k1"=> $lists[$i]->elementDetails->k1,
+					$mykeys[$lists[$i]->elementId]= array("k1"=> $lists[$i]->elementDetails->k1,
                                                                 "k2" => $lists[$i]->elementDetails->k2,
                                                                 "cb" => $lists[$i]->elementDetails->contextbroker,
                                                                 "owner" => $lists[$i]->username,
 																"edgegateway_type" =>$gtwtype, 
 																"edgegateway_uri" =>$gtwuri);
-                            $result["username"]=$lists[$i]->username;
-						}
-		}
-		$result["status"]='ok';
-        $result["keys"]=$mykeys;
-                //print_r($mykeys);
-		$result["msg"] .= '\n identified ' . count($lists) . ' private devices \n';
-		$result["log"] .= '\n identified ' . count($lists) . ' private devices \n'; //  .  $listCondDevice . json_encode($mykeys);
-       }	
+					$result["username"]=$lists[$i]->username;
+				}
+			}
+			$result["status"]='ok';
+        	$result["keys"]=$mykeys;
+			$result["msg"] .= '\n identified ' . count($lists) . ' private devices \n';
+			$result["log"] .= '\n identified ' . count($lists) . ' private devices \n'; //  .  $listCondDevice . json_encode($mykeys);
+		}	
 	} 
 	catch (Exception $ex)
 	{
-	$result["status"]='ko';
-	$result["error_msg"] .= 'Error in accessing the ownership. ';
-	$result["msg"] .= '\n error in accessing the ownership ';
-	$result["log"] .= '\n error in accessing the ownership ' . $ex;
+		$result["status"]='ko';
+		$result["error_msg"] .= 'Error in accessing the ownership. ';
+		$result["msg"] .= '\n error in accessing the ownership ';
+		$result["log"] .= '\n error in accessing the ownership ' . $ex;
 	}
 
-       return $listCondDevice;
+	return $listCondDevice;
 }
 
-function getOwnerShipObject($token, $object, &$result) {
+function getOwnerShipObject($token, $object, &$result) 
+{
 	$listCondDevice = "";
-    $local_result="";
-    $mykeys = array();
-    try
+	$local_result="";
+	$mykeys = array();
+	try
 	{
-	 $url= $GLOBALS["ownershipURI"] . "ownership-api/v1/list/?type=".$object."&accessToken=" . $token;
-     $local_result = file_get_contents($url);
-     $result["log"] .= $local_result;
+		$url= $GLOBALS["ownershipURI"] . "ownership-api/v1/list/?type=".$object."&accessToken=" . $token;
+		$local_result = file_get_contents($url);
+		$result["log"] .= $local_result;
        
-	if(strpos($http_response_header[0], '200') == true || strpos($http_response_header[0], '204') == true)
-	{
+		if(strpos($http_response_header[0], '200') == true || strpos($http_response_header[0], '204') == true)
+		{
 		$lists = json_decode($local_result);
 		for ($i=0;$i < count($lists); $i++)
 		{
-          if (!isset($lists[$i]->deleted))
-          {
-			 $org=substr($lists[$i]->elementId,0,strpos($lists[$i]->elementId,":"));
-             $name=substr($lists[$i]->elementId,strpos($lists[$i]->elementId,":")+1, strlen($lists[$i]->elementId));
-              $listCondDevice .= " (name = '" . $name . "' AND organization = '" . $org . "') ";
-			  if ($i != count($lists)-1) 
-                  $listCondDevice .= " OR ";
-              $mykeys[$lists[$i]->elementId]= array("owner" => $lists[$i]->username);
-              $result["username"]=$lists[$i]->username; 
-          }
+			if (!isset($lists[$i]->deleted))
+			{
+				$org=substr($lists[$i]->elementId,0,strpos($lists[$i]->elementId,":"));
+				$name=substr($lists[$i]->elementId,strpos($lists[$i]->elementId,":")+1, strlen($lists[$i]->elementId));
+				$listCondDevice .= " (name = '" . $name . "' AND organization = '" . $org . "') ";
+				if ($i != count($lists)-1) 
+					$listCondDevice .= " OR ";
+				$mykeys[$lists[$i]->elementId]= array("owner" => $lists[$i]->username);
+				$result["username"]=$lists[$i]->username; 
+			}
 		}
 		$result["status"]='ok';
         $result["keys"]=$mykeys;
@@ -1226,14 +1266,62 @@ function getOwnerShipObject($token, $object, &$result) {
 	} 
 	catch (Exception $ex)
 	{
-    $result["status"]='ko';
-	$result["error_msg"] .= ' Error in accessing the ownership. ';
-	$result["msg"] .= '\n error in accessing the ownership ';
-	$result["log"] .= '\n error in accessing the ownership ' . $ex;
+		$result["status"]='ko';
+		$result["error_msg"] .= ' Error in accessing the ownership. ';
+		$result["msg"] .= '\n error in accessing the ownership ';
+		$result["log"] .= '\n error in accessing the ownership ' . $ex;
 	}
 
-       return $listCondDevice;
+	return $listCondDevice;
 }
+
+function checkOwnershipObject($token, $elementId, $elementType, &$result)
+{
+	$toreturn=false;
+
+	try
+	{
+		$url= $GLOBALS["ownershipURI"] . "ownership-api/v1/list/?type=".$elementType."&accessToken=" . $token;
+		error_log("URI:".$url);
+		$local_result = file_get_contents($url);
+		
+		if(strpos($http_response_header[0], '200') == true || strpos($http_response_header[0], '204') == true)
+		{
+			error_log("OWN:".$local_result);
+			$lists = json_decode($local_result);
+			for ($i=0;$i < count($lists); $i++)
+			{
+				if ( !isset($lists[$i]->deleted) && 
+					  isset($lists[$i]->elementId) && ($lists[$i]->elementId == $elementId) &&
+					  isset($lists[$i]->elementType) && ($lists[$i]->elementType == $elementType)
+					)
+				{
+					$toreturn=true;
+				}
+			}
+			$result["status"]='ok';
+			$result["msg"] = '\n check ownership '.$toreturn;
+			$result["log"] = '\n check ownership '.$toreturn;
+		}
+		else 
+		{
+			$result["status"]='ko';
+			$result["error_msg"] = 'Error in accessing the ownership. ';
+			$result["msg"] = '\n error in accessing the ownership ';
+			$result["log"] = '\n error in accessing the ownership. Returned code:  '.$http_response_header[0];
+		}
+    }
+    catch (Exception $ex)
+	{
+		$result["status"]='ko';
+		$result["error_msg"] .= 'Error in accessing the ownership. ';
+		$result["msg"] .= '\n error in accessing the ownership ';
+		$result["log"] .= '\n error in accessing the ownership ' . $ex;
+    }
+
+    return $toreturn;
+}
+
 
 function generatelabels($link) {
      $query2 = "SELECT value_type FROM value_types ORDER BY value_type";
@@ -2027,8 +2115,8 @@ $visibility, $frequency, $attributes,  $subnature, $staticAttributes,$result))
 	 {
 	   $result["status"]='ok';
 	   $result["content"]=$local_result;
-	   $result["msg"] .= "\n an URI has been generated by the KB";
-	   $result["log"] .= "\n an URI has been generated by the KB";
+	   $result["msg"] = "\n an URI has been generated by the KB";
+	   $result["log"] = "\n an URI has been generated by the KB";
 	 }
 	 else
 	 {
@@ -2801,7 +2889,7 @@ function get_all_models($username, $organization, $role, $accessToken, $link, &$
         }
 }
 
-function get_device($username, $organization, $role, $id, $cb,  $accessToken, $link, &$result){
+function get_device($username, $role, $id, $cb,  $accessToken, $link, &$result){
 
         getOwnerShipDevice($accessToken, $result);
         getDelegatedDevice($accessToken, $username, $result);
@@ -2991,13 +3079,14 @@ function get_all_contextbrokers($username, $organization, $loggedrole, $accessTo
 
 }
 
-function get_user_info($accessToken, &$username, &$organization, $oidc, &$role, &$result, $ldapBaseName, $ldapServer, $ldapPort, $ldapAdminName, $ldapAdminPwd ){
+function get_user_info($accessToken, &$username, &$organization, $oidc, &$role, &$result, $ldapBaseName, $ldapServer, $ldapPort, $ldapAdminName, $ldapAdminPwd )
+{
 
 	$result["status"]="ok";
 
 	$oidc->setAccessToken($accessToken);
 
-        $userinfo=(array)$oidc->getAccessTokenPayload();
+	$userinfo=(array)$oidc->getAccessTokenPayload();
 	
 	if ($userinfo['preferred_username']!=null)
 		$username=$userinfo["preferred_username"];
@@ -3008,6 +3097,15 @@ function get_user_info($accessToken, &$username, &$organization, $oidc, &$role, 
 		$result['msg'] = "Username not found in AccessToken";
 		$result['error_msg'] .="Username not found in AccessToken";
                 $result["log"]= "action=get_user_info -" . " Username not found in AccessToken \r\n";
+	}
+
+	$uinfo = $oidc->requestUserInfo();
+	if(isset($uinfo->error)) 
+	{
+		$result["status"]="ko";
+		$result['msg'] = "Userinfo not found in AccessToken";
+		$result['error_msg'] .="Userinfo not found in AccessToken ".json_encode($uinfo);
+		$result["log"]= "action=get_user_info -" . " Userinfo not found in AccessToken ".json_encode($uinfo)."\r\n";
 	}
 
 	if ($result["status"]=="ok"){
@@ -3093,6 +3191,33 @@ function getProtocol($contextBrokerName, $link)
 	}
 	return $toreturn;
 }
+
+//return false if you have no right to access
+//action can be 'write' or 'read'
+function enforcementRights($username, $token, $role, $elementId, $elementType, $action, &$result)
+{
+	if ($role=="RootAdmin") 
+	{
+		$toreturn = true;//grant RootAdmin for everything
+	}
+	else 
+	{
+		//for write check owenrship
+		if ($action=="write")
+		{
+			$toreturn=checkOwnershipObject($token, $elementId, $elementType, $result);
+		}
+		else if ($action=="read")
+        {
+            $toreturn= checkOwnershipObject($token, $elementId, $elementType, $result) || 
+     				   checkDelegationObject($username, $token, $elementId, $elementType, $result);
+					  
+        }
+	}
+
+	return $toreturn;
+}
+
 
 function logAction($link,$accessed_by,$target_entity_type,$access_type,$entity_name,$organization,$notes,$result){
 	$query = "INSERT INTO access_log(accessed_by,target_entity_type,access_type,entity_name,organization,notes,result) ".
