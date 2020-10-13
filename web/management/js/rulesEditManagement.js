@@ -35,7 +35,9 @@ function showEditDeviceModal()
 	checkSelectionCBM(); 
 	checkSelectionFormatM();
 	checkSelectorM();
-  
+ 
+	checkEditDeviceConditions();//cehck also before any pressed
+ 
 	$("#editDeviceModal").modal('show');
 	
 }

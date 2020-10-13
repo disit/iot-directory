@@ -1,57 +1,67 @@
-
 var gb_datatypes ="";
 var gb_value_units ="";
 var gb_value_types = "";
 var defaultPolicyValue = [];
 var gb_delegated= false;
-
 var gb_device ="";
 var gb_latitude ="";
 var gb_longitude = "";
 var gb_k1="";
 var gb_k2="";
 var gb_delegateDelete = false;
-
-
 var dataTable ="";
-// var gb_key1="";
-// var gb_key2="";
+var tableFirstLoad = true;
 
-     //   var existingPoolsJson = null;
-        // var internalDest = false;
-        var tableFirstLoad = true;
+//--------to get the datatypes items----------	
+$.ajax({url: "../api/device.php",
+	data: {
+		action: 'get_param_values',
+		token : sessionToken
+	},
+	type: "POST",
+	async: true,
+	dataType: 'json',
+	success: function (mydata) {
+		if (mydata["status"] === 'ok') {
+			gb_datatypes= mydata["data_type"];
+			gb_value_units= mydata["value_unit"];
+			gb_value_types= mydata["value_type"];
+			addSubnature($("#selectSubnature"),mydata["subnature"]);
+		}
+		else {
+			console.log("error getting the data types "+data);
+		}
+	},
+	error: function (mydata) {
+		console.log(JSON.stringify(mydata));
+		alert("Network errors. <br/> Get in touch with the Snap4City Administrator<br/>"+ JSON.stringify(mydata));
+	}
+});
 
-//Settaggio dei globals per il file usersManagement.js
- //       setGlobals(admin, existingPoolsJson);
-        
+//--------to get the models with their details----------------------
+$.ajax({
+	url: "../api/model.php",
+	data: {
+		action: "get_all_models",
+		token : sessionToken
+	},
+	type: "POST",
+	async: true,
+	success: function (data) {
+		if (data["status"] === 'ok') {
+			addModel($("#selectModel"), data);
+		}
+		else {
+			console.log("error getting the context brokers "+data);
+		}
+	},
+	error: function (data) {
+		console.log("error in the call to get the context brokers "+data);
+		alert("Network errors. <br/> Get in touch with the Snap4City Administrator<br/>"+ JSON.stringify(data));
+	}
+});
 
-	$.ajax({url: "../api/device.php",
-		 data: {
-			 organization : organization, 
-			 action: 'get_param_values'
-			 },
-		 type: "POST",
-		 async: true,
-		 dataType: 'json',
-		 success: function (mydata)
-		 {
-			if (mydata["status"] === 'ok'){
-			   gb_datatypes= mydata["data_type"];
-			   gb_value_units= mydata["value_unit"];
-			   gb_value_types= mydata["value_type"];		   
-}
-			else{
-				 alert("An error occured when reading the data. <br/> Get in touch with the Snap4City Administrator. <br/>"+ mydata["error_msg"]);
-			}
-		 },
-		 error: function (mydata)
-		 {
-		   console.log(JSON.stringify(mydata));
-		   alert("Network errors. <br/> Get in touch with the Snap4City Administrator<br/>"+ JSON.stringify(mydata));
-		 }
-	});
-     
-	function updateDeviceTimeout()
+function updateDeviceTimeout()
 	{
 		$("#editDeviceOkModal").modal('hide');
 		setTimeout(function(){
@@ -202,11 +212,11 @@ var dataTable ="";
 		{	
 			if (selected==null)
 			{
-			  mydata = {action: "get_all_private_event_value", /*Sara611 - logging */ username: loggedUser, organization : organization, loggedrole:loggedRole, token : sessionToken, no_columns: ["position","status1","delete","map"]};
+			  mydata = {action: "get_all_private_event_value", token : sessionToken, no_columns: ["position","status1","delete","map"]};
 			}
 			else
 			{
-			  mydata = {action: "get_subset_event_value", /*Sara611 - logging */ username: loggedUser, organization : organization, loggedrole:loggedRole, token : sessionToken, select : selected, no_columns: ["position","status1","delete","map"]};
+			  mydata = {action: "get_all_event_value", token : sessionToken, select : selected, no_columns: ["position","status1","delete","map"]};
 			}
 		}
 		else  			
@@ -218,7 +228,7 @@ var dataTable ="";
 			}
 			else
 			{
-			  mydata = {action: "get_subset_event_value", /* Sara611 - logging*/ username: loggedUser, organization : organization, loggedrole:loggedRole, token : sessionToken, select : selected, no_columns: ["position","status1","delete","map"]};
+			  mydata = {action: "get_all_event_value", /* Sara611 - logging*/ username: loggedUser, organization : organization, loggedrole:loggedRole, token : sessionToken, select : selected, no_columns: ["position","status1","delete","map"]};
 			}
             
 		}
@@ -324,7 +334,9 @@ var dataTable ="";
 		dataTable.columns( [4,6] ).visible( false );
 		gb_delegateDelete = false;	
 		
-	} 
+	}
+	else 
+		dataTable.columns( [6] ).visible( false ); //always hide DELETE button
  
  }	 
 
@@ -486,34 +498,6 @@ var dataTable ="";
 	// buildMainTable(false);
 
 	$("#addMyNewDevice").click(function() {
-        
-         $.ajax({
-                url: "../api/value.php",
-                data:{
-                                          
-                    action: "get_cb",
-                    token : sessionToken, 
-                    username: loggedUser, 
-                    organization : organization, 
-                    loggedrole:loggedRole                          
-                },
-                type: "POST",
-                async: true,
-                success: function (data)
-                {
-                        
-                    if (data["status"] === 'ok')
-                    {        
-                        
-                        var $dropdown = $("#selectModel");        
-                        $dropdown.empty();   
-                        $.each(data['content_model'], function(){ 
-                            var opt= "<option data_key="+this.kgenerator+" value='"+this.name+"'>"+this.name+"</option>";
-                            $dropdown.append(opt);        
-                            //$dropdown.append($("<option />").val(this.name).text(this.name));        
-                        });
-                        
-                            //console.log("add new device heree");	
                             $("#displayAllDeviceRow").hide();
                             gb_delegated = false;
                             $("#addMyNewDeviceRow").show();
@@ -523,18 +507,6 @@ var dataTable ="";
                             $('#inputLongitudeDeviceUser').val("");
                             showAddMyDeviceModal();
                             drawMapUser(43.78, 11.23);
-				
-                        }
-                    else{
-                        //console.log("error getting the models "+data); 
-                    }
-                },
-                error: function (data)
-                {
-                 console.log("error in the call to get the models "+data);   
-                }
-          });
-			   
 	});
 		
 		
@@ -825,83 +797,56 @@ var dataTable ="";
 
 	$("#addMyNewDeviceConfirmBtn").off("click");
 	$("#addMyNewDeviceConfirmBtn").click(function(){	
-		 $("#registerDeviceModal").show();	                  
+		$("#registerDeviceModal").show();	                  
 			
-		 var nameOpt =  document.getElementById('selectModel').options;
-		 var selectednameOpt = document.getElementById('selectModel').selectedIndex;
-		 gb_device =  document.getElementById('inputNameDeviceUser').value;
+		var nameOpt =  document.getElementById('selectModel').options;
+		var selectednameOpt = document.getElementById('selectModel').selectedIndex;
+		gb_device =  document.getElementById('inputNameDeviceUser').value;
 		 
-		 addMyDeviceConditionsArray['inputNameDeviceUser'] = true;
-		 checkDeviceNameUser(); checkAddMyDeviceConditions(); 
+		addMyDeviceConditionsArray['inputNameDeviceUser'] = true;
+		checkDeviceNameUser(); checkAddMyDeviceConditions(); 
 		  
-		 gb_latitude =  document.getElementById('inputLatitudeDeviceUser').value;
-		 gb_longitude =  document.getElementById('inputLongitudeDeviceUser').value;
-		 gb_k1 =  document.getElementById('KeyOneDeviceUser').value;
-		 gb_k2 =  document.getElementById('KeyTwoDeviceUser').value;
-
-		 // $("#addDeviceModal #inputModelDevice").val(nameOpt[selectednameOpt].value);
-		 
-		 //console.log(nameOpt[selectednameOpt].value + " " + gb_device + " " + gb_longitude + " " + gb_latitude);
-		 
-
-		 // $("#addDeviceModal #inputNameDevice").val(device);
-		 // $("#addDeviceModal #inputLatitudeDevice").val(latitude);
-		 // $("#addDeviceModal #inputLongitudeDevice").val(longitude);
+		gb_latitude =  document.getElementById('inputLatitudeDeviceUser').value;
+		gb_longitude =  document.getElementById('inputLongitudeDeviceUser').value;
+		gb_k1 =  document.getElementById('KeyOneDeviceUser').value;
+		gb_k2 =  document.getElementById('KeyTwoDeviceUser').value;
 		 
 		$.ajax({
 			url: "../api/model.php",
 			data: {
-			action: "get_model",
-			organization : organization, 
-			name: nameOpt[selectednameOpt].value 
+				action: "get_model",
+				name: nameOpt[selectednameOpt].value,
+				token : sessionToken
 			},
 			type: "POST",
 			async: true,
 			datatype: 'json',
-			success: function (data) 
-			 {
-				
-				 if(data["status"] === 'ko')
-					{
-						 alert("An error occured when reading the data. <br/> Get in touch with the Snap4City Administrator<br/>"+ data["msg"]);
-						//$("#modelInsertModalInnerDiv1").html(data["msg"]);
-						 //$("#modelInsertModalInnerDiv2").html('<i class="fa fa-frown-o" style="font-size:42px"></i>');
-						  //data = data["content"];
-					}
+			success: function (data) {
+				if(data["status"] === 'ko')	{
+					alert("An error occured when reading the data. <br/> Get in touch with the Snap4City Administrator<br/>"+ data["msg"]);
+				}
+				else if (data["status"] === 'ok') {
+					var model = data.content.name;
+					var type = data.content.devicetype;
+					var kind = data.content.kind;
+					var producer = data.content.producer;
+					//var mac = data.content.mac;
+					var frequency = data.content.frequency;
+					var contextbroker = data.content.contextbroker;
+					var protocol = data.content.protocol;
+					var format = data.content.format;
+					var attrJSON = data.content.attributes;
+					var edgegateway_type=data.content.edgegateway_type;	
+					var subnature=data.content.subnature;
+					var staticAttributes=JSON.stringify(retrieveStaticAttributes("addlistStaticAttributes"));				//not use model, but use overriding
+					var service = data.content.service;
+					var servicePath = data.content.servicePath;
 
-				 else (data["status"] === 'ok')
-					{
-						var model = data.content.name;
-						var type = data.content.devicetype;
-						var kind = data.content.kind;
-						var producer = data.content.producer;
-						//var mac = data.content.mac;
-						var frequency = data.content.frequency;
-						var contextbroker = data.content.contextbroker;
-						var protocol = data.content.protocol;
-						var format = data.content.format;
-						var attrJSON = data.content.attributes;
-						var edgegateway_type=data.content.edgegateway_type;	
-						/* 
-						$('#inputTypeDevice').val(data.content.devicetype);
-						$('#selectKindDevice').val(data.content.kind);
-						$('#inputProducerDevice').val(data.content.producer);
-						$('#inputFrequencyDevice').val(data.content.frequency);
-						
-						$('#selectContextBroker').val(data.content.contextbroker);
-						$('#selectProtocolDevice').val(data.content.protocol);
-						$('#selectFormatDevice').val(data.content.format); 
-						*/
-						var subnature=data.content.subnature;
-						var staticAttributes=data.content.static_attributes;				
-						var service = data.content.service;
-						var servicePath = data.content.servicePath;
-
-						if ($('#selectProtocolDevice').val() === "ngsi w/MultiService"){
-				                    // servicePath value pre-processing
-				                    if (servicePath[0] !== "/" || servicePath === "") servicePath = "/" + servicePath;
-		                		    if (servicePath[servicePath.length -1] === "/" && servicePath.length > 1) servicePath = servicePath.substr(0, servicePath.length -1);
-			                        }	
+					if ($('#selectProtocolDevice').val() === "ngsi w/MultiService") {
+						// servicePath value pre-processing
+						if (servicePath[0] !== "/" || servicePath === "") servicePath = "/" + servicePath;
+						if (servicePath[servicePath.length -1] === "/" && servicePath.length > 1) servicePath = servicePath.substr(0, servicePath.length -1);
+					}	
 					
 				 $.ajax({
 					 url: "../api/device.php",
@@ -910,14 +855,9 @@ var dataTable ="";
 						  attributes: attrJSON,
 						  id: gb_device,
 						  type: type,
-						  organization : organization, 
 						  kind: kind,
 						  latitude: gb_latitude,
 						  longitude: gb_longitude,
-						 
-						  /*Sara711 - logging*/
-						  username: loggedUser, 
-						 
 						  mac: "",
 						  model: model,
 						  producer: producer,
@@ -933,7 +873,7 @@ var dataTable ="";
 						  subnature: subnature,
 						  static_attributes:staticAttributes,
 						  service : service,
-			                          servicePath : servicePath
+			              servicePath : servicePath
 						},
 						 type: "POST",
 						 async: true,
@@ -1328,7 +1268,6 @@ var dataTable ="";
 		
 		
 	$("#selectModel").on('click', function() {
-
 		var nameOpt =  document.getElementById('selectModel').options;
 		var selectednameOpt = document.getElementById('selectModel').selectedIndex;
 		$("#addNewDeviceGenerateKeyBtn").hide();
@@ -1337,69 +1276,79 @@ var dataTable ="";
 		
 		if (nameOpt[selectednameOpt].value =="")
 		{
-		  // nothing is selected
-		  $("#sigFoxDeviceUserMsg").val("");
-		  $("#KeyOneDeviceUserMsg").html("");
-		  $("#KeyTwoDeviceUserMsg").html("");	
-		  $("#KeyOneDeviceUser").val("");
-		  $("#KeyTwoDeviceUser").val("");
-		  $("#inputLatitudeDeviceUser").val("");
-		  $("#inputLongitudeDeviceUser").val("");			  
-		  addMyDeviceConditionsArray['KeyOneDeviceUser'] = false;
-		  addMyDeviceConditionsArray['KeyTwoDeviceUser'] = false;
-		  $("#KeyOneDeviceUser").attr({'disabled': 'disabled'});
-		  $("#KeyTwoDeviceUser").attr({'disabled': 'disabled'}); 
-		  checkAddMyDeviceConditions();			  
+			// nothing is selected
+			$("#sigFoxDeviceUserMsg").val("");
+			$("#KeyOneDeviceUserMsg").html("");
+			$("#KeyTwoDeviceUserMsg").html("");	
+			$("#KeyOneDeviceUser").val("");
+			$("#KeyTwoDeviceUser").val("");
+			$("#inputLatitudeDeviceUser").val("");
+			$("#inputLongitudeDeviceUser").val("");			  
+			addMyDeviceConditionsArray['KeyOneDeviceUser'] = false;
+			addMyDeviceConditionsArray['KeyTwoDeviceUser'] = false;
+			$("#KeyOneDeviceUser").attr({'disabled': 'disabled'});
+			$("#KeyTwoDeviceUser").attr({'disabled': 'disabled'}); 
+			checkAddMyDeviceConditions();			 
+
+			//remove subnature + static info 
+			$("#selectSubnature").val("");
+			$("#addStaticTabModel").hide();
 		}
 		else 
 		{	
-		//Fatima6
-		 // $("#KeyOneDeviceUser").removeAttr('disabled');
-		 // $("#KeyOneDeviceUser").removeAttr('disabled');
-
-		 // if(nameOpt[selectednameOpt].value.indexOf("Raspberry")!=-1 || nameOpt[selectednameOpt].value.indexOf("Arduino")!=-1 || nameOpt[selectednameOpt].value.indexOf("sigfox")!=-1 || nameOpt[selectednameOpt].value.indexOf("Sigfox")!=-1){
-
-			 // $("#addNewDeviceGenerateKeyBtn").hide();
-		 // }
-		 // else{
-			 // $("#addNewDeviceGenerateKeyBtn").show();
-		 // }
-		//
+			if (nameOpt[selectednameOpt].getAttribute("data_key")!="special") {
+				$("#sigFoxDeviceUserMsg").val("");
+				$("#KeyOneDeviceUserMsg").html("");
+				$("#KeyTwoDeviceUserMsg").html("");
+				$("#sigFoxDeviceUserMsg").html("These keys have been generated automatically for your device. Keep track of them. "+
+					"Details on <a href=\"https://www.snap4city.org/drupal/node/76\">info</a>");
 		
-		if (nameOpt[selectednameOpt].getAttribute("data_key")!="special"){
+				$("#KeyOneDeviceUser").val(generateUUID());
+				$("#KeyTwoDeviceUser").val(generateUUID());
 		
-			$("#sigFoxDeviceUserMsg").val("");
-			$("#KeyOneDeviceUserMsg").html("");
-			$("#KeyTwoDeviceUserMsg").html("");
-			$("#sigFoxDeviceUserMsg").html("These keys have been generated automatically for your device. Keep track of them. Details on <a href=\"https://www.snap4city.org/drupal/node/76\">info</a>");
-		
-			$("#KeyOneDeviceUser").val(generateUUID());
-			$("#KeyTwoDeviceUser").val(generateUUID());
-		
-			addMyDeviceConditionsArray['KeyOneDeviceUser'] = true;
-			addMyDeviceConditionsArray['KeyTwoDeviceUser'] = true;
-			checkAddMyDeviceConditions();
-			//Fatima6
+				addMyDeviceConditionsArray['KeyOneDeviceUser'] = true;
+				addMyDeviceConditionsArray['KeyTwoDeviceUser'] = true;
+				checkAddMyDeviceConditions();
 			
-			$("#KeyOneDeviceUser").attr({'disabled': 'disabled'});
-			$("#KeyTwoDeviceUser").attr({'disabled': 'disabled'});
-									 
-		} else
-		{
-			$("#sigFoxDeviceUserMsg").html("Generate in your SigFox server the keys and report them here.  Details on <a href=\"https://www.snap4city.org/drupal/node/76\">info</a>");
-			$("#KeyOneDeviceUser").val("");
-			$("#KeyTwoDeviceUser").val("");
-			addMyDeviceConditionsArray['KeyOneDeviceUser'] = true;
-			addMyDeviceConditionsArray['KeyTwoDeviceUser'] = true;
-			checkAddMyDeviceConditions();
+				$("#KeyOneDeviceUser").attr({'disabled': 'disabled'});
+				$("#KeyTwoDeviceUser").attr({'disabled': 'disabled'});
+			} else	{
+				$("#sigFoxDeviceUserMsg").html("Generate in your SigFox server the keys and report them here.  Details on <a href=\"https://www.snap4city.org/drupal/node/76\">info</a>");
+				$("#KeyOneDeviceUser").val("");
+				$("#KeyTwoDeviceUser").val("");
+				addMyDeviceConditionsArray['KeyOneDeviceUser'] = true;
+				addMyDeviceConditionsArray['KeyTwoDeviceUser'] = true;
+				checkAddMyDeviceConditions();
 			
-			//Fatima
-			$("#KeyOneDeviceUser").removeAttr('disabled');
-			$("#KeyTwoDeviceUser").removeAttr('disabled');
+				$("#KeyOneDeviceUser").removeAttr('disabled');
+				$("#KeyTwoDeviceUser").removeAttr('disabled');
+			}
+
+			var subnature=nameOpt[selectednameOpt].getAttribute("data_subnature")
+			if (subnature && subnature!="null") {
+				 //add subnature + static info
+				$("#selectSubnature").val(subnature);
+				$('#selectSubnature').trigger('change');
+				subnatureChanged(false, JSON.parse(atob(nameOpt[selectednameOpt].getAttribute("data_static"))));	
+				$("#addStaticTabModel").show();	
+			}
+			else {
+				//remove subnature + static info
+			    $("#selectSubnature").val("");
+				$("#addStaticTabModel").hide();
+			}
 		}
-	
-		}	
 	});
+
+//--------------------- static attribute ADD start
+
+        $("#addNewStaticBtn").off("click");
+        $("#addNewStaticBtn").click(function(){
+	        createRowElem('', '', currentDictionaryStaticAttribAdd, "addlistStaticAttributes");
+        });
+//--------------------- static attribute ADD end
+
+
 
 //Validation of the name of the new owner during typing
 	$('#newOwner').on('input',function(e)
@@ -1511,7 +1460,6 @@ function updateGroupList(ouname){
                 url: "../api/ldap.php",
                 data:{
                                           action: "get_logged_ou",
-                                          username: loggedUser,
                                           token : sessionToken
                                           },
                 type: "POST",

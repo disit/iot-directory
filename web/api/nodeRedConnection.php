@@ -14,134 +14,92 @@
    along with this program; if not, write to the Free Software
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA. */
 
-
-
 $result=array("status"=>"","msg"=>"","content"=>"","log"=>"", "error_msg"=>"");	
+
+/* all the primitives return an array "result" with the following structure
+
+result["status"] = ok/ko; reports the status of the operation (mandatory)
+result["msg"] a message related to the execution of the operation (optional)
+result["content"] in case of positive execution of the operation the content extracted from the db (optional)
+result["log"] keep trace of the operations executed on the db
+
+This array should be encoded in json
+*/	
 
 header("Content-type: application/json");
 header("Access-Control-Allow-Origin: *\r\n");
 include ('../config.php');
 include ('common.php');
-// session_start();
-$link = mysqli_connect($host, $username, $password) or die("failed to connect to server !!");
-mysqli_select_db($link, $dbname);
-//Altrimenti restituisce in output le warning
 error_reporting(E_ERROR | E_NOTICE);
 
-if(!$link->set_charset("utf8")) 
-{
-    exit();
-}
-
 if(isset($_REQUEST['action']) && !empty($_REQUEST['action'])) 
-    {
-        $action = $_REQUEST['action'];
-    }
+{
+	$action = $_REQUEST['action'];
+}
 else
 {
-    exit();
+	$result['status'] = 'ko';
+	$result['msg'] = 'action not present'; 
+	$result['error_msg']='action not present';
+	$result['log'] = 'nodeRedConnection.php action not present';
+	my_log($result);
+	exit();
+}
+
+$headers = apache_request_headers();
+if (isset($headers['Authorization']) && strlen($headers['Authorization'])>8 )
+{
+	$_REQUEST['token']=substr($headers['Authorization'],7);
 }
 
 require '../sso/autoload.php';
 use Jumbojett\OpenIDConnectClient;
-include '../config.php'; 
 
-$organization="";
+$oidc = new OpenIDConnectClient($keycloakHostUri, $clientId, $clientSecret);
+$oidc->providerConfigParam(array('token_endpoint'    => $keycloakHostUri.'/auth/realms/master/protocol/openid-connect/token',
+                                 'userinfo_endpoint' => $keycloakHostUri.'/auth/realms/master/protocol/openid-connect/userinfo'));
 
+$accessToken = "";   
+if ((isset($_REQUEST['token']))&&($_REQUEST['token']!='undefined'))
+	$accessToken = $_REQUEST['token'];
 
-   
-if ($_REQUEST['token']!='undefined')
-      $accessToken = $_REQUEST['token'];
-   
-else $accessToken = "";
-
-
-if (isset($_REQUEST['username'])) {
-	$currentUser = $_REQUEST['username'];
+if (empty($accessToken))
+{
+    $result["status"]="ko";
+    $result['msg'] = "Access Token not present";
+    $result["error_msg"] .= "Access Token not present";
+    $result["log"]= "nodeRedConnection.php AccessToken not present\r\n";
+    my_log($result);
+    exit();
 }
 
- 
-$ldapRole = null;
-$ldapOk = false;
-   
-   
-
-    
-    
-$ldapUsername = "cn=". $currentUser . ",".$ldapBaseName;
-
-$ds = ldap_connect($ldapServer, $ldapPort);
-ldap_set_option($ds, LDAP_OPT_PROTOCOL_VERSION, 3);
-$bind = ldap_bind($ds);    
-
-
-
-if($ds && $bind)
-    {
-        
-        if(checkLdapMembership($ds, $ldapUsername, $ldapToolName, $ldapBaseName))
-        {
-           $result["msg"].=" Ldap checked ";
-           $organization= findLdapOrganizationalUnit($ds, $ldapUsername, $ldapToolName, $ldapBaseName);
-           $result["msg"].=" organization found is $organization ";
-            if(checkLdapRole($ds, $ldapUsername, "RootAdmin", $ldapBaseName))
-           {
-              $ldapRole = "RootAdmin";
-              $ldapOk = true;
-           }
-           else if(checkLdapRole($ds, $ldapUsername, "ToolAdmin", $ldapBaseName))
-           {
-              $ldapRole = "ToolAdmin";
-              $ldapOk = true;
-           }
-           else
-           {
-               if(checkLdapRole($ds, $ldapUsername, "AreaManager", $ldapBaseName))
-               {
-                  $ldapRole = "AreaManager";
-                  $ldapOk = true;
-               }
-               else
-               {
-                  if(checkLdapRole($ds, $ldapUsername, "Manager", $ldapBaseName)) {
-                     $ldapRole = "Manager";
-                     $ldapOk = true;
-                  } else {
-					  $msg = "user $username does not have a role";
-				  } /* else { //uncomment if Public role is managed
-				     $ldapRole = "Public";
-					 $ldapOk = true;
-				  } */
-               }
-           }
-        } else {
-			$msg = "user $username cannot access to tool $ldapToolName";
-		}
-    } else {
-		$msg = "cannot bind to LDAP server $ldapServer";
-	}
-
-
+//retrieve username, organization and role from the accetoken
+//TODO avoid passing all the parameters for LDAP
+get_user_info($accessToken, $username, $organization, $oidc, $role, $result, $ldapBaseName, $ldapServer, $ldapPort, $ldapAdminName, $ldapAdminPwd);
 
 if ($action=="get_organization")
 {  
-	
-    if (!empty($accessToken)) 
-	{ 
-        if(!empty($organization) )
+	if (empty($organization))
+	{
+        $result["status"]="ko";
+        $result['msg'] = "Organization is empty";
+        $result["error_msg"] .= "Problem in get organization (Organization is empty)";
+        $result["log"]= "action=get organization - error Organization is empty"." \r\n";
+
+	}
+	else 
+	{
         $result["status"]="ok";
         $info=get_organization_info($organizationApiURI, $organization);
 		$result["content"]=$organization;
 		$result["info"]=$info;
         $result["msg"].=" ok";
 	}
-    
-    
-	my_log($result);
-	mysqli_close($link);
 
+	my_log($result);
 }
 
+/*
 function checkLdapMembership($connection, $userDn, $tool, $ldapBaseName) 
 {
 	 $result = ldap_search($connection, $ldapBaseName, '(&(objectClass=posixGroup)(memberUid=' . $userDn . '))');
@@ -174,35 +132,16 @@ function checkLdapRole($connection, $userDn, $role, $ldapBaseName)
   return false;
 }
 
-//Fatima
 function findLdapOrganizationalUnit($connection, $userDn, $tool, $ldapBaseName) 
 {
 	$result = ldap_search($connection, $ldapBaseName, '(&(objectClass=organizationalUnit)(l=' . $userDn . '))');
 	$entries = ldap_get_entries($connection, $result);
-	
-    //Print $entries here
-    //echo_log(var_dump($entries));
-    //echo_log($entries);
-    
-
 
     if (ldap_count_entries($connection,$result)==0){
-        //TODO thrown an error or return an error
-//        echo_log("No LDAP organization Unit found for user".$userDn);
         return "NULL";
         }
     else{
         $ou=$entries["0"]["ou"][0];
-  //      echo_log("Organization found is:".$ou);
         return $ou;
-        
     }
-	// foreach ($entries as $key => $value){
-		// if(is_numeric($key)){
-		   // if($value["ou"]["0"] == $tool) {
-			  // return true;
-		   // }
-		// }
-	// }
-}
-
+}*/

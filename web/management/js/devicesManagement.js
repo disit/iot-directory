@@ -251,19 +251,19 @@ function checkDeviceName()
     if ( !$("#addInfoTabDevice #inputNameDevice").val() || $("#addInfoTabDevice #inputNameDevice").val().length === 0)
     {
         $("#inputNameDeviceMsg").css("color", "red");
-        message = 'Device name is mandatory';
+        message = 'Device Identifier is mandatory';
         addDeviceConditionsArray['inputNameDevice'] = false;
     }
     else if($("#addInfoTabDevice #inputNameDevice").val().length < 5)
     {
         $("#inputNameDeviceMsg").css("color", "red");
-        message = 'Device name (at least 5 chars long)';
+        message = 'Device Identifier (at least 5 chars long)';
         addDeviceConditionsArray['inputNameDevice'] = false;
     }
     else if(regex.test($("#addInfoTabDevice #inputNameDevice").val()))
     {
         $("#inputNameDeviceMsg").css("color", "red");
-        message = 'No special characters are allowed in Device name';
+        message = 'No special characters are allowed in Device Identifier';
         addDeviceConditionsArray['inputNameDevice'] = false;
     }
     else
@@ -321,13 +321,13 @@ function checkDeviceNameUser()
     if ( !$("#inputNameDeviceUser").val() || $("#inputNameDeviceUser").val().length === 0)
     {
         $("#inputNameDeviceUserMsg").css("color", "red");
-        message = 'Device name is mandatory';
+        message = 'Device Identifier is mandatory';
         addMyDeviceConditionsArray['inputNameDeviceUser'] = false;
     }
     else if($("#inputNameDeviceUser").val().length < 5)
     {
         $("#inputNameDeviceUserMsg").css("color", "red");
-        message = 'Device name (at least 5 chars long)';
+        message = 'Device Identifier (at least 5 chars long)';
         addMyDeviceConditionsArray['inputNameDeviceUser'] = false;
     }
     else if(regex.test($("#inputNameDeviceUser").val()))
@@ -342,7 +342,7 @@ function checkDeviceNameUser()
         if(($.inArray($("#inputNameDeviceUser").val(), devicenamesArray, 0) > 0)||($("#inputNameDeviceUser").val() === devicenamesArray[0]))
         {
             $("#inputNameDeviceUserMsg").css("color", "red");
-            message = 'Device name already used';
+            message = 'Device Identifier already used';
             addMyDeviceConditionsArray['inputNameDeviceUser'] = false;
         }
         else

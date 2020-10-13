@@ -15,7 +15,7 @@
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA. */
 
 
-$result=array("status"=>"","msg"=>"","content"=>"","log"=>"");	
+$result=array("status"=>"","msg"=>"","content"=>"","log"=>"", "error_msg"=>"");	
 /* all the primitives return an array "result" with the following structure
 
 result["status"] = ok/ko; reports the status of the operation (mandatory)
@@ -26,175 +26,197 @@ result["log"] keep trace of the operations executed on the db
 This array should be encoded in json
 */	
 
-
-
 header("Content-type: application/json");
 header("Access-Control-Allow-Origin: *\r\n");
 include ('../config.php');
 include ('common.php');
-
-//session_start();
 $link = mysqli_connect($host, $username, $password) or die("failed to connect to server !!");
 mysqli_select_db($link, $dbname);
-
-//Altrimenti restituisce in output le warning
 error_reporting(E_ERROR | E_NOTICE);
-
-
-function compare_values($obj_a, $obj_b) {
-  return  strcasecmp($obj_a->value_name,$obj_b->value_name);
-}
-
 
 if(!$link->set_charset("utf8")) 
 {
     exit();
 }
+
 $node_data = json_decode(file_get_contents("php://input"));
-if($node_data != null){
-//if(isset($_POST['data']) && !empty($_POST['data']) && isset($_POST['data_from_nodeJs']) && !empty($_POST['data_from_nodeJs'])) 
-//{
-// $node_data=$_POST['data'];
-$data_parallel=$node_data->data_parallel;
-$action= $node_data->action;
+if($node_data != null)
+{
+	$data_parallel=$node_data->data_parallel;
+	$action= $node_data->action;
 }
 else if(isset($_REQUEST['action']) && !empty($_REQUEST['action'])) 
-    {
-        $action = $_REQUEST['action'];
-    }
+{
+	$action = $_REQUEST['action'];
+}
 else
 {
-    exit();
+	$result['status'] = 'ko';
+	$result['msg'] = 'Action not present'; 
+	$result['error_msg']='Action not present';
+	$result['log'] = 'extractionRules.php Action not present';
+	my_log($result);
+	mysqli_close($link);
+	exit();
+}
+
+$headers = apache_request_headers();
+if (isset($headers['Authorization']) && strlen($headers['Authorization'])>8 )
+{
+	$_REQUEST['token']=substr($headers['Authorization'],7);
 }
 
 require '../sso/autoload.php';
 use Jumbojett\OpenIDConnectClient;
 
+$oidc = new OpenIDConnectClient($keycloakHostUri, $clientId, $clientSecret);
+$oidc->providerConfigParam(array('token_endpoint'    => $keycloakHostUri.'/auth/realms/master/protocol/openid-connect/token',
+                                 'userinfo_endpoint' => $keycloakHostUri.'/auth/realms/master/protocol/openid-connect/userinfo'));
 
+$accessToken = "";
 if (isset($_REQUEST['nodered']))
 {
-   if ($_REQUEST['token']!='undefined')
-      $accessToken = $_REQUEST['token'];
-   else $accessToken = "";
-} 
+    if ((isset($_REQUEST['token']))&&($_REQUEST['token']!='undefined'))
+        $accessToken = $_REQUEST['token'];
+}
 else
 {
-if (isset($_REQUEST['token'])) {
-	  $oidc = new OpenIDConnectClient($keycloakHostUri, $clientId, $clientSecret);
-          $oidc->providerConfigParam(array('token_endpoint' => $keycloakHostUri.'/auth/realms/master/protocol/openid-connect/token'));
-          $tkn = $oidc->refreshToken($_REQUEST['token']);
-          $accessToken = $tkn->access_token;
+    if (isset($_REQUEST['token']))
+    {
+        $tkn = $oidc->refreshToken($_REQUEST['token']);
+        $accessToken = $tkn->access_token;
+    }
 }
-else $accessToken ="";
+if (empty($accessToken))
+{
+    $result["status"]="ko";
+    $result['msg'] = "Access Token not present";
+    $result["error_msg"] .= "Access Token not present";
+    $result["log"]= "extractionRules.php AccessToken not present\r\n";
+    my_log($result);
+    mysqli_close($link);
+    exit();
 }
 
-if (isset($_REQUEST['username'])) {
-	$currentUser = $_REQUEST['username'];
+//retrieve username, organization and role from the accetoken
+//TODO avoid passing all the parameters for LDAP
+get_user_info($accessToken, $username, $organization, $oidc, $role, $result, $ldapBaseName, $ldapServer, $ldapPort, $ldapAdminName, $ldapAdminPwd);
+
+if ($result["status"]!="ok")
+{
+    $result["status"]="ko";
+    $result['msg'] = "Cannot retrieve user information";
+    $result["error_msg"] .= "Cannot retrieve user information";
+    $result["log"]= "extractionRules.php Cannot retrieve user information\r\n";
+    my_log($result);
+    mysqli_close($link);
+    exit();
 }
 
-
-//sara 1510 start
 if ($action=="insert")
-{   
+{
+	$missingParams=missingParameters(array('id','contextbroker','format','selector','kind','value_type','value_unit','data_type','structure_flag'));
 
-	//Sara2510 - for logging purpose
-	$username = mysqli_real_escape_string($link, $_REQUEST['username']);
-	$usernameNotHashed = $username;
-	$username = md5($username);
-	$organization= mysqli_real_escape_string($link, $_REQUEST['organization']);
+	if (!empty($missingParams))
+	{
+		$result["status"]="ko";
+        $result['msg'] = "Missing Parameters";
+        $result["error_msg"] .= "Problem in insert extraction rules (Missing parameters: ".implode(", ",$missingParams)." )";
+        $result["log"]= "action=insert - error Missing Parameters: ".implode(", ",$missingParams)." \r\n";
+	}
+	else 
+	{
+		$id = mysqli_real_escape_string($link, $_REQUEST['id']);
+		$contextbroker = mysqli_real_escape_string($link, $_REQUEST['contextbroker']);  
+		$format = mysqli_real_escape_string($link, $_REQUEST['format']);  
+		$selector = mysqli_real_escape_string($link, $_REQUEST['selector']);  
+		$kind = mysqli_real_escape_string($link, $_REQUEST['kind']);  
+		$value_type = mysqli_real_escape_string($link, $_REQUEST['value_type']);  
+		$value_unit = mysqli_real_escape_string($link, $_REQUEST['value_unit']);  
+		$data_type= mysqli_real_escape_string($link, $_REQUEST['data_type']);
+		$structure_flag= mysqli_real_escape_string($link, $_REQUEST['structure_flag']);
+
+		$insertquery="INSERT INTO `extractionRules`(`id`, `contextbroker`, `format`, `selector`, `kind`, `value_type`, `value_unit`, `data_type`, 
+			`structure_flag`, `organization`, `username`)	VALUES ('$id','$contextbroker','$format', '$selector','$kind','$value_type','$value_unit',
+			'$data_type','$structure_flag','$organization','".md5($username)."');";
 	
-	$id = mysqli_real_escape_string($link, $_REQUEST['id']);
-	$contextbroker = mysqli_real_escape_string($link, $_REQUEST['contextbroker']);  
-	$format = mysqli_real_escape_string($link, $_REQUEST['format']);  
-	$selector = mysqli_real_escape_string($link, $_REQUEST['selector']);  
-	$kind = mysqli_real_escape_string($link, $_REQUEST['kind']);  
-	$value_type = mysqli_real_escape_string($link, $_REQUEST['value_type']);  
-	$value_unit = mysqli_real_escape_string($link, $_REQUEST['value_unit']);  
-	$data_type= mysqli_real_escape_string($link, $_REQUEST['data_type']);
-	$structure_flag= mysqli_real_escape_string($link, $_REQUEST['structure_flag']);
-    
+		$r1 = mysqli_query($link, $insertquery);
+		if($r1)
+		{
+			$result['status'] = 'ok';
+			logAction($link,$username,'extractionRule','insert',$id . " ".$contextbroker,$organization,'','success');
+		}
+		else
+		{
+			$result["status"]='ko';
+			$result["msg"] .= "faliure"; 
+			$result["log"] .= "\n Problem in inserting rule". generateErrorMessage($link); 
+			logAction($link,$username,'extractionRule','insert',$id . " ".$contextbroker,$organization,'','faliure');
+		}
+	}
 
-	$insertquery="INSERT INTO `extractionRules`(`id`, `contextbroker`, `format`, `selector`, `kind`, `value_type`, `value_unit`, `data_type`, `structure_flag`, `organization`, `username`) 
-	VALUES ('$id','$contextbroker','$format', '$selector','$kind','$value_type','$value_unit','$data_type','$structure_flag','$organization','$username');";
-	$r1 = mysqli_query($link, $insertquery);
-	
-	if($r1){
-		$result['status'] = 'ok';
-	}
-	else{
-	  $result["status"]='ko';
-	  $result["msg"] .= "failure"; 
-	  $result["log"] .= "\n Problem in inserting rule". generateErrorMessage($link); 
-	}
-		//Sara2510 - For logging purpose
-	$deviceName = $id . " ".$contextbroker;
-
-	if($result["status"]=="ok"){
-			logAction($link,$usernameNotHashed,'extractionRule','insert',$deviceName,$organization,'','success');		
-	}
-	else if($result["status"]=="ko"){
-			logAction($link,$usernameNotHashed,'extractionRule','insert',$deviceName,$organization,'','faliure');				
-	}
-    
 	my_log($result);
 	mysqli_close($link);
- 
 }
-else if ($action=="get_cb_details"){
-	$contextbroker = mysqli_real_escape_string($link,$_REQUEST['cb']);
-	$username = mysqli_real_escape_string($link,$_REQUEST['username']);
-	$organization = mysqli_real_escape_string($link,$_REQUEST['organization']);
-	
-	$q = "SELECT * FROM contextbroker WHERE name= '$contextbroker';";
-	$r = mysqli_query($link, $q);
-	
-	$context = array();
-	if($r){
-		while($row = mysqli_fetch_assoc($r)) 
-        {
-			$rec= array();
-			$rec["protocol"]=$row["protocol"];
-			$rec["ip"]=$row["ip"];
-			$rec["accessLink"]=$row["accesslink"];
-			$rec["port"]=$row["port"];
-			$rec["protocol"]=$row["protocol"];
-			$rec["username"]=md5($username);
-			$rec["apikey"]=$row["apikey"];
-			$rec["kind"]=$row["kind"];
-			$rec["path"]=$row["path"];
+/*else if ($action=="get_cb_details")
+{
+	$missingParams=missingParameters(array('contextbroker'));
 
-			array_push($context, $rec);         
-		}	
-		$result['status'] = 'ok';
-		$result['content'] = $context;		
+	if (!empty($missingParams))
+	{
+		$result["status"]="ko";
+        $result['msg'] = "Missing Parameters";
+        $result["error_msg"] .= "Problem in get cb detailse (Missing parameters: ".implode(", ",$missingParams)." )";
+        $result["log"]= "action=insert - error Missing Parameters: ".implode(", ",$missingParams)." \r\n";
 	}
-	else{
-	  $result["status"]='ko';
-	  $result["msg"] .= "failure"; 
-	  $result["log"] .= "\n Problem in get count temporary devices". generateErrorMessage($link); 
-	 }
-	 my_log($result);
-     mysqli_close($link);
-}
+	else 
+	{
+		$contextbroker = mysqli_real_escape_string($link,$_REQUEST['cb']);
+	
+		$q = "SELECT * FROM contextbroker WHERE name= '$contextbroker';";
+		$r = mysqli_query($link, $q);
+		$context = array();
+		if($r)
+		{
+			while($row = mysqli_fetch_assoc($r)) 
+	        {
+				$rec= array();
+				$rec["protocol"]=$row["protocol"];
+				$rec["ip"]=$row["ip"];
+				$rec["accessLink"]=$row["accesslink"];
+				$rec["port"]=$row["port"];
+				$rec["protocol"]=$row["protocol"];
+				$rec["username"]=md5($username);
+				$rec["apikey"]=$row["apikey"];
+				$rec["kind"]=$row["kind"];
+				$rec["path"]=$row["path"];
+				array_push($context, $rec);         
+			}	
+			$result['status'] = 'ok';
+			$result['content'] = $context;		
+		}
+		else
+		{
+			$result["status"]='ko';
+			$result["msg"] .= "faliure"; 
+			$result["log"] .= "\n Problem in get count temporary devices". generateErrorMessage($link); 
+		}
+	}
 
-//sara 1510 end
-else if ($action=="get_rules"){
-	$username = mysqli_real_escape_string($link,$_REQUEST['username']);
-	$organization = mysqli_real_escape_string($link,$_REQUEST['organization']);
-	$loggedrole = mysqli_real_escape_string($link,$_REQUEST['loggedrole']);
-	$username = md5($username);
-
-	$q = "SELECT contextbroker, id, selector, kind, format, data_type, value_type,value_unit, structure_flag
-	FROM extractionRules"; // WHERE username = '$username' AND deleted IS null;";
-	//$r = mysqli_query($link, $q);	
-	if($loggedrole == 'Root' || $loggedrole == 'RootAdmin'){
+	my_log($result);
+    mysqli_close($link);
+}*/
+else if ($action=="get_rules")
+{
+	$q = "SELECT contextbroker, id, selector, kind, format, data_type, value_type,value_unit, structure_flag FROM extractionRules"; 
+	if ($role == 'ToolAdmin' || $role == 'RootAdmin')
+	{
 		$r=create_datatable_data($link,$_REQUEST,$q,"");
 	}
-	else{
-		$r=create_datatable_data($link,$_REQUEST,$q, "username = '$username' AND organization='$organization'");
+	else
+	{
+		$r=create_datatable_data($link,$_REQUEST,$q, "username = '"+md5($username)+"' AND organization='$organization'");
 	}
-	
-	
 	$selectedrows=-1;
 	if($_REQUEST["length"] != -1)
 	{
@@ -206,15 +228,12 @@ else if ($action=="get_rules"){
 	{
 		$tobelimited=false;
 	}
-     
 	if($r) 
 	{
-      //$result['status'] = 'ok';
-	  //$result['content'] = array();
-	  $rules = array();
-	  $result["log"]= "\r\n action=get_rules \r\n";
+		$rules = array();
+		$result["log"]= "\r\n action=get_rules \r\n";
       	 
-	 while($row = mysqli_fetch_assoc($r)) 
+		while($row = mysqli_fetch_assoc($r)) 
         {	
 			$selectedrows++;
 			if (!$tobelimited || ($tobelimited && $selectedrows >= $start && $selectedrows < ($start+$offset)))
@@ -229,131 +248,103 @@ else if ($action=="get_rules"){
 				$rec["value_type"]=$row["value_type"];
 				$rec["value_unit"]=$row["value_unit"];
 				$rec["structure_flag"]=$row["structure_flag"];
-				
 				array_push($rules, $rec);           
 			}
 		}
-	 $output= format_result($_REQUEST["draw"], $selectedrows+1, $selectedrows+1, $rules, "", "\r\n action=get_rules \r\n", 'ok');	
+		$output= format_result($_REQUEST["draw"], $selectedrows+1, $selectedrows+1, $rules, "", "\r\n action=get_rules \r\n", 'ok');	
     }
-	else{
-	$output= format_result($_REQUEST["draw"], 0, 0, null, 'Error: errors in reading data about  rules. <br/>' . generateErrorMessage($link), 'ko');
-
+	else
+	{
+		$output= format_result($_REQUEST["draw"], 0, 0, null, 'Error: errors in reading data about  rules. <br/>' . generateErrorMessage($link), 'ko');
 	}    
+	
 	my_log($output);
 	mysqli_close($link);
 }
 else if ($action=="update")
-{   
-	$result["msg"] .= "update"; 
-	//Sara2210 start
-	$username = mysqli_real_escape_string($link, $_REQUEST['username']);
-	$organization = mysqli_real_escape_string($link, $_REQUEST['organization']);
-	//Sara2210 end
-	$id = mysqli_real_escape_string($link, $_REQUEST['id']);
-	$old_id = mysqli_real_escape_string($link, $_REQUEST['old_id']);
-	$contextbroker = mysqli_real_escape_string($link, $_REQUEST['contextbroker']);  
-	$old_cb = mysqli_real_escape_string($link, $_REQUEST['old_cb']);  
-	$selector = mysqli_real_escape_string($link, $_REQUEST['selector']);  
-	$format = mysqli_real_escape_string($link, $_REQUEST['format']);  
-	$kind = mysqli_real_escape_string($link, $_REQUEST['kind']);  
-	$data_type = mysqli_real_escape_string($link, $_REQUEST['data_type']);  
-	$value_type = mysqli_real_escape_string($link, $_REQUEST['value_type']);  
-	$value_unit = mysqli_real_escape_string($link, $_REQUEST['value_unit']);  
-	$structure_flag = mysqli_real_escape_string($link, $_REQUEST['structure_flag']);  
+{
+	$missingParams=missingParameters(array('id','old_id','contextbroker','old_cb','selector','format','kind','data_type','value_type','value_unit','structure_flag'));
 
-	//Sara2510 - for logging purpose
-	$deviceName= $old_id . " ".$old_cb; 
+	if (!empty($missingParams))
+	{
+		$result["status"]="ko";
+        $result['msg'] = "Missing Parameters";
+        $result["error_msg"] .= "Problem in update extraction rules (Missing parameters: ".implode(", ",$missingParams)." )";
+        $result["log"]= "action=update - error Missing Parameters: ".implode(", ",$missingParams)." \r\n";
+	}
+	else 
+	{
+		$id = mysqli_real_escape_string($link, $_REQUEST['id']);
+		$old_id = mysqli_real_escape_string($link, $_REQUEST['old_id']);
+		$contextbroker = mysqli_real_escape_string($link, $_REQUEST['contextbroker']);  
+		$old_cb = mysqli_real_escape_string($link, $_REQUEST['old_cb']);  
+		$selector = mysqli_real_escape_string($link, $_REQUEST['selector']);  
+		$format = mysqli_real_escape_string($link, $_REQUEST['format']);  
+		$kind = mysqli_real_escape_string($link, $_REQUEST['kind']);  
+		$data_type = mysqli_real_escape_string($link, $_REQUEST['data_type']);  
+		$value_type = mysqli_real_escape_string($link, $_REQUEST['value_type']);  
+		$value_unit = mysqli_real_escape_string($link, $_REQUEST['value_unit']);  
+		$structure_flag = mysqli_real_escape_string($link, $_REQUEST['structure_flag']);  
 					
-	// The following code has to decide the search key in the tables, then the behavior is analogous.
-	$q = "UPDATE extractionRules 
-	SET id='$id', 
-	contextBroker='$contextbroker',
-	selector='$selector', 
-	format='$format', 
-	kind='$kind', 
-	data_type='$data_type', 
-	value_type='$value_type', 
-	value_unit='$value_unit', 
-	structure_flag='$structure_flag'
-	WHERE id='$old_id' and contextBroker='$old_cb';";
-	
-	$r = mysqli_query($link, $q);
-		
-	if($r){
-		$result['status'] = 'ok';
-	}
-	else{
-	  $result["status"]='ko';
-	  $result["msg"] .= "failure"; 
-	  $result["log"] .= "\n Problem in updating rule $id". generateErrorMessage($link); 
-	}
-		//Sara2510 - For logging purpose
-	$deviceName = $id . " ".$contextbroker;
-
-	if($result["status"]=="ok"){
-			logAction($link,$username,'extractionRule','update',$deviceName,$organization,'','success');		
-	}
-	else if($result["status"]=="ko"){
-			logAction($link,$username,'extractionRule','update',$deviceName,$organization,'','faliure');				
+		// The following code has to decide the search key in the tables, then the behavior is analogous.
+		$q = "UPDATE extractionRules SET id='$id', contextBroker='$contextbroker', selector='$selector', format='$format', kind='$kind', 
+			data_type='$data_type', value_type='$value_type', value_unit='$value_unit',	structure_flag='$structure_flag' WHERE id='$old_id' and contextBroker='$old_cb';";
+		$r = mysqli_query($link, $q);
+		if($r)
+		{
+			$result['status'] = 'ok';
+			$result["msg"] .= "update";
+			logAction($link,$username,'extractionRule','update',$id . " ".$contextbroker,$organization,'','success');
+		}
+		else
+		{
+			$result["status"]='ko';
+			$result["msg"] .= "update faliure"; 
+			$result["log"] .= "\n Problem in updating rule $id". generateErrorMessage($link); 
+			logAction($link,$username,'extractionRule','update',$id . " ".$contextbroker,$organization,'','faliure');
+		}
 	}
     
 	my_log($result);
 	mysqli_close($link);
-	
-	
 }  
 else if ($action=="delete_rule")
 {
-     $id = mysqli_real_escape_string($link,$_REQUEST['id']);
-	 $cb = mysqli_real_escape_string($link,$_REQUEST['contextbroker']);
+	$missingParams=missingParameters(array('id', 'contextbroker'));
 
-	 $organization = mysqli_real_escape_string($link,$_REQUEST['organization']);
-	 
-	 //Sara2510
-	 $username = mysqli_real_escape_string($link,$_REQUEST['username']);
-	 $deviceName = $id . " ".$cb;
+	if (!empty($missingParams))
+	{
+		$result["status"]="ko";
+        $result['msg'] = "Missing Parameters";
+        $result["error_msg"] .= "Problem in delete extraction rule (Missing parameters: ".implode(", ",$missingParams)." )";
+        $result["log"]= "action=delete_rule - error Missing Parameters: ".implode(", ",$missingParams)." \r\n";
+	}
+	else 
+	{
+		$id = mysqli_real_escape_string($link,$_REQUEST['id']);
+		$cb = mysqli_real_escape_string($link,$_REQUEST['contextbroker']);
 	
-	// if ($result["status"]=='ko') return $result;
-			
-	//  $query = "UPDATE temporary_devices SET deleted = '". date("Y/m/d") . "' WHERE id = '$id' and contextBroker='$cb'";
-     $query = "DELETE FROM extractionRules  WHERE id = '$id' and contextBroker='$cb'";
-	 $r = mysqli_query($link, $query);
+		$query = "DELETE FROM extractionRules  WHERE id = '$id' and contextBroker='$cb'";
+		$r = mysqli_query($link, $query);
+		if($r)
+		{
+			$result["status"]='ok';
+			$result["msg"] .= "\n Device $id/$cb and corresponding values correctly removed from temporary devices"; 
+			$result["log"] .= "\n Device $id/$cb and corresponding values correctly removed from temporary devices";
+			logAction($link,$username,'extractionRules','delete',$id . " ".$cb,$organization,'','success');
+		}
+		else
+		{
+			$result["status"]='ko';
+			$result["msg"] .= "\n Problem in deleting the device $id: " . generateErrorMessage($link); 
+			$result["log"] .= "\n Problem in deleting the device $id: " . $query . " " . generateErrorMessage($link); 
+			logAction($link,$username,'extractionRules','delete',$id . " ".$cb,$organization,'','faliure');
+		}
+	}
 
-     if($r)
-	 {
-		 $result["status"]='ok';
-		 $result["msg"] .= "\n Device $id/$cb and corresponding values correctly removed from temporary devices"; 
-		 $result["log"] .= "\n Device $id/$cb and corresponding values correctly removed from temporary devices";
-		
-		//Sara2510
-		 logAction($link,$username,'extractionRules','delete',$deviceName,$organization,'','success');
-	 }
-	 else
-	 {
-	  $result["status"]='ko';
-	  $result["msg"] .= "\n Problem in deleting the device $id: " . generateErrorMessage($link); 
-	  $result["log"] .= "\n Problem in deleting the device $id: " . $query . " " . generateErrorMessage($link); 
-	//Sara2510
-	logAction($link,$username,'extractionRules','delete',$deviceName,$organization,'','faliure');
-	 }
-	 my_log($result);
-     mysqli_close($link);
-}
-
-else if($action == 'get_param_values')
-{	
-	// $result = array();
-	$result['status'] = 'ok'; 
-	$result['value_type'] = generatelabels($link);
-	$result['data_type'] = generatedatatypes($link);
-	$result['value_unit'] = generateunits($link);
-	//$result['log'] .= '\n\naction:get_param_values';
 	my_log($result);
-	mysqli_close($link); 
-
+	mysqli_close($link);
 }
-
-//----Sara end---
 else 
 {
 	$result['status'] = 'ko';

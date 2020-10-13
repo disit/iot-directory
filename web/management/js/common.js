@@ -1,4 +1,6 @@
 //---------------------------------------------------------------------------------------------------------------------------------------------managing valuetype-valueunit
+
+//TODO uniform with below
 function valueTypeChanged(indice){
 
        //get new value type that has been selected
@@ -32,6 +34,44 @@ function valueUnitChanged(indice){
         $("#value_unit"+indice).parent().siblings().last().css("color", "#337ab7");
         $("#value_unit"+indice).parent().siblings().last().html("Ok");
 }
+
+//TODO unifrom with above, used in extract
+function valueTypeChangedM(indice){
+
+       //get new value type that has been selected
+       valueTypeNew=$("#Mvalue_type"+indice).val();
+
+       //remove old value units
+       valueUnitNew=$("#Mvalue_unit"+indice).find("option").remove().end();
+
+       //retrieve valid value units basing on new value type selected (selected value unit is discarged)
+       validValueUnit=getValidValueUnit(valueTypeNew, "");
+
+       //if there are any valid value units, present to the users
+        if (validValueUnit!==""){
+               if (!validValueUnit.includes('selected')){
+                       valueUnitNew.append("<option hidden disabled selected value=\"NOT VALID OPTION\"> -- select an option -- </option>");
+                       //update msg_value_unit
+                       $("#Mvalue_unit"+indice).parent().siblings().last().css("color", "red");
+                       $("#Mvalue_unit"+indice).parent().siblings().last().html("Value unit is mandatory");
+               }
+                valueUnitNew.append(validValueUnit);
+        }
+
+       //update msg_value_type
+       $("#Mvalue_type"+indice).parent().siblings().last().css("color", "#337ab7");
+       $("#Mvalue_type"+indice).parent().siblings().last().html("Ok");
+ }
+
+function valueUnitChangedM(indice){
+
+        //update msg_value_unit
+        $("#Mvalue_unit"+indice).parent().siblings().last().css("color", "#337ab7");
+        $("#Mvalue_unit"+indice).parent().siblings().last().html("Ok");
+}
+
+
+
 
 function getValidValueUnit(valueType, selectedValueUnit){
 
@@ -364,10 +404,16 @@ function verifySubnature(subnature, static_attributes){
 }
 
 //------------------------------------------------------------------------------------------------------------------- common routine 
+function addModel(element, data){
+	$.each(data['content'], function() {
+		element.append("<option data_key="+this.kgenerator+" data_subnature='"+this.subnature+"' data_static="+btoa(this.static_attributes)+" value='"+this.name+"'>"+this.name+"</option>");
+	});
+}
+
 function addCB(element, data){
-        $.each(data['content'], function() {
-                element.append("<option my_data= "+JSON.stringify(this.protocol)+" data_kind="+this.kind+" value='"+this.name+"'>"+this.name+"</option>");
-        });
+	$.each(data['data'], function() {
+		element.append("<option my_data="+JSON.stringify(this.protocol)+" data_org="+this.organization+" data_kind="+this.kind+" value='"+this.name+"'>"+this.name+"</option>");
+	});
 }
 
 function copyClipboard(elementName) {
@@ -806,7 +852,8 @@ function getServicesByCBName(name, mode, initialValue=null){
     // data to send to server
     var data = {
         action : "get_services_by_cb_name",
-        brokerName : name
+        name : name,
+		token : sessionToken
     };
 
     // send POST request to server and manage its result
@@ -890,7 +937,8 @@ function fillMultiTenancyFormSection(serviceVal, servicePathVal, brokerName, con
     // data to send to server
     var data = {
         action : "get_services_by_cb_name",
-        brokerName : brokerName
+        name : brokerName,
+        token : sessionToken
     };
 
     // send POST request to server and manage its result

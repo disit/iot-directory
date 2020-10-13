@@ -1,12 +1,8 @@
 var dataTable ="";
 var _serviceIP = "..";
-// var _serviceIP = "http://159.149.129.184:3001";
 
-// var _serviceIP = "http://iot-app.snap4city.org/iotdirectory";
-
-
-function ajaxRequest()
-{var request=false;
+function ajaxRequest(){
+var request=false;
   try { request = new XMLHttpRequest()}catch(e1){
 	try{request = new ActiveXObject("Msxml2.XMLHTTP")}catch(e2){
 		try{ request = new ActiveXObject("Microsoft.XMLHTTP")
@@ -18,9 +14,8 @@ function ajaxRequest()
 
 function activateStub(button,cb,ip,port,protocol)
 {
-    
 	var data = "contextbroker=" + cb + "&ip=" + ip + "&port=" + port;
-        var service = _serviceIP + "/stub/"+protocol;
+	var service = _serviceIP + "/stub/"+protocol;
 	var xhr = ajaxRequest();
 
 	xhr.addEventListener("readystatechange", function () {
@@ -38,7 +33,6 @@ function activateStub(button,cb,ip,port,protocol)
 	xhr.send(data);
 	return true;
 }
-
 
 function aggiornaStub()
 {
@@ -61,15 +55,13 @@ function aggiornaStub()
 	return true;
 }
 
-
-
 function format ( d ) {
 	// `d` is the original data object for the row
   	return '<div class="container-fluid">' +
 				'<div class="row">' +
-					'<div class="col-xs-6 col-sm-6" style="background-color:#E6E6FA;"><b>IP:</b>' + "  " + d.ip + '</div>' +
+					'<div class="col-xs-6 col-sm-6" style="background-color:#E6E6FA;"><b>IOT Broker URI:</b>' + "  " + d.accesslink+ '</div>' +
 					'<div class="clearfix visible-xs"></div>' +
-					'<div class="col-xs-6 col-sm-6" style="background-color:#E6E6FA;"><b>Port:</b>' + "  " + d.port + '</div>' +								
+					'<div class="col-xs-6 col-sm-6" style="background-color:#E6E6FA;"><b>IOT Broker Port:</b>' + "  " + d.accessport + '</div>' +								
 				'</div>' +
 				'<div class="row">' +
 					'<div class="col-xs-6 col-sm-6" style="background-color:#D6CADD;"><b>Latitude:</b>' + "  " + d.latitude + '</div>' +
@@ -84,168 +76,157 @@ function format ( d ) {
 				'<div class="row">' +
 					'<div class="col-xs-6 col-sm-6" style="background-color:#D6CADD;"><b>SHA:</b>' + "  " + d.sha + '</div>' +
 					'<div class="clearfix visible-xs"></div>' +
+					'<div class="col-xs-6 col-sm-6" style="background-color:#D6CADD;"><b>Version:</b>' + "  " + d.version + '</div>'
 				'</div>' +
 			'</div>' ;
-	
 }
-
-	
 			
-	function fetch_data(destroyOld, selected=null)
-	{
-		if(destroyOld)
-		{
-			$('#contextBrokerTable').DataTable().clear().destroy();
-			tableFirstLoad = true;
-		}
+function fetch_data(destroyOld, selected=null) {
+	if(destroyOld) {
+		$('#contextBrokerTable').DataTable().clear().destroy();
+		tableFirstLoad = true;
+	}
 	   
-		 if (selected==null)
-		{
-		  mydata = {action: "get_all_contextbroker",token : sessionToken, username: loggedUser, organization : organization, loggedrole:loggedRole,  no_columns: ["position", "owner", "edit","delete"]};
-		}
-		else
-		{
-		  mydata = {action: "get_subset_contextbroker",token : sessionToken, username: loggedUser, organization : organization,  loggedrole:loggedRole,select : selected, no_columns: ["position", "owner", "edit","delete"]};
-		}
-	   
+	if (selected==null) {
+		mydata = { action: "get_all_contextbroker",token : sessionToken, no_columns: ["position", "owner", "edit", "delete"] };
+	}
+	else {
+		mydata = { action: "get_all_contextbroker",token : sessionToken, select : selected, no_columns: ["position", "owner", "edit", "delete"] };
+	}
 		   
-        dataTable = $('#contextBrokerTable').DataTable({
+	dataTable = $('#contextBrokerTable').DataTable({
 		"processing" : true,
 		"serverSide" : true,
-		//"responsive" : true,
-		//"responsive": {
-        	//details: false
-		//},
 		"paging"   : true,
 		"ajax" : {
-		 url:"../api/contextbroker.php",
-		 data: mydata,
-		//token : sessionToken,
-		 datatype: 'json',
-		 type: "POST" 
-		//"dataSrc": "";		
+			 url:"../api/contextbroker.php",
+			 data: mydata,
+			 datatype: 'json',
+			 type: "POST" 
 		},
-		"columns": [
-	        {
-			"class":          "details-control",
+		"columns": [ {
+			"class": "details-control",
 			"name": "position",
-			"orderable":      false,
-			"data":           null,
+			"orderable": false,
+			"data": null,
 			"defaultContent": "",
 			"render": function () {
-					 return '<i class="fa fa-plus-square" aria-hidden="true"></i>';
-			 }//,
-			//"width":"10px"
-            	}, 	
-			{"name": "name", "data": function ( row, type, val, meta ) {
-			
+				 return '<i class="fa fa-plus-square" aria-hidden="true"></i>';
+		 	}
+		},{
+			"name": "name", 
+			"data": function ( row, type, val, meta ) {
 				return row.name;
-				} },			
-			{"name": "accesslink", "data": function ( row, type, val, meta ) {
-				  return row.accesslink;
-				}},	
-			{"name": "accessport", "data": function ( row, type, val, meta ) {
-			
-				  return row.accessport;
-				} },
-			{"name": "protocol", "data": function ( row, type, val, meta ) {
-			
-				  return row.protocol;
-				} },
-            {"name": "visibility", "data": function ( row, type, val, meta ) {
-			
-				  				  
-				if (row.visibility=='MyOwnPrivate'){   
-					return '<button type="button"  class=\"myOwnPrivateBtn\" onclick="changeVisibility(\''+ row.name + '\',\''+ row.visibility + '\',\''+ row.organization + '\',\''+ row.accesslink + '\')">' + row.visibility + '</button>';																				
-					} 
-				else if (row.visibility=='MyOwnPublic'){
-					return '<button type="button"  class=\"myOwnPublicBtn\" onclick="changeVisibility(\''+ row.name + '\',\''+ row.visibility + '\',\''+ row.organization + '\',\''+ row.accesslink + '\')">' + row.visibility + '</button>';
-					}
+			} 
+		},{
+			"name": "accesslink", 
+			"data": function ( row, type, val, meta ) {
+				return row.accesslink;
+			}
+		},{
+			"name": "accessport", 
+			"data": function ( row, type, val, meta ) {
+				return row.accessport;
+			} 
+		},{
+			"name": "kind", 
+			"data": function ( row, type, val, meta ) {
+               	return row.kind;
+			} 
+		},{
+			"name": "protocol", 
+			"data": function ( row, type, val, meta ) {
+			  return row.protocol;
+			} 
+		},{
+			"name": "visibility", 
+			"data": function ( row, type, val, meta ) {
+				if (row.visibility=='MyOwnPrivate') {   
+					return '<button type="button"  class=\"myOwnPrivateBtn\" onclick="changeVisibility(\''+ 
+						row.name + '\',\''+ row.visibility + '\',\''+ row.organization + '\',\''+ row.accesslink + '\')">' + row.visibility + '</button>';								
+				}	 
+				else if (row.visibility=='MyOwnPublic') {
+					return '<button type="button"  class=\"myOwnPublicBtn\" onclick="changeVisibility(\''+ 
+						row.name + '\',\''+ row.visibility + '\',\''+ row.organization + '\',\''+ row.accesslink + '\')">' + row.visibility + '</button>';
+				}
 				else if (row.visibility=='public') 
 				{
 					return '<button type="button"  class=\"publicBtn\" >' + row.visibility + '</button>';
-					}
+				}
 				else // value is private
 				{
 				  return "<div class=\"delegatedBtn\">"+ row.visibility + "</div>";								  
-					}
-					
-				} },
-			{"name": "organization", "data": function ( row, type, val, meta ) {
-			
-				  return row.organization;
-				} },
-			{"name": "owner", "data": function ( row, type, val, meta ) {
-			
-				  return row.owner;
-				} },
-            {"name": "created", "data": function ( row, type, val, meta ) {
-			
-				  return row.created;
-				} },			
-								 
-			{
-                data: null,
-				"name": "edit",
-				"orderable":      false,
-                className: "center",
-				render: function(d) {
-                //defaultContent: '<button type="button" id="edit" class="editDashBtn data-id="'+ row.name +'"">Edit</button>'
-				return '<button type="button" class="editDashBtn" ' +
-				'data-name="'+d.name+'" ' +
-				'data-organization="'+d.organization+'" ' +
-				'data-kind="'+d.kind+'" ' +
-				'data-ip="'+d.ip+'" ' +
-				'data-protocol="'+d.protocol+'" ' +
-				'data-version="'+d.version+'" ' +
-				'data-port="'+d.port+'" ' +
-				'data-uri="'+d.uri+'" ' +
-				'data-created="'+d.created+'" ' +
-				'data-visibility="'+d.visibility+'" ' +
-				'data-longitude="'+d.longitude+'" ' +
-				'data-latitude="'+d.latitude+'" ' +
-				'data-login="'+d.login+'" ' +
-				'data-password="'+d.password+'" ' +
-				'data-accesslink="'+d.accesslink+'" ' +
-				'data-accessport="'+d.accessport+'" ' +
-				'data-apikey="'+d.apikey+'" ' +
-				'data-path="'+d.path+'" ' +
-				'data-sha="'+d.sha+'" '+
-				'data-urlnificallback="'+d.urlnificallback+'" '+
-				'data-subscription_id="'+d.subscription_id+'" '+ 'data-services="'+d.services+'">Edit</button>'; 
 				}
-            },
-			{
-                data: null,
-				"name": "delete",
-				"orderable":      false,
-                className: "center",
-                //defaultContent: '<button type="button" id="delete" class="delDashBtn delete">Delete</button>'
-				render: function(d) {
-				return '<button type="button" class="delDashBtn" ' +
-				'data-name="'+d.name+'">Delete</button>';
+			} 
+		},{
+			"name": "organization", 
+			"data": function ( row, type, val, meta ) {
+				return row.organization;
+			} 
+		},{
+			"name": "owner", 
+			"data": function ( row, type, val, meta ) {
+				return row.owner;
+			} 
+		},{
+			"name": "created", 
+			"data": function ( row, type, val, meta ) {
+			  return row.created;
+			} 
+		},{
+			data: null,
+			"name": "edit",
+			"orderable": false,
+            className: "center",
+			render: function(d) {
+				if (loggedRole=='RootAdmin' || d.visibility=='MyOwnPrivate' || d.visibility=='MyOwnPublic') {
+					return '<button type="button" class="editDashBtn" ' +
+						'data-name="'+d.name+'" ' +
+						'data-organization="'+d.organization+'" ' +
+						'data-kind="'+d.kind+'" ' +
+						'data-ip="'+d.ip+'" ' +
+						'data-protocol="'+d.protocol+'" ' +
+						'data-version="'+d.version+'" ' +
+						'data-port="'+d.port+'" ' +
+						'data-uri="'+d.uri+'" ' +
+						'data-created="'+d.created+'" ' +
+						'data-visibility="'+d.visibility+'" ' +
+						'data-longitude="'+d.longitude+'" ' +
+						'data-latitude="'+d.latitude+'" ' +
+						'data-login="'+d.login+'" ' +
+						'data-password="'+d.password+'" ' +
+						'data-accesslink="'+d.accesslink+'" ' +
+						'data-accessport="'+d.accessport+'" ' +
+						'data-apikey="'+d.apikey+'" ' +
+						'data-path="'+d.path+'" ' +
+						'data-sha="'+d.sha+'" '+
+						'data-urlnificallback="'+d.urlnificallback+'" '+
+						'data-subscription_id="'+d.subscription_id+'" '+ 'data-services="'+d.services+'">Edit</button>'; 
 				}
-            }
-        ],
-    "order" : [] 
-	  
-   });
-  
+			}
+		},{
+            data: null,
+			"name": "delete",
+			"orderable": false,
+            className: "center",
+			render: function(d) {
+				if (loggedRole=='RootAdmin' || d.visibility=='MyOwnPrivate' || d.visibility=='MyOwnPublic') {
+					return '<button type="button" class="delDashBtn" ' +
+						'data-name="'+d.name+'">Delete</button>';
+				}
+			}
+		}],
+    	"order" : [] 
+	});
   
 	if (loggedRole!='RootAdmin' && loggedRole!='ToolAdmin') {		
-	dataTable.columns( [6,7, 9, 10] ).visible( false );		
+		dataTable.columns( [8, 10, 11] ).visible( false );	//hide Owner, Edit, Delete
 	} 
-    if (loggedRole=='ToolAdmin') {		
-	dataTable.columns( [7] ).visible( false );		
+   	if (loggedRole=='ToolAdmin') {		
+		dataTable.columns( [8] ).visible( false );//hide Owner 		
 	}
-  
-  }	 
-
- //end of fetch function 
-
-
-
-
+}	 
+//end of fetch function 
 
 /*JQuery Started...*/
 
@@ -435,10 +416,7 @@ function format ( d ) {
                 	url: "../api/contextbroker.php",
 			data:{
 					action: "insert",
-					//Sara2610 - for logging purpose
-					username: loggedUser,
-			                token : sessionToken,
-					organization : organization, 
+			        token : sessionToken,
 					name: $('#inputNameCB').val(),
 					kind: $('#selectKindCB').val(),
 					ip: $('#inputIpCB').val(),
@@ -585,9 +563,6 @@ function format ( d ) {
 			data:{
 				action: "delete",
 				token : sessionToken,
-				//Sara2610 - for logging purpose
-				username: loggedUser,
-				organization : organization, 
 				name: name
 				},
 			type: "POST",
@@ -669,6 +644,9 @@ function format ( d ) {
 
 // Edit Context broker			
 	$('#contextBrokerTable tbody').on('click', 'button.editDashBtn', function () {
+			$("#editContextBrokerModal").modal('show');
+			$('.nav-tabs a[href="#editInfoTabCB"]').tab('show');
+
 
 			$("#editContextBrokerModalUpdating").hide();
 			$("#editCBModalLoading").hide();
@@ -676,7 +654,6 @@ function format ( d ) {
 			$("#editContextBrokerModalFooter").show();
 		        $("#editContextBrokerCancelBtn").show();
 		        $("#editContextBrokerConfirmBtn").show();
-			$("#editContextBrokerModal").modal('show');
 			$("#editCBModalLabel").html("Edit Context Broker - " + $(this).attr("data-name"));
             		$('#editContextBrokerLoadingMsg').hide();
 		        $('#editContextBrokerLoadingIcon').hide();
@@ -784,9 +761,6 @@ function format ( d ) {
                 	data:{
 					token : sessionToken,
 					action: "update",
-					username: loggedUser,
-					organization : organization, 
-					obj_organization : $('#inputOrganizationCBM').val(), 
 					name: $('#inputNameCBM').val(),
 					kind: $('#selectKindCBM').val(),
 					path: $('#inputPathCBM').val(),
@@ -902,10 +876,10 @@ function format ( d ) {
 
 	$('#addContextBrokerBtn').off('click');
 	$('#addContextBrokerBtn').click(function (){
-	
 		$("#tab-addCB-4").hide();
-	
 		$('#addContextBrokerModalTabs').show();
+		$('.nav-tabs a[href="#infoTabCB"]').tab('show');
+	
 		$('#addContextBrokerModalBody').show();	
 		$('#addContextBrokerModal div.modalCell').show();
 		$('#addContextBrokerModalFooter').show();
@@ -1242,16 +1216,12 @@ function format ( d ) {
 	$.ajax({
 		url: "../api/contextbroker.php",
 		data: {
-		organization : organization,
-            username: loggedUser, 
-            loggedrole:loggedRole,
-        
-		action: "get_all_contextbroker_latlong"
+       		token : sessionToken, 
+			action: "get_all_contextbroker_latlong"
 		},
 		type: "POST",
 		async: true,
 		datatype: 'json',
-        token : sessionToken,
 		success: function (data) 
 		 {
 			
@@ -1504,7 +1474,6 @@ function updateGroupList(ouname){
                 url: "../api/ldap.php",
                 data:{
                                           action: "get_logged_ou",
-                                          username: loggedUser,
                                           token : sessionToken
                                           },
                 type: "POST",
@@ -1721,9 +1690,6 @@ function updateGroupList(ouname){
 				data: 
 				{	
 					action: "change_visibility", 
-					username: loggedUser,
-					organization : organization, 
-					obj_organization : obj_organization, 
 					name: name,
                     object:"BrokerID",
                     table:"contextbroker",
@@ -1788,9 +1754,6 @@ function updateGroupList(ouname){
                  object:"BrokerID",
 				 name: name,
 				 accesslink: accesslink,
-				 organization : organization, 
-				 obj_organization : obj_organization, 
-				 owner: loggedUser,
 				 newOwner:  $('#newOwner').val(),
 				 token : sessionToken
 			 },	
@@ -1868,9 +1831,7 @@ function updateGroupList(ouname){
 													   
                 action: "get_delegations",  // check the action and to be specified
                 accesslink: accesslink,
-                obj_organization:obj_organization,
                 name:name,
-                user : loggedUser,
                 object:"BrokerID",
                 token : sessionToken,
 			},
@@ -1931,7 +1892,6 @@ function updateGroupList(ouname){
 						{
                             action: "remove_delegation",    // to be specified
                             token : sessionToken,
-                            user : loggedUser,
                             delegationId: $(this).parents('tr').attr('data-delegationId')
 						},
 						type: "POST",
@@ -1962,7 +1922,6 @@ function updateGroupList(ouname){
                             {
                                 action: "remove_delegation",
                                 token : sessionToken,
-                                user : loggedUser,
                                 delegationId: $(this).parents('tr').attr('data-delegationId')				   
                             },				   
                             type: "POST",
@@ -2008,12 +1967,9 @@ function updateGroupList(ouname){
 						{
 						  action: "add_delegation",
 						  accesslink : accesslink,
-                          obj_organization:obj_organization,
                           obj_name: name,
                           object:"BrokerID",
-						  user : loggedUser,
 						  token : sessionToken,
-                          organization:organization,
 						  delegated_user: newDelegation,
 						},
 						type: "POST",
@@ -2095,10 +2051,8 @@ function updateGroupList(ouname){
 			   {
 					   action: "add_delegation",
 					   accesslink : accesslink,
-                       obj_organization: obj_organization,
                        obj_name: name,
                        object:"BrokerID",
-					   user : loggedUser,
 					   token : sessionToken,
 					   delegated_group: delegatedDN
 			   },

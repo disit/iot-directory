@@ -46,27 +46,6 @@ if (isset($_REQUEST['redirect'])){
 	$link = mysqli_connect($host, $username, $password);
     mysqli_select_db($link, $dbname);
     
-    if(!isset($_SESSION['loggedRole']))
-    {
-        header("location: unauthorizedUser.php");
-    }
-
-/* 
-require '../sso/autoload.php';
-use Jumbojett\OpenIDConnectClient;
-
-
- if (isset($_SESSION['refreshToken'])) {
-   $oidc = new OpenIDConnectClient($keycloakHostUri, $clientId, $clientSecret);
-   $oidc->providerConfigParam(array('token_endpoint' => $keycloakHostUri.'/auth/realms/master/protocol/openid-connect/token'));
-   $tkn = $oidc->refreshToken($_SESSION['refreshToken']);
-   $accessToken = $tkn->access_token;
-   $_SESSION['refreshToken'] = $tkn->refresh_token;
-}
-else 
-	$accessToken ="";
-
- */
 $accessToken = "";
    
 ?>
@@ -179,7 +158,7 @@ $accessToken = "";
 	var currentDictionaryStaticAttribEdit=[];
 
           $.ajax({url: "../api/functionality.php",
-			 data: {action: 'get_functionality', page : mypage},
+			 data: {action: 'get_functionality', page : mypage, token:sessionToken},
 			 type: "GET",
 			 async: false,
 			 dataType: 'json',
@@ -342,15 +321,14 @@ $accessToken = "";
                             </div>
 							
 							
-										<div id="managerBoard" class="row mainContentRow">
-											<!-- <div class="col-xs-12 mainContentRowDesc">My Devices Menu </div>-->
+										<!--div id="managerBoard" class="row mainContentRow">
 											<div class="col-xs-12 mainContentCellCnt">
 											
 											<button type="text" id="myDevice" name="myDevice"class="btn btn-primary">My Devices</button>
 											<button type="text" id="delegatedDevice" name="delegatedDevice" class="btn btn-primary">Delegated Devices</button>			
 											<button type="button" id="addMyNewDevice" class="btn btn-primary">Add New Device</button>
 											</div>
-										</div>
+										</div-->
 		
 							
 			
@@ -363,14 +341,14 @@ $accessToken = "";
 										<div class="modalFieldCnt">
 											<input type="text" class="modalInputTxt" name="inputNameDeviceUser" id="inputNameDeviceUser" onkeyup="checkStrangeCharacters(this)" required> 
 										</div>
-										<div class="modalFieldLabelCnt">Name</div>
+										<div class="modalFieldLabelCnt">Device Identifier</div>
 										<div id="inputNameDeviceUserMsg" class="modalFieldMsgCnt">&nbsp;</div>
 									</div>
 									
 									<div class="col-xs-12 col-md-6 modalCell">
                                     <div class="modalFieldCnt">
                                         <select id="selectModel" name="selectModel" class="modalInputTxt">
-										<?php
+										<!--?php
                                             $query = "SELECT name, kgenerator FROM model";
                                             $result = mysqli_query($link, $query);
 
@@ -391,7 +369,7 @@ $accessToken = "";
                                                 $name="ERROR";
                                                 echo "<option value=\"$name\">$name</option>";
                                             }
-                                        ?>
+                                        ?-->
 										</select>
                                     </div>
                                     <div class="modalFieldLabelCnt">Model</div>
@@ -671,7 +649,7 @@ $accessToken = "";
                                     <div class="modalFieldCnt">
                                         <input type="text" class="modalInputTxt" name="inputNameDevice" id="inputNameDevice" onkeyup="checkStrangeCharacters(this)" required> 
                                     </div>
-                                    <div class="modalFieldLabelCnt">Name</div>
+                                    <div class="modalFieldLabelCnt">Device Identifier</div>
 									<div id="inputNameDeviceMsg" class="modalFieldMsgCnt">&nbsp;</div>
                                 </div>
 								 <div class="col-xs-12 col-md-6 modalCell">
@@ -1154,7 +1132,7 @@ $accessToken = "";
                                         <input type="text" class="modalInputTxt" name="inputNameDeviceM" id="inputNameDeviceM" onkeyup="checkStrangeCharacters(this)" required> 
                                         <input type="text" class="modalInputTxt" name="inputOrganizationDeviceM" id="inputOrganizationDeviceM" style="display:none"> 
                                     </div>
-                                    <div class="modalFieldLabelCnt">Name</div>
+                                    <div class="modalFieldLabelCnt">Device Identifier</div>
 									<div id="inputNameDeviceMMsg" class="modalFieldMsgCnt">&nbsp;</div>
                                 </div>
 								

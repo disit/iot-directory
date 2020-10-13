@@ -47,27 +47,6 @@ if (isset($_REQUEST['redirect'])){
 	$link = mysqli_connect($host, $username, $password);
     mysqli_select_db($link, $dbname);
     
-    if(!isset($_SESSION['loggedRole']))
-    {
-        header("location: unauthorizedUser.php");
-    }
-
-
-/*require '../sso/autoload.php';
-use Jumbojett\OpenIDConnectClient;
-
-
- if (isset($_SESSION['refreshToken'])) {
-   $oidc = new OpenIDConnectClient('https://www.snap4city.org', $clientId, $clientSecret);
-   $oidc->providerConfigParam(array('token_endpoint' => 'https://www.snap4city.org/auth/realms/master/protocol/openid-connect/token'));
-   $tkn = $oidc->refreshToken($_SESSION['refreshToken']);
-   $accessToken = $tkn->access_token;
-   $_SESSION['refreshToken'] = $tkn->refresh_token;
-}
-else 
-	$accessToken ="";
-
-  */
   $accessToken = "";
 ?>
 
@@ -164,7 +143,7 @@ else
          var functionality = [];
 
           $.ajax({url: "../api/functionality.php",
-			 data: {action: 'get_functionality', page : mypage},
+			 data: {action: 'get_functionality', page : mypage, token:sessionToken},
 			 type: "GET",
 			 async: false,
 			 dataType: 'json',
@@ -190,7 +169,7 @@ else
 		<script  src="js/rulesManagement.js"></script>	
 		<script  src="js/rulesEditManagement.js"></script>
         <script  src="../js/dashboard_mng.js"></script>
-
+		<script  src="js/common.js"></script>
 		
 		<!-- leaflet scripts -->
 		
@@ -458,7 +437,7 @@ else
                                 </div>	
 								<div class="col-xs-12 col-md-6 modalCell" id="valueTypeSel">
                                     <div class="modalFieldCnt">
-                                        <select id="valueTypeInput" name="valueTypeInput" class="modalInputTxt">
+                                        <select id="value_type0" name="valueTypeInput" class="modalInputTxt" onchange=valueTypeChanged(0)>
 										<option></option>
 										</select>
                                     </div>
@@ -470,7 +449,7 @@ else
 							<div class="row">
 								<div class="col-xs-12 col-md-6 modalCell" id="valueUnitSel">
                                     <div class="modalFieldCnt">
-                                        <select id="deviceValueUnit" name="deviceValueUnit" class="modalInputTxt">
+                                        <select id="value_unit0" name="deviceValueUnit" class="modalInputTxt" onchange=valueUnitChanged(0)>
 										<option></option>
 										</select>
                                     </div>
@@ -781,20 +760,18 @@ else
                                 </div>	
 								<div class="col-xs-12 col-md-6 modalCell" id="valueTypeSelM">
                                     <div class="modalFieldCnt">
-                                        <select id="inputValueTypeM" name="inputValueTypeM" class="modalInputTxt">
+                                        <select id="Mvalue_type0" name="inputValueTypeM" class="modalInputTxt" onchange=valueTypeChangedM(0)>
 										<option></option>
 										</select>
                                     </div>
                                     <div class="modalFieldLabelCnt">Value Type</div>
 								<div id="inputValueTypeMMsg" class="modalFieldMsgCnt">&nbsp;</div>
                                 </div>	
-								
-								
 							</div>
 							<div class="row">
 								<div class="col-xs-12 col-md-6 modalCell" id="valueUnitSelM">
                                     <div class="modalFieldCnt">
-                                        <select id="valueUnitDeviceM" name="valueUnitDeviceM" class="modalInputTxt">
+                                        <select id="Mvalue_unit0" name="valueUnitDeviceM" class="modalInputTxt" onchange=valueUnitChangedM(0)>
 										<option></option>
 										</select>
                                     </div>

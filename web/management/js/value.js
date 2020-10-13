@@ -1,28 +1,53 @@
+var tableFirstLoad = true;
+var dataTable ="";
+   
+//--------to get the datatypes items---------- 
+$.ajax({url: "../api/device.php",
+	data: {
+		action: 'get_param_values',
+		token : sessionToken
+	},
+	type: "POST",
+	async: true,
+	dataType: 'json',
+	success: function (mydata) {
+		if (mydata["status"] === 'ok') {
+			gb_datatypes= mydata["data_type"];
+			gb_value_units= mydata["value_unit"];
+			gb_value_types= mydata["value_type"];
+		}
+		else {
+			console.log("error getting the data types "+data);
+		}
+	},
+	error: function (mydata) {
+		console.log(JSON.stringify(mydata));
+		alert("Network errors. <br/> Get in touch with the Snap4City Administrator<br/>"+ JSON.stringify(mydata));
+	}
+});
 
- var tableFirstLoad = true;
- var dataTable ="";
-    
-	$.ajax({url: "../api/device.php",
-         data: {
-			 organization : organization, 
-			 action: 'get_param_values'
-			 },
-         type: "POST",
-         async: true,
-         dataType: 'json',
-         success: function (mydata)
-         {
-		   gb_datatypes= mydata["data_type"];
-		   gb_value_units= mydata["value_unit"];
-		   gb_value_types= mydata["value_type"];		   
-         },
-		 error: function (mydata)
-		 {
-		   console.log(JSON.stringify(mydata));
-		   alert("Network errors. <br/> Get in touch with the Snap4City Administrator<br/>"+ JSON.stringify(mydata));
-		 }
-	});
-
+//--------to get the list of context broker----------
+$.ajax({
+	url: "../api/contextbroker.php",
+	data: {
+		action: "get_all_contextbroker",
+		token : sessionToken
+	},
+	type: "POST",
+	async: true,
+	success: function (data) {
+		if (data["status"] === 'ok') {
+			addCB($("#selectContextBroker"), data);
+		}
+		else {
+			console.log("error getting the context brokers "+data);
+		}
+	},
+	error: function (data) {
+		console.log("error in the call to get the context brokers "+data);
+		alert("Network errors. <br/> Get in touch with the Snap4City Administrator<br/>"+ JSON.stringify(data));
+	}
+});
  
 function generateUUID() { // Public Domain/MIT
 		var d = new Date().getTime();
@@ -170,7 +195,7 @@ function format ( d ) {
 
             }
             
-          
+         //TODO uniform this switch .. they call same stuff!!! 
             if (selected==null)
 			{
                          if (loggedRole!='RootAdmin') {
@@ -184,9 +209,9 @@ function format ( d ) {
 			else
 			{
 				if (loggedRole!='RootAdmin') 
-			       mydata = {action: "get_subset_event_value", token : sessionToken, organization : organization,username: loggedUser, loggedrole:loggedRole,  select: selected, no_columns: ["position","visibility","status1","edit","delete","map"]};
+			       mydata = {action: "get_all_event_value", token : sessionToken, select: selected, no_columns: ["position","visibility","status1","edit","delete","map"]};
                           else
-			       mydata = {action: "get_subset_event_value_admin", token : sessionToken, organization : organization, loggedrole:loggedRole, select: selected, username: loggedUser, no_columns: ["position","visibility","status1","edit","delete","map"]};
+			       mydata = {action: "get_all_event_value_admin", token : sessionToken, select: selected, no_columns: ["position","visibility","status1","edit","delete","map"]};
 			}    
 
 	  dataTable = $('#valuesTable').DataTable({
@@ -200,7 +225,6 @@ function format ( d ) {
 		"ajax" : {
 		 url:"../api/value.php",
 		 data: mydata,
-		//token : sessionToken,
 		 datatype: 'json',
 		 type: "POST",                
 		},
@@ -513,10 +537,7 @@ function format ( d ) {
 		url: "../api/value.php",
 		data: {
 		action: "get_all_value_latlong", 
-		organization : organization, 
-		token : sessionToken,
-        username: loggedUser,
-        loggedrole:loggedRole    
+		token : sessionToken
 		},
 		type: "POST",
 		async: true,
@@ -558,32 +579,8 @@ function format ( d ) {
 	$("#addValueBtn").off("click");
 	$("#addValueBtn").click(function(){
 
-		$.ajax({
-                url: "../api/value.php",
-                data:{
-                                          
-                    action: "get_cb",
-                    token : sessionToken, 
-                    username: loggedUser, 
-                    organization : organization, 
-                    loggedrole:loggedRole                          
-                },
-                type: "POST",
-                async: true,
-                success: function (data)
-                {
-                        
-                    if (data["status"] === 'ok')
-                    {        
-                        var $dropdown = $("#selectContextBroker");        
-                        $dropdown.empty();
-			$dropdown.append($("<option hidden disabled selected value=\"NOT VALID OPTION\"> -- select an option -- </option>"));
-                        $.each(data['content'], function() {
-                            $dropdown.append($("<option data-protocol='"+this.protocol+"'/>").val(this.name).text(this.name));        
-                        });
-                        
                      $("#addValueModalTabs").show();
-	             $('#addValueModal div.modalCell').show();
+	        	     $('#addValueModal div.modalCell').show();
                      $("#addNewValueCancelBtn").show();
                      $("#addNewValueConfirmBtn").show();
                      $("#addNewValueOkBtn").hide();
@@ -596,7 +593,7 @@ function format ( d ) {
                      $("#addValueKoMsg").hide();
                      $("#addValueModal").modal('show');
                       
-			                     checkProtocol($('#selectContextBroker').children("option:selected").data("protocol"), 'add', 'value');
+			checkProtocol($('#selectContextBroker').children("option:selected").data("protocol"), 'add', 'value');
  
 			var $datatype=$("#selectDataType");
 			$datatype.empty();
@@ -607,26 +604,13 @@ function format ( d ) {
 			var $valuetype=$("#value_type-1");
 			$valuetype.empty();
 			$valuetype.append($("<option hidden disabled selected value=\"NOT VALID OPTION\"> -- select an option -- </option>"));
-                        $.each(gb_value_types, function() {
+            $.each(gb_value_types, function() {
                             $valuetype.append($("<option />").val(this.value).text(this.label));
                         });
 			$("#value_type-1").parent().siblings().last().css("color", "red");
-                        $("#value_type-1").parent().siblings().last().html("Value type is mandatory");
-
+            $("#value_type-1").parent().siblings().last().html("Value type is mandatory");
 			$("#value_unit-1").parent().siblings().last().css("color", "#337ab7");
-		        $("#value_unit-1").parent().siblings().last().html("Ok");
- 
-                    }
-                    else{
-                        console.log("error getting the context brokers "+data); 
-                    }
-                },
-                error: function (data)
-                {
-                 console.log("error in the call to get the context brokers "+data);   
-                }
-          });
-
+	        $("#value_unit-1").parent().siblings().last().html("Ok");
 	});
 
 	//$('#selectValueType, #selectValueTypeM').change(function() {		
@@ -659,14 +643,10 @@ function format ( d ) {
                  url: "../api/value.php",
                  data:{
 					  action: "insert",
-					  //Sara2610 - For logging purpose
-					  username: loggedUser,
-					  organization : organization, 
 					  contextbroker: $('#selectContextBroker').val(),
 		 			  device: deviceName,
 					  value_name: $('#inputValueNameDevice').val(),
 					  data_type: $('#selectDataType').val(),
-					  organization : organization, 
 					  value_type: $('#value_type-1').val(),
 					  editable: $('#inputEditableValue').val(),
 					  value_unit: $('#value_unit-1').val(),
@@ -835,9 +815,6 @@ function format ( d ) {
 			url: "../api/value.php",
 			data:{	
 					action: "delete",
-					//Sara2610 - For logging purpose
-					username: loggedUser,
-					organization : organization, 
 					device: device, 
 					contextbroker: cb, 
 					value_name: value_name,
@@ -1011,9 +988,6 @@ function format ( d ) {
 			 url: "../api/value.php",
 			 data:{
 			  action: "update", 
-			  //Sara2610 - For logging purpose
-			  username: loggedUser,
-			  organization : organization, 
 			  contextbroker: $('#selectContextBrokerM').val(),
 			  device: deviceName,
 			  value_name: $('#inputValueNameDeviceM').val(),
@@ -1023,7 +997,6 @@ function format ( d ) {
 			  value_unit: $('#selectValueUnitM').val(),
 			  healthiness_criteria: $('#selectHealthinessCriteriaM').val(),
 			  healthiness_value: $('#inputHealthinessValueM').val(),
-			  // order: $('#inputOrderM').val()
 			 },
 			 type: "POST",
 			 async: true,
@@ -1164,7 +1137,6 @@ function format ( d ) {
                 data:{
                                           action: "get_group_for_ou",
                                           ou: ouname,
-										  organization : organization, 
                                           token : sessionToken
                                           },
                 type: "POST",
@@ -1205,11 +1177,10 @@ function format ( d ) {
 	if ((loggedRole=='RootAdmin')||(loggedRole=='ToolAdmin')) {
 		$.ajax({
         	url: "../api/ldap.php",
-		data:{
-					  action: "get_all_ou",
-					  organization : organization, 
-                                          token : sessionToken
-                                          },
+			data:{
+				action: "get_all_ou",
+                token : sessionToken
+                },
                 type: "POST",
                 async: false,
                 success: function (data)
@@ -1240,8 +1211,6 @@ function format ( d ) {
                 url: "../api/ldap.php",
                 data:{
                                           action: "get_logged_ou",
-                                          username: loggedUser,
-										  organization : organization, 
                                           token : sessionToken
                                           },
                 type: "POST",
@@ -1383,13 +1352,10 @@ function format ( d ) {
                                                                  url: "../api/value.php",
                                                                  data:{
                                                                  action: "delegate_value",  // check the action -- there is no action for change_visiblity like device
-                                                                 id: id,
                                                                  contextbroker: contextbroker,
-																 organization : organization, 
                                                                  value_name: valueName,
-                                                                 visibility :newVisibility,
+                                                                 visibility :newVisibility,//TODO i cannot find the api relationship with making sensor public
                                                                  uri : uri,
-                                                                 user : loggedUser,
                                                                  token : sessionToken,
                                                                  delegated_user: "ANONYMOUS",
                                                                  k1: newk1,
@@ -1458,10 +1424,8 @@ function format ( d ) {
                                                                  id: id,
                                                                  contextbroker: contextbroker,
                                                                  value_name: valueName,
-                                                                 visibility : visibility,
-																 organization : organization, 
+                                                                 visibility : visibility,//TODO find relationship with API
                                                                  uri: uri,
-                                                                 user : loggedUser,
                                                                  delegated_user: "ANONYMOUS",
 																  //delegated_user: $('#newVisibility').val(), //check the attribute delegated_user
                                                                  token : sessionToken,
@@ -1528,17 +1492,9 @@ function format ( d ) {
 									data:
                                     {
 										action: "delegate_value_list",  // check the action and to be specified
-										id: id,
-										contextbroker: contextbroker,
-										organization : organization, 
 										value_name: valueName,
-										visibility : visibility,
 										uri: uri,
-										user : loggedUser,
-										// delegated_user: $('#newVisibility').val(), //check the attribute delegated_user
-										token : sessionToken,
-										// k1: k1,
-										// k2: k2,
+										token : sessionToken
                                     },
                                     type: "POST",
                                     async: true,
@@ -1586,17 +1542,9 @@ function format ( d ) {
                                                         data:
                                                         {
                                                                 action: "remove_delegation",    // to be specified
-                                                                id: id,
-                                                                contextbroker: contextbroker,
-																organization : organization, 
                                                                 value_name: valueName,
-                                                                visibility : visibility,
                                                                 uri: uri,
-                                                                // delegated_user: $('#newVisibility').val(), //check the attribute delegated_user
                                                                 token : sessionToken,
-                                                                // k1: k1,
-                                                                // k2: k2,
-                                                                user : loggedUser,
                                                                 delegationId: $(this).parents('tr').attr('data-delegationId')
                                                         },
                                                         type: "POST",
@@ -1629,14 +1577,9 @@ function format ( d ) {
                                                                                                                data:
                                                                                                                {
                                                                                                                        action: "remove_delegation",    // to be specified
-                                                                                                                       id: id,
-                                                                                                                       contextbroker: contextbroker,
-																													   organization : organization, 
                                                                                                                        value_name: valueName,
-                                                                                                                       visibility : visibility,
                                                                                                                        uri: uri,
                                                                                                                        token : sessionToken,
-                                                                                                                       user : loggedUser,
                                                                                                                        delegationId: $(this).parents('tr').attr('data-delegationId')
                                                                                                                },
                                                                                                                type: "POST",
@@ -1692,13 +1635,9 @@ function format ( d ) {
                                                         data:
                                                         {
                                                           action: "delegate_value",
-                                                          id: id,
                                                           contextbroker: contextbroker,
-														  organization : organization, 
                                                           value_name: valueName,
-                                                          visibility :visibility,
                                                           uri : uri,
-                                                          user : loggedUser,
                                                           token : sessionToken,
                                                           delegated_user: newDelegation,
                                                           k1: newk1,
@@ -1781,13 +1720,9 @@ function format ( d ) {
                                                                                                data:
                                                                                                {
                                                                                                        action: "delegate_value",
-                                                                                                       id: id,
                                                                                                        contextbroker: contextbroker,
-																									   organization : organization, 
                                                                                                        value_name: valueName,
-                                                                                                       visibility :visibility,
                                                                                                        uri : uri,
-                                                                                                       user : loggedUser,
                                                                                                        token : sessionToken,
                                                                                                        delegated_group: delegatedDN,
                                                                                                        k1: newk1,
@@ -1892,7 +1827,7 @@ $('#delegationsModal').on('hidden.bs.modal', '.modal', function () {
   }
  
 	 
-	  function getLatLong(id, cb){
+/*	  function getLatLong(id, cb){
 		     
 			//console.log(id);
 			var id = id;
@@ -1937,7 +1872,7 @@ $('#delegationsModal').on('hidden.bs.modal', '.modal', function () {
 					}
 					
 				});
-	   }
+	   }*/
 	   
 
 

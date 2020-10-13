@@ -15,35 +15,8 @@
    along with this program; if not, write to the Free Software
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA. */
 
-header("Content-type: application/json");
-header("Access-Control-Allow-Origin: *\r\n");
-include ('../config.php');
-include ('common.php');
-// session_start();
-$link = mysqli_connect($host, $username, $password) or die("failed to connect to server !!");
-mysqli_select_db($link, $dbname);
-
-//Altrimenti restituisce in output le warning
-error_reporting(E_ERROR | E_NOTICE);
-
-
-if(!$link->set_charset("utf8")) 
-{
-    exit();
-}
-
-if(isset($_REQUEST['action']) && !empty($_REQUEST['action'])) 
-    {
-        $action = $_REQUEST['action'];
-    }
-else
-{
-    exit();
-}
-
-//print_r ($_REQUEST);
-
 $result=array("status"=>"","msg"=>"","content"=>"","log"=>"", "error_msg"=>"");	
+
 /* all the primitives return an array "result" with the following structure
 
 result["status"] = ok/ko; reports the status of the operation (mandatory)
@@ -52,252 +25,452 @@ result["content"] in case of positive execution of the operation the content ext
 result["log"] keep trace of the operations executed on the db
 
 This array should be encoded in json
-*/	
+*/
 
+header("Content-type: application/json");
+header("Access-Control-Allow-Origin: *\r\n");
+include ('../config.php');
+include ('common.php');
+$link = mysqli_connect($host, $username, $password) or die("failed to connect to server !!");
+mysqli_select_db($link, $dbname);
+error_reporting(E_ERROR | E_NOTICE);
+
+if(!$link->set_charset("utf8")) 
+{
+    exit();
+}
+
+if(isset($_REQUEST['action']) && !empty($_REQUEST['action'])) 
+{
+	$action = $_REQUEST['action'];
+}
+else
+{
+	$result['status'] = 'ko';
+	$result['msg'] = 'action not present'; 
+	$result['error_msg']='action not present';
+	$result['log'] = 'device.php action not present';
+	my_log($result);
+	mysqli_close($link);
+    exit();
+}
+
+$headers = apache_request_headers();
+if (isset($headers['Authorization']) && strlen($headers['Authorization'])>8 )
+{
+	$_REQUEST['token']=substr($headers['Authorization'],7);
+}
 
 require '../sso/autoload.php';
 use Jumbojett\OpenIDConnectClient;
 
+$oidc = new OpenIDConnectClient($keycloakHostUri, $clientId, $clientSecret);
+$oidc->providerConfigParam(array('token_endpoint'    => $keycloakHostUri.'/auth/realms/master/protocol/openid-connect/token',
+                                 'userinfo_endpoint' => $keycloakHostUri.'/auth/realms/master/protocol/openid-connect/userinfo'));
 
-if (isset($_REQUEST['token'])) {
-  $oidc = new OpenIDConnectClient($keycloakHostUri, $clientId, $clientSecret);
-  $oidc->providerConfigParam(array('token_endpoint' => $keycloakHostUri.'/auth/realms/master/protocol/openid-connect/token'));
-  $tkn = $oidc->refreshToken($_REQUEST['token']);
-  $accessToken = $tkn->access_token;
-}
-else {$accessToken="";}
-
-if (isset($_REQUEST['username'])) {
-	$currentUser = $_REQUEST['username'];
-}
-
-	
-if ($action=="insert")
+$accessToken = "";
+if (isset($_REQUEST['nodered']))
 {
-	$cb = mysqli_real_escape_string($link, $_REQUEST['contextbroker']);
-	$device = mysqli_real_escape_string($link, $_REQUEST['device']);
-	$value_name = mysqli_real_escape_string($link, $_REQUEST['value_name']);
-	$data_type = mysqli_real_escape_string($link, $_REQUEST['data_type']);
-	$value_type = mysqli_real_escape_string($link, $_REQUEST['value_type']);
-	$editable = mysqli_real_escape_string($link, $_REQUEST['editable']);
-	$value_unit = mysqli_real_escape_string($link, $_REQUEST['value_unit']);
-	$healthiness_criteria = mysqli_real_escape_string($link, $_REQUEST['healthiness_criteria']);
-	$healthiness_value = mysqli_real_escape_string($link, $_REQUEST['healthiness_value']);
-	$organization = mysqli_real_escape_string($link, $_REQUEST['organization']);
-	
-	//Sara2610 - for logging purpose
-	$username = mysqli_real_escape_string($link, $_REQUEST['username']);
-	// $order = mysqli_real_escape_string($link, $_REQUEST['order']);
-
-	$hc="";
-	if ($healthiness_criteria=="refresh_rate") $hc="value_refresh_rate";
-	 else if ($healthiness_criteria=="different_values") $hc="different_values";
-	 else $hc="value_bounds";
-	
-	$q = "INSERT INTO event_values(cb, device, value_name, data_type, value_type, editable, value_unit, healthiness_criteria, `$hc`) " .
-		 "VALUES('$cb', '$device', '$value_name',  '$data_type', '$value_type', '$editable', '$value_unit', '$healthiness_criteria', '$healthiness_value')"; //, '$order' )";
-	$r = mysqli_query($link, $q);
-
-	//Sara2610
-	$deviceName = $device . " ".$cb." ".$value_name;
-	
-	if($r)
-	{
-	    $result["log"] .= "\r\n Value $cb/$device/$value_name correctly inserted \r\n";
-		modify_valueKB($link, $device, $cb, $organization, $result);
-        $result["editable"]=$editable;		
-        if($result["content"]==null) $result["active"]=false;  else $result["active"]=true;
-		$result["msg"] .= '\n insertion in the db of the value was ok';
-		if (!isset($result["status"])){
-			//Sara2610 - for logging purpose
-			logAction($link,$username,'event_values','insert',$deviceName,$organization,'','success');
-
-			$result["status"]="ok";
-		}
-		else if ($result["status"]=="ko")  
-		{ 
-			//Sara2610 - for logging purpose
-			logAction($link,$username,'event_values','insert',$deviceName,$organization,'Error occurred in the KB','faliure');
-		  $result["msg"] .= '\n an error occurred in the KB or context broker';
-          $result["log"] .= '\n an error occurred in the KB or context broker';
-        }
-		else if($result["status"]=="ok"){
-				//Sara2610 - for logging purpose
-			logAction($link,$username,'event_values','insert',$deviceName,$organization,'','success');		
-		}
-		
-	}
-	else
-	{
-		//Sara2610 - for logging purpose
-		logAction($link,$username,'event_values','insert',$deviceName,$organization,'Error occurred registering the value','faliure');
-		
-		 $result["status"]='ko';
-		 $result["msg"] = "Error: An error occurred when registering the value
-		 $value_name. <br/>" .   generateErrorMessage($link) .
-						   '<br/> Please enter again the value_name';
-		$result["log"] = "\n\r Error: An error occurred when registering the value
-		 $value_name. <br/>" .   generateErrorMessage($link) .
-						   '<br/> Please enter again the value_name';				   
-	}
-	 my_log($result);
-	mysqli_close($link);
+    if ((isset($_REQUEST['token']))&&($_REQUEST['token']!='undefined'))
+        $accessToken = $_REQUEST['token'];
 }
 else
-if ($action=="update")
-{  
-		
-	$cb = mysqli_real_escape_string($link, $_REQUEST['contextbroker']);
-	$device = mysqli_real_escape_string($link, $_REQUEST['device']);
-	$value_name = mysqli_real_escape_string($link, $_REQUEST['value_name']);
-	$data_type = mysqli_real_escape_string($link, $_REQUEST['data_type']);
-	$value_type = mysqli_real_escape_string($link, $_REQUEST['value_type']);
-	$editable = mysqli_real_escape_string($link, $_REQUEST['editable']);
-	$value_unit = mysqli_real_escape_string($link, $_REQUEST['value_unit']);
-	$healthiness_criteria = mysqli_real_escape_string($link, $_REQUEST['healthiness_criteria']);
-	$healthiness_value = mysqli_real_escape_string($link, $_REQUEST['healthiness_value']);
-	$username = mysqli_real_escape_string($link, $_REQUEST['username']);
-	$organization = mysqli_real_escape_string($link, $_REQUEST['organization']);
-	
-	$hc="";
-	if ($healthiness_criteria=="refresh_rate") $hc="value_refresh_rate";
-	 else if ($healthiness_criteria=="different_values") $hc="different_values";
-	 else $hc="value_bounds";
+{
+    if (isset($_REQUEST['token']))
+    {
+        $tkn = $oidc->refreshToken($_REQUEST['token']);
+        $accessToken = $tkn->access_token;
+    }
+}
+if (empty($accessToken))
+{
+    $result["status"]="ko";
+    $result['msg'] = "Access Token not present";
+    $result["error_msg"] .= "Access Token not present";
+    $result["log"]= "model.php AccessToken not present\r\n";
+    my_log($result);
+    mysqli_close($link);
+    exit();
+}
 
-	$deviceName = $device . " ".$cb." ".$value_name;
-	
-	$q = "UPDATE event_values SET cb = '$cb', device = '$device', value_name = '$value_name', data_type = '$data_type', value_type = '$value_type', editable = '$editable', value_unit = '$value_unit', healthiness_criteria = '$healthiness_criteria', $hc = '$healthiness_value' 
-	WHERE cb = '$cb' and device='$device' and value_name='$value_name'";
-	$r = mysqli_query($link, $q);
+//retrieve username, organization and role from the accetoken
+//TODO avoid passing all the parameters for LDAP
+get_user_info($accessToken, $username, $organization, $oidc, $role, $result, $ldapBaseName, $ldapServer, $ldapPort, $ldapAdminName, $ldapAdminPwd);
 
-	if($r)
+if ($result["status"]!="ok")
+{
+    $result["status"]="ko";
+    $result['msg'] = "Cannot retrieve user information";
+    $result["error_msg"] .= "Problem in insert context broker (Cannot retrieve user information)";
+    $result["log"]= "action=insert - error Cannot retrieve user information\r\n";
+    my_log($result);
+    mysqli_close($link);
+    exit();
+}
+
+if ($action=="insert")
+{
+	$missingParams=missingParameters(array('contextbroker','device','value_name','data_type','value_type','editable','value_unit','healthiness_criteria','healthiness_value'));
+
+	if (!empty($missingParams))
 	{
-		modify_valueKB($link, $device, $cb, $organization, $result);	   
-		$result["editable"]=$editable;
-		if($result["content"]==null) $result["active"]=false;  else $result["active"]=true;
-		$result["msg"] .= '\n update in the db of the value was ok';
-		$result["log"] .= "\r\n Value $cb/$device/$value_name correctly updated";
-		if (!isset($result["status"])){
-			//Sara2610 - for logging purpose
-			logAction($link,$username,'event_values','update',$deviceName,$organization,'','success');
-			$result["status"]="ok";
-		}		
-		else {
-			  if ($result["status"]=="ko")  
-		      {
-				logAction($link,$username,'event_values','update',$deviceName,$organization,'Error occurred in the KB','faliure'); 
-			    $result["msg"] .= '\n an error occurred in the KB or context broker';
-			    $result["log"] .= '\n an error occurred in the KB or context broker';
-	          } 
-			    if($result["status"]=="ok")
-				{
-			    logAction($link,$username,'event_values','update',$deviceName,$organization,'','success');		
-			    }	
-		}
+		$result["status"]="ko";
+        $result['msg'] = "Missing Parameters";
+        $result["error_msg"] .= "Problem in insert value (Missing parameters: ".implode(", ",$missingParams)." )";
+        $result["log"]= "action=insert - error Missing Parameters: ".implode(", ",$missingParams)." \r\n";
+	}
+	else 
+	{
+		$cb = mysqli_real_escape_string($link, $_REQUEST['contextbroker']);
+		$device = mysqli_real_escape_string($link, $_REQUEST['device']);
+		$value_name = mysqli_real_escape_string($link, $_REQUEST['value_name']);
+		$data_type = mysqli_real_escape_string($link, $_REQUEST['data_type']);
+		$value_type = mysqli_real_escape_string($link, $_REQUEST['value_type']);
+		$editable = mysqli_real_escape_string($link, $_REQUEST['editable']);
+		if (empty($editable)) $editable="0";
+		$value_unit = mysqli_real_escape_string($link, $_REQUEST['value_unit']);
+		$healthiness_criteria = mysqli_real_escape_string($link, $_REQUEST['healthiness_criteria']);
+		$healthiness_value = mysqli_real_escape_string($link, $_REQUEST['healthiness_value']);
+		if (empty($healthiness_value)) $healthiness_value="0";
 
+		$hc="";
+		if ($healthiness_criteria=="refresh_rate") $hc="value_refresh_rate";
+		else if ($healthiness_criteria=="different_values") $hc="different_values";
+		else $hc="value_bounds";
+
+		$protocol = getProtocol($cb, $link);
+
+		if (empty($protocol))//it also ensure the contextbroker name is valid
+		{
+			$result["status"]="ko";
+			$result['msg'] = "Unrecognized contextbroker/protocol";
+  	        $result["error_msg"] .= "Problem in insert value (Unrecognized contextbroker/protocol)";
+           	$result["log"]= "action=insert - error Unrecognized contextbroker/protocol\r\n";	
+		}
+		else 
+		{
+			//get device ---- it also assure device existence
+            $q  = "SELECT * FROM devices WHERE id = '$device' and contextBroker = '$cb'";
+            $r = mysqli_query($link, $q);
+            if ((!$r)||(count(mysqli_fetch_assoc($r))==0))
+            {
+                $result["status"]="ko";
+                $result['msg'] = "Unrecognized device";
+                $result["error_msg"] .= "Problem in getting device (Unrecognized device)";
+                $result["log"]= "action=insert - error Unrecognized device\r\n";
+            }
+            else
+            {
+				$q = "INSERT INTO event_values(cb, device, value_name, data_type, value_type, editable, value_unit, healthiness_criteria, `$hc`) " .
+					"VALUES('$cb', '$device', '$value_name',  '$data_type', '$value_type', '$editable', '$value_unit', '$healthiness_criteria', '$healthiness_value')"; //, '$order' )";
+				$r = mysqli_query($link, $q);
+
+				if($r)
+				{
+					$result["log"] .= "\r\n Value $cb/$device/$value_name correctly inserted \r\n";
+					modify_valueKB($link, $device, $cb, $organization, retrieveKbUrl($organizationApiURI, $organization),$result);
+					$result["editable"]=$editable;		
+					if($result["content"]==null) $result["active"]=false;  else $result["active"]=true;
+					$result["msg"] .= '\n insertion in the db of the value was ok';
+					if (!isset($result["status"]))
+					{
+						logAction($link,$username,'event_values','insert',$device . " ".$cb." ".$value_name,$organization,'','success');
+						$result["status"]="ok";
+					}
+					else if ($result["status"]=="ko")  
+					{ 
+						logAction($link,$username,'event_values','insert',$device . " ".$cb." ".$value_name,$organization,'Error occurred in the KB','faliure');
+						$result["msg"] .= '\n an error occurred in the KB or context broker';
+						$result["log"] .= '\n an error occurred in the KB or context broker';
+					}
+					else if($result["status"]=="ok")
+					{
+						logAction($link,$username,'event_values','insert',$device . " ".$cb." ".$value_name,$organization,'','success');		
+					}
+				}
+				else
+				{
+					logAction($link,$username,'event_values','insert',$device . " ".$cb." ".$value_name,$organization,'Error occurred registering the value','faliure');
+				 	$result["status"]='ko';
+					$result["msg"] = "Error: An error occurred when registering the value	$value_name. <br/>" .   generateErrorMessage($link) .   '<br/> Please enter again the value_name';
+					$result["log"] = "\n\r Error: An error occurred when registering the value	 $value_name. <br/>" .   generateErrorMessage($link) .   '<br/> Please enter again the value_name';
+				}	
+			}
+		}
+	}
+
+	my_log($result);
+	mysqli_close($link);
+}
+else if ($action=="update")
+{  
+	$missingParams=missingParameters(array('contextbroker','device','value_name','data_type','value_type','editable','value_unit','healthiness_criteria','healthiness_value'));
+ 
+	if (!empty($missingParams))
+    {
+		$result["status"]="ko";
+		$result['msg'] = "Missing Parameters";
+		$result["error_msg"] .= "Problem update the value information (Missing parameters: ".implode(", ",$missingParams)." )";
+		$result["log"]= "action=update - error Missing Parameters: ".implode(", ",$missingParams)." \r\n";
 	}
 	else
-    {
-		logAction($link,$username,'event_values','update',$deviceName,$organization,'','faliure'); 
-		
-		$result["status"]='ko';
-		 $result["msg"] = 'event_values <b>' . $value_name . '</b> &nbsp; update failed, ' .
-         generateErrorMessage($link) .
-         ' Please enter again.';
-		 $result["log"] = '\n\r event_values <b>' . $value_name . '</b> &nbsp; update failed, ' .
-         generateErrorMessage($link);
+	{
+		$cb = mysqli_real_escape_string($link, $_REQUEST['contextbroker']);
+		$device = mysqli_real_escape_string($link, $_REQUEST['device']);
+		$value_name = mysqli_real_escape_string($link, $_REQUEST['value_name']);
+		$data_type = mysqli_real_escape_string($link, $_REQUEST['data_type']);
+		$value_type = mysqli_real_escape_string($link, $_REQUEST['value_type']);
+		$editable = mysqli_real_escape_string($link, $_REQUEST['editable']);
+		$value_unit = mysqli_real_escape_string($link, $_REQUEST['value_unit']);
+		$healthiness_criteria = mysqli_real_escape_string($link, $_REQUEST['healthiness_criteria']);
+		$healthiness_value = mysqli_real_escape_string($link, $_REQUEST['healthiness_value']);
+	
+		$hc="";
+		if ($healthiness_criteria=="refresh_rate") $hc="value_refresh_rate";
+		else if ($healthiness_criteria=="different_values") $hc="different_values";
+		else $hc="value_bounds";
+
+		$protocol = getProtocol($cb, $link);
+
+		if (empty($protocol))//it also ensure the contextbroker name is valid
+		{
+			$result["status"]="ko";
+            $result['msg'] = "Unrecognized contextbroker/protocol";
+   	        $result["error_msg"] .= "Problem in update value (Unrecognized contextbroker/protocol)";
+           	$result["log"]= "action=update - error Unrecognized contextbroker/protocol\r\n";	
+		}
+		else 
+		{
+			get_device($username, $role, $device, $cb,  $accessToken, $link, $result);
+				
+			if (empty($result["content"]))
+			{
+				$result["status"]="ko";
+    	        $result['msg'] = "Unrecognized device";
+        	    $result["error_msg"] .= "Problem in update value (Unrecognized device)";
+                $result["log"]= "action=update - error Unrecognized device\r\n";
+			}
+			else
+			{
+				$dev_organization=$result["content"]["organization"];
+				$eId=$dev_organization.":".$cb.":".$device;
+				
+				if (!enforcementRights($username, $accessToken, $role, $eId, 'IOTID','write', $result))
+				{
+					$result["status"]="ko";
+					$result['msg'] = "Not ownership or enough right to update";
+					$result["error_msg"] .= "Problem in update value (Not ownership or enough right to update)";
+					$result["log"] .= "action=update - error Not ownership or enough right to update\r\n";
+            	}
+				else
+				{
+					$q = "UPDATE event_values SET cb = '$cb', device = '$device', value_name = '$value_name', data_type = '$data_type', value_type = '$value_type', 
+						editable = '$editable', value_unit = '$value_unit', healthiness_criteria = '$healthiness_criteria', $hc = '$healthiness_value' 
+						WHERE cb = '$cb' and device='$device' and value_name='$value_name'";
+					$r = mysqli_query($link, $q);
+
+					if($r)
+					{
+						modify_valueKB($link, $device, $cb, $organization, retrieveKbUrl($organizationApiURI, $organization),$result);	   
+						$result["editable"]=$editable;
+						if($result["content"]==null) $result["active"]=false;  else $result["active"]=true;
+						$result["msg"] .= '\n update in the db of the value was ok';
+						$result["log"] .= "\r\n Value $cb/$device/$value_name correctly updated";
+						if (!isset($result["status"]))
+						{
+							logAction($link,$username,'event_values','update',$device . " ".$cb." ".$value_name,$organization,'','success');
+							$result["status"]="ok";
+						}		
+						else 
+						{
+							if ($result["status"]=="ko")  
+						    {
+								logAction($link,$username,'event_values','update',$device . " ".$cb." ".$value_name,$organization,'Error occurred in the KB','faliure'); 
+							    $result["msg"] .= '\n an error occurred in the KB or context broker';
+							    $result["log"] .= '\n an error occurred in the KB or context broker';
+		    	    		} 
+							if($result["status"]=="ok")
+							{
+					    		logAction($link,$username,'event_values','update',$device . " ".$cb." ".$value_name,$organization,'','success');		
+			    			}	
+						}
+					}
+					else
+    				{
+						logAction($link,$username,'event_values','update',$device . " ".$cb." ".$value_name,$organization,'','faliure'); 
+						$result["status"]='ko';
+						$result["msg"] = 'event_values <b>' . $value_name . '</b> &nbsp; update failed, ' .  generateErrorMessage($link) . ' Please enter again.';
+						$result["log"] = '\n\r event_values <b>' . $value_name . '</b> &nbsp; update failed, ' .  generateErrorMessage($link);
+					}
+				}
+			}
+		}
 	}
-	 my_log($result);
+	 
+	my_log($result);
 	mysqli_close($link);
 }
 else if ($action=="delete")
 {
-      $cb = mysqli_real_escape_string($link, $_REQUEST['contextbroker']);
-	  $device = mysqli_real_escape_string($link, $_REQUEST['device']);
-	  $value_name = mysqli_real_escape_string($link, $_REQUEST['value_name']);
-	  $editable = mysqli_real_escape_string($link, $_REQUEST['editable']);
-	  $username = mysqli_real_escape_string($link, $_REQUEST['username']);	  
-	  $organization = mysqli_real_escape_string($link, $_REQUEST['organization']);	  
-      
-	  $deviceName = $device . " ".$cb." ".$value_name;
-	  
-      $q = "DELETE FROM event_values WHERE cb = '$cb' and device='$device' and value_name='$value_name'";
-      $r = mysqli_query($link, $q);
-      if($r)
-	  {
-		modify_valueKB($link, $device, $cb, $organization, $result);	   
-        $result["editable"]=$editable;		
-        if($result["content"]==null) $result["active"]=false;  else $result["active"]=true;
-		$result["msg"] .= '\n delete in the db of the value was ok';
-		$result["log"] .= '\n delete in the db of the value was ok';
-		if (!isset($result["status"])){
-			//Sara2610 - for logging purpose
-			logAction($link,$username,'event_values','delete',$deviceName,$organization,'','success'); 
-			$result["status"]="ok";
-		}
-		else {
-		if ($result["status"]=="ko")  
-		         { 
-					//Sara2610 - for logging purpose
-					logAction($link,$username,'event_values','delete',$deviceName,$organization,'Error occurred in the KB','faliure'); 
-				   $result["error_msg"] .= 'An error occurred in the KB or context broker. ';
-				   $result["msg"] .= '\n an error occurred in the KB or context broker';
-				   $result["log"] .= '\n an error occurred in the KB or context broker';
-				 }
-				 if($result["status"]=="ok"){
-					//Sara2610 - for logging purpose
-					logAction($link,$username,'event_values','delete',$deviceName,$organization,'','success');		
-				}
-		    }
+	$missingParams=missingParameters(array('contextbroker','device','value_name','editable'));
+ 
+	if (!empty($missingParams))
+    {
+		$result["status"]="ko";
+		$result['msg'] = "Missing Parameters";
+		$result["error_msg"] .= "Problem delete the value information (Missing parameters: ".implode(", ",$missingParams)." )";
+		$result["log"]= "action=delete - error Missing Parameters: ".implode(", ",$missingParams)." \r\n";
+	}
+	else
+	{
+		$cb = mysqli_real_escape_string($link, $_REQUEST['contextbroker']);
+		$device = mysqli_real_escape_string($link, $_REQUEST['device']);
+		$value_name = mysqli_real_escape_string($link, $_REQUEST['value_name']);
+		$editable = mysqli_real_escape_string($link, $_REQUEST['editable']);
 
-	  }
-	  else
-	  {
-		//Sara2610 - for logging purpose
-		logAction($link,$username,'event_values','delete',$deviceName,$organization,'','faliure'); 
-		 $result["status"]='ko';
-		 $result["error_msg"] = 'Event_values ' . $value_name . ': deletion failed, ';
-		 $result["msg"] = 'event_values <b>' . $value_name . '</b> &nbsp; deletion failed, ' .
-         generateErrorMessage($link) .
-         ' Please enter again.';
-		 $result["log"] = '\n\r event_values ' . $value_name . ' deletion failed, ' .
-         generateErrorMessage($link);
-	  }
-	   my_log($result);
-	  mysqli_close($link);
+		$protocol = getProtocol($cb, $link);
+
+		if (empty($protocol))//it also ensure the contextbroker name is valid
+		{
+			$result["status"]="ko";
+			$result['msg'] = "Unrecognized contextbroker/protocol";
+			$result["error_msg"] .= "Problem in delete value (Unrecognized contextbroker/protocol)";
+			$result["log"]= "action=delete - error Unrecognized contextbroker/protocol\r\n";	
+		}
+		else 
+		{
+            get_device($username, $role, $device, $cb,  $accessToken, $link, $result);
+
+            if (empty($result["content"]))
+            {
+                $result["status"]="ko";
+                $result['msg'] = "Unrecognized device";
+                $result["error_msg"] .= "Problem in update value (Unrecognized device)";
+                $result["log"]= "action=update - error Unrecognized device\r\n";
+            }
+            else
+            {
+                $dev_organization=$result["content"]["organization"];
+                $eId=$dev_organization.":".$cb.":".$device;
+
+                if (!enforcementRights($username, $accessToken, $role, $eId, 'IOTID','write', $result))
+                {
+                    $result["status"]="ko";
+                    $result['msg'] = "Not ownership or enough right to update";
+                    $result["error_msg"] .= "Problem in update value (Not ownership or enough right to update)";
+                    $result["log"] .= "action=update - error Not ownership or enough right to update\r\n";
+                }
+                else
+                {
+
+					$q = "DELETE FROM event_values WHERE cb = '$cb' and device='$device' and value_name='$value_name'";
+					$r = mysqli_query($link, $q);
+					if($r)
+				  	{
+						modify_valueKB($link, $device, $cb, $organization, retrieveKbUrl($organizationApiURI, $organization), $result);	   
+	    	    		$result["editable"]=$editable;		
+		    	    	if($result["content"]==null) $result["active"]=false;  else $result["active"]=true;
+						$result["msg"] .= '\n delete in the db of the value was ok';
+						$result["log"] .= '\n delete in the db of the value was ok';
+						if (!isset($result["status"]))
+						{
+							logAction($link,$username,'event_values','delete',$device . " ".$cb." ".$value_name,$organization,'','success'); 
+							$result["status"]="ok";
+						}
+						else 
+						{
+							if ($result["status"]=="ko")  
+					        { 
+								logAction($link,$username,'event_values','delete',$device . " ".$cb." ".$value_name,$organization,'Error occurred in the KB','faliure'); 
+								$result["error_msg"] .= 'An error occurred in the KB or context broker. ';
+								$result["msg"] .= '\n an error occurred in the KB or context broker';
+								$result["log"] .= '\n an error occurred in the KB or context broker';
+							}
+							if($result["status"]=="ok")
+							{
+								logAction($link,$username,'event_values','delete',$device . " ".$cb." ".$value_name,$organization,'','success');		
+							}
+					    }
+			  		}
+				  	else
+		  			{
+						logAction($link,$username,'event_values','delete',$device . " ".$cb." ".$value_name,$organization,'','faliure'); 
+						$result["status"]='ko';
+						$result["error_msg"] = 'Event_values ' . $value_name . ': deletion failed, ';
+					 	$result["msg"] = 'event_values <b>' . $value_name . '</b> &nbsp; deletion failed, ' . generateErrorMessage($link) .  ' Please enter again.';
+						$result["log"] = '\n\r event_values ' . $value_name . ' deletion failed, ' .    generateErrorMessage($link);
+					}
+				}
+		  	}
+		}
+	}
+
+	my_log($result);
+	mysqli_close($link);
 }
 else if ($action=="check_if_last_value")
 {
-      $cb = mysqli_real_escape_string($link, $_REQUEST['contextbroker']);
-	  $device = mysqli_real_escape_string($link, $_REQUEST['device']);
-	  $username = mysqli_real_escape_string($link, $_REQUEST['username']);	  
-	  $organization = mysqli_real_escape_string($link, $_REQUEST['organization']);	  
-    
-	  
-      $q = "SELECT * FROM event_values WHERE cb = '$cb' and device='$device'";
-      $r = mysqli_query($link, $q);
-      if($r)
-	  {
-          $rowcount=mysqli_num_rows($r);
-          logAction($link,$username,'event_values','check_if_last_value',$device,$organization,'','success'); 	
-          $result["status"]="ok";
-          $result["content"]=$rowcount;
-	  }
-	  else
-	  {
-		//Sara2610 - for logging purpose
-		logAction($link,$username,'event_values','check_if_last_value',$device,$organization,'','faliure'); 
-		 $result["status"]='ko';
-		 $result["error_msg"] = 'Event_values ' . $device . ': check_if_last_value failed, ';
-		 $result["msg"] = 'event_values <b>' . $device . '</b> &nbsp; check_if_last_value failed, ' .
-         generateErrorMessage($link) .
-         ' Please enter again.';
-		 $result["log"] = '\n\r event_values ' . $device . ' check_if_last_value failed, ' .
-         generateErrorMessage($link);
-	  }
-	   my_log($result);
-	  mysqli_close($link);
-}
+	$missingParams=missingParameters(array('contextbroker','device'));
+
+	if (!empty($missingParams))
+	{
+		$result["status"]="ko";
+        $result['msg'] = "Missing Parameters";
+        $result["error_msg"] .= "Problem in check last value (Missing parameters: ".implode(", ",$missingParams)." )";
+        $result["log"]= "action=check_if_last_value - error Missing Parameters: ".implode(", ",$missingParams)." \r\n";
+	}
+	else 
+	{
+		$cb = mysqli_real_escape_string($link, $_REQUEST['contextbroker']);
+		$device = mysqli_real_escape_string($link, $_REQUEST['device']);
+
+		$protocol = getProtocol($cb, $link);
+
+		if (empty($protocol))//it also ensure the contextbroker name is valid
+		{
+			$result["status"]="ko";
+			$result['msg'] = "Unrecognized contextbroker/protocol";
+			$result["error_msg"] .= "Problem in check value (Unrecognized contextbroker/protocol)";
+			$result["log"]= "action=check_if_last_value - error Unrecognized contextbroker/protocol\r\n";	
+		}
+		else 
+		{
+            //get device ---- it also assure device existence
+            $q  = "SELECT * FROM devices WHERE id = '$device' and contextBroker = '$cb'";
+            $r = mysqli_query($link, $q);
+            if ((!$r)||(count(mysqli_fetch_assoc($r))==0))
+            {
+                $result["status"]="ko";
+                $result['msg'] = "Unrecognized device";
+                $result["error_msg"] .= "Problem in getting device (Unrecognized device)";
+                $result["log"]= "action=update - error Unrecognized device\r\n";
+            }
+            else
+            {
+				$q = "SELECT * FROM event_values WHERE cb = '$cb' and device='$device'";
+				$r = mysqli_query($link, $q);
+				if($r)
+				{
+    	    		$rowcount=mysqli_num_rows($r);
+	        		logAction($link,$username,'event_values','check_if_last_value',$device,$organization,'','success'); 	
+    	    		$result["status"]="ok";
+	    	    	$result["content"]=$rowcount;
+				}
+		  		else
+			  	{
+					logAction($link,$username,'event_values','check_if_last_value',$device,$organization,'','faliure'); 
+				 	$result["status"]='ko';
+		 			$result["error_msg"] = 'Event_values ' . $device . ': check_if_last_value failed, ';
+				 	$result["msg"] = 'event_values <b>' . $device . '</b> &nbsp; check_if_last_value failed, ' . generateErrorMessage($link) .      ' Please enter again.';
+					$result["log"] = '\n\r event_values ' . $device . ' check_if_last_value failed, ' .    generateErrorMessage($link);
+				}
+			}
+	  	}
+	}
+
+	my_log($result);
+	mysqli_close($link);
+}/*
 else if($action == 'get_event_value') 
 {
 	$cb = mysqli_real_escape_string($link, $_REQUEST['contextbroker']);
@@ -325,27 +498,49 @@ else if($action == 'get_event_value')
 	}
 	 my_log($result);
 	mysqli_close($link); 
-}
+}*/
 else if($action == 'get_all_event_value')
 {
-    $organization = mysqli_real_escape_string($link, $_REQUEST['organization']);
-    $loggedrole= mysqli_real_escape_string($link, $_REQUEST['loggedrole']);
-    $username = mysqli_real_escape_string($link, $_REQUEST['username']);	
-    if (!empty($accessToken)) 
-	{ 
-	 getOwnerShipDevice($accessToken, $result); 
-	 getDelegatedDevice($accessToken, $username, $result);
+	if (isset($_REQUEST['length']))	$length = mysqli_real_escape_string($link, $_REQUEST['length']);
+	else $length=-1;
+	$start=1;//default is 1 but should throw an error
+	if (($length!=-1)&& (isset($_REQUEST['start']))) $start= mysqli_real_escape_string($link, $_REQUEST['start']);
+	if (isset($_REQUEST['draw'])) $draw = mysqli_real_escape_string($link, $_REQUEST['draw']);
+	else $draw=1;
+	if (!isset($_REQUEST['columns'])) $_REQUEST["columns"]=array();
+	if (isset($_REQUEST['select'])) $selection=json_decode($_REQUEST['select']);
+	else $selection= array();
+
+	getOwnerShipDevice($accessToken, $result); 
+	getDelegatedDevice($accessToken, $username, $result);
+	
+	$q = "SELECT cb.sha,cb.accesslink, cb.accessport, v.*, d.kind, d.contextbroker, d.latitude, d.longitude, 
+			d.visibility, d.devicetype, d.uri, d.created, d.privatekey, d.organization, d.certificate,
+			d.visibility, d.`protocol`, d.`service`, d.`servicePath`, 
+			CASE WHEN d.mandatoryproperties AND d.mandatoryvalues THEN \"active\" ELSE \"idle\" END	AS status1 
+			FROM event_values v JOIN devices d ON (v.device=d.id AND d.contextbroker=v.cb) JOIN contextbroker cb ON (v.cb=cb.name )"; 
+
+	if (count($selection)!=0)
+    {
+		$a=0;
+		$cond="";
+        while ($a < count($selection))
+        {
+             $sel = $selection[$a];
+             $cond .= " (device='". $sel->id . "' AND cb = '" . $sel->cb . "' AND value_name= '". $sel->value_name ."') ";
+             if ($a != count($selection)-1)  $cond .= " OR ";
+             $a++;
+         }
+        $r=create_datatable_data($link,$_REQUEST,$q, "deleted IS null AND (" . $cond . ")");
+    }
+    else
+    {    
+		$r=create_datatable_data($link,$_REQUEST,$q, "deleted IS null");
 	}
 	
-    $q = "SELECT cb.sha,cb.accesslink, cb.accessport, v.*, d.kind, d.contextbroker, d.latitude, d.longitude, d.visibility, d.devicetype, d.uri, d.created, d.privatekey, d.organization, d.certificate,d.visibility, d.`protocol`, d.`service`, d.`servicePath`, CASE WHEN d.mandatoryproperties AND d.mandatoryvalues THEN \"active\" ELSE \"idle\" END	AS status1 FROM event_values v JOIN devices d ON (v.device=d.id AND d.contextbroker=v.cb) JOIN contextbroker cb ON (v.cb=cb.name )"; 
-    
-	$r=create_datatable_data($link,$_REQUEST,$q, "deleted IS null");
-    
-	
 	$selectedrows=-1;
-	if($_REQUEST["length"] != -1)
+	if($length != -1)
 	{
-			$start= $_REQUEST['start'];
 			$offset=$_REQUEST['length'];
 			$tobelimited=true;
 	}
@@ -354,17 +549,14 @@ else if($action == 'get_all_event_value')
 		$tobelimited=false;
 	}
 	
-	
 	if($r) 
 	{
 		$data = array();
 			
 		while($row = mysqli_fetch_assoc($r)) 
 		{
-		     
             $eid=$row["organization"].":".$row["contextbroker"].":".$row["device"];
-            if ( ($loggedrole=="RootAdmin")|| 
-                
+            if ( ($role=="RootAdmin")|| 
                 ((
                     (
                     ($row["organization"]==$organization)&&
@@ -382,300 +574,300 @@ else if($action == 'get_all_event_value')
                         ||
                         (isset($result["delegation"][$row["uri"] . "/" . $row["value_name"]]))&& $result["delegation"][$row["uri"] . "/" . $row["value_name"]]["kind"]!="anonymous")
                     ) 
-                    
                 ||
                     (isset($result["keys"][$eid]))
                ))
-                
-		{	 
-			$selectedrows++;
+			{	 
+				$selectedrows++;
 		        if (!$tobelimited || ($tobelimited && $selectedrows >= $start && $selectedrows < ($start+$offset)))
 				{
-	        $rec = array();
-			$rec["cb"]= $row["cb"];
-			$rec["device"]= $row["device"];
-			$rec["devicetype"]= $row["devicetype"];
-			$rec["value_name"]= $row["value_name"];
-			$rec["data_type"]= $row["data_type"];
-			$rec["value_type"]= $row["value_type"];
-			$rec["editable"]= $row["editable"];
-			$rec["value_unit"]= $row["value_unit"];
-			$rec["healthiness_criteria"]= $row["healthiness_criteria"];
-			$rec["order"]= $row["order"];
-			$rec["value_refresh_rate"]= $row["value_refresh_rate"];
-			$rec["organization"]= $row["organization"];
-			$rec["latitude"]= $row["latitude"];
-			$rec["longitude"]= $row["longitude"];
-			// $rec["visibility"]= $row["visibility"];
-			$rec["kind"]= $row["kind"];
-			$rec["uri"]= $row["uri"];
+			        $rec = array();
+					$rec["cb"]= $row["cb"];
+					$rec["device"]= $row["device"];
+					$rec["devicetype"]= $row["devicetype"];
+					$rec["value_name"]= $row["value_name"];
+					$rec["data_type"]= $row["data_type"];
+					$rec["value_type"]= $row["value_type"];
+					$rec["editable"]= $row["editable"];
+					$rec["value_unit"]= $row["value_unit"];
+					$rec["healthiness_criteria"]= $row["healthiness_criteria"];
+					$rec["order"]= $row["order"];
+					$rec["value_refresh_rate"]= $row["value_refresh_rate"];
+					$rec["organization"]= $row["organization"];
+					$rec["latitude"]= $row["latitude"];
+					$rec["longitude"]= $row["longitude"];
+					$rec["kind"]= $row["kind"];
+					$rec["uri"]= $row["uri"];
             		$rec["status1"]= $row["status1"];			
-			$rec["created"]=$row["created"];
-			$rec["privatekey"]=$row["privatekey"];
-			$rec["certificate"]=$row["certificate"];
-			$rec["sha"]=$row["sha"];
-			$rec["accesslink"]=$row["accesslink"];
-                        $rec["accessport"]=$row["accessport"];
-	
-			$rec["service"] = $row["service"];
-			$rec["servicePath"] = $row["servicePath"];
-			if ($row["protocol"] == "ngsi w/MultiService"){
-				// dev_log("get_all_event_value: multiservice device detected");
-				// get the name from id
-				$rec["device"] = explode(".", $row["device"])[2];
-				// dev_log("get_all_event_value: new rec[device]: " . $rec["device"]);
-			}
-	
-			if (isset($result["keys"][$eid]))
-			{//it's mine
-					if ((isset($result["delegation"][$row["uri"] . "/" . $row["value_name"]])
-					     && $result["delegation"][$row["uri"] . "/" . $row["value_name"]]["kind"]=="anonymous")	
-                        ||
-                        (isset($result["delegation"][$eid])
-					     && $result["delegation"][$eid]["kind"]=="anonymous")
-                        )
-				        $rec["visibility"]= "MyOwnPublic";
-				    else  
-					    $rec["visibility"]="MyOwnPrivate";
-		
-					
-				$rec["k1"]=$result["keys"][$eid]["k1"];
-				$rec["k2"]=$result["keys"][$eid]["k2"];
-            }
-			else
-                       {//it's not mine
-                               if ((isset($result["delegation"][$row["uri"] . "/" . $row["value_name"]])
-                                       && ($result["delegation"][$row["uri"] . "/" . $row["value_name"]]["kind"]=="anonymous"))
-                                   ||
-                                   (isset($result["delegation"][$eid])
-                                       && ($result["delegation"][$eid]["kind"]=="anonymous"))
-                                   )
-                               {//it's delegated as public
-                                       $rec["visibility"]='public';
-					$rec["k1"]="";
-					$rec["k2"]="";
-                               }
-                               else if( (isset($result["delegation"][$row["uri"] . "/" . $row["value_name"]]))
-                                   ||
-                                   (isset($result["delegation"][$eid])))
-                               {//it's delegated personally
-                                       $rec["visibility"]='delegated';
-                                        $rec["k1"]="";
-                                        $rec["k2"]="";
-
-					if (isset($result["delegation"][$row["uri"] . "/" . $row["value_name"]]["k1"]))
-                       
+					$rec["created"]=$row["created"];
+					$rec["privatekey"]=$row["privatekey"];
+					$rec["certificate"]=$row["certificate"];
+					$rec["sha"]=$row["sha"];
+					$rec["accesslink"]=$row["accesslink"];
+                    $rec["accessport"]=$row["accessport"];
+					$rec["service"] = $row["service"];
+					$rec["servicePath"] = $row["servicePath"];
+					if ($row["protocol"] == "ngsi w/MultiService")
 					{
-						$rec["k1"]= $result["delegation"][$row["uri"] . "/" . $row["value_name"]]["k1"]; // to be fixed 
-						$rec["k2"]= $result["delegation"][$row["uri"] . "/" . $row["value_name"]]["k2"]; // to be fixed 
+						$rec["device"] = explode(".", $row["device"])[2];
 					}
-                                   else if(isset($result["delegation"][$eid]["k1"])){
-                                       $rec["k1"]= $result["delegation"][$eid]["k1"]; // to be fixed 
-						               $rec["k2"]= $result["delegation"][$eid]["k2"]; // to be fixed 
-                                   }
-				}	
-			    else	
-				{//not mine, not delegated
-				 $rec["visibility"]= $row["visibility"];
-				 $rec["k1"]="";
-				 $rec["k2"]="";
-				} 
-			}
-     		array_push($data, $rec);
+	
+					if (isset($result["keys"][$eid]))
+					{//it's mine
+						if ((isset($result["delegation"][$row["uri"] . "/" . $row["value_name"]])
+						     && $result["delegation"][$row["uri"] . "/" . $row["value_name"]]["kind"]=="anonymous")	
+                        	||
+	                        (isset($result["delegation"][$eid])
+						     && $result["delegation"][$eid]["kind"]=="anonymous")
+        	                )
+					        $rec["visibility"]= "MyOwnPublic";
+					    else  
+						    $rec["visibility"]="MyOwnPrivate";
+					
+						$rec["k1"]=$result["keys"][$eid]["k1"];
+						$rec["k2"]=$result["keys"][$eid]["k2"];
+            		}
+					else
+                    {//it's not mine
+                    	if ((isset($result["delegation"][$row["uri"] . "/" . $row["value_name"]])
+                        	&& ($result["delegation"][$row["uri"] . "/" . $row["value_name"]]["kind"]=="anonymous"))
+                            ||
+                            (isset($result["delegation"][$eid])
+                            && ($result["delegation"][$eid]["kind"]=="anonymous"))
+                            )
+                    	{//it's delegated as public
+                        	$rec["visibility"]='public';
+							$rec["k1"]="";
+							$rec["k2"]="";
+                        }
+                        else if( (isset($result["delegation"][$row["uri"] . "/" . $row["value_name"]]))
+                     	   ||
+                           (isset($result["delegation"][$eid])))
+                        {//it's delegated personally
+                        	$rec["visibility"]='delegated';
+                            $rec["k1"]="";
+                            $rec["k2"]="";
+
+							if (isset($result["delegation"][$row["uri"] . "/" . $row["value_name"]]["k1"]))
+							{
+								$rec["k1"]= $result["delegation"][$row["uri"] . "/" . $row["value_name"]]["k1"]; // to be fixed 
+								$rec["k2"]= $result["delegation"][$row["uri"] . "/" . $row["value_name"]]["k2"]; // to be fixed 
+							}
+                            else if(isset($result["delegation"][$eid]["k1"]))
+							{
+                            	$rec["k1"]= $result["delegation"][$eid]["k1"]; // to be fixed 
+						        $rec["k2"]= $result["delegation"][$eid]["k2"]; // to be fixed 
+                            }
+						}	
+			    		else	
+						{//not mine, not delegated
+				 			$rec["visibility"]= $row["visibility"];
+							$rec["k1"]="";
+							$rec["k2"]="";
+						} 
+					}
+     				array_push($data, $rec);
+				}
 			}
 		}
-
-		
-	   }
-	   
-	 $output= format_result($_REQUEST["draw"], $selectedrows+1, $selectedrows+1, $data, "", "\r\n action=get_all_event_value \r\n", 'ok');
-
+	 	$output= format_result($draw, $selectedrows+1, $selectedrows+1, $data, "", "\r\n action=get_all_event_value \r\n", 'ok');
 	} 
 	else
 	{
-			$output= format_result($_REQUEST["draw"], 0, 0, null, 'Error: errors in reading data about values. <br/>' . generateErrorMessage($link), '\n\r Error: errors in reading data about values.' . generateErrorMessage($link), 'ko');
-
-			
+		$output= format_result($draw, 0, 0, null, 'Error: errors in reading data about values. <br/>' . 
+			generateErrorMessage($link), '\n\r Error: errors in reading data about values.' . generateErrorMessage($link), 'ko');
 	}
 
-	 my_log($output);
+	my_log($output);
 	mysqli_close($link); 
 }
+//TODO can be unified with get_all_event_value)
 else if($action == 'get_all_event_value_admin')
-{				 
-    $ownDevices= "";
-    $username = mysqli_real_escape_string($link, $_REQUEST['username']);
-    $organization = mysqli_real_escape_string($link, $_REQUEST['organization']);
-    if (!empty($accessToken)) 
-	{ 
-	 $ownDevices = getOwnerShipDevice($accessToken, $result); 
-	 if (isset($username)) getDelegatedDevice($accessToken, $username, $result);
-	}
-	
-	$q = "SELECT v.*, d.`kind`, d.`latitude`, d.`longitude`, d.`organization`, d.`devicetype`, d.`visibility`, d.`uri`,d.`created`, cb.sha, cb.accesslink, cb.accessport, d.protocol, d.`service`, d.`servicePath`, 
-		 CASE WHEN d.mandatoryproperties AND d.mandatoryvalues THEN \"active\" ELSE \"idle\" END 
-		 AS status1, d.`visibility` FROM `event_values` v JOIN `devices` d ON (v.device=d.id AND d.contextbroker=v.cb) JOIN contextbroker cb ON (v.cb=cb.name )"; 
-
-	
-	$r=create_datatable_data($link,$_REQUEST,$q, "deleted IS null");
-
-	$selectedrows=-1;
-	if($_REQUEST["length"] != -1)
+{
+	//encforce RootAdmin
+	if ($role!="RootAdmin")
 	{
+				$result["status"]="ko";
+                $result['msg'] = "Role mismatch";
+       	        $result["error_msg"] .= "Problem in get values (Role mismatch)";
+               	$result["log"]= "action=get_all_event_value_admin - error Role mismatch\r\n";	
+	}
+	else
+	{
+	    if (isset($_REQUEST['length'])) $length = mysqli_real_escape_string($link, $_REQUEST['length']);
+    	else $length=-1;
+	    $start=1;//default is 1 but should throw an error
+    	if (($length!=-1)&& (isset($_REQUEST['start']))) $start= mysqli_real_escape_string($link, $_REQUEST['start']);
+	    if (isset($_REQUEST['draw'])) $draw = mysqli_real_escape_string($link, $_REQUEST['draw']);
+    	else $draw=1;
+	    if (!isset($_REQUEST['columns'])) $_REQUEST["columns"]=array();
+    	if (isset($_REQUEST['select'])) $selection=json_decode($_REQUEST['select']);
+	    else $selection= array();
+			 
+		$ownDevices = getOwnerShipDevice($accessToken, $result); 
+		getDelegatedDevice($accessToken, $username, $result);
+	
+		$q = "SELECT v.*, d.`kind`, d.`latitude`, d.`longitude`, d.`organization`, d.`devicetype`, d.`visibility`, d.`uri`,d.`created`, cb.sha, 
+			cb.accesslink, cb.accessport, d.protocol, d.`service`, d.`servicePath`, 
+		 	CASE WHEN d.mandatoryproperties AND d.mandatoryvalues THEN \"active\" ELSE \"idle\" END 
+		 	AS status1, d.`visibility` FROM `event_values` v JOIN `devices` d ON (v.device=d.id AND d.contextbroker=v.cb) JOIN contextbroker cb ON (v.cb=cb.name )"; 
+
+	    if (count($selection)!=0)
+    	{
+        	$a=0;
+	        $cond="";
+    	    while ($a < count($selection))
+        	{
+             $sel = $selection[$a];
+             $cond .= " (device='". $sel->id . "' AND cb = '" . $sel->cb . "' AND value_name= '". $sel->value_name ."') ";
+             if ($a != count($selection)-1)  $cond .= " OR ";
+             $a++;
+	        }
+    	    $r=create_datatable_data($link,$_REQUEST,$q, "deleted IS null AND (" . $cond . ")");
+	    }
+    	else
+	    {	
+			$r=create_datatable_data($link,$_REQUEST,$q, "deleted IS null");
+		}
+
+		$selectedrows=-1;
+		if($_REQUEST["length"] != -1)
+		{
 			$start= $_REQUEST['start'];
 			$offset=$_REQUEST['length'];
 			$tobelimited=true;
-	}
-	else
-	{
-		$tobelimited=false;
-	}
-	
-	
-	if($r) 
-	{
-			
-        logAction($link,$username,'event_value','get_all_event_value_admin','',$organization,'','success');		
-		$data = array();
-		
-		while($row = mysqli_fetch_assoc($r)) 
+		}
+		else
 		{
-			$selectedrows++;
-		        if (!$tobelimited || ($tobelimited && $selectedrows >= $start && $selectedrows < ($start+$offset)))
+			$tobelimited=false;
+		}
+	
+		if($r) 
+		{
+			
+    	    logAction($link,$username,'event_value','get_all_event_value_admin','',$organization,'','success');		
+			$data = array();
+		
+			while($row = mysqli_fetch_assoc($r)) 
+			{
+				$selectedrows++;
+				if (!$tobelimited || ($tobelimited && $selectedrows >= $start && $selectedrows < ($start+$offset)))
 				{
-	        $rec = array();
-			$rec["cb"]= $row["cb"];
-			$rec["device"]= $row["device"];
-			$rec["devicetype"]= $row["devicetype"];
-			$rec["value_name"]= $row["value_name"];
-			$rec["data_type"]= $row["data_type"];
-			$rec["value_type"]= $row["value_type"];
-			$rec["editable"]= $row["editable"];
-			$rec["value_unit"]= $row["value_unit"];
-			$rec["healthiness_criteria"]= $row["healthiness_criteria"];
-			$rec["order"]= $row["order"];
-			$rec["value_refresh_rate"]= $row["value_refresh_rate"];
-			$rec["organization"]= $row["organization"];
-			$rec["latitude"]= $row["latitude"];
-			$rec["longitude"]= $row["longitude"];
-			$rec["kind"]= $row["kind"];
-			$rec["uri"]= $row["uri"];
-            $rec["status1"]= $row["status1"];			
-            $rec["sha"]= $row["status1"];
-            $rec["accesslink"]= $row["accesslink"];
-            $rec["accessport"]= $row["accessport"];
-            $rec["created"]= $row["created"];
-     	    $rec["service"] = $row["service"];
-            $rec["servicePath"] = $row["servicePath"];
-				if ($row["protocol"] == "ngsi w/MultiService"){
-                                        //dev_log("get_all_private_event_value: multiservice device detected");
-                                        // get the name from id
-                                        $rec["device"] = explode(".", $row["device"])[2];
-                                        //dev_log("get_all_private_event_value: new rec[device]: " . $rec["device"]);
-                                        //dev_log("get_all_private_event_value: new rec[id]: " . $rec["id"]);
-                                }
-			$eid=$row["organization"].":".$row["cb"].":".$row["device"];
-             if(isset($result["keys"][$eid]) && $result["keys"][$eid]["owner"]==$username){
-                    if ($row["visibility"]=="public"){$rec["visibility"]= "MyOwnPublic";}
-                    else 
-                    {
-                        if (isset($result["delegation"][$row["uri"] . "/" . $row["value_name"]])
-                             && $result["delegation"][$row["uri"] . "/" . $row["value_name"]]["kind"]=="anonymous")				  				
-                            $rec["visibility"]= "MyOwnPublic";
-                        else  
-                            $rec["visibility"]="MyOwnPrivate";
-                    }
-                    $rec["k1"]=$result["keys"][$eid]["k1"];
-                    $rec["k2"]=$result["keys"][$eid]["k2"];
-                }
-            else
-                {//it's not mine
-                               
-                if (isset($result["delegation"][$row["uri"] . "/" . $row["value_name"]])
-                                      && ($result["delegation"][$row["uri"] . "/" . $row["value_name"]]["kind"]=="anonymous"))
-                                {//it's delegated as public
-                                       $rec["visibility"]='public';
-                                        $rec["k1"]="";
-                                        $rec["k2"]="";
-                               }
-                               
-                else  if (isset($result["delegation"][$row["uri"] . "/" . $row["value_name"]]))
-                               {//it's delegated personally
-                                        $rec["visibility"]='delegated';
-                                        $rec["k1"]="";
-                                        $rec["k2"]="";
-                                        
-                                        if (isset($result["delegation"][$row["uri"] . "/" . $row["value_name"]]["k1"]))
-                                        {
-                                                $rec["k1"]= $result["delegation"][$row["uri"] . "/" . $row["value_name"]]["k1"]; // to be fixed
-                                                $rec["k2"]= $result["delegation"][$row["uri"] . "/" . $row["value_name"]]["k2"]; // to be fixed
-                                        }
-                                }
-                               
-                else {//other
-				   $rec["visibility"]= $row["visibility"]; // =="public")?"MyOwnPublic":"MyOwnPrivate";
-				   $rec["k1"]="";
-				   $rec["k2"]="";
-				   $rec["owner"]="";
+		        	$rec = array();
+					$rec["cb"]= $row["cb"];
+					$rec["device"]= $row["device"];
+					$rec["devicetype"]= $row["devicetype"];
+					$rec["value_name"]= $row["value_name"];
+					$rec["data_type"]= $row["data_type"];
+					$rec["value_type"]= $row["value_type"];
+					$rec["editable"]= $row["editable"];
+					$rec["value_unit"]= $row["value_unit"];
+					$rec["healthiness_criteria"]= $row["healthiness_criteria"];
+					$rec["order"]= $row["order"];
+					$rec["value_refresh_rate"]= $row["value_refresh_rate"];
+					$rec["organization"]= $row["organization"];
+					$rec["latitude"]= $row["latitude"];
+					$rec["longitude"]= $row["longitude"];
+					$rec["kind"]= $row["kind"];
+					$rec["uri"]= $row["uri"];
+	        	    $rec["status1"]= $row["status1"];			
+    	        	$rec["sha"]= $row["status1"];
+	        	    $rec["accesslink"]= $row["accesslink"];
+		            $rec["accessport"]= $row["accessport"];
+    		        $rec["created"]= $row["created"];
+     			    $rec["service"] = $row["service"];
+	            	$rec["servicePath"] = $row["servicePath"];
+					if ($row["protocol"] == "ngsi w/MultiService")
+					{
+						$rec["device"] = explode(".", $row["device"])[2];
+					}
+					$eid=$row["organization"].":".$row["cb"].":".$row["device"];
+
+					if(isset($result["keys"][$eid]) && $result["keys"][$eid]["owner"]==$username)
+					{
+        	            if ($row["visibility"]=="public") $rec["visibility"]= "MyOwnPublic";
+            	        else 
+                	    {
+                    	    if (isset($result["delegation"][$row["uri"] . "/" . $row["value_name"]])
+                        	     && $result["delegation"][$row["uri"] . "/" . $row["value_name"]]["kind"]=="anonymous")				  				
+                            	$rec["visibility"]= "MyOwnPublic";
+	                        else  
+    	                        $rec["visibility"]="MyOwnPrivate";
+        	            }
+            	        $rec["k1"]=$result["keys"][$eid]["k1"];
+                	    $rec["k2"]=$result["keys"][$eid]["k2"];
+	                }
+		            else
+        	        {//it's not mine
+            	    	if (isset($result["delegation"][$row["uri"] . "/" . $row["value_name"]])
+                	    	&& ($result["delegation"][$row["uri"] . "/" . $row["value_name"]]["kind"]=="anonymous"))
+                    	{//it's delegated as public
+	                    	$rec["visibility"]='public';
+    	                    $rec["k1"]="";
+        	                $rec["k2"]="";
+            	        }
+                		else if (isset($result["delegation"][$row["uri"] . "/" . $row["value_name"]]))
+                    	{//it's delegated personally
+	                    	$rec["visibility"]='delegated';
+    	                    $rec["k1"]="";
+        	                $rec["k2"]="";
+            	                            
+                	        if (isset($result["delegation"][$row["uri"] . "/" . $row["value_name"]]["k1"]))
+                 	       {
+                    	    	$rec["k1"]= $result["delegation"][$row["uri"] . "/" . $row["value_name"]]["k1"]; // to be fixed
+                        	    $rec["k2"]= $result["delegation"][$row["uri"] . "/" . $row["value_name"]]["k2"]; // to be fixed
+	                        }
+    	                }
+        	        	else 
+						{//other
+					   		$rec["visibility"]= $row["visibility"]; // =="public")?"MyOwnPublic":"MyOwnPrivate";
+							$rec["k1"]="";
+							$rec["k2"]="";
+							$rec["owner"]="";
+						}
+					}
+ 	    			array_push($data, $rec);
 				}
 			}
-
-     		array_push($data, $rec);
-		}
-	   }
-	   
-	   	 $output= format_result($_REQUEST["draw"], $selectedrows+1, $selectedrows+1, $data, "", "\r\n action=get_all_event_value_admin \r\n", 'ok');
-	} 
-	else
-	{
-		//Sara611 - for logging purpose
+			$output= format_result($_REQUEST["draw"], $selectedrows+1, $selectedrows+1, $data, "", "\r\n action=get_all_event_value_admin \r\n", 'ok');
+		} 
+		else
+		{
 			logAction($link,$username,'event_value','get_all_event_value_admin','',$organization,'Error: errors in reading data about values.','faliure');	
-	$output= format_result($_REQUEST["draw"], 0, 0, null, 'Error: errors in reading data about values. <br/>' . generateErrorMessage($link), '\n\r Error: errors in reading data about values.' . generateErrorMessage($link), 'ko');
-
-		//$result['status'] = 'ko';
-		//$result['msg'] = 'Error:  in action get_all_event_value_admin <br/>' .
-		//				   generateErrorMessage($link);
-		//$result['log'] = 'Error:  in action get_all_event_value_admin' .
-		//				   generateErrorMessage($link);				   
+			$output= format_result($_REQUEST["draw"], 0, 0, null, 'Error: errors in reading data about values. <br/>' . generateErrorMessage($link), 
+				'\n\r Error: errors in reading data about values.' . generateErrorMessage($link), 'ko');
+		}
 	}
 
-	 my_log($output);
+	my_log($output);
 	mysqli_close($link); 
 }
-
+//TODO can be unified with get_all_event_value)
 else if($action == 'get_all_private_event_value')
 {
-	$username = mysqli_real_escape_string($link, $_REQUEST['username']);
-	$organization = mysqli_real_escape_string($link, $_REQUEST['organization']);
-    $loggedrole= mysqli_real_escape_string($link, $_REQUEST['loggedrole']);
-    $ownDevices= "";
-    
-    if (!empty($accessToken)) 
-	{ 
-	 $ownDevices = getOwnerShipDevice($accessToken, $result);
-        getDelegatedDevice($accessToken, $username, $result);
-	}
+	$ownDevices = getOwnerShipDevice($accessToken, $result);
+	getDelegatedDevice($accessToken, $username, $result);
+	
 	if ($ownDevices!="")
 	{	
-		
-		$q = "SELECT v.*, d.`id`, d.`kind`, d.`contextbroker`,  d.`latitude`, d.`longitude`, d.`devicetype`,  d.`organization`, d.`visibility`, d.`uri`,d.`model`, d.`created`, d.`privatekey`, d.`certificate`, cb.`sha`,cb.`accesslink`, cb.`accessport`, d.`protocol`, d.`service`, d.`servicePath`,
-	      CASE WHEN d.mandatoryproperties AND d.mandatoryvalues THEN \"active\" ELSE \"idle\" END AS status1,
-	      d.`visibility` FROM `event_values` v JOIN `devices` d ON (v.device=d.id AND d.contextbroker=v.cb) JOIN `contextbroker` cb ON (v.cb=cb.name )"; 
-		
+		$q = "SELECT v.*, d.`id`, d.`kind`, d.`contextbroker`,  d.`latitude`, d.`longitude`, d.`devicetype`,  d.`organization`, d.`visibility`, 
+			d.`uri`,d.`model`, d.`created`, d.`privatekey`, d.`certificate`, cb.`sha`,cb.`accesslink`, cb.`accessport`, d.`protocol`, d.`service`, d.`servicePath`,
+	      	CASE WHEN d.mandatoryproperties AND d.mandatoryvalues THEN \"active\" ELSE \"idle\" END AS status1,
+	      	d.`visibility` FROM `event_values` v JOIN `devices` d ON (v.device=d.id AND d.contextbroker=v.cb) JOIN `contextbroker` cb ON (v.cb=cb.name )"; 
 
         $r=create_datatable_data($link,$_REQUEST,$q, "deleted IS null");	
         $selectedrows=-1;
 
         if($_REQUEST["length"] != -1)
-			{		$start= $_REQUEST['start'];
-					$offset=$_REQUEST['length'];
-					$tobelimited=true;
-			}	
+		{		
+			$start= $_REQUEST['start'];
+			$offset=$_REQUEST['length'];
+			$tobelimited=true;
+		}	
         else
-			{
-				$tobelimited=false;
-			}
-			
+		{
+			$tobelimited=false;
+		}
 			
 		if($r) 
 		{
@@ -683,555 +875,316 @@ else if($action == 'get_all_private_event_value')
 
 			$data = array();
 			
-			 while($row = mysqli_fetch_assoc($r)) 
+			while($row = mysqli_fetch_assoc($r)) 
 			{
-                 $eid=$row["organization"].":".$row["contextbroker"].":".$row["id"];
-				  
-			  if (
-                  (isset($result["keys"][$eid])
-                   &&((($result["keys"][$eid]["owner"]==$username) && ($loggedrole==='RootAdmin'))
-                      ||
-                     ($loggedrole!='RootAdmin')
-                     )
-                 )
-                  
-                 )
-			  {	
-                 
-                 $selectedrows++;
-		        if (!$tobelimited || ($tobelimited && $selectedrows >= $start && $selectedrows < ($start+$offset)))
-				{
-				$rec = array();
-				$rec["id"]=$row["id"];
-				$rec["cb"]= $row["cb"];
-				$rec["uri"]= $row["uri"];
-				$rec["model"]= $row["model"];
-				$rec["device"]= $row["device"];
-				$rec["devicetype"]= $row["devicetype"];
-				$rec["value_name"]= $row["value_name"];
-				$rec["data_type"]= $row["data_type"];
-				$rec["value_type"]= $row["value_type"];
-				$rec["editable"]= $row["editable"];
-				
-				$rec["value_unit"]= $row["value_unit"];
-				$rec["healthiness_criteria"]= $row["healthiness_criteria"];
-				$rec["order"]= $row["order"];
-				$rec["value_refresh_rate"]= $row["value_refresh_rate"];
-				$rec["latitude"]= $row["latitude"];
-				$rec["longitude"]= $row["longitude"];
-				$rec["organization"]= $row["organization"];
-				$rec["kind"]= $row["kind"];
-				$rec["status1"]= $row["status1"];			
-				$rec["created"]=$row["created"];
-				$rec["privatekey"]=$row["privatekey"];
-				$rec["certificate"]=$row["certificate"];
-				$rec["sha"]=$row["sha"];
-				$rec["accesslink"]=$row["accesslink"];
-				$rec["accessport"]=$row["accessport"];
-				$rec["protocol"] = $row["protocol"];
-				$rec["service"] = $row["service"];
-				$rec["servicePath"] = $row["servicePath"];
-				if ($row["protocol"] == "ngsi w/MultiService"){
-					//dev_log("get_all_private_event_value: multiservice device detected");
-					// get the name from id
-					$rec["device"] = explode(".", $row["device"])[2];
-					$rec["id"] = explode(".", $row["id"])[2];
-					//dev_log("get_all_private_event_value: new rec[device]: " . $rec["device"]);
-					//dev_log("get_all_private_event_value: new rec[id]: " . $rec["id"]);
-				}                 
-
- 
-                   /* if ($row["visibility"]=="private")
-                    {
-                        $rec["visibility"]= "MyOwnPrivate";
-                    }   
-                    else{
-                        $rec["visibility"]= "MyOwnPublic";
-                    }*/
-                    
-                    
+				$eid=$row["organization"].":".$row["contextbroker"].":".$row["id"];
+				if ((isset($result["keys"][$eid])
+                   	&&((($result["keys"][$eid]["owner"]==$username) && ($role==='RootAdmin'))
+                    ||
+                    ($role!='RootAdmin')
+                    )))
+			  	{	
+                	$selectedrows++;
+			        if (!$tobelimited || ($tobelimited && $selectedrows >= $start && $selectedrows < ($start+$offset)))
+					{
+						$rec = array();
+						$rec["id"]=$row["id"];
+						$rec["cb"]= $row["cb"];
+						$rec["uri"]= $row["uri"];
+						$rec["model"]= $row["model"];
+						$rec["device"]= $row["device"];
+						$rec["devicetype"]= $row["devicetype"];
+						$rec["value_name"]= $row["value_name"];
+						$rec["data_type"]= $row["data_type"];
+						$rec["value_type"]= $row["value_type"];
+						$rec["editable"]= $row["editable"];
+						$rec["value_unit"]= $row["value_unit"];
+						$rec["healthiness_criteria"]= $row["healthiness_criteria"];
+						$rec["order"]= $row["order"];
+						$rec["value_refresh_rate"]= $row["value_refresh_rate"];
+						$rec["latitude"]= $row["latitude"];
+						$rec["longitude"]= $row["longitude"];
+						$rec["organization"]= $row["organization"];
+						$rec["kind"]= $row["kind"];
+						$rec["status1"]= $row["status1"];			
+						$rec["created"]=$row["created"];
+						$rec["privatekey"]=$row["privatekey"];
+						$rec["certificate"]=$row["certificate"];
+						$rec["sha"]=$row["sha"];
+						$rec["accesslink"]=$row["accesslink"];
+						$rec["accessport"]=$row["accessport"];
+						$rec["protocol"] = $row["protocol"];
+						$rec["service"] = $row["service"];
+						$rec["servicePath"] = $row["servicePath"];
+						if ($row["protocol"] == "ngsi w/MultiService")
+						{
+							$rec["device"] = explode(".", $row["device"])[2];
+							$rec["id"] = explode(".", $row["id"])[2];
+						}                 
                                 
-                    if ((isset($result["delegation"][$row["uri"] . "/" . $row["value_name"]])
-                         && $result["delegation"][$row["uri"] . "/" . $row["value_name"]]["kind"]=="anonymous")	            
-                        ||
-                        (isset($result["delegation"][$eid])
-                         && $result["delegation"][$eid]["kind"]=="anonymous")           
-                       )
-                        $rec["visibility"]= "MyOwnPublic";      
-                    else             
-                        $rec["visibility"]="MyOwnPrivate";
-
-                        
+	                    if ((isset($result["delegation"][$row["uri"] . "/" . $row["value_name"]])
+    		                && $result["delegation"][$row["uri"] . "/" . $row["value_name"]]["kind"]=="anonymous")	            
+            	            ||
+                	        (isset($result["delegation"][$eid])
+                    	     && $result["delegation"][$eid]["kind"]=="anonymous")           
+                       		)
+                        	$rec["visibility"]= "MyOwnPublic";      
+	                    else             
+    	                    $rec["visibility"]="MyOwnPrivate";
 			
-                    if(isset($result["keys"][$rec["device"]])){
-                        $rec["k1"]=$result["keys"][$rec["device"]]["k1"];
-                        $rec["k2"]=$result["keys"][$rec["device"]]["k2"];
-                        $rec["edgegateway_type"]= $result["keys"][$rec["device"]]["edgegateway_type"];
-                        $rec["edgegateway_uri"]= $result["keys"][$rec["device"]]["edgegateway_uri"];
-                    }
-                    else{
-                        $rec["k1"]=$result["keys"][$eid]["k1"];
-                        $rec["k2"]=$result["keys"][$eid]["k2"];
-                        $rec["edgegateway_type"]= $result["keys"][$eid]["edgegateway_type"];
-                        $rec["edgegateway_uri"]= $result["keys"][$eid]["edgegateway_uri"];
-                    }
-                    
-
-                    
-							
-				array_push($data, $rec);
-                }
-			}	
-		}
-		  
-		 $output= format_result($_REQUEST["draw"], $selectedrows+1, $selectedrows+1, $data, "", "\r\n action=get_all_private_event_value \r\n", 'ok');
+           				if(isset($result["keys"][$rec["device"]]))
+						{
+                        	$rec["k1"]=$result["keys"][$rec["device"]]["k1"];
+                        	$rec["k2"]=$result["keys"][$rec["device"]]["k2"];
+	                        $rec["edgegateway_type"]= $result["keys"][$rec["device"]]["edgegateway_type"];
+    	                    $rec["edgegateway_uri"]= $result["keys"][$rec["device"]]["edgegateway_uri"];
+        	            }
+            	        else
+						{
+                        	$rec["k1"]=$result["keys"][$eid]["k1"];
+	                        $rec["k2"]=$result["keys"][$eid]["k2"];
+    	                    $rec["edgegateway_type"]= $result["keys"][$eid]["edgegateway_type"];
+        	                $rec["edgegateway_uri"]= $result["keys"][$eid]["edgegateway_uri"];
+            	        }
+						array_push($data, $rec);
+                	}
+				}	
+			}
+		 	$output= format_result($_REQUEST["draw"], $selectedrows+1, $selectedrows+1, $data, "", "\r\n action=get_all_private_event_value \r\n", 'ok');
 		} 
 		else
 		{
-			//Sara611 - for logging purpose
-			logAction($link,$username,'event_value','get_all_private_event_value','',$organization,'Error: errors in reading data about devices.','faliure');		 
-
-	       $output= format_result($_REQUEST["draw"], 0, 0, null, 'Error: errors in reading data about devices. <br/>' . generateErrorMessage($link), '\n\r Error: errors in reading data about devices.' . generateErrorMessage($link), 'ko');
-			
+			logAction($link,$username,'event_value','get_all_private_event_value','',$organization,'Error: errors in reading data about devices.','faliure');		$output= format_result($_REQUEST["draw"], 0, 0, null, 'Error: errors in reading data about devices. <br/>' . generateErrorMessage($link), '\n\r Error: errors in reading data about devices.' . generateErrorMessage($link), 'ko');
 		}
 	}
 	else
 	{
 		 $output= format_result($_REQUEST["draw"], 0, 0, array(), "", "\r\n action=get_all_private_event_value \r\n", 'ok');	
 	}
+	
 	my_log($output); 
 	mysqli_close($link); 
 }
+//TODO can be unified with get_all_event_value)
 else if($action == 'get_all_delegated_event_value')
 {
-	//Sara611 - for logging purpose
-	$username = mysqli_real_escape_string($link, $_REQUEST['username']);
-	$organization = mysqli_real_escape_string($link, $_REQUEST['organization']);
-    $loggedrole= mysqli_real_escape_string($link, $_REQUEST['loggedrole']);
-
-	
-    if (!empty($accessToken)) 
-	{ 
-	    getDelegatedDevice($accessToken, $username, $result);
-	}
+	getDelegatedDevice($accessToken, $username, $result);
 		
-      	
-		
-    $q = "SELECT v.*, d.`id`,d.`contextbroker`, d.`kind`, d.`latitude`, d.`longitude`, d.`devicetype`,  d.`organization`, d.`visibility`, d.`uri`,d.`model`, d.`created` ,cb.`accesslink`, cb.`accessport`, d.`protocol`, d.`service`, d.`servicePath`, CASE WHEN d.mandatoryproperties AND d.mandatoryvalues THEN \"active\" ELSE \"idle\" END AS status1, d.`visibility` FROM `event_values` v JOIN `devices` d ON (v.device=d.id AND d.contextbroker=v.cb) JOIN `contextbroker` cb ON (v.cb=cb.name )";
+	$q = "SELECT v.*, d.`id`,d.`contextbroker`, d.`kind`, d.`latitude`, d.`longitude`, d.`devicetype`,  d.`organization`, d.`visibility`, 
+			d.`uri`,d.`model`, d.`created` ,cb.`accesslink`, cb.`accessport`, d.`protocol`, d.`service`, d.`servicePath`, 
+			CASE WHEN d.mandatoryproperties AND d.mandatoryvalues THEN \"active\" ELSE \"idle\" END AS status1, d.`visibility` 
+			FROM `event_values` v JOIN `devices` d ON (v.device=d.id AND d.contextbroker=v.cb) JOIN `contextbroker` cb ON (v.cb=cb.name )";
     
     $r=create_datatable_data($link,$_REQUEST,$q, "deleted IS null");
 			
     $selectedrows=-1;
-			
     if($_REQUEST["length"] != -1)
-			
     {
         $start= $_REQUEST['start'];
         $offset=$_REQUEST['length'];
         $tobelimited=true;
 			
     }
-			
     else
-		
     {
         $tobelimited=false;	
     }
 		
     if($r) 
-		
     {
 			
         logAction($link,$username,'event_value','get_all_delegated_event_value','',$organization,'','success');		 
         $data = array();
 	 
         while($row = mysqli_fetch_assoc($r)) 
-			
         {
- 
-             $eid=$row["organization"].":".$row["contextbroker"].":".$row["id"];
+	        $eid=$row["organization"].":".$row["contextbroker"].":".$row["id"];
             if (isset($row["uri"]) && $row["uri"]!="" && 
-                  (
-                      (isset($result["delegation"][$row["uri"] . "/" . $row["value_name"]])
-                        &&  $result["delegation"][$row["uri"] . "/" . $row["value_name"]]["kind"]!="anonymous")
-                  ||
-                     (isset($result["delegation"][$eid])
-                        &&  $result["delegation"][$eid]["kind"]!="anonymous")
-                  )
-
-                 )
-                  
-			 {
+    	        (
+                (isset($result["delegation"][$row["uri"] . "/" . $row["value_name"]])
+                &&  $result["delegation"][$row["uri"] . "/" . $row["value_name"]]["kind"]!="anonymous")
+                ||
+                (isset($result["delegation"][$eid])
+                &&  $result["delegation"][$eid]["kind"]!="anonymous")
+                ))
+			{
 				$selectedrows++;
 		        if (!$tobelimited || ($tobelimited && $selectedrows >= $start && $selectedrows < ($start+$offset)))
 				{
-         		$rec = array();
-                		$rec["id"]=$row["id"];
-				$rec["cb"]= $row["cb"];
-				$rec["device"]= $row["device"];
-				$rec["devicetype"]= $row["devicetype"];
-				$rec["value_name"]= $row["value_name"];
-				$rec["data_type"]= $row["data_type"];
-				$rec["value_type"]= $row["value_type"];
-				$rec["editable"]= $row["editable"];
-				$rec["value_unit"]= $row["value_unit"];
-				$rec["healthiness_criteria"]= $row["healthiness_criteria"];
-				$rec["order"]= $row["order"];
-				$rec["value_refresh_rate"]= $row["value_refresh_rate"];
-				$rec["latitude"]= $row["latitude"];
-				$rec["longitude"]= $row["longitude"];
-				$rec["organization"]= $row["organization"];
-		                $rec["accesslink"]=$row["accesslink"];
-				$rec["accessport"]=$row["accessport"];
-				$rec["created"]=$row["created"];
-				// $rec["visibility"]= $row["visibility"];
-				$rec["kind"]= $row["kind"];
-				$rec["status1"]= $row["status1"];
-                		$rec["k1"]="";
-				$rec["k2"]=""; 				
-				$rec["service"] = $row["service"];
-				$rec["servicePath"] = $row["servicePath"];
-				if ($row["protocol"] == "ngsi w/MultiService"){
-					//dev_log("get_all_delegated_event_value: multiservice device detected");
-					// get the name from id
-					$rec["device"] = explode(".", $row["device"])[2];
-					$rec["id"] = explode(".", $row["id"])[2];
-					//dev_log("get_all_delegated_event_value: new rec[device]: " . $rec["device"]);
-					//dev_log("get_all_delegated_event_value: new rec[id]: " . $rec["id"]);
-				}
-                if (isset($result["delegation"][$row["uri"] . "/" . $row["value_name"]]["k1"]))
-                { 					
-					$rec["k1"]=$result["delegation"][$row["uri"] . "/" . $row["value_name"]]["k1"]; // to be fixed
-					$rec["k2"]=$result["delegation"][$row["uri"] . "/" . $row["value_name"]]["k2"]; // to be fixed 
-				}    
-                else if(isset($result["delegation"][$eid]["k1"])){
+         			$rec = array();
+                	$rec["id"]=$row["id"];
+					$rec["cb"]= $row["cb"];
+					$rec["device"]= $row["device"];
+					$rec["devicetype"]= $row["devicetype"];
+					$rec["value_name"]= $row["value_name"];
+					$rec["data_type"]= $row["data_type"];
+					$rec["value_type"]= $row["value_type"];
+					$rec["editable"]= $row["editable"];
+					$rec["value_unit"]= $row["value_unit"];
+					$rec["healthiness_criteria"]= $row["healthiness_criteria"];
+					$rec["order"]= $row["order"];
+					$rec["value_refresh_rate"]= $row["value_refresh_rate"];
+					$rec["latitude"]= $row["latitude"];
+					$rec["longitude"]= $row["longitude"];
+					$rec["organization"]= $row["organization"];
+		            $rec["accesslink"]=$row["accesslink"];
+					$rec["accessport"]=$row["accessport"];
+					$rec["created"]=$row["created"];
+					$rec["kind"]= $row["kind"];
+					$rec["status1"]= $row["status1"];
+               		$rec["k1"]="";
+					$rec["k2"]=""; 				
+					$rec["service"] = $row["service"];
+					$rec["servicePath"] = $row["servicePath"];
+					if ($row["protocol"] == "ngsi w/MultiService")
+					{
+						$rec["device"] = explode(".", $row["device"])[2];
+						$rec["id"] = explode(".", $row["id"])[2];
+					}
+	                if (isset($result["delegation"][$row["uri"] . "/" . $row["value_name"]]["k1"]))
+    	            { 					
+						$rec["k1"]=$result["delegation"][$row["uri"] . "/" . $row["value_name"]]["k1"]; // to be fixed
+						$rec["k2"]=$result["delegation"][$row["uri"] . "/" . $row["value_name"]]["k2"]; // to be fixed 
+					}    
+                	else if(isset($result["delegation"][$eid]["k1"]))
+					{
                         $rec["k1"]=$result["delegation"][$eid]["k1"]; // to be fixed
                         $rec["k2"]=$result["delegation"][$eid]["k2"]; // to be fixed 
                     }
-				$rec["visibility"]="delegated";
+					$rec["visibility"]="delegated";
 				
-				array_push($data, $rec);
+					array_push($data, $rec);
 				}
-			 } 
-			}
-		 $output= format_result($_REQUEST["draw"], $selectedrows+1, $selectedrows+1, $data, "", "\r\n action=get_all_delegated_event_value \r\n", 'ok');
-		
-		} 
-		else
-		{
-            logAction($link,$username,'event_value','get_all_delegated_event_value','',$organization,'','faliure');
-            $output= format_result($_REQUEST["draw"], 0, 0, null, 'Error: errors in reading data about devices. <br/>' . generateErrorMessage($link), '\n\r Error: errors in reading data about devices.' . generateErrorMessage($link), 'ko');
-			
+			} 
 		}
+		$output= format_result($_REQUEST["draw"], $selectedrows+1, $selectedrows+1, $data, "", "\r\n action=get_all_delegated_event_value \r\n", 'ok');
+	} 
+	else
+	{
+        logAction($link,$username,'event_value','get_all_delegated_event_value','',$organization,'','faliure');
+        $output= format_result($_REQUEST["draw"], 0, 0, null, 'Error: errors in reading data about devices. <br/>' . generateErrorMessage($link), 
+			'\n\r Error: errors in reading data about devices.' . generateErrorMessage($link), 'ko');
+	}
 
     my_log($output);
 	mysqli_close($link); 
 }
-else if($action == 'get_subset_event_value')
-{
-	//Sara611 - for logging purpose
-	$username = mysqli_real_escape_string($link, $_REQUEST['username']);
-	$organization = mysqli_real_escape_string($link, $_REQUEST['organization']);
-    $loggedrole= mysqli_real_escape_string($link, $_REQUEST['loggedrole']);
-	
-    $selection= json_decode($_REQUEST['select']);
-	 $ownDevices= "";
-    if (!empty($accessToken)) 
-	{ 
-	   $ownDevices = getOwnerShipDevice($accessToken, $result);	
-        getDelegatedDevice($accessToken, $username, $result);
-	}
-	$a=0;
-	$cond="";
-	
-	$q = "SELECT v.*, d.`kind`, d.`latitude`, d.`longitude`, d.`devicetype`, d.`id`, d.`uri`,  d.`organization`, d.`protocol`, d.`service`, d.`servicePath`,  
-	      CASE WHEN d.`mandatoryproperties` AND d.`mandatoryvalues` THEN \"active\" ELSE \"idle\" END 
-	      AS status1, d.`visibility` FROM `event_values` v JOIN `devices` d ON (v.`device`=d.`id` AND d.`contextbroker`=v.`cb`)"; 
-	if (count($selection)!=0)
-	{
-
-		while ($a < count($selection))
-		{
-			 $sel = $selection[$a];
-			 $cond .= " (device='". $sel->id . "' AND cb = '" . $sel->cb . "' AND value_name= '". $sel->value_name ."') ";
-			 if ($a != count($selection)-1)  $cond .= " OR ";
-			 $a++;
-		 }
-		
-		
-        
-        $r=create_datatable_data($link,$_REQUEST,$q, "deleted IS null AND (" . $cond . ")");
-
-		
-	}
-    else
-	{	
-        $r=create_datatable_data($link,$_REQUEST,$q, "1=2");
-	}
-	$r=create_datatable_data($link,$_REQUEST,$q, "deleted IS null AND (" . $cond . ")");
-		 	 
-    $selectedrows=-1;
-			
-    if($_REQUEST["length"] != -1)
-			
-    {
-        $start= $_REQUEST['start'];
-        $offset=$_REQUEST['length'];
-        $tobelimited=true;		
-    }
-			
-    else
-	
-    {
-        $tobelimited=false;	
-    }
-	
-	if($r) 
-	{
-	    //Sara611 - for logging purpose
-		logAction($link,$username,'event_value','get_subset_event_value','',$organization,'','success');
-		
-		$data = array();
-
-		while($row = mysqli_fetch_assoc($r)) 
-		{
-	        
-			$selectedrows++;
-		        if (!$tobelimited || ($tobelimited && $selectedrows >= $start && $selectedrows < ($start+$offset)))
-				{
-            $eid=$row["organization"].":".$row["cb"].":".$row["id"];
-            $rec= array();
-			$rec["cb"]= $row["cb"];
-			$rec["device"]= $row["device"];
-			$rec["devicetype"]= $row["devicetype"];
-			$rec["value_name"]= $row["value_name"];
-			$rec["data_type"]= $row["data_type"];
-			$rec["value_type"]= $row["value_type"];
-			$rec["editable"]= $row["editable"];
-			$rec["value_unit"]= $row["value_unit"];
-			$rec["healthiness_criteria"]= $row["healthiness_criteria"];
-			$rec["order"]= $row["order"];
-			$rec["value_refresh_rate"]= $row["value_refresh_rate"];
-			$rec["organization"]= $row["organization"];  //organization added 
-			$rec["latitude"]= $row["latitude"];
-			$rec["longitude"]= $row["longitude"];
-			// $rec["visibility"]= $row["visibility"];
-			$rec["kind"]= $row["kind"];
-			$rec["status1"]= $row["status1"];			
-			$rec["service"] = $row["service"];
-			$rec["servicePath"] = $row["servicePath"];
-			if ($row["protocol"] == "ngsi w/MultiService"){
-				//dev_log("get_subset_event_value: multiservice device detected");
-				// get the name from id
-				$rec["device"] = explode(".", $row["device"])[2];
-				$rec["id"] = explode(".", $row["id"])[2];
-				//dev_log("get_subset_event_value: new rec[device]: " . $rec["device"]);
-				//dev_log("get_subset_event_value: new rec[id]: " . $rec["id"]);
-			}	
-                
-             if (((isset($result["keys"][$eid]))&&($loggedrole!=='RootAdmin'))
-                                       ||            
-                        ((isset($result["keys"][$eid]))&& ($result["keys"][$eid]["owner"]==$username) && ($loggedrole==='RootAdmin')))
-                               	
-                    {//it's mine   	
-				if ($row["visibility"]=="public")
-					{
-						$rec["visibility"]= "MyOwnPublic";
-					}
-					else 
-					{
-						if (isset($result["delegation"][$row["uri"] . "/" . $row["value_name"]])
-							 && $result["delegation"][$row["uri"] . "/" . $row["value_name"]]["kind"]=="anonymous")				  				
-							$rec["visibility"]= "MyOwnPublic";
-						else  
-							$rec["visibility"]="MyOwnPrivate";
-					}
-				
-				$rec["k1"]=$result["keys"][$eid]["k1"];
-				$rec["k2"]=$result["keys"][$eid]["k2"];
-            }
-			else{
-				if (isset($result["delegation"][$row["uri"] . "/" . $row["value_name"]]))
-				{
-					$rec["visibility"]='delegated';
-					$rec["k1"]="";
-					$rec["k2"]="";
-					if (isset($result["delegation"][$row["uri"] . "/" . $row["value_name"]]["k1"]))
-					{	
-						$rec["k1"]=$result["delegation"][$row["uri"] . "/" . $row["value_name"]]["k1"];; // to be fixed 
-						$rec["k2"]=$result["delegation"][$row["uri"] . "/" . $row["value_name"]]["k2"];; // to be fixed 
-					}
-				}
-				else 
-				{ 
-					$rec["visibility"]=$row["visibility"];
-					$rec["k1"]="";
-					$rec["k2"]="";
-                } 					
-			}
-	        array_push($data, $rec); 
-			}			
-				
-		}
-		
-	   $output= format_result($_REQUEST["draw"], $selectedrows+1, $selectedrows+1, $data, "", "\r\n action=get_subset_event_value \r\n", 'ok');
-
-	} 
-	else
-	{
-	    //Sara611 - for logging purpose
-		logAction($link,$username,'event_value','get_subset_event_value','',$organization,'Error: errors in reading data about devices.','faliure');
-        $output= format_result($_REQUEST["draw"], 0, 0, null, 'Error: errors in reading data about devices. <br/>' . generateErrorMessage($link), '\n\r Error: errors in reading data about devices.' . generateErrorMessage($link), 'ko');
-		
-	}
-
-	 my_log($output);
-	mysqli_close($link); 
-}
-
-
 else if($action == 'get_all_private_event_value_map')
 {
-	$username = mysqli_real_escape_string($link, $_REQUEST['username']);
-	$organization = mysqli_real_escape_string($link, $_REQUEST['organization']);
-	$loggedrole= mysqli_real_escape_string($link, $_REQUEST['loggedrole']);
-     $ownDevices= "";
-    if (!empty($accessToken)) 
-	{ 
-	 $ownDevices = getOwnerShipDevice($accessToken, $result); 
-	}
+	$ownDevices = getOwnerShipDevice($accessToken, $result); 
+	
 	if ($ownDevices!="")
 	{	
-      	$q = "SELECT v.*, d.`id`, d.`kind`, d.`latitude`, d.`longitude`, d.`devicetype`,  d.`organization`, d.`visibility`, d.`uri`, d.`created`, d.`privatekey`, d.`certificate`, cb.`sha`,cb.`accesslink`, cb.`accessport`,
-	      CASE WHEN d.mandatoryproperties AND d.mandatoryvalues THEN \"active\" ELSE \"idle\" END AS status1,
-	      d.`visibility` FROM `event_values` v JOIN `devices` d ON (v.device=d.id AND d.contextbroker=v.cb) JOIN `contextbroker` cb ON (v.cb=cb.name ) where deleted IS null"; 
+		$q = "SELECT v.*, d.`id`, d.`kind`, d.`latitude`, d.`longitude`, d.`devicetype`,  d.`organization`, d.`visibility`, 
+			d.`uri`, d.`created`, d.`privatekey`, d.`certificate`, cb.`sha`,cb.`accesslink`, cb.`accessport`,
+	      	CASE WHEN d.mandatoryproperties AND d.mandatoryvalues THEN \"active\" ELSE \"idle\" END AS status1,
+	      	d.`visibility` FROM `event_values` v JOIN `devices` d ON (v.device=d.id AND d.contextbroker=v.cb) JOIN `contextbroker` cb ON (v.cb=cb.name ) where deleted IS null"; 
 		
         $r = mysqli_query($link, $q);
-
         
 		if($r) 
 		{
 			logAction($link,$username,'event_value','get_all_private_event_value_map','',$organization,'','success');
-			
 			$result['status'] = 'ok';
 			$result['log'] .= "\n\r action:get_all_private_event_value. ok " . $q;
-		
 			$result['content'] = array();
-			 while($row = mysqli_fetch_assoc($r)) 
+			while($row = mysqli_fetch_assoc($r)) 
 			{
 				$eid=$row["organization"].":".$row["cb"].":".$row["id"];
                  
-                 if (
-                     isset($result["keys"][$eid])
-                   &&((($result["keys"][$eid]["owner"]==$username) && ($loggedrole==='RootAdmin'))
-                      ||
-                     ($loggedrole!='RootAdmin')
-                     )
-                 
+                if (isset($result["keys"][$eid])
+                	&&((($result["keys"][$eid]["owner"]==$username) && ($role==='RootAdmin'))
+                    ||
+                    ($role!='RootAdmin')
+                    )
                     )
                 {
-                $rec = array();
-				$rec["id"]=$row["id"];
-				$rec["cb"]= $row["cb"];
-				$rec["device"]= $row["device"];
-				$rec["devicetype"]= $row["devicetype"];
-				$rec["value_name"]= $row["value_name"];
-				$rec["data_type"]= $row["data_type"];
-				$rec["value_type"]= $row["value_type"];
-				$rec["editable"]= $row["editable"];
-				$rec["value_unit"]= $row["value_unit"];
-				$rec["healthiness_criteria"]= $row["healthiness_criteria"];
-				// $rec["different_values"]= $row["different_values"];
-				// $rec["value_bounds"]= $row["value_bound"];
-				$rec["order"]= $row["order"];
-				$rec["value_refresh_rate"]= $row["value_refresh_rate"];
-				$rec["latitude"]= $row["latitude"];
-				$rec["longitude"]= $row["longitude"];
-				// $rec["visibility"]= $row["visibility"];
-				$rec["kind"]= $row["kind"];
-				$rec["status1"]= $row["status1"];			
-				$rec["created"]=$row["created"];
-	                        $rec["privatekey"]=$row["privatekey"];
-        	                $rec["certificate"]=$row["certificate"];
-                	        $rec["sha"]=$row["sha"];
-				$rec["accesslink"]=$row["accesslink"];
-				$rec["accessport"]=$row["accessport"];
+	                $rec = array();
+					$rec["id"]=$row["id"];
+					$rec["cb"]= $row["cb"];
+					$rec["device"]= $row["device"];
+					$rec["devicetype"]= $row["devicetype"];
+					$rec["value_name"]= $row["value_name"];
+					$rec["data_type"]= $row["data_type"];
+					$rec["value_type"]= $row["value_type"];
+					$rec["editable"]= $row["editable"];
+					$rec["value_unit"]= $row["value_unit"];
+					$rec["healthiness_criteria"]= $row["healthiness_criteria"];
+					$rec["order"]= $row["order"];
+					$rec["value_refresh_rate"]= $row["value_refresh_rate"];
+					$rec["latitude"]= $row["latitude"];
+					$rec["longitude"]= $row["longitude"];
+					$rec["kind"]= $row["kind"];
+					$rec["status1"]= $row["status1"];			
+					$rec["created"]=$row["created"];
+	                $rec["privatekey"]=$row["privatekey"];
+                    $rec["certificate"]=$row["certificate"];
+           	        $rec["sha"]=$row["sha"];
+					$rec["accesslink"]=$row["accesslink"];
+					$rec["accessport"]=$row["accessport"];
 
-				if(isset($result["keys"][$eid])){
-                         if ($row["visibility"]=="public")
+					if(isset($result["keys"][$eid]))
 					{
-						$rec["visibility"]= "MyOwnPublic";
-					}
-					else 
-					{
-						if (isset($result["delegation"][$row["uri"] . "/" . $row["value_name"]])
-							 && $result["delegation"][$row["uri"] . "/" . $row["value_name"]]["kind"]=="anonymous")				  				
+                    	if ($row["visibility"]=="public")
+						{
 							$rec["visibility"]= "MyOwnPublic";
-						else  
-							$rec["visibility"]="MyOwnPrivate";
-					}
-					
-					
-					$rec["k1"]=$result["keys"][$eid]["k1"];
-					$rec["k2"]=$result["keys"][$eid]["k2"];
-                         
+						}
+						else 
+						{
+							if (isset($result["delegation"][$row["uri"] . "/" . $row["value_name"]])
+								 && $result["delegation"][$row["uri"] . "/" . $row["value_name"]]["kind"]=="anonymous")				  				
+								$rec["visibility"]= "MyOwnPublic";
+							else  
+								$rec["visibility"]="MyOwnPrivate";
+						}
+						$rec["k1"]=$result["keys"][$eid]["k1"];
+						$rec["k2"]=$result["keys"][$eid]["k2"];
                      }
-				else{
-					$rec["visibility"]= $row["visibility"];
-					$rec["k1"]="";
-					$rec["k2"]="";	
-				}				
-				array_push($result['content'], $rec);
-			}
-        }
+					else
+					{
+						$rec["visibility"]= $row["visibility"];
+						$rec["k1"]="";
+						$rec["k2"]="";	
+					}				
+					array_push($result['content'], $rec);
+				}
+	        }
 		} 
 		else
 		{
-			//Sara611 - for logging purpose
 			logAction($link,$username,'event_value','get_all_private_event_value_map','',$organization,'','faliure');
 			
 			$result['status'] = 'ko';
-			$result['msg'] = 'Error: errors in action get_all_private_event_value_map <br/>' .
-							   generateErrorMessage($link);
-			$result['log'] = 'Error: errors in action get_all_private_event_value_map <br/>' .
-							   generateErrorMessage($link);				   
+			$result['msg'] = 'Error: errors in action get_all_private_event_value_map <br/>' .   generateErrorMessage($link);
+			$result['log'] = 'Error: errors in action get_all_private_event_value_map <br/>' .   generateErrorMessage($link);				   
 		}
 	}
-	 my_log($result);
+
+	my_log($result);
 	mysqli_close($link); 
 }
 else if($action == 'get_all_delegated_event_value_map')
 {
-	$username = mysqli_real_escape_string($link, $_REQUEST['username']);
-	$organization = mysqli_real_escape_string($link, $_REQUEST['organization']);
-    $loggedrole= mysqli_real_escape_string($link, $_REQUEST['loggedrole']);
-	
-    if (!empty($accessToken)) 
-	{  
-	    getDelegatedDevice($accessToken,$username, $result);  
-	}
+	getDelegatedDevice($accessToken,$username, $result);  
 		
-   $q = "SELECT v.*,d.`id`, d.`kind`, d.`latitude`, d.`longitude`, d.`devicetype`, d.`visibility`, d.`organization`, d.`uri`,
+	$q = "SELECT v.*,d.`id`, d.`kind`, d.`latitude`, d.`longitude`, d.`devicetype`, d.`visibility`, d.`organization`, d.`uri`,
 	      CASE WHEN d.`mandatoryproperties` AND d.`mandatoryvalues` THEN \"active\" ELSE \"idle\" END 
 	      AS status1, d.`visibility` FROM `event_values` v JOIN `devices` d ON (v.`device`=d.`id` AND d.`contextbroker`=v.`cb`) where deleted IS null;";     
 
-     $r = mysqli_query($link, $q);
+    $r = mysqli_query($link, $q);
     	
     if($r) 
-		{
-			
+	{
         logAction($link,$username,'event_value','get_all_delegated_event_value_map','',$organization,'','success');
         $result['status'] = 'ok';			
         $result['log'] .= "\n\r action:get_all_delegated_event_value_map. ok " . $q;
-		
         $result['content'] = array(); 
         while($row = mysqli_fetch_assoc($r)) 
-			{
-		
+		{
             $eid=$row["organization"].":".$row["cb"].":".$row["id"];   
             if (isset($row["uri"]) && $row["uri"]!="" && 
                   (
-                      (isset($result["delegation"][$row["uri"] . "/" . $row["value_name"]])
+                     (isset($result["delegation"][$row["uri"] . "/" . $row["value_name"]])
                         &&  $result["delegation"][$row["uri"] . "/" . $row["value_name"]]["kind"]!="anonymous")
                   ||
                      (isset($result["delegation"][$eid])
@@ -1239,8 +1192,7 @@ else if($action == 'get_all_delegated_event_value_map')
                   )
 
                  )
-                  
-			 {
+			{
          		$rec = array();
 				$rec["id"]= $row["id"];
 				$rec["cb"]= $row["cb"];
@@ -1256,7 +1208,6 @@ else if($action == 'get_all_delegated_event_value_map')
 				$rec["value_refresh_rate"]= $row["value_refresh_rate"];
 				$rec["latitude"]= $row["latitude"];
 				$rec["longitude"]= $row["longitude"];
-				// $rec["visibility"]= $row["visibility"];
 				$rec["kind"]= $row["kind"];
 				$rec["status1"]= $row["status1"];
                 $rec["k1"]="";
@@ -1267,289 +1218,57 @@ else if($action == 'get_all_delegated_event_value_map')
 					$rec["k2"]=$result["delegation"][$row["uri"] . "/" . $row["value_name"]]["k2"]; // to be fixed 
 				}
 				$rec["visibility"]="delegated";
-				
 				array_push($result['content'], $rec);
 			 } 
-			}
-		} 
-		else
-		{
-			logAction($link,$username,'event_value','get_all_delegated_event_value_map','',$organization,'','faliure');	
-			$result['status'] = 'ko';
-			$result['msg'] = 'Error: errors in action: get_all_delegated_event_value_map. <br/>' .
-							   generateErrorMessage($link);
-			$result['log'] = '\n\r Error: errors in action: get_all_delegated_event_value_map.' .
-							   generateErrorMessage($link);				   
 		}
-	 my_log($result);
-	mysqli_close($link); 
-}
-
-
-else if($action == 'get_subset_event_value_admin')
-{	
-    $selection= json_decode($_REQUEST['select']);
-	$username = mysqli_real_escape_string($link, $_REQUEST['username']);
-	$organization = mysqli_real_escape_string($link, $_REQUEST['organization']);
- 
-	 $ownDevices= "";
-    if (!empty($accessToken)) 
-	{ 
-	 $ownDevices = getOwnerShipDevice($accessToken, $result); 
-	 if (isset($result["username"])) getDelegatedDevice($accessToken, $result["username"], $result);	 
-	 
-	}
-	$a=0;
-	$cond="";
-	if (count($selection)!=0)
-	{
-	    
-		while ($a < count($selection))
-		{
-			 $sel = $selection[$a];
-			 $cond .= " (device='". $sel->id . "' AND cb = '" . $sel->contextbroker . "' AND value_name= '". $sel->value_name ."') ";
-			 if ($a != count($selection)-1)  $cond .= " OR ";
-			 $a++;
-		 }
-		
-		//$q = "SELECT v.*, d.kind, d.latitude, d.longitude, d.devicetype, d.uri, d.id, 
-		//CASE WHEN d.mandatoryproperties AND d.mandatoryvalues THEN \"active\" ELSE \"idle\" END AS 
-		//status, d.visibility FROM event_values v JOIN devices d ON (v.device=d.id AND d.contextbroker=v.cb) WHERE d.deleted is null and (" . $cond . ")";
-		// echo $q;
-		
-				
-		$q = "SELECT v.*, d.`kind`, d.`latitude`, d.`longitude`, d.`devicetype`, d.`id`, d.`organization`,d.protocol, d.`service`, d.`servicePath`,
-	      CASE WHEN d.`mandatoryproperties` AND d.`mandatoryvalues` THEN \"active\" ELSE \"idle\" END 
-	      AS status1, d.`visibility` FROM `event_values` v JOIN `devices` d ON (v.`device`=d.`id` AND d.`contextbroker`=v.`cb`)"; // WHERE (" . $cond . ")";  //d.deleted is null and 
-
-
-	}
-    else
-	    $q = "SELECT  * FROM event_values WHERE 1=2";
-	
-	
-	
-    //$r = mysqli_query($link, $q);
-	
-	$r=create_datatable_data($link,$_REQUEST,$q, "deleted IS null AND (" . $cond . ")");
-
-	$selectedrows=-1;
-	if($_REQUEST["length"] != -1)
-	{
-			$start= $_REQUEST['start'];
-			$offset=$_REQUEST['length'];
-			$tobelimited=true;
-	}
-	else
-	{
-		$tobelimited=false;
-	}
-	
-	if($r) 
-	{
-		//$result['status'] = 'ok';
-		//$result['log'] .= "\n\r action:get_subset_event_value_admin ok " . $q;
-		
-		//$result['content'] = array();
-		//Sara611 - for logging purpose
-		logAction($link,$username,'event_value','get_subset_event_value_admin','',$organization,'','success');
-		while($row = mysqli_fetch_assoc($r)) 
-		{	 
-			$selectedrows++;
-			if (!$tobelimited || ($tobelimited && $selectedrows >= $start && $selectedrows < ($start+$offset)))
-			{
-            $rec= array();
-			$rec["cb"]= $row["cb"];
-			$rec["device"]= $row["device"];
-			$rec["devicetype"]= $row["devicetype"];
-			$rec["value_name"]= $row["value_name"];
-			$rec["data_type"]= $row["data_type"];
-			$rec["value_type"]= $row["value_type"];
-			$rec["editable"]= $row["editable"];
-			$rec["value_unit"]= $row["value_unit"];
-			$rec["healthiness_criteria"]= $row["healthiness_criteria"];
-			//$rec["different_values"]= $row["different_values"];
-			// $rec["value_bounds"]= $row["value_bound"];
-			$rec["order"]= $row["order"];
-			$rec["value_refresh_rate"]= $row["value_refresh_rate"];
-			$rec["organization"]= $row["organization"];
-			$rec["latitude"]= $row["latitude"];
-			$rec["longitude"]= $row["longitude"];
-			// $rec["visibility"]= $row["visibility"];
-			$rec["kind"]= $row["kind"];
-			$rec["status"]= $row["status"];			
-			$rec["service"] = $row["service"];
-                        $rec["servicePath"] = $row["servicePath"];
-			        if ($row["protocol"] == "ngsi w/MultiService"){
-                                        //dev_log("get_all_private_event_value: multiservice device detected");
-                                        // get the name from id
-                                        $rec["device"] = explode(".", $row["device"])[2];
-                                        //dev_log("get_all_private_event_value: new rec[device]: " . $rec["device"]);
-                                        //dev_log("get_all_private_event_value: new rec[id]: " . $rec["id"]);
-                                }        
-			$eid=$row["organization"].":".$row["cb"].":".$row["id"];
-            
-            if (isset($result["keys"][$eid]) && $result["keys"][$eid]["owner"]==$username)
-			{
-				// $rec["visibility"]= ($row["visibility"]=="public")?"MyOwnPublic":"MyOwnPrivate";
-				if ($row["visibility"]=="public")
-					{
-						$rec["visibility"]= "MyOwnPublic";
-					}
-					else 
-					{
-						if (isset($result["delegation"][$row["uri"] . "/" . $row["value_name"]])
-							 && $result["delegation"][$row["uri"] . "/" . $row["value_name"]]["kind"]=="anonymous")				  				
-							$rec["visibility"]= "MyOwnPublic";
-						else  
-							$rec["visibility"]="MyOwnPrivate";
-					}
-				
-				$rec["k1"]=$result["keys"][$eid]["k1"];
-				$rec["k2"]=$result["keys"][$eid]["k2"];
-                        }
-			else  if (isset($result["keys"][$eid]) && $result["keys"][$eid]["owner"]!=$username)
-			{
-			   $rec["visibility"]= $row["visibility"]; // =="public")?"MyOwnPublic":"MyOwnPrivate";
-			   $rec["k1"]=$result["keys"][$eid]["k1"];
-			   $rec["k2"]=$result["keys"][$eid]["k2"];
-            }
-			else
-			{
-			   $rec["visibility"]= $row["visibility"]; // =="public")?"MyOwnPublic":"MyOwnPrivate";
-			   $rec["k1"]="";
-			   $rec["k2"]="";
-			   $rec["owner"]="";
-			}
-
-	        array_push($data, $rec); 
-	   	
-			}
-		}
-		
-	   $output= format_result($_REQUEST["draw"], $selectedrows+1, $selectedrows+1, $data, "", "\r\n action=get_subset_event_value_admin \r\n", 'ok');
-
 	} 
 	else
 	{
-		//Sara611 - for logging purpose
-		logAction($link,$username,'event_value','get_subset_event_value_admin','',$organization,'Error: errors in reading data about values.','faliure');
-		
-		$output= format_result($_REQUEST["draw"], 0, 0, null, 'Error: errors in reading data about values. <br/>' . generateErrorMessage($link), '\n\r Error: errors in reading data about values.' . generateErrorMessage($link), 'ko');
-			   
+		logAction($link,$username,'event_value','get_all_delegated_event_value_map','',$organization,'','faliure');	
+		$result['status'] = 'ko';
+		$result['msg'] = 'Error: errors in action: get_all_delegated_event_value_map. <br/>' .   generateErrorMessage($link);
+		$result['log'] = '\n\r Error: errors in action: get_all_delegated_event_value_map.' .   generateErrorMessage($link);				   
 	}
-
-	 my_log($output);
+	
+	my_log($result);
 	mysqli_close($link); 
-}
-else if($action == 'get_value_unit_data') 
-{	
-	//Sara611 - for logging purpose
-	$username = mysqli_real_escape_string($link, $_REQUEST['username']);
-	$organization = mysqli_real_escape_string($link, $_REQUEST['organization']);
-
-	$value_type = mysqli_real_escape_string($link, $_REQUEST['value_type']);
-	
-	$q = "SELECT * FROM value_types WHERE value_type = '$value_type'";
-	$r = mysqli_query($link, $q);
-
-	if($r) 
-	{
-	//Sara611 - for logging purpose
-	logAction($link,$username,'event_value','get_value_unit_data','',$organization,'','success');
-	
-	 $result['status'] = 'ok';
-	 $result['log'] .= "\n\r action:get_value_unit_data. ok " . $q;
-	 $result['content'] = array();
-     while($row = mysqli_fetch_assoc($r)) 
-     {
-	   array_push($result['content'], $row);
-	 }
-    }
-	else{
-		//Sara611 - for logging purpose
-		logAction($link,$username,'event_value','get_value_unit_data','',$organization,'','faliure');
-		
-	   $result['status'] = 'ko';
-	   $result['msg'] = 'Error: errors in get_value_unit_data. <br/>' .
-						   generateErrorMessage($link);
-	   $result['log'] = 'Error: errors in get_value_unit_data. <br/>' .
-						   generateErrorMessage($link);					   
-	}    
-	 my_log($result);
-	mysqli_close($link);
-}
-else if($action == "get_value_latlong")
-{
-    $id = mysqli_real_escape_string($link, $_REQUEST['id']);
-	$cb = mysqli_real_escape_string($link, $_REQUEST['contextbroker']);
-	
-	$q = "SELECT d.id, d.contextbroker, v.value_name, d.latitude, d.longitude  FROM devices d JOIN event_values v ON (d.id=v.device and d.contextbroker=v.cb) WHERE d.deleted IS null and d.id='$id' and d.contextbroker='$cb'";
-	$r = mysqli_query($link, $q);
-	
-	if($r) 
-	{
-	 $result['status'] = 'ok';
-	 $result['log'] .= "\n\r action:get_value_latlong. ok " . $q;
-	 
-	 $result['content'] = array();
-     while($row = mysqli_fetch_assoc($r)) 
-     {
-	   array_push($result['content'], $row);
-	 }
-    }
-	else{
-	   $result['status'] = 'ko';
-	   $result['msg'] = 'Error: errors in reading data about location of the device. <br/>' .
-						   generateErrorMessage($link);
-		$result['log'] = 'Error: errors in reading data about location of the device. <br/>' .
-						   generateErrorMessage($link);				   
-	}    
-	 my_log($result);
-	mysqli_close($link);
 }
 else if($action == "get_all_value_latlong")
 {
-    
-	$loggedrole= mysqli_real_escape_string($link, $_REQUEST['loggedrole']);
-    $organization = mysqli_real_escape_string($link, $_REQUEST['organization']);
-    $username = mysqli_real_escape_string($link, $_REQUEST['username']);
-    if (!empty($accessToken)) 
-	{ 
-	 $ownDevices = getOwnerShipDevice($accessToken, $result); 	 
-	 getDelegatedDevice($accessToken, $username, $result);	 
-	}
+	$ownDevices = getOwnerShipDevice($accessToken, $result); 	 
+	getDelegatedDevice($accessToken, $username, $result);	 
 	
-    $q = "SELECT cb.sha,cb.accesslink, cb.accessport, v.*, d.id,d.contextbroker, d.kind, d.latitude, d.longitude, d.visibility, d.devicetype, d.uri, d.created, d.privatekey, d.organization, d.certificate,d.visibility, CASE WHEN d.mandatoryproperties AND d.mandatoryvalues THEN \"active\" ELSE \"idle\" END	AS status1 FROM event_values v JOIN devices d ON (v.device=d.id AND d.contextbroker=v.cb) JOIN contextbroker cb ON (v.cb=cb.name ) where deleted IS null;"; 
-
+    $q = "SELECT cb.sha,cb.accesslink, cb.accessport, v.*, d.id,d.contextbroker, d.kind, d.latitude, d.longitude, d.visibility, 
+		d.devicetype, d.uri, d.created, d.privatekey, d.organization, d.certificate,d.visibility, 
+		CASE WHEN d.mandatoryproperties AND d.mandatoryvalues THEN \"active\" ELSE \"idle\" END	AS status1 
+		FROM event_values v JOIN devices d ON (v.device=d.id AND d.contextbroker=v.cb) JOIN contextbroker cb ON (v.cb=cb.name ) where deleted IS null;"; 
 			
 	$r = mysqli_query($link, $q);
 	
 	if($r) 
 	{
-	 $result['status'] = 'ok';
-	 $result['log'] .= "\n\r action:get_all_value_latlong. ok " . $q;
-	 $result['content'] = array();
+		$result['status'] = 'ok';
+		$result['log'] .= "\n\r action:get_all_value_latlong. ok " . $q;
+		$result['content'] = array();
         
-     while($row = mysqli_fetch_assoc($r)) 
-     {
-         $eid=$row["organization"].":".$row["contextbroker"].":".$row["device"];
-         if ( ($loggedrole=="RootAdmin")|| 
-                
-                ((
-                    (
-                    ($row["organization"]==$organization)&&
-                    (   
-                        ($row["visibility"]=='public'  
-                         ||
-                         (isset($row["uri"]) && $row["uri"]!="" && 
-                          isset($result["delegation"][$row["uri"] . "/" . $row["value_name"]]))&& $result["delegation"][$row["uri"] . "/" . $row["value_name"]]["kind"]=="anonymous")
-                        )
-                    )
+		while($row = mysqli_fetch_assoc($r)) 
+		{
+        	$eid=$row["organization"].":".$row["contextbroker"].":".$row["device"];
+			if (($role=="RootAdmin")|| 
+            	((
+                (
+                ($row["organization"]==$organization)&&
+                (   
+                ($row["visibility"]=='public'  
+                ||
+                (isset($row["uri"]) && $row["uri"]!="" && 
+                isset($result["delegation"][$row["uri"] . "/" . $row["value_name"]]))&& $result["delegation"][$row["uri"] . "/" . $row["value_name"]]["kind"]=="anonymous")
+                )
+                )
                 ) 
                 ||
-                    (isset($row["uri"]) && $row["uri"]!="" && 
-                        ((isset($result["delegation"][$eid])&& $result["delegation"][$eid]["kind"]!="anonymous")
+                (isset($row["uri"]) && $row["uri"]!="" && 
+                ((isset($result["delegation"][$eid])&& $result["delegation"][$eid]["kind"]!="anonymous")
                         ||
                         (isset($result["delegation"][$row["uri"] . "/" . $row["value_name"]]))&& $result["delegation"][$row["uri"] . "/" . $row["value_name"]]["kind"]!="anonymous")
                     ) 
@@ -1557,278 +1276,171 @@ else if($action == "get_all_value_latlong")
                 ||
                  (isset($result["keys"][$eid]))
                     
-               )){
-             
-             array_push($result['content'], $row);
-             
-         }
-	   
-	 }
+               ))
+			{
+            	array_push($result['content'], $row);
+         	}
+	 	}
     }
-	else{
-	   $result['status'] = 'ko';
-	   $result['msg'] = 'Error: errors in reading data about location of the device. <br/>' .
-						   generateErrorMessage($link);
-	   $result['log'] = 'Error: errors in reading data about location of the device. <br/>' .
-						   generateErrorMessage($link);					   
+	else
+	{
+		$result['status'] = 'ko';
+		$result['msg'] = 'Error: errors in reading data about location of the device. <br/>' .  generateErrorMessage($link);
+		$result['log'] = 'Error: errors in reading data about location of the device. <br/>' .  generateErrorMessage($link);					   
 	}    
-	 my_log($result);
+	 
+	my_log($result);
 	mysqli_close($link);
 }
 else
 if($action == "delegate_value_list")
 {
-	$id = mysqli_real_escape_string($link, $_REQUEST['id']);
-	$cb = mysqli_real_escape_string($link, $_REQUEST['contextbroker']);
-	$value_name = mysqli_real_escape_string($link, $_REQUEST['value_name']);
-	$visibility = mysqli_real_escape_string($link, $_REQUEST['visibility']);
-	$uri =  mysqli_real_escape_string($link, $_REQUEST['uri']);
-	$user = mysqli_real_escape_string($link, $_REQUEST['user']);
+	$missingParams=missingParameters(array('value_name','uri'));
+
+	if (!empty($missingParams))
+	{
+		$result["status"]="ko";
+        $result['msg'] = "Missing Parameters";
+        $result["error_msg"] .= "Problem in insert device (Missing parameters: ".implode(", ",$missingParams)." )";
+        $result["log"]= "action=insert - error Missing Parameters: ".implode(", ",$missingParams)." \r\n";
+	}
+	else 
+	{
+		$value_name = mysqli_real_escape_string($link, $_REQUEST['value_name']);
+		$uri =  mysqli_real_escape_string($link, $_REQUEST['uri']);
 	
+		getDelegatorDevice($accessToken, $username, $result, $uri . "/" . $value_name);
+	}
 	
-	getDelegatorDevice($accessToken, $user, $result, $uri . "/" . $value_name);
-	
-	 my_log($result);
-	 
-	
+	my_log($result);
 }
+//TODO make mandary delegated group or delgated user
 else if($action == "delegate_value")
 {
-	
-    $id = mysqli_real_escape_string($link, $_REQUEST['id']);
-	$cb = mysqli_real_escape_string($link, $_REQUEST['contextbroker']);
-	$value_name = mysqli_real_escape_string($link, $_REQUEST['value_name']);
-	$visibility = mysqli_real_escape_string($link, $_REQUEST['visibility']);
-	$uri =  mysqli_real_escape_string($link, $_REQUEST['uri']);
-	$user = mysqli_real_escape_string($link, $_REQUEST['user']);
-	$delegated_user = (isset($_REQUEST['delegated_user']))?mysqli_real_escape_string($link, $_REQUEST['delegated_user']):"";
-	$delegated_group= (isset($_REQUEST['delegated_group']))?mysqli_real_escape_string($link, $_REQUEST['delegated_group']):"";
-	$k1 = mysqli_real_escape_string($link, $_REQUEST['k1']);
-	$k2 = mysqli_real_escape_string($link, $_REQUEST['k2']);
-	$organization = mysqli_real_escape_string($link, $_REQUEST['organization']);
+	$missingParams=missingParameters(array('contextbroker','value_name','uri','k1','k2'));
 
-	//Sara2610
-    $deviceName = $id . " ".$cb." ".$value_name;
+	if (!empty($missingParams))
+	{
+		$result["status"]="ko";
+        $result['msg'] = "Missing Parameters";
+        $result["error_msg"] .= "Problem in insert device (Missing parameters: ".implode(", ",$missingParams)." )";
+        $result["log"]= "action=insert - error Missing Parameters: ".implode(", ",$missingParams)." \r\n";
+	}
+	else 
+	{
+		$cb = mysqli_real_escape_string($link, $_REQUEST['contextbroker']);
+		$value_name = mysqli_real_escape_string($link, $_REQUEST['value_name']);
+		$uri =  mysqli_real_escape_string($link, $_REQUEST['uri']);
+		$delegated_user = (isset($_REQUEST['delegated_user']))?mysqli_real_escape_string($link, $_REQUEST['delegated_user']):"";
+		$delegated_group= (isset($_REQUEST['delegated_group']))?mysqli_real_escape_string($link, $_REQUEST['delegated_group']):"";
+		$k1 = mysqli_real_escape_string($link, $_REQUEST['k1']);
+		$k2 = mysqli_real_escape_string($link, $_REQUEST['k2']);
 
-	if (($delegated_user != "" || $delegated_group != "") && $user != ""){	
-
-		  delegateDeviceValue($uri ."/" . $value_name, $cb, $value_name, $user, $delegated_user, $delegated_group, $accessToken, $k1, $k2, $result);
+		if (($delegated_user != "" || $delegated_group != "") && $username != "")
+		{	
+			delegateDeviceValue($uri ."/" . $value_name, $cb, $value_name, $username, $delegated_user, $delegated_group, $accessToken, $k1, $k2, $result);
  
-			 //Sara2610 - for logging purpose
-			 if($result["status"]=='ok'){
-				//Sara2610 - for logging purpose
-				logAction($link,$user,'event_values','delegate_value',$deviceName,$organization,'Delegated user: '.$delegated_user,'success');		 
-			 }
-			 else if($result["status"]=='ko'){
-				//Sara2610 - for logging purpose
-				logAction($link,$user,'event_values','delegate_value',$deviceName,$organization,'Delegated user: '.$delegated_user,'faliure');		 
-			 }
-        }
-        else 
-        {
-		  //Sara2610 - for logging purpose
-		  logAction($link,$user,'event_values','delegate_value',$deviceName,$organization,'Mandatory parameters not specified','faliure');
-          $result["status"]='ko';
-          $result["error_msg"]='The value delegation has been called without specifying mandatory parameters. ';
-          $result["msg"]='\n the function delegate_value has been called without specifying mandatory parameters';
-          $result["log"]='\n the function delegate_value has been called without specifying mandatory parameters';
-        } 	   
-        my_log($result);
+			if($result["status"]=='ok')
+			{
+				logAction($link,$username,'event_values','delegate_value',$uri." ".$value_name,$organization,'Delegated user: '.$delegated_user,'success');		 
+			}
+			else if($result["status"]=='ko')
+			{
+				logAction($link,$username,'event_values','delegate_value',$uri." ".$value_name,$organization,'Delegated user: '.$delegated_user,'faliure');		 
+			}
+		}
+    	else 
+	    {
+			logAction($link,$username,'event_values','delegate_value',$uri." ".$value_name,$organization,'Mandatory parameters not specified','faliure');
+        	$result["status"]='ko';
+	        $result["error_msg"]='The value delegation has been called without specifying mandatory parameters. ';
+    	    $result["msg"]='\n the function delegate_value has been called without specifying mandatory parameters';
+        	$result["log"]='\n the function delegate_value has been called without specifying mandatory parameters';
+		} 	   
+	}
+
+    my_log($result);
 }
 else
 if($action == "remove_delegation")
 {
+	$missingParams=missingParameters(array('uri','value_name','delegationId'));
 
-	$id = mysqli_real_escape_string($link, $_REQUEST['id']);
-	$uri = mysqli_real_escape_string($link, $_REQUEST['uri']);	
-	$cb = mysqli_real_escape_string($link, $_REQUEST['contextbroker']);
-	$value_name = mysqli_real_escape_string($link, $_REQUEST['value_name']);
-	$user = mysqli_real_escape_string($link, $_REQUEST['user']);
-	$delegationId = mysqli_real_escape_string($link, $_REQUEST['delegationId']);
-	$organization = mysqli_real_escape_string($link, $_REQUEST['organization']);
-
-	
-	removeDelegationValue($accessToken, $user, $delegationId, $result);
-	
-	//Sara2610
-    $deviceName = $id . " ".$cb." ".$value_name;
-	
-		 //Sara2610 - for logging purpose
-	 if($result["status"]=='ok'){
-		//Sara2610 - for logging purpose
-		logAction($link,$user,'event_values','remove_delegation',$deviceName,$organization,'','success');		 
-	 }
-	 else if($result["status"]=='ko'){
-		//Sara2610 - for logging purpose
-		logAction($link,$user,'event_values','remove_delegation',$deviceName,$organization,'','faliure');		 
-	 }
-	
-	 my_log($result);
-}	
-else 
-if($action == "remove_delegate_value")
-{
-
-	$id = mysqli_real_escape_string($link, $_REQUEST['id']);
-	$uri = mysqli_real_escape_string($link, $_REQUEST['uri']);	
-	$cb = mysqli_real_escape_string($link, $_REQUEST['contextbroker']);
-	$value_name = mysqli_real_escape_string($link, $_REQUEST['value_name']);
-	$user = mysqli_real_escape_string($link, $_REQUEST['user']);
-	$organization = mysqli_real_escape_string($link, $_REQUEST['organization']);
-
-	//Sara2610
-    $deviceName = $id . " ".$cb." ".$value_name;
-	
-	getDelegatorDevice($accessToken, $user, $result, $uri."/".$value_name);
-	$delegated=$result["delegation"];
-	$found=false;
-	$i=0;
-	while (!$found && $i < count($delegated))
+	if (!empty($missingParams))
 	{
-		if ($delegated[$i]["userDelegated"]=='ANONYMOUS')
-		{
-			$found=true;
-			$delegationId= $delegated[$i]["delegationId"];
-		}
-		$i++; 
-	}
-	if ($found)
-	{
-		//Sara2610 - for logging purpose
-		logAction($link,$user,'event_values','remove_delegate_value',$deviceName,$organization,'','success');	
-		
-		$result["status"]="ok";
-		$result["msg"]="The delegation to anonymous has been changed";
-		$result["log"]="The delegation to anonymous has been changed";
-		removeDelegationValue($accessToken, $user, $delegationId, $result);
-	}
-    else
-	{
-		//Sara2610 - for logging purpose
-		logAction($link,$user,'event_values','remove_delegate_value',$deviceName,$organization,'','faliure');	
-		
 		$result["status"]="ko";
-		$result["error_msg"]="The delegation to anonymous was not found. ";
-		$result["msg"]="The delegation to anonymous was not found";
-		$result["log"]="The delegation to anonymous was not found";
-	}		
-	my_log($result);
-}
-else if($action == "get_cb")
-{
-	$username = mysqli_real_escape_string($link, $_REQUEST['username']);
-	$organization = mysqli_real_escape_string($link, $_REQUEST['organization']);
-    $loggedrole= mysqli_real_escape_string($link, $_REQUEST['loggedrole']);
-    
-    if (!empty($accessToken)) 
-	{
-        getOwnerShipObject($accessToken, "BrokerID", $result); 
-        getDelegatedObject($accessToken, $username, "BrokerID", $result);
+        $result['msg'] = "Missing Parameters";
+        $result["error_msg"] .= "Problem in insert device (Missing parameters: ".implode(", ",$missingParams)." )";
+        $result["log"]= "action=insert - error Missing Parameters: ".implode(", ",$missingParams)." \r\n";
 	}
-
-	$q = "SELECT * FROM contextbroker";	
-	$r = mysqli_query($link, $q);
+	else 
+	{
+		$uri = mysqli_real_escape_string($link, $_REQUEST['uri']);	
+		$value_name = mysqli_real_escape_string($link, $_REQUEST['value_name']);
+		$delegationId = mysqli_real_escape_string($link, $_REQUEST['delegationId']);
 	
-	if($r) 
-	{
-        $result['status'] = 'ok';
-        $result['log'] .= "\n\r action:get_cb. ok ";
-        $result['content'] = array();		 
-        $result['content_cb'] = array();		 
-        $result['content_model'] = array();		 
-		 
-        while($row = mysqli_fetch_assoc($r)) 
+		removeDelegationValue($accessToken, $username, $delegationId, $result);
+	
+		if($result["status"]=='ok')
 		{
-             $idTocheck=$row["organization"].":".$row["name"];
-             if (
-                 ($loggedrole=='RootAdmin')
-                 ||($loggedrole=='ToolAdmin') 
-                 ||
-                 (
-                    ($row["organization"]==$organization)&&
-                    (   
-                        ($row["visibility"]=='public'  
-                         ||
-                         (isset($result["delegation"][$idTocheck])&& $result["delegation"][$idTocheck]["kind"]=="anonymous")
-                        )
-                    )
-                ) 
-                ||
-                    (isset($result["delegation"][$idTocheck])&& $result["delegation"][$idTocheck]["kind"]!="anonymous")
-                ||
-                    (isset($result["keys"][$idTocheck]) && $result["keys"][$idTocheck]["owner"]==$username)
-                    
-               )
-            {
-                    
-                    array_push($result['content'], $row);
-                    array_push($result['content_cb'], $row);
-                
-            }
+			logAction($link,$username,'event_values','remove_delegation',$uri." ".$value_name,$organization,'','success');		 
 		}
-		
-        if (!empty($accessToken)) 
-        {
-            getOwnerShipObject($accessToken, "ModelID", $result); 
-            getDelegatedObject($accessToken, $username, "ModelID", $result);
-        }
-        $q = "SELECT * FROM model";
-        $m = mysqli_query($link, $q);
-        if($m) 
-	{
-		
-		 
-		 while($row = mysqli_fetch_assoc($m)) 
+		else if($result["status"]=='ko')
 		{
-             $idTocheck=$row["organization"].":".$row["name"];
-             if (
-                 ($loggedrole=='RootAdmin')
-                 ||($loggedrole=='ToolAdmin') 
-                 ||
-                 (
-                    ($row["organization"]==$organization)&&
-                    (   
-                        ($row["visibility"]=='public'  
-                         ||
-                         (isset($result["delegation"][$idTocheck])&& $result["delegation"][$idTocheck]["kind"]=="anonymous")
-                        )
-                    )
-                ) 
-                ||
-                    (isset($result["delegation"][$idTocheck])&& $result["delegation"][$idTocheck]["kind"]!="anonymous")
-                ||
-                    (isset($result["keys"][$idTocheck]) && $result["keys"][$idTocheck]["owner"]==$username)
-                    
-               )
-            {
-
-                   array_push($result['content_model'], $row);
-                
-            }
+			logAction($link,$username,'event_values','remove_delegation',$uri . " ".$value_name,$organization,'','faliure');		 
 		}
-		
 	}
-        else
-	{
-		$result['status'] = 'ko';
-	    $result['msg'] = 'Error: errors in getting models. <br/>' .
-						   generateErrorMessage($link);
-	    $result['log'] = 'Error: errors in getting models. <br/>' .
-						   generateErrorMessage($link);				   
-	}
-        
-	} 
-	else
-	{
-		$result['status'] = 'ko';
-	    $result['msg'] = 'Error: errors in getting context brokers. <br/>' .
-						   generateErrorMessage($link);
-	    $result['log'] = 'Error: errors in getting context brokers. <br/>' .
-						   generateErrorMessage($link);				   
-	}
-
+	
 	my_log($result);
-    mysqli_close($link); 
+}	
+else if($action == "remove_delegate_value")
+{
+	$missingParams=missingParameters(array('uri','value_name'));
+
+	if (!empty($missingParams))
+	{
+		$result["status"]="ko";
+        $result['msg'] = "Missing Parameters";
+        $result["error_msg"] .= "Problem in insert device (Missing parameters: ".implode(", ",$missingParams)." )";
+        $result["log"]= "action=insert - error Missing Parameters: ".implode(", ",$missingParams)." \r\n";
+	}
+	else 
+	{
+		$uri = mysqli_real_escape_string($link, $_REQUEST['uri']);	
+		$value_name = mysqli_real_escape_string($link, $_REQUEST['value_name']);
+
+		getDelegatorDevice($accessToken, $username, $result, $uri."/".$value_name);
+
+		$delegated=$result["delegation"];
+		$found=false;
+		$i=0;
+		while (!$found && $i < count($delegated))
+		{
+			if ($delegated[$i]["userDelegated"]=='ANONYMOUS')
+			{
+				$found=true;
+				$delegationId= $delegated[$i]["delegationId"];
+			}
+			$i++; 
+		}
+		if ($found)
+		{
+			logAction($link,$username,'event_values','remove_delegate_value',$uri." ".$value_name,$organization,'','success');	
+			$result["status"]="ok";
+			$result["msg"]="The delegation to anonymous has been changed";
+			$result["log"]="The delegation to anonymous has been changed";
+			removeDelegationValue($accessToken, $username, $delegationId, $result);
+		}
+    	else
+		{
+			logAction($link,$username,'event_values','remove_delegate_value',$uri." ".$value_name,$organization,'','faliure');	
+			$result["status"]="ko";
+			$result["error_msg"]="The delegation to anonymous was not found. ";
+			$result["msg"]="The delegation to anonymous was not found";
+			$result["log"]="The delegation to anonymous was not found";
+		}		
+	}
+	my_log($result);
 }
 else 
 {
@@ -1837,7 +1449,3 @@ else
 	$result['log'] = 'invalid action ' . $action;
 	 my_log($result);
 }
-
-
-
-

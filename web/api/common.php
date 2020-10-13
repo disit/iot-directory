@@ -177,7 +177,6 @@ function insert_device($link, $id, $devicetype, $contextbroker, $kind, $protocol
 		  else $hc="value_bounds";
 		 
 		  $insertquery="INSERT INTO `event_values`(`cb`, `device`, `value_name`, `data_type`, `order`, `value_type`, `editable`,`value_unit`,`healthiness_criteria`,`$hc`) VALUES ('$contextbroker','$id','$att->value_name','$att->data_type','$b','$att->value_type','$att->editable','$att->value_unit','$att->healthiness_criteria','$att->healthiness_value');";
-		  //echo $insertquery;
 		  $r1 = mysqli_query($link, $insertquery);
 		  if ($r1) 
 		  {
@@ -238,9 +237,7 @@ function insert_device($link, $id, $devicetype, $contextbroker, $kind, $protocol
   }
 }
 
-
 /* function for loging */
-
 function format_result($draw, $number_all_row, $number_filter_row, $data, $msg, $log, $status) 
 {
  	$output = array(
@@ -254,7 +251,6 @@ function format_result($draw, $number_all_row, $number_filter_row, $data, $msg, 
 	);
 	return $output;
 }
-
 
 function create_datatable_data($link,$request,$query,$where)
 {
@@ -283,10 +279,9 @@ function create_datatable_data($link,$request,$query,$where)
 	return $result;
 }
 
-
-
 function my_log($result) {  
-  // my_log
+  	//TODO rotate
+	// my_log
   $fp=fopen($GLOBALS["pathLog"],"a");
   if (!$fp)
   {
@@ -306,7 +301,6 @@ function my_log($result) {
   // return json encoded result
   echo json_encode($result);
 }
-
 
 //this routine return two information:
 //1 or 0 that means if a certificate has been created (information to fill the db)
@@ -374,9 +368,7 @@ function registerCertificatePrivateKey($link, $cb, $deviceId, $model, $path, &$r
 	}
 }
 
-
 /* functions for getting parameters */
-
 function generatedatatypes($link) {
      $query2 = "SELECT data_type FROM data_types order by data_type";
      $res = mysqli_query($link, $query2);
@@ -417,10 +409,8 @@ function generateAttributes($link,$name,$cb) {
 				  array_push($attributes, $rec);
                 }
      }
-	 //print_r($attributes);
 	 return $attributes;
 }
-
 
 function generateErrorMessage($link)
 
@@ -476,8 +466,6 @@ function generateErrorMessage($link)
  return $errmsg;
 }
 
-
-
 function removeOwnerShipDevice($elementId,$token,&$result) {
 	try
 	{
@@ -497,8 +485,7 @@ function removeOwnerShipDevice($elementId,$token,&$result) {
 		{
 		   $result["status"]='ok';
 		   $result["msg"] .= "\n the deletion of the ownership succeded";
-		   $result["log"] .= "\n the deletion of the ownership succeded"; //  . $local_result;
-
+		   $result["log"] .= "\n the deletion of the ownership succeded";
 		}
 		else
 		{
@@ -506,7 +493,6 @@ function removeOwnerShipDevice($elementId,$token,&$result) {
 		   $result["error_msg"] .= "Error in deleting the ownership. ";
 		   $result["msg"] .= "\n error in deleting the ownership";
 		   $result["log"] .= "\n error in deleting the ownership";
-		   
 		}	
 	} 
 	catch (Exception $ex)
@@ -522,7 +508,7 @@ function removeOwnerShipObject($elementId,$token,$object,&$result) {
 	try
 	{
 		$result["log"] .= "\n\r Deletion of the ownership invoked on $elementId $object";
-		$url=$GLOBALS["ownershipURI"] . "ownership-api/v1/delete/?type=".$object."&elementId=" . $elementId . "&accessToken=" . $token;
+		$url=$GLOBALS["ownershipURI"] . "ownership-api/v1/delete/?type=".$object."&elementId=" . urlencode($elementId) . "&accessToken=" . $token;
 		$options = array(
 			  'http' => array(
 					  'header' => "Content-Type: application/json;charset=utf-8",
@@ -538,7 +524,7 @@ function removeOwnerShipObject($elementId,$token,$object,&$result) {
 		{
 		   $result["status"]='ok';
 		   $result["msg"] .= "\n the deletion of the ownership succeded";
-		   $result["log"] .= "\n the deletion of the ownership succeded"; //  . $local_result;
+		   $result["log"] .= "\n the deletion of the ownership succeded";
 
 		}
 		else
@@ -559,9 +545,9 @@ function removeOwnerShipObject($elementId,$token,$object,&$result) {
 	} 
 }
 
-function registerOwnerShipDevice($elementId, $msg, $token, &$result) { //	$msg["elementId"]=$elementId;
-	$msg["elementType"]="IOTID"; // $msg["elementName"]=$elementName; // $msg["accessToken"]=$token;
-	 $result["msg"] .="\n the element id is ".$elementId;
+function registerOwnerShipDevice($elementId, $msg, $token, &$result) { 
+	$msg["elementType"]="IOTID"; 
+	$result["msg"] .="\n the element id is ".$elementId;
  
 	try
 	{
@@ -591,8 +577,6 @@ function registerOwnerShipDevice($elementId, $msg, $token, &$result) { //	$msg["
 			$result["error_msg"] .= "The registration is NOT possible. Reached limit of IoT Devices. ";
 			$result["msg"] .= "\n The registration is NOT possible. Reached limit of IoT Devices (".json_decode($local_result)->limit.")";
             $result["log"] .= "\n The registration is NOT possible. Reached limit of IoT Devices (".json_decode($local_result)->limit.")";		
-			// $result["msg"] .= "\n error in registering the ownership";
-			// $result["log"] .= "\n error in registering the ownership" . $url . json_encode($msg) . $local_result;
 		}	 
 	} 
 	catch (Exception $ex)
@@ -632,7 +616,7 @@ function registerOwnerShipObject($msg, $token, $object, &$result) {
 			$result["status"]='ok';
 			$result["error_msg"] .= "The registration is NOT possible. Reached limit of IoT Devices. ";
 			$result["msg"] .= "\n The registration is NOT possible. Reached limit of IoT Devices (".$local_result.")";
-			$result["log"] .= "\n The registration is NOT possible. Reached limit of IoT Devices ";//(".json_decode($local_result)->limit.")";		
+			$result["log"] .= "\n The registration is NOT possible. Reached limit of IoT Devices ";		
 		}	 
 	} 
 	catch (Exception $ex)
@@ -653,7 +637,7 @@ function delegateDeviceValue($elementId, $contextbroker, $value_name, $user, $us
         else {//delegate a device scenario
                 $msg["elementType"]="IOTID"; // ServiceUri
         }
-if ($userdelegated!=="") $msg["usernameDelegated"]=$userdelegated; // $msg["accessToken"]=$token;
+if ($userdelegated!=="") $msg["usernameDelegated"]=$userdelegated;
 if ($groupdelegated!=="") {
 								
 	$msg["groupnameDelegated"]=$groupdelegated.",".$GLOBALS["ldapBaseName"];
@@ -744,8 +728,6 @@ function delegateObject($elementId, $user, $userdelegated, $groupdelegated, $obj
 
         $context = stream_context_create($options);
         $local_result = file_get_contents($url, false, $context);
-    
-	 
      
         if(strpos($http_response_header[0], '200') !== false)
         {
@@ -775,7 +757,6 @@ function delegateObject($elementId, $user, $userdelegated, $groupdelegated, $obj
 	$result["msg"] .= '\n error in the delegation';
 	$result["log"] .= '\n error in the delegation' . $ex;
 	} 
-	
 }
 
 function removeDelegationValue($token, $user, $delegationId, &$result) {
@@ -854,9 +835,6 @@ function getDelegatedDevice($token, $user, &$result) {
                                {
                                    $mykeys[$a]= array("usernameDelegator" => $lists[$i]->usernameDelegator, "delegationId" => $lists[$i]->id, "kind" => 'specific', "k1" => "", "k2" => "");
                                }
-
-
-
 			}
 		}
 		
@@ -878,8 +856,6 @@ function getDelegatedDevice($token, $user, &$result) {
                      $mykeys[$a]=array("usernameDelegator" => $lists[$i]->usernameDelegator, "delegationId" => $lists[$i]->id, "kind" => 'anonymous', "k1" => $lists[$i]->delegationDetails->k1, "k2" => $lists[$i]->delegationDetails->k2);
                   else 
                      $mykeys[$a]= array("usernameDelegator" => $lists[$i]->usernameDelegator, "delegationId" => $lists[$i]->id, "kind" => 'anonymous', "k1" => "", "k2" => "");
-                  
-                 
 				}
 			}
 			$result["status"]='ok';
@@ -910,7 +886,6 @@ function getDelegatedDevice($token, $user, &$result) {
 		   $result["msg"] .= '\n errors in reading delegations personal ' . $local_result . $url ."------" .  $http_response_header[0];
 		   $result["log"] .= '\n errors in reading delegations personal' . $local_result . $url ."------" . $http_response_header[0];
 	   }	   
-       // return $listCondDevice;
 }
 
 function getDelegatedObject($token, $user, $object, &$result) 
@@ -919,7 +894,6 @@ function getDelegatedObject($token, $user, $object, &$result)
     $mykeys = array();
 	try
 	{
-          
         $url= $GLOBALS["delegationURI"] . "datamanager/api/v2/username/". urlencode($user) . "/delegated?accessToken=" . $token ."&sourceRequest=iotdirectory";  
         $local_result = file_get_contents($url);
 	} 
@@ -958,14 +932,9 @@ function getDelegatedObject($token, $user, $object, &$result)
 			}
 			$result["status"]='ok';
 		    $result["delegation"]=$mykeys;
-            
-			//$result["msg"] .= '\n identified ' . count($lists) . ' anonymous delegated devices \n' . json_encode($mykeys);
-			//$result["log"] .= '\n identified ' . count($lists) . ' anonymous delegated devices \n' . json_encode($mykeys);
 		}
 		 else {
 		   $result["status"]='ko';
-		   //$result["msg"] .= '\n errors in reading delegations anonymous' . $local_result . $url ."------". $http_response_header[0];
-		   //$result["log"] .= '\n errors in reading delegations anonymous' . $local_result . $url ."------" . $http_response_header[0];
 	   }
 			
 		}	 
@@ -984,30 +953,21 @@ function getDelegatedObject($token, $user, $object, &$result)
 		   $result["msg"] .= '\n errors in reading delegations personal ' . $local_result . $url ."------" .  $http_response_header[0];
 		   $result["log"] .= '\n errors in reading delegations personal' . $local_result . $url ."------" . $http_response_header[0];
 	   }	   
-       
 }
 
 //this function reuse an existent function
 //TODO use the check apis from mypersonaldata
 function checkDelegationObject($username, $token, $elementId, $elementType, &$result)
 {
-	error_log("elementID".$elementId);	
-
     $toreturn=false;
 
 	getDelegatedObject($token, $username, $elementType, $result);
 
-	error_log("DELEG:".json_encode($result));
-
 	if ($result["status"]=="ok")
 	{
-
         if (isset($result["delegation"][$elementId])){
-					error_log("TRUE");
                     $toreturn=true;
 		}
-
-		
 		$result["status"]='ok';
 		$result["msg"] .= '\n check delegation '.$toreturn;
 		$result["log"] .= '\n check delegation '.$toreturn;
@@ -1019,12 +979,10 @@ function checkDelegationObject($username, $token, $elementId, $elementType, &$re
             $result["msg"] = '\n error in accessing the delegation';
             $result["log"] = '\n error in accessing the delegation';
 	}
-
 	unset($result["delegation"]);
 
     return $toreturn;
 }
-
 
 //TODO show the k1 and k2 also if delegator==user (the owner of the delegation should be able to access k1 and k2 delegations)
 function getDelegatorDevice($token, $user, &$result, $eId) {
@@ -1067,7 +1025,6 @@ function getDelegatorDevice($token, $user, &$result, $eId) {
                                    $mykeys[] = array("groupDelegated" => $lists[$i]->groupnameDelegated, "delegationId" => $lists[$i]->id, "k1" => "", "k2" => "");
                                  }
                                }
-
                          } 
 			}
                
@@ -1096,8 +1053,6 @@ function getDelegatorDevice($token, $user, &$result, $eId) {
 	$result["log"] .= '\n error in accessing the delegation ' . $ex;
 	
 	}
-       // $result["msg"] .= $local_result;
-	
 }
 
 function getDelegatorObject($token, $user, &$result,$object, $delegationId) {
@@ -1115,32 +1070,23 @@ function getDelegatorObject($token, $user, &$result,$object, $delegationId) {
             {
                 if ( isset( $lists[$i]->elementType)&& $lists[$i]->elementType==$object)
                 {
-                          
                     $a = $lists[$i]->elementId;      
                     if ($delegationId== $a)
                     {
-		         	
-                                 
                         if (isset($lists[$i]->usernameDelegated))
-                                  
                         {                           
                             $mykeys[] = array("userDelegated" => $lists[$i]->usernameDelegated, "delegationId" => $lists[$i]->id);
                                  
                         }
-                                 
                         else 
                         {   
                             $mykeys[] = array("groupDelegated" => $lists[$i]->groupnameDelegated, "delegationId" => $lists[$i]->id);
                                  
                         }
-                        
-                         
                     } 
 			}
-               
 		}
 		$result["status"]='ok';
-
 		$result["delegation"]=$mykeys;
 		$result["msg"] .= '\n identified ' . count($lists) . ' delegations\n' . $local_result .  json_encode($mykeys);
 		$result["log"] .= '\n identified ' . count($lists) . ' delegations\n' . json_encode($mykeys);
@@ -1152,8 +1098,6 @@ function getDelegatorObject($token, $user, &$result,$object, $delegationId) {
 	   $result["msg"] .= '\n error in accessing the delegation ' . $http_response_header[0];
 	   $result["log"] .= '\n error in accessing the delegation ' . $http_response_header[0];
 	 }	  
-		  
-
 	} 
 	catch (Exception $ex)
 	{
@@ -1161,9 +1105,7 @@ function getDelegatorObject($token, $user, &$result,$object, $delegationId) {
 	$result["error_msg"] .= 'Error happened when accessing the delegation. ';
 	$result["msg"] .= '\n error in accessing the delegation ';
 	$result["log"] .= '\n error in accessing the delegation ' . $ex;
-	
 	}
-	
 }
 
 function getOwnerShipDevice($token, &$result) 
@@ -1179,7 +1121,6 @@ function getOwnerShipDevice($token, &$result)
 		$result["log"] .= $local_result;
 		if(strpos($http_response_header[0], '200') == true || strpos($http_response_header[0], '204') == true)
 		{
-
 			$lists = json_decode($local_result);
 			for ($i=0;$i < count($lists); $i++)
 			{
@@ -1271,23 +1212,19 @@ function getOwnerShipObject($token, $object, &$result)
 		$result["msg"] .= '\n error in accessing the ownership ';
 		$result["log"] .= '\n error in accessing the ownership ' . $ex;
 	}
-
 	return $listCondDevice;
 }
 
 function checkOwnershipObject($token, $elementId, $elementType, &$result)
 {
 	$toreturn=false;
-
 	try
 	{
 		$url= $GLOBALS["ownershipURI"] . "ownership-api/v1/list/?type=".$elementType."&accessToken=" . $token;
-		error_log("URI:".$url);
 		$local_result = file_get_contents($url);
 		
 		if(strpos($http_response_header[0], '200') == true || strpos($http_response_header[0], '204') == true)
 		{
-			error_log("OWN:".$local_result);
 			$lists = json_decode($local_result);
 			for ($i=0;$i < count($lists); $i++)
 			{
@@ -1318,35 +1255,37 @@ function checkOwnershipObject($token, $elementId, $elementType, &$result)
 		$result["msg"] .= '\n error in accessing the ownership ';
 		$result["log"] .= '\n error in accessing the ownership ' . $ex;
     }
-
     return $toreturn;
 }
 
-
-function generatelabels($link) {
-     $query2 = "SELECT value_type FROM value_types ORDER BY value_type";
-     $res = mysqli_query($link, $query2) or die(mysqli_error($link));
-     $labels = array();
-
-          if($res){
-         while($row = mysqli_fetch_assoc($res))
-                {array_push($labels, $row["value_type"]);
-                }
-     }
-         return $labels;
+function generatelabels($link) 
+{
+	$query2 = "SELECT value_type FROM value_types ORDER BY value_type";
+	$res = mysqli_query($link, $query2) or die(mysqli_error($link));
+	$labels = array();
+	if($res)
+	{
+		while($row = mysqli_fetch_assoc($res))
+		{
+			array_push($labels, $row["value_type"]);
+		}
+	}
+	return $labels;
 }
 
-function generateunits($link) {
-     $query2 = "SELECT DISTINCT value_unit_default FROM value_types ORDER BY value_unit_default";
-     $res = mysqli_query($link, $query2) or die(mysqli_error($link));
-     $labels = array();
-
-          if($res){
-         while($row = mysqli_fetch_assoc($res))
-                {array_push($labels, $row["value_unit_default"]);
-                }
-     }
-         return $labels;
+function generateunits($link) 
+{
+	$query2 = "SELECT DISTINCT value_unit_default FROM value_types ORDER BY value_unit_default";
+	$res = mysqli_query($link, $query2) or die(mysqli_error($link));
+	$labels = array();
+	if($res)
+	{
+		while($row = mysqli_fetch_assoc($res))
+		{
+			array_push($labels, $row["value_unit_default"]);
+		}
+	}
+	return $labels;
 }
 
 function retrieveFromDictionary($type,&$result){
@@ -1406,7 +1345,6 @@ function retrieveAvailableStaticAttribute($subnature, &$result){
         {
 		$url= $GLOBALS["knowledgeBaseURI"] . "api/v1/iot/list-static-attr?subnature=".$subnature;
 
-
                 $local_result = file_get_contents($url);
                 $result["log"] .= $local_result;
 
@@ -1463,10 +1401,8 @@ $listnewAttributes, $ip, $port, &$result,  $service="", $servicePath="")
 	  $msg_orion["model"]=array();
 	  $msg_orion["model"]["value"]= $model;
  	  $msg_orion["model"]["type"]= "string";
-        
 	
 	  $url_orion="http://$ip:$port/v2/entities/";
-          //echo "stefano ".json_encode($msg_orion) .  $url_orion;
       
       try
          {
@@ -1510,9 +1446,6 @@ $listnewAttributes, $ip, $port, &$result,  $service="", $servicePath="")
 			 $res='ok';
 			 
             } 
-		    // Print the date from the response
-		    // echo $responseData['published'];
-                    // echo $response_orion;
             }
             catch (Exception $ex)
             {
@@ -1574,17 +1507,13 @@ $visibility, $frequency, $listnewAttributes, &$result)
 		    if ($att["healthiness_criteria"]=="refresh_rate" && $att["healthiness_value"]=="")
 				{$error=true; $result["msg"].= "\n healthiness_criteria for attribute $att[value_name] not specified";$result["error_msg"].= "healthiness_criteria for attribute $att[value_name] not specified. ";
 				$result["log"].= "\n healthiness_criteria for attribute $att[value_name] not specified";}
-			// echo "valore di erroe" . $error;
 			// if ($att->healthiness_criteria=="different_values" && ($att->different_values=="" || !is_int($att->different_values))) 
 //{$error=true;}
 		  }
 
-
 	   if ($error) return false;
 	   return true;
 	}
-
-
 	
 	function canBeRegistered($name, $type, $contextbroker, $kind, $protocol, $format, $macaddress, $model, $producer, $latitude, $longitude, 
 $visibility, $frequency, $listnewAttributes, $subnature, $staticAttr, &$result)
@@ -2035,10 +1964,8 @@ $visibility, $frequency, $attributes,  $subnature, $staticAttributes,$result))
 	  $msg["frequency"]= $frequency;
 	  $msg["organization"]= $organization;
       
-	  // $msg["visibility"]= $visibility;
 	  $msg["ownership"]= $visibility;
 	  
-	  // if ($msg["visibility"]=='private') $msg["owner"]=$owner;
 	  $msg["broker"]=array();
 	  $msg["broker"]["name"]=$contextbroker;
 	  $msg["broker"]["type"]=$rowCB["protocol"];
@@ -2050,8 +1977,6 @@ $visibility, $frequency, $attributes,  $subnature, $staticAttributes,$result))
 	  $msg["broker"]["latitude"]=$rowCB["latitude"];
 	  $msg["broker"]["longitude"]=$rowCB["longitude"];
 	  $msg["broker"]["created"]=$rowCB["created"];
-	   // $msg["attributes"]=array();
-	 
 
 			$msg["subnature"]=$subnature;
 
@@ -2102,7 +2027,7 @@ $visibility, $frequency, $attributes,  $subnature, $staticAttributes,$result))
 			$context = stream_context_create($options);
 			$local_result = @file_get_contents($url, false, $context);
 
-			error_log("Returning from insertKB:".$local_result);
+			error_log("Returning from updateKB:".$local_result);
 		} 
 		catch (Exception $ex)
 		{
@@ -2184,15 +2109,12 @@ $visibility, $frequency, $attributes,  $subnature, $staticAttributes,$result))
 
 /* ****FUNCTIONS FOR THE DELETION OF THE REGISTRATION OF A DEVICE IN THE KNOWLEDGE BASE AND IN THE CONTEXT BROKER ****************** */
 
-
 	function delete_ngsi($name, $type, $contextbroker, $kind, $protocol, $format, $model, $latitude, $longitude, $visibility, $frequency, 
 $listnewAttributes, $ip, $port,$uri, &$result, $service="", $servicePath="")
 	{
 	if ($protocol == "ngsi w/MultiService"){
-		//dev_log("delete_ngsi: multiservice device detected");
 		// get the name from id
 		$name = explode(".", $name)[2];
-		//dev_log("delete_ngsi: device name: " . $name);
 	}
 
 	   $res = "ok";
@@ -2240,9 +2162,6 @@ $listnewAttributes, $ip, $port,$uri, &$result, $service="", $servicePath="")
 			$res='ok';
 			 
             }
-		    
-		    // Print the date from the response
-		    // echo $responseData['published'];
             }
               catch (Exception $ex)
             {
@@ -2252,7 +2171,6 @@ $listnewAttributes, $ip, $port,$uri, &$result, $service="", $servicePath="")
 		       $result["log"] .= ' error in connecting with the ngsi context broker ' . $ex;
 			   $res="ko";
             }
-            // echo json_encode($result);
             return $res;
 	}
 	
@@ -2267,10 +2185,6 @@ $listnewAttributes, $ip, $port,$uri, &$result)
 	{
 	  return "ok";
 	}
-	
-
-
-	
 	
 function deleteKB($link, $name, $contextbroker, $kbUrl="", &$result, $service="", $servicePath="") {
 	
@@ -2313,7 +2227,7 @@ d.contextBroker='$contextbroker' and d.id='$name';";
 	$subnature=$row["subnature"];
 	$staticAttributes=$row["static_attributes"];
 
-	$result["msg"] .="$name, $type, $contextbroker, $kind, $protocol, $format, $macaddress, $model, $producer, $latitude, $longitude, 
+	$result["msg"] ="$name, $type, $contextbroker, $kind, $protocol, $format, $macaddress, $model, $producer, $latitude, $longitude, 
 $visibility, $frequency,". count($listnewAttributes);
     
 	if (canBeModified($name, $type, $contextbroker, $kind, $protocol, $format, $macaddress, $model, $producer, $latitude, $longitude, 
@@ -2478,7 +2392,7 @@ $visibility, $frequency, $listnewAttributes, $result))
 
 /* functions for insert/update/delete values from a specific device in the KB and context brokers */
 
-function modify_valueKB($link, $device, $contextbroker, $organization, &$result) {
+function modify_valueKB($link, $device, $contextbroker, $organization, $kbUrl="",&$result) {
     $result["status"]='ok';
     
 	$listnewAttributes=generateAttributes($link, $device, $contextbroker);
@@ -2499,7 +2413,6 @@ d.contextBroker='$contextbroker' and d.id='$device';";
 	}
   
 	$row = mysqli_fetch_assoc($r_init);
-	// $device =$row["id"];
 	$type =$row["entityType"];
 	$kind =$row["kind"];
 	$protocol =$row["protocol"];
@@ -2510,7 +2423,6 @@ d.contextBroker='$contextbroker' and d.id='$device';";
 	$latitude =$row["latitude"];
 	$longitude =$row["longitude"];
 	$visibility = $row['visibility'];
-	//$owner= $row['owner'];
 	$frequency= $row['frequency'];
 	$ip=$row["ip"];
 	$port=$row["port"];
@@ -2521,11 +2433,7 @@ d.contextBroker='$contextbroker' and d.id='$device';";
 	if (canBeModified($device, $type, $contextbroker, $kind, $protocol, $format, $macaddress, $model, $producer, $latitude, $longitude, 
 $visibility, $frequency, $listnewAttributes, $result))
 	  {
-		
-
-
 		  /* msg for the Knowledge base + registration on the KB */
-		 // echo "entrato";
 		  $msg=array();
 		  $msg["id"]= $device;
 		  $msg["type"]= $type;
@@ -2550,7 +2458,6 @@ $visibility, $frequency, $listnewAttributes, $result))
 		  $msg["broker"]["longitude"]=$row["cblongitude"];
 		  $msg["broker"]["created"]=$row["created"];
 		  $msg["organization"]= $organization;
-		   // $msg["attributes"]=array();
 		  
 		  $myAttrs=array();
 		  $i=1;
@@ -2571,13 +2478,12 @@ $visibility, $frequency, $listnewAttributes, $result))
 		  }	 
 		  $msg["attributes"]=$myAttrs;
 		  
-		  // echo json_encode($msg);
-		  
 		  try
 		   {
-			 //$url=$GLOBALS["knowledgeBaseURI"] . "api/v1/iot/insert";
-			$url= $_SESSION['kbUrl']."iot/insert";
-
+			 if($kbUrl=="")
+                    $url= $_SESSION['kbUrl']."iot/insert";
+                else
+                    $url= $kbUrl."iot/insert";
 
 			 $options = array(
 					  'http' => array(
@@ -2594,18 +2500,18 @@ $visibility, $frequency, $listnewAttributes, $result))
 			 {
 			   $result["status"]='ok';
 			   $result["content"]=$local_result;
-			   $result["msg"] .= "\n the device has been modified in the KB";
+			   $result["msg"] = "\n the device has been modified in the KB";
 				$result["log"] .= "\n the device has been modified in the KB";
-			   // echo "dentro" . json_encode($result);
+			//TODO manage deletion of attributes
 			   switch ($protocol)
 			   {
 				case "ngsi":
 					$res = update_ngsi($device, $type, $contextbroker, $kind, $protocol, $format, $model, $latitude,
-$longitude, $visibility, $frequency, $listnewAttributes, $ip, $port,$uri, $result);
+$longitude, $visibility, $frequency, $listnewAttributes, array(), $ip, $port,$uri, $result);
 					break;
 				case "ngsi w/MultiService":
 		                        $res = update_ngsi($device, $type, $contextbroker, $kind, $protocol, $format, $model, $latitude, 
-$longitude, $visibility, $frequency, $listnewAttributes, $ip, $port,$uri, $result, $service, $servicePath);
+$longitude, $visibility, $frequency, $listnewAttributes, array(),$ip, $port,$uri, $result, $service, $servicePath);
                         break;
 				case "mqtt":
 					$res =update_mqtt($device, $type, $contextbroker, $kind, $protocol, $format, $latitude, $longitude, 
@@ -2647,8 +2553,6 @@ $visibility, $frequency, $listnewAttributes, $ip, $port,$uri, $result);
             $result["log"] .= ' error in connecting with KB ' . $ex;
 		 } 	
 		/* registration of the device in the corresponding context broker */
-		 // echo "valore local_result" . $local_result;
-		
  } 
 } // end of function modify_valueKB
 
@@ -2665,7 +2569,6 @@ function get_organization_info($organizationApiURI, $ou_tmp){
                 return null;
         }
 }
-
 
 //return subscription_id. can be FAILED
 //returning ok also if subscribe failed (beside try and catch)
@@ -2768,7 +2671,7 @@ function nificallback_delete($ip, $port, $subscription_id, $name, $protocol, $se
 
         	        $result["log"] .= "\n Delete url is:".$url;
 
-			$http_headers = array();//"Content-Type: application/json;charset=utf-8");
+			$http_headers = array();
 
                         if ($protocol == 'ngsi w/MultiService'){
 				if ($i<$howmany-1)//scenario senza tenant
@@ -2840,53 +2743,44 @@ function servicePathSyntaxCheck($servicePath) {
     return 0;
 }
 
-function get_all_models($username, $organization, $role, $accessToken, $link, &$result){
+function get_all_models($username, $organization, $role, $accessToken, $link, &$result)
+{
+	getOwnerShipObject($accessToken, "ModelID", $result);
+	getDelegatedObject($accessToken, $username, "ModelID", $result);
 
-        getOwnerShipObject($accessToken, "ModelID", $result);
-        getDelegatedObject($accessToken, $username, "ModelID", $result);
+	$res=array();
+	$q  = "SELECT * FROM model";
+	$r = mysqli_query($link, $q);
 
-        $res=array();
-        $q  = "SELECT * FROM model";
-        $r = mysqli_query($link, $q);
-
-        if($r)
-        {
-                while($row = mysqli_fetch_assoc($r))
-                {
+	if($r)
+	{
+		while($row = mysqli_fetch_assoc($r))
+		{
 			$idTocheck=$row["organization"].":".$row["name"];
-						if (
-							($role=='RootAdmin')
-							||($role=='ToolAdmin')
-							||
-							(
-								($row["organization"]==$organization)&&
-								(
-									($row["visibility"]=='public'
-									||
-									(isset($result["delegation"][$idTocheck])&& $result["delegation"][$idTocheck]["kind"]=="anonymous")
-									)
-								)
-							)
-							||
-								(isset($result["delegation"][$idTocheck])&& $result["delegation"][$idTocheck]["kind"]!="anonymous")
-							||
-								(isset($result["keys"][$idTocheck]) && $result["keys"][$idTocheck]["owner"]==$username)
-			
-						)
-                        {
-                                array_push($res, $row);
-                        }
-                }
-                $result["status"]="ok";
-                $result["content"]=$res;
-                $result["log"]= "action=get_all_models \r\n";
-        }
-        else
-        {
-                $result["status"]="ko";
-                $result['msg'] = mysqli_error($link);
-                $result["log"]= "action=get_all_models -" . " error " .  mysqli_error($link)  . "\r\n";
-        }
+			if (
+				($role=='RootAdmin')||																							//roles
+				($role=='ToolAdmin')||
+				(
+				 ($row["organization"]==$organization) &&																		//public
+				 (($row["visibility"]=='public' || (isset($result["delegation"][$idTocheck])&& $result["delegation"][$idTocheck]["kind"]=="anonymous")) )
+				)||
+				(isset($result["delegation"][$idTocheck])&& $result["delegation"][$idTocheck]["kind"]!="anonymous")||			//delegation
+				(isset($result["keys"][$idTocheck]) && $result["keys"][$idTocheck]["owner"]==$username)							//owner
+			   )
+			{
+				array_push($res, $row);
+			}
+		}
+		$result["status"]="ok";
+		$result["content"]=$res;
+		$result["log"]= "action=get_all_models \r\n";
+	}
+	else
+	{
+		$result["status"]="ko";
+		$result['msg'] = mysqli_error($link);
+		$result["log"]= "action=get_all_models -" . " error " .  mysqli_error($link)  . "\r\n";
+	}
 }
 
 function get_device($username, $role, $id, $cb,  $accessToken, $link, &$result){
@@ -2960,13 +2854,30 @@ function get_device($username, $role, $id, $cb,  $accessToken, $link, &$result){
 	unset($result["delegation"]);
 }
 
-function get_all_contextbrokers($username, $organization, $loggedrole, $accessToken, $link, $length, $start, $draw, $request, &$result){
+function get_all_contextbrokers($username, $organization, $loggedrole, $accessToken, $link, $length, $start, $draw, $request, $selection, &$result){
 	
 	getOwnerShipObject($accessToken, "BrokerID", $result);
 	getDelegatedObject($accessToken, $username, "BrokerID", $result);
 
 	$q = "SELECT * FROM contextbroker";
-	$r=create_datatable_data($link,$request,$q, '');
+	
+	if (count($selection)!=0)
+	{
+		$a=0;
+		$cond="";	    
+		while ($a < count($selection))
+		{
+			$sel = $selection[$a];
+			$cond .= " (name = '" . $sel->name . "' AND organization = '".$sel->organization."') ";
+			if ($a != count($selection)-1)  $cond .= " OR ";
+			$a++;
+		}
+		$r=create_datatable_data($link,$_REQUEST,$q, $cond); 
+	}
+	else
+	{
+		$r=create_datatable_data($link,$request,$q, '');
+	}
 	$selectedrows=-1;
 	if($length != -1)
 	{
@@ -3076,11 +2987,11 @@ function get_all_contextbrokers($username, $organization, $loggedrole, $accessTo
 		$result=format_result($draw, 0, 0, null, 'Error: errors in reading data about IOT Broker. <br/>' . generateErrorMessage($link), '\n\r Error: errors in reading data about IOT Broker.' . generateErrorMessage($link), 'ko');
 		logAction($link,$username,'contextbroker','get_all_contextbroker','',$organization,'Error: errors in reading data about IOT Broker.','faliure');
 	}
-
 }
 
 function get_user_info($accessToken, &$username, &$organization, $oidc, &$role, &$result, $ldapBaseName, $ldapServer, $ldapPort, $ldapAdminName, $ldapAdminPwd )
 {
+	$mctime=microtime(true);
 
 	$result["status"]="ok";
 
@@ -3137,26 +3048,28 @@ function get_user_info($accessToken, &$username, &$organization, $oidc, &$role, 
 	}
 }
 
-//TODO armonize with the code available in ssoLogin.php AND ldap.php in api
+//TODO armonize with the code available in ssoLogin.php AND ldap.php in api and in nodeRed.php
 function findLdapOrganizationalUnit($username, $ldapBaseName, $ldapServer, $ldapPort, $ldapAdminName, $ldapAdminPwd)
 {
-	$ldapUsername = "cn=". strtolower($username) . ",".$ldapBaseName;
+	$toreturn="";
 
+	$ldapUsername = "cn=". strtolower($username) . ",".$ldapBaseName;
 	$ds = ldap_connect($ldapServer, $ldapPort);
 	ldap_set_option($ds, LDAP_OPT_PROTOCOL_VERSION, 3);
 	$bind = ldap_bind($ds, $ldapAdminName, $ldapAdminPwd);
+	$result = ldap_search($ds, $ldapBaseName, '(&(objectClass=organizationalUnit)(l=' . $ldapUsername . '))');
+	$entries = ldap_get_entries($ds, $result);
 
-        $result = ldap_search($ds, $ldapBaseName, '(&(objectClass=organizationalUnit)(l=' . $ldapUsername . '))');
-        $entries = ldap_get_entries($ds, $result);
-
-    	if (ldap_count_entries($ds,$result)==0){
-        	//TODO thrown an error or return an error
-	        return "";
-        }
-	else{
-        	$ou=$entries["0"]["ou"][0];
-		return $ou;
+	if (ldap_count_entries($ds,$result)==0)
+	{
+		//TODO thrown an error or return an error, here we just return empty string
 	}
+	else
+	{
+		$toreturn=$entries["0"]["ou"][0];
+	}
+
+	return $toreturn;
 }
 
 function missingParameters($requiredParams){
@@ -3196,7 +3109,7 @@ function getProtocol($contextBrokerName, $link)
 //action can be 'write' or 'read'
 function enforcementRights($username, $token, $role, $elementId, $elementType, $action, &$result)
 {
-	if ($role=="RootAdmin") 
+	if (($role=="RootAdmin") || ($role=="ToolAdmin"))
 	{
 		$toreturn = true;//grant RootAdmin for everything
 	}
@@ -3218,6 +3131,24 @@ function enforcementRights($username, $token, $role, $elementId, $elementType, $
 	return $toreturn;
 }
 
+function retrieveKbUrl($organizationApiURI, $org)
+{
+	//retrieve the kburl -> this is needed since this api can be called from OUTSIDE of the IoT directory
+	$kburl="";
+	if (!isset($_SESSION['kbUrl']))
+	{
+		$infokburl=get_organization_info($organizationApiURI, $org);
+		if(!is_null($infokburl))
+		{
+			$kburl=$infokburl["kbUrl"];
+		}
+	}
+	else 
+	{
+		$kburl=$_SESSION['kbUrl'];
+	}
+    return $kburl;
+}
 
 function logAction($link,$accessed_by,$target_entity_type,$access_type,$entity_name,$organization,$notes,$result){
 	$query = "INSERT INTO access_log(accessed_by,target_entity_type,access_type,entity_name,organization,notes,result) ".
@@ -3233,5 +3164,3 @@ function logAction($link,$accessed_by,$target_entity_type,$access_type,$entity_n
 	return $result["msg"];
 }
 ?>
-
-

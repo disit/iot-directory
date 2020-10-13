@@ -14,56 +14,8 @@
    along with this program; if not, write to the Free Software
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA. */
 
-header("Content-type: application/json");
-header("Access-Control-Allow-Origin: *\r\n");
-include ('../config.php');
-include ('common.php');
-// session_start();
-$link = mysqli_connect($host, $username, $password) or die("failed to connect to server !!");
-mysqli_select_db($link, $dbname);
+$result=array("status"=>"","msg"=>"","content"=>"","log"=>"", "error_msg"=>"");	
 
-//Altrimenti restituisce in output le warning
-error_reporting(E_ERROR | E_NOTICE);
-
-
-if(!$link->set_charset("utf8")) 
-{
-    exit();
-}
-
-if(isset($_REQUEST['action']) && !empty($_REQUEST['action'])) 
-    {
-        $action = $_REQUEST['action'];
-    }
-else
-{
-    exit();
-}
-
-require '../sso/autoload.php';
-use Jumbojett\OpenIDConnectClient;
-
-
-$oidc = new OpenIDConnectClient($keycloakHostUri, $clientId, $clientSecret);
-
-if (isset($_REQUEST['nodered']))
-{
-   if ($_REQUEST['token']!='undefined')
-      $accessToken = $_REQUEST['token'];
-   else $accessToken = "";//TODO throw an error directly here, instead of checking the presence in any APIS
-} 
-else
-{
-if (isset($_REQUEST['token'])) {
-  $oidc->providerConfigParam(array('token_endpoint' => $keycloakHostUri.'/auth/realms/master/protocol/openid-connect/token'));
-
-  $tkn = $oidc->refreshToken($_REQUEST['token']);
-  $accessToken = $tkn->access_token;
-}
-else $accessToken ="";//TODO throw an error directly here, instead of checking the presence in any APIS
-}
-
-$result=array("status"=>"","msg"=>"","content"=>"","error_msg"=>"","log"=>"");	
 /* all the primitives return an array "result" with the following structure
 
 result["status"] = ok/ko; reports the status of the operation (mandatory)
@@ -72,169 +24,238 @@ result["content"] in case of positive execution of the operation the content ext
 result["log"] keep trace of the operations executed on the db
 
 This array should be encoded in json
-*/	
+*/
 
-/* MARCO: this action is not used
-if ($action=="get_models")
+header("Content-type: application/json");
+header("Access-Control-Allow-Origin: *\r\n");
+include ('../config.php');
+include ('common.php');
+$link = mysqli_connect($host, $username, $password) or die("failed to connect to server !!");
+mysqli_select_db($link, $dbname);
+error_reporting(E_ERROR | E_NOTICE);
+
+if(!$link->set_charset("utf8")) 
 {
-    $res=array(); 
-    $q  = "SELECT * FROM model;";
-    $r = mysqli_query($link, $q);
-
-	if($r) 
-	{
-		while($row = mysqli_fetch_assoc($r)) 
-		{
-			array_push($res, $row);
-		}
-		$result["status"]="ok";
-		$result["content"]=$res;
-		$result["log"]= "action=get_models \r\n";
-	} 
-	else
-	{
-		$result["status"]="ko";
-		$result['msg'] = mysqli_error($link);
-		$result["log"]= "action=get_models -" . " error " .  mysqli_error($link)  . "\r\n";
-	}
-	echo json_encode($result);
-	mysqli_close($link);	
+    exit();
 }
 
-else */
+if(isset($_REQUEST['action']) && !empty($_REQUEST['action'])) 
+{
+	$action = $_REQUEST['action'];
+}
+else
+{
+	$result['status'] = 'ko';
+	$result['msg'] = 'action not present'; 
+	$result['error_msg']= 'action not present';
+	$result['log'] = 'model.php action not present';
+	my_log($result);
+	mysqli_close($link);
+	exit();
+}
+
+$headers = apache_request_headers();
+if (isset($headers['Authorization']) && strlen($headers['Authorization'])>8 )
+{
+	$_REQUEST['token']=substr($headers['Authorization'],7);
+}
+
+require '../sso/autoload.php';
+use Jumbojett\OpenIDConnectClient;
+
+$oidc = new OpenIDConnectClient($keycloakHostUri, $clientId, $clientSecret);
+$oidc->providerConfigParam(array('token_endpoint'    => $keycloakHostUri.'/auth/realms/master/protocol/openid-connect/token',
+                                 'userinfo_endpoint' => $keycloakHostUri.'/auth/realms/master/protocol/openid-connect/userinfo'));
+
+$accessToken = "";
+if (isset($_REQUEST['nodered']))
+{
+if ((isset($_REQUEST['token']))&&($_REQUEST['token']!='undefined'))		
+	$accessToken = $_REQUEST['token'];
+} 
+else
+{
+	if (isset($_REQUEST['token'])) 
+	{
+		$mctime=microtime(true);
+		$tkn = $oidc->refreshToken($_REQUEST['token']);
+		error_log("---- model.php:".(microtime(true)-$mctime));
+		$accessToken = $tkn->access_token;
+	}
+}
+if (empty($accessToken))
+{
+	$result["status"]="ko";
+	$result['msg'] = "Access Token not present";
+	$result["error_msg"] .= "Access Token not present";
+	$result["log"]= "model.php AccessToken not present\r\n";
+	my_log($result);
+    mysqli_close($link);
+    exit();
+}
+
+//retrieve username, organization and role from the accetoken
+//TODO avoid passing all the parameters for LDAP
+get_user_info($accessToken, $username, $organization, $oidc, $role, $result, $ldapBaseName, $ldapServer, $ldapPort, $ldapAdminName, $ldapAdminPwd);
+
+if ($result["status"]!="ok")
+{
+    $result["status"]="ko";
+    $result['msg'] = "Cannot retrieve user information";
+    $result["error_msg"] .= "Problem in insert context broker (Cannot retrieve user information)";
+    $result["log"]= "action=insert - error Cannot retrieve user information\r\n";
+    my_log($result);
+    mysqli_close($link);
+    exit();
+}
+
 if ($action == "get_model")
 {
-	$name = mysqli_real_escape_string($link, $_REQUEST['name']);
-    $q  = "SELECT * FROM model WHERE name = '$name'";
-	
-	//$q  = "SELECT * FROM defaultpolicy  WHERE policyname = '$name'";
-    $r = mysqli_query($link, $q);
+	$missingParams=missingParameters(array('name'));
 
-	if($r) 
-	{
-		$row = mysqli_fetch_assoc($r);	
-		$result["status"]="ok";
-		$result["content"]=$row;
-		$result["log"]= "action=get_model:" . $name . " \r\n";
-		
-	} 
-	else
+	if (!empty($missingParams))
 	{
 		$result["status"]="ko";
-		$result['msg'] = mysqli_error($link);
-		$result["log"]= "action=get_model:" . $name . " error " .  mysqli_error($link) . "\r\n";
+        $result['msg'] = "Missing Parameters";
+        $result["error_msg"] .= "Problem in getting_model (Missing parameters: ".implode(", ",$missingParams)." )";
+        $result["log"]= "action=get_model - error Missing Parameters: ".implode(", ",$missingParams)." \r\n";
 	}
-	echo json_encode($result);
+	else 
+	{
+			$name = mysqli_real_escape_string($link, $_REQUEST['name']);
+
+			//id management
+			//get_model
+            $q  = "SELECT m.id,m.name,m.description,m.devicetype,m.kind,m.producer,m.frequency,m.policy,m.attributes,m.link,m.contextbroker,m.protocol,
+	                m.format,m.healthiness_criteria,m.healthiness_value,m.k1,m.k2,m.kgenerator,m.edgegateway_type,m.organization,
+    	            m.visibility,m.subnature,m.static_attributes,m.service,m.servicePath,cb.organization as cb_organization
+        	        FROM model m JOIN contextbroker cb on m.contextbroker = cb.name WHERE m.name = '$name'";
+            $r = mysqli_query($link, $q);
+            if(!$r)
+            {
+                $result["status"]="ko";
+                $result['msg'] = "Unrecognized model";
+                $result["error_msg"] .= "Problem in getting model (Unrecognized model)";
+                $result["log"]= "action=get_model - error Unrecognized model\n";
+            }
+            else
+            {
+                $row = mysqli_fetch_assoc($r);
+                $obj_organization=$row["organization"];
+				$eId=$obj_organization.":".$name;
+
+				if ((count($row)==0)||(!enforcementRights($username, $accessToken, $role, $eId, 'ModelID','read', $result)))
+				{
+					$result["status"]="ko";
+					$result['msg'] = "Not ownership or enough right to getting model";
+					$result["error_msg"] .= "Problem in getting model (Not ownership or enough right to getting model)";
+					$result["log"] .= "action=get_model - error Not ownership or enough right to getting model\r\n";
+				}
+				else
+            	{
+					$result["status"]="ok";
+					$result["content"]=$row;
+					$result["log"]= "action=get_model:" . $name . " \r\n";
+				} 
+			}
+	}
+
+	my_log($result);
 	mysqli_close($link);	
 }
-else if ($action=="get_all_models")
+else if ((($action=="get_all_models"))||($action=="get_all_models_simple"))
 {
-	if (empty($accessToken))
-	{
-                $result["status"]="ko";
-                $result['msg'] = "Access Token not present";
-		$result["error_msg"] .= "Problem getting the list of the avaialable models (Access Token not present). ";	
-                $result["log"]= "action=get_all_models - error AccessToken not present\r\n";
-	}
-	else {
-		$username = mysqli_real_escape_string($link, $_REQUEST['username']);
-		$organization = mysqli_real_escape_string($link, $_REQUEST['organization']);
-		$loggedrole= mysqli_real_escape_string($link, $_REQUEST['loggedrole']);
-   
-		get_all_models($username, $organization, $loggedrole, $accessToken, $link, $result);
-	}
-	my_log($result);
-	mysqli_close($link);
-}
-else if ($action=="get_all_models_simple")//simple require just the accesstoken, and not the role, username, organization
-{
-	if (empty($accessToken))
-        {
-                $result["status"]="ko";
-                $result['msg'] = "Access Token not present";
-                $result["error_msg"] .= "Problem getting the list of the avaialable models (Access Token not present). ";
-                $result["log"]= "action=get_all_models_simple - error AccessToken not present\r\n";
-        }
-        else {
-		//retrieve any parameteres from the accetoken
-		//TODO avoid passing all the parameters for LDAP
-		get_user_info($accessToken, $username, $organization, $oidc, $role, $result, $ldapBaseName, $ldapServer, $ldapPort, $ldapAdminName, $ldapAdminPwd);
+	get_all_models($username, $organization, $role, $accessToken, $link,$result);
 
-		if ($result["status"]=="ok")
-			get_all_models($username, $organization, $role, $accessToken, $link,$result);
-	}
 	my_log($result);
 	mysqli_close($link);
 }
+//TODO can be unified with get_all_models
 else if ($action=="get_all_models_DataTable")
 {
-    $username = mysqli_real_escape_string($link, $_REQUEST['username']);
-	$organization = mysqli_real_escape_string($link, $_REQUEST['organization']);
-    $loggedrole= mysqli_real_escape_string($link, $_REQUEST['loggedrole']);
+	$missingParams=missingParameters(array());
 
-    if (!empty($accessToken)) 
+	if (!empty($missingParams))
 	{
-        getOwnerShipObject($accessToken, "ModelID", $result); #IOTModel 
-        getDelegatedObject($accessToken, $username, "ModelID", $result); #IOTModel
+		$result["status"]="ko";
+        $result['msg'] = "Missing Parameters";
+        $result["error_msg"] .= "Problem in getting models (Missing parameters: ".implode(", ",$missingParams)." )";
+        $result["log"]= "action=get_all_models_DataTable - error Missing Parameters: ".implode(", ",$missingParams)." \r\n";
 	}
+	else 
+	{
+			//default value if called from outside
+			if (isset($_REQUEST['length']))
+				$length = mysqli_real_escape_string($link, $_REQUEST['length']);
+			else
+				$length=-1;
+			$start=1;//default is 1 but should throw an error
+			if (($length!=-1)&& (isset($_REQUEST['start'])))
+				$start= mysqli_real_escape_string($link, $_REQUEST['start']);
+			if (isset($_REQUEST['draw']))
+				$draw = mysqli_real_escape_string($link, $_REQUEST['draw']);
+			else
+				$draw=1;
+			if (!isset($_REQUEST['columns']))
+				$_REQUEST["columns"]=array();
 
-	$q = "SELECT * FROM model";	
-	$r=create_datatable_data($link,$_REQUEST,$q, '');
-	$selectedrows=-1;
-	if($_REQUEST["length"] != -1)
-	{
-		$start= $_REQUEST['start'];
-		$offset=$_REQUEST['length'];
-		$tobelimited=true;
-	}
-	else
-	{
-		$tobelimited=false;
-	}
+			getOwnerShipObject($accessToken, "ModelID", $result);  
+			getDelegatedObject($accessToken, $username, "ModelID", $result); 
+
+			$q = "SELECT * FROM model";	
+			$r=create_datatable_data($link,$_REQUEST,$q, '');
+			$selectedrows=-1;
+			if($length != -1)
+			{
+				$offset=$length;
+				$tobelimited=true;
+			}
+			else
+			{
+				$tobelimited=false;
+			}
 	
-	if($r) 
-	{
-		
-		$data = array();		 
-		 while($row = mysqli_fetch_assoc($r)) 
-		{
-             $idTocheck=$row["organization"].":".$row["name"];
-             if (
-                 ($loggedrole=='RootAdmin')
-                 ||($loggedrole=='ToolAdmin') 
-                 ||
-                 (
-                    ($row["organization"]==$organization)&&
-                    (   
-                        ($row["visibility"]=='public'  
-                         ||
-                         (isset($result["delegation"][$idTocheck])&& $result["delegation"][$idTocheck]["kind"]=="anonymous")
-                        )
-                    )
-                ) 
-                ||
-                    (isset($result["delegation"][$idTocheck])&& $result["delegation"][$idTocheck]["kind"]!="anonymous")
-                ||
-                    (isset($result["keys"][$idTocheck]) && $result["keys"][$idTocheck]["owner"]==$username)
-                    
-               )
-            {
-             
-             $selectedrows++;
-		        if (!$tobelimited || ($tobelimited && $selectedrows >= $start && $selectedrows < ($start+$offset)))
+			if($r) 
+			{
+				$data = array();		 
+				while($row = mysqli_fetch_assoc($r)) 
 				{
+        		     $idTocheck=$row["organization"].":".$row["name"];
+		             if (
+        		         ($role=='RootAdmin')
+                		 ||($role=='ToolAdmin') 
+		                 ||
+        		         (
+                		    ($row["organization"]==$organization)&&
+		                    (   
+        		                ($row["visibility"]=='public'  
+                		         ||
+                        		 (isset($result["delegation"][$idTocheck])&& $result["delegation"][$idTocheck]["kind"]=="anonymous")
+		                        )
+        		            )
+                		) 
+		                ||
+        		            (isset($result["delegation"][$idTocheck]))
+                		||
+		                    (isset($result["keys"][$idTocheck]) && $result["keys"][$idTocheck]["owner"]==$username)
+        	       		)
+		            {
+             
+						$selectedrows++;
+				        if (!$tobelimited || ($tobelimited && $selectedrows >= $start && $selectedrows < ($start+$offset)))
+						{
 			     
-                    if (((isset($result["keys"][$idTocheck]))&&($loggedrole!=='RootAdmin')&&($loggedrole!=='ToolAdmin'))
+                		    if (((isset($result["keys"][$idTocheck]))&&($role!=='RootAdmin')&&($role!=='ToolAdmin'))
                                        ||
-                                    ((isset($result["keys"][$idTocheck]))&& ($result["keys"][$idTocheck]["owner"]==$username) && (($loggedrole==='RootAdmin')||($loggedrole==='ToolAdmin'))))
-                               	{
-                                    //it's mine
-                                       if ($row["visibility"]=="public")
-                                       {
-                                               $row["visibility"]= "MyOwnPublic";
-                                       }
-                                       else
-                                       {
+                                    ((isset($result["keys"][$idTocheck]))&& ($result["keys"][$idTocheck]["owner"]==$username) && (($role==='RootAdmin')||($role==='ToolAdmin'))))
+                          	{
+                        	    //it's mine
+                                if ($row["visibility"]=="public")
+                                {
+                            	    $row["visibility"]= "MyOwnPublic";
+                                }
+                                else
+                                {
                                            if (isset($result["delegation"][$idTocheck])
                                                     && $result["delegation"][$idTocheck]["kind"]=="anonymous")    
                                                $row["visibility"]= "MyOwnPublic";
@@ -242,16 +263,14 @@ else if ($action=="get_all_models_DataTable")
                                            else 
                                                $row["visibility"]="MyOwnPrivate";
 					
-                                       }
-	 					  
-				
                                 }
-                               else
-                               {//it's not mine
+                           }
+                           else
+                           {//it's not mine
                                        
-                                   if (isset($result["delegation"][$idTocheck])
+                 	          if (isset($result["delegation"][$idTocheck])
                                               && ($result["delegation"][$idTocheck]["kind"]=="anonymous"))
-                                       {//it's delegated as public
+                              {//it's delegated as public
                                            
                                                $row["visibility"]='public';
                                        }
@@ -259,276 +278,448 @@ else if ($action=="get_all_models_DataTable")
                                        {//it's delegated personally
                                                $row["visibility"]='delegated';
                                        }
-                                       
-                                   else 
+                                       else 
                                        {
                                            $row["visibility"]= $row["visibility"];
-                                   }
-				}
+                                       }
+							}
                     
-                    $row["owner"]='';
-                    if(isset($result["keys"][$idTocheck]))									   
-                        $row["owner"]=$result["keys"][$idTocheck]["owner"];
-                    array_push($data, $row);
-                }
-            }
-		}
+		                    $row["owner"]='';
+        		            if(isset($result["keys"][$idTocheck])) $row["owner"]=$result["keys"][$idTocheck]["owner"];
+		                    array_push($data, $row);
+						}
+					}
+				}
 		
-		 $output= format_result($_REQUEST["draw"], $selectedrows+1, $selectedrows+1, $data, "", "\r\n action=get_all_models_DataTable \r\n", 'ok');
-		logAction($link,$username,'model','get_all_models_DataTable','',$organization,'','success');
-	} 
-	else
-	{
-		$output= format_result($_REQUEST["draw"], 0, 0, null, 'Error: errors in reading data about model. <br/>' . generateErrorMessage($link), '\n\r Error: errors in reading data about model.' . generateErrorMessage($link), 'ko');
-		logAction($link,$username,'model','get_all_models_DataTable','',$organization,'Error: errors in reading data about model.','faliure');				   
+				$output= format_result($draw, $selectedrows+1, $selectedrows+1, $data, "", "\r\n action=get_all_models_DataTable \r\n", 'ok');
+				logAction($link,$username,'model','get_all_models_DataTable','',$organization,'','success');
+			} 
+			else
+			{
+				$output= format_result($draw, 0, 0, null, 'Error: errors in reading data about model. <br/>' . 
+					generateErrorMessage($link), '\n\r Error: errors in reading data about model.' . generateErrorMessage($link), 'ko');
+				logAction($link,$username,'model','get_all_models_DataTable','',$organization,'Error: errors in reading data about model.','faliure');				   
+			}
 	}
 
 	my_log($output);
 	mysqli_close($link); 	
 }
-else
-if ($action=="insert")
-{  
-	//Sara2510 - for logging purpose
-	$username = mysqli_real_escape_string($link, $_REQUEST['username']);
-	
-	$name = mysqli_real_escape_string($link, $_REQUEST['name']);
-	$description = mysqli_real_escape_string($link, $_REQUEST['description']);
-	$type = mysqli_real_escape_string($link, $_REQUEST['type']);
-	$kind = mysqli_real_escape_string($link, $_REQUEST['kind']);
-	$producer = mysqli_real_escape_string($link, $_REQUEST['producer']);
-	$frequency = mysqli_real_escape_string($link, $_REQUEST['frequency']);
-	//$policy = mysqli_real_escape_string($link, $_REQUEST['policy']);
-	$kgenerator =  mysqli_real_escape_string($link,$_REQUEST['kgenerator']);
-	$edgegateway_type = mysqli_real_escape_string($link,$_REQUEST['edgegateway_type']);
-	$contextbroker = mysqli_real_escape_string($link, $_REQUEST['contextbroker']);
-	$protocol = mysqli_real_escape_string($link, $_REQUEST['protocol']);
-	$format = mysqli_real_escape_string($link, $_REQUEST['format']);
-	//$active = mysqli_real_escape_string($link, $_REQUEST['active']);
-	$hc = mysqli_real_escape_string($link, $_REQUEST['hc']);
-	$hv = mysqli_real_escape_string($link, $_REQUEST['hv']);
-	$listAttributes= mysqli_real_escape_string($link, $_REQUEST['attributes']);
-	$organization= mysqli_real_escape_string($link, $_REQUEST['organization']);
-	$subnature=mysqli_real_escape_string($link, $_REQUEST['subnature']);
-	$staticAttributes= mysqli_real_escape_string($link, $_REQUEST['static_attributes']);
-	$service = mysqli_real_escape_string($link, $_REQUEST['service']);
-	$servicePath = mysqli_real_escape_string($link, $_REQUEST['servicePath']);
-	
-	checkRegisterOwnerShipObject($accessToken, 'ModelID', $result);
-	
-	if ($result["status"]=='ok'){
-	
-		//TODO check if needed
-		$syntaxRes=0;
-		if ($protocol == 'ngsi w/MultiService'){
-			$syntaxRes = servicePathSyntaxCheck($servicePath);
-			$service="'$service'";
-			$servicePath="'$servicePath'";
-		}
-		else {
-	                $service="NULL";
-			$servicePath="NULL";
-		}
+else if ($action=="insert")
+{ 
+	$missingParams=missingParameters(array('name','description','contextbroker','type','kind','format','frequency','kgenerator','hc','hv','attributes','producer'));
 
-		if($syntaxRes == 0){
+	if (!empty($missingParams))
+	{
+		$result["status"]="ko";
+        $result['msg'] = "Missing Parameters";
+        $result["error_msg"] .= "Problem in insert model (Missing parameters: ".implode(", ",$missingParams)." )";
+        $result["log"]= "action=insert - error Missing Parameters: ".implode(", ",$missingParams)." \r\n";
+	}
+	else 
+	{
+			$name = mysqli_real_escape_string($link, $_REQUEST['name']);
+			$description = mysqli_real_escape_string($link, $_REQUEST['description']);
+			$type = mysqli_real_escape_string($link, $_REQUEST['type']);
+			if (isset($_REQUEST['kind'])) $kind = mysqli_real_escape_string($link, $_REQUEST['kind']);
+			else $kind="sensor";
+			$producer = mysqli_real_escape_string($link, $_REQUEST['producer']);
+			if (isset($_REQUEST['frequency'])) $frequency = mysqli_real_escape_string($link, $_REQUEST['frequency']);
+			else $frequency="600";
+			if (isset($_REQUEST['kgenerator'])) $kgenerator =  mysqli_real_escape_string($link,$_REQUEST['kgenerator']);
+			else $kgenerator="normal";
+			if (isset($_REQUEST['edgegateway_type'])) $edgegateway_type = mysqli_real_escape_string($link,$_REQUEST['edgegateway_type']);
+			else $edgegateway_type ="";
+			$contextbroker = mysqli_real_escape_string($link, $_REQUEST['contextbroker']);
+			$format = mysqli_real_escape_string($link, $_REQUEST['format']);
+			$hc = mysqli_real_escape_string($link, $_REQUEST['hc']);
+			$hv = mysqli_real_escape_string($link, $_REQUEST['hv']);
+			$listAttributes= mysqli_real_escape_string($link, $_REQUEST['attributes']);
+			if (isset($_REQUEST['subnature'])) $subnature=mysqli_real_escape_string($link, $_REQUEST['subnature']);
+			else $subnature="";
+			if (isset($_REQUEST['static_attributes'])) $staticAttributes= mysqli_real_escape_string($link, $_REQUEST['static_attributes']);
+			else $staticAttributes="[]";
+			if (isset($_REQUEST['service'])) $service = mysqli_real_escape_string($link, $_REQUEST['service']);
+			else $service ="";
+			if (isset($_REQUEST['servicePath'])) $servicePath = mysqli_real_escape_string($link, $_REQUEST['servicePath']);
+			else $servicePath ="";
 
-			$q = "INSERT INTO model(name, description, devicetype, kind, producer, frequency, contextbroker, protocol, format, healthiness_criteria, healthiness_value, kgenerator, attributes, edgegateway_type, organization, visibility, subnature, static_attributes, service, servicePath ) " .
-			 "VALUES('$name', '$description', '$type', '$kind', '$producer', '$frequency', '$contextbroker', '$protocol', '$format', '$hc', '$hv', '$kgenerator', '$listAttributes', '$edgegateway_type', '$organization', 'private', '$subnature', '$staticAttributes', $service, $servicePath)";
-			$r = mysqli_query($link, $q);
+			$protocol = getProtocol($contextbroker, $link);
 
-			if($r)
+			if (empty($protocol))//it also ensure the contextbroker name is valid
 			{
-				$result["status"]='ok';
-				$result["log"]= "action=insert " . $q   . " \r\n";
-			        $ownmsg = array();
-				$ownmsg["elementId"]=$organization . ':' . $name; // I am using the new identifier
-				$ownmsg["elementName"]=$organization . ':' . $name;				    
-				$ownmsg["elementUrl"]=$organization . ':' . $name;
-			        $ownmsg["elementType"]="ModelID"; #IOTModel
-        
-       				registerOwnerShipObject($ownmsg, $accessToken, 'ModelID',$result); #IOTModel
-				if($result["status"]=='ok'){
-			                logAction($link,$username,'model','insert',$name,$organization,'Registering the ownership of model','success');
-			        }
-			        else{
-			                logAction($link,$username,'model','insert',$name,$organization,'Registering the ownership of model','failure');
-			        }
-		
-				//Sara2510 - for logging purpose
-				logAction($link,$username,'model','insert',$name,$organization,'','success');
+				$result["status"]="ko";
+				$result['msg'] = "Unrecognized contextbroker/protocol";
+				$result["error_msg"] .= "Problem in insert model (Unrecognized contextbroker/protocol)";
+				$result["log"]= "action=insert - error Unrecognized contextbroker/protocol\r\n";
 			}
 			else
 			{
-				//Sara2510 - for logging purpose
-				logAction($link,$username,'model','insert',$name,$organization,'An error occurred when registering the Model','faliure');
-				$result["status"]='ko';
-				$result["msg"] = "Error: An error occurred when registering the Model $name. <br/>" .
-						   mysqli_error($link) . 
-						   ' Please enter again the Model';
-				$result["log"]= "action=insert -" . $q . " error " .  mysqli_error($link)  . "\r\n";
-			}
-		}
-		else
-		{
-			$result["status"]='ko';
-			$result["error_msg"] = $servicePath . " is NOT a valid servicePath";
-		}
-	}
+				//id management
+				$eId=$organization.":".$name;
 	
-	echo json_encode($result);
+				checkRegisterOwnerShipObject($accessToken, 'ModelID', $result);
+	
+				if ($result["status"]=='ok')
+				{
+	
+					//TODO check if needed
+					$syntaxRes=0;
+					if ($protocol == 'ngsi w/MultiService')
+					{
+						$syntaxRes = servicePathSyntaxCheck($servicePath);
+						$service="'$service'";
+						$servicePath="'$servicePath'";
+					}
+					else 
+					{
+	                	$service="NULL";
+						$servicePath="NULL";
+					}
+
+					if($syntaxRes == 0)
+					{
+
+						$q = "INSERT INTO model(name, description, devicetype, kind, producer, frequency, contextbroker, protocol, format, 
+							healthiness_criteria, healthiness_value, kgenerator, attributes, edgegateway_type, organization, visibility, subnature, static_attributes, service, servicePath )
+							VALUES('$name', '$description', '$type', '$kind', '$producer', '$frequency', '$contextbroker', '$protocol', '$format', '$hc', '$hv', '$kgenerator', 
+							'$listAttributes', '$edgegateway_type', '$organization', 'private', '$subnature', '$staticAttributes', $service, $servicePath)";
+						$r = mysqli_query($link, $q);
+
+						if($r)
+						{
+							$result["status"]='ok';
+							$result["log"]= "action=insert " . $q   . " \r\n";
+						    $ownmsg = array();
+							$ownmsg["elementId"]=$eId;
+							$ownmsg["elementName"]=$eId;				    
+							$ownmsg["elementUrl"]=$eId;
+						    $ownmsg["elementType"]="ModelID";
+        
+		       				registerOwnerShipObject($ownmsg, $accessToken, 'ModelID',$result);
+							if($result["status"]=='ok')
+							{
+			                	logAction($link,$username,'model','insert',$name,$organization,'Registering the ownership of model','success');
+					        }
+					        else
+							{
+				                logAction($link,$username,'model','insert',$name,$organization,'Registering the ownership of model','faliure');
+					        }
+		
+							logAction($link,$username,'model','insert',$name,$organization,'','success');
+						}
+						else
+						{	
+							logAction($link,$username,'model','insert',$name,$organization,'An error occurred when registering the Model','faliure');
+							$result["status"]='ko';
+							$result["msg"] = "Error: An error occurred when registering the Model $name. <br/>" .   mysqli_error($link) .    ' Please enter again the Model';
+							$result["log"]= "action=insert -" . $q . " error " .  mysqli_error($link)  . "\r\n";
+						}
+					}
+					else
+					{
+						$result["status"]='ko';
+						$result["error_msg"] = $servicePath . " is NOT a valid servicePath";
+					}
+				}
+			}
+	}
+
+	my_log($result);	
 	mysqli_close($link);
 }
 else
 if ($action=="update")
-{  
-	//Sara2510 - for logging purpose
-	$username = mysqli_real_escape_string($link, $_REQUEST['username']);
+{ 
+	$missingParams=missingParameters(array('id', 'name', 'description', 'type', 'contextbroker', 'kind', 'format', 'producer', 'frequency', 'attributes','kgenerator','hc', 'hv'));
+
+	if (!empty($missingParams))
+	{
+		$result["status"]="ko";
+        $result['msg'] = "Missing Parameters";
+        $result["error_msg"] .= "Problem in update model (Missing parameters: ".implode(", ",$missingParams)." )";
+        $result["log"]= "action=update - error Missing Parameters: ".implode(", ",$missingParams)." \r\n";
+	}
+	else 
+	{
+			$id = mysqli_real_escape_string($link, $_REQUEST['id']);
+			$name = mysqli_real_escape_string($link, $_REQUEST['name']);
+			$description = mysqli_real_escape_string($link, $_REQUEST['description']);
+			$type = mysqli_real_escape_string($link, $_REQUEST['type']);
+			$kind = mysqli_real_escape_string($link, $_REQUEST['kind']);
+			$producer = mysqli_real_escape_string($link, $_REQUEST['producer']);
+			$frequency = mysqli_real_escape_string($link, $_REQUEST['frequency']);
+			$kgenerator =  mysqli_real_escape_string($link,$_REQUEST['kgenerator']);
+			$contextbroker = mysqli_real_escape_string($link, $_REQUEST['contextbroker']);
+			$format = mysqli_real_escape_string($link, $_REQUEST['format']);
+			$hc = mysqli_real_escape_string($link, $_REQUEST['hc']);
+			$hv = mysqli_real_escape_string($link, $_REQUEST['hv']);
+			$listAttributes= mysqli_real_escape_string($link, $_REQUEST['attributes']);
+            if (isset($_REQUEST['subnature'])) $subnature=mysqli_real_escape_string($link, $_REQUEST['subnature']);
+            else $subnature="";
+            if (isset($_REQUEST['static_attributes'])) $staticAttributes= mysqli_real_escape_string($link, $_REQUEST['static_attributes']);
+            else $staticAttributes="[]";
+            if (isset($_REQUEST['service'])) $service = mysqli_real_escape_string($link, $_REQUEST['service']);
+            else $service ="";
+            if (isset($_REQUEST['servicePath'])) $servicePath = mysqli_real_escape_string($link, $_REQUEST['servicePath']);
+            else $servicePath ="";
+            if (isset($_REQUEST['edgegateway_type'])) $edgegateway_type = mysqli_real_escape_string($link,$_REQUEST['edgegateway_type']);
+            else $edgegateway_type ="";
+
+			$protocol = getProtocol($contextbroker, $link);
+
+			if (empty($protocol))//it also ensure the contextbroker name is valid
+			{
+				$result["status"]="ko";
+				$result['msg'] = "Unrecognized contextbroker/protocol";
+				$result["error_msg"] .= "Problem in update model (Unrecognized contextbroker/protocol)";
+				$result["log"]= "action=update - error Unrecognized contextbroker/protocol\r\n";
+			}
+			else
+			{
+				//id management
+				//get_model
+				$q  = "SELECT * FROM model WHERE id = '$id'";
+			    $r = mysqli_query($link, $q);
+			    if(!$r)
+			    {
+					$result["status"]="ko";
+    	            $result['msg'] = "Unrecognized model";
+        	        $result["error_msg"] .= "Problem in update model (Unrecognized device)";
+            	    $result["log"]= "action=update - error Unrecognized device\r\n";
+				}
+				else
+				{
+					$row = mysqli_fetch_assoc($r);
+					$obj_organization=$row["organization"];
+					$old_name=$row["name"];
+					$eId=$obj_organization.":".$old_name;
+					$new_eId=$obj_organization.":".$name;
 	
-	$id = mysqli_real_escape_string($link, $_REQUEST['id']);
-	$name = mysqli_real_escape_string($link, $_REQUEST['name']);
-	$description = mysqli_real_escape_string($link, $_REQUEST['description']);
-	$type = mysqli_real_escape_string($link, $_REQUEST['type']);
-	$kind = mysqli_real_escape_string($link, $_REQUEST['kind']);
-	$producer = mysqli_real_escape_string($link, $_REQUEST['producer']);
-	$frequency = mysqli_real_escape_string($link, $_REQUEST['frequency']);
-	//$policy = mysqli_real_escape_string($link, $_REQUEST['policy']);
-	$kgenerator =  mysqli_real_escape_string($link,$_REQUEST['kgenerator']);
-	$edgegateway_type = mysqli_real_escape_string($link,$_REQUEST['edgegateway_type']);
-	$contextbroker = mysqli_real_escape_string($link, $_REQUEST['contextbroker']);
-	$protocol = mysqli_real_escape_string($link, $_REQUEST['protocol']);
-	$format = mysqli_real_escape_string($link, $_REQUEST['format']);
-	//$active = mysqli_real_escape_string($link, $_REQUEST['active']);
-	$hc = mysqli_real_escape_string($link, $_REQUEST['hc']);
-	$hv = mysqli_real_escape_string($link, $_REQUEST['hv']);
-	$listAttributes= mysqli_real_escape_string($link, $_REQUEST['attributes']);
-	$organization= mysqli_real_escape_string($link, $_REQUEST['organization']);
-	$obj_organization = mysqli_real_escape_string($link, $_REQUEST['obj_organization']);
-	$subnature= mysqli_real_escape_string($link, $_REQUEST['subnature']);	
-	$staticAttributes= mysqli_real_escape_string($link, $_REQUEST['static_attributes']);
-	$service = mysqli_real_escape_string($link, $_REQUEST['service']);
-	$servicePath = mysqli_real_escape_string($link, $_REQUEST['servicePath']);
+					if ((count($row)==0)||(!enforcementRights($username, $accessToken, $role, $eId, 'ModelID','write', $result)))
+					{
+						$result["status"]="ko";
+						$result['msg'] = "Not ownership or enough right to update";
+						$result["error_msg"] .= "Problem in update model (Not ownership or enough right to update)";
+						$result["log"] .= "action=update - error Not ownership or enough right to update\r\n";
+	            	}
+					else
+					{
 
-	//TODO check if needed
-        $syntaxRes=0;
-        if ($protocol == 'ngsi w/MultiService'){
-		$syntaxRes = servicePathSyntaxCheck($servicePath);
-                $service="'$service'";
-		$servicePath="'$servicePath'";
-        }
-        else {
-                $service="NULL";
-		$servicePath="NULL";
-        }
+						//TODO check if needed
+				        $syntaxRes=0;
+				        if ($protocol == 'ngsi w/MultiService')
+						{
+							$syntaxRes = servicePathSyntaxCheck($servicePath);
+							$service="'$service'";
+							$servicePath="'$servicePath'";
+				        }
+				        else 
+						{
+							$service="NULL";
+							$servicePath="NULL";
+				        }
 
-	if ($syntaxRes == 0){
+						if ($syntaxRes == 0)
+						{
+							$q = "UPDATE model SET name = '$name', attributes = '$listAttributes', description = '$description', devicetype = '$type', 
+								kind = '$kind',  producer= '$producer', frequency = '$frequency', contextbroker='$contextbroker', protocol = '$protocol', 
+								format = '$format', healthiness_criteria = '$hc', healthiness_value='$hv', kgenerator = '$kgenerator', edgegateway_type = '$edgegateway_type', 
+								subnature='$subnature', static_attributes='$staticAttributes' , service = $service, servicePath = $servicePath WHERE id = '$id'";
 
-		$q = "UPDATE model SET name = '$name', attributes = '$listAttributes', description = '$description', devicetype = '$type', kind = '$kind',  producer= '$producer', frequency = '$frequency', contextbroker='$contextbroker', protocol = '$protocol', format = '$format', healthiness_criteria = '$hc', healthiness_value='$hv', kgenerator = '$kgenerator', edgegateway_type = '$edgegateway_type', subnature='$subnature', static_attributes='$staticAttributes' , service = $service, servicePath = $servicePath WHERE id = '$id'";
-	
-		$r = mysqli_query($link, $q);
+							$r = mysqli_query($link, $q);
 
-		if($r)
-		{
-			$ownmsg = array();
-		        $ownmsg["elementId"]=$obj_organization . ':' . $name; // I am using the new identifier	
-		        $ownmsg["elementName"]=$obj_organization . ':' . $name;				    
-		        $ownmsg["elementUrl"]=$obj_organization . ':' . $name;
-		        $ownmsg["elementType"]="ModelID";
-		        registerOwnerShipObject($ownmsg, $accessToken, 'ModelID',$result);
+							//we need to update the ownership since the name can change
+							if (strcmp($name, $old_name)!=0) 
+							{
+								if($r)
+								{
+									//remove old ownership
+                                    removeOwnerShipObject($eId,$accessToken,"ModelID",$result);
+
+									//TODO if RootAdmin update this device, he became the owner of the device... instead of remove and add again, here we need to updateOwnership!!!
+									$ownmsg = array();
+							        $ownmsg["elementId"]=$new_eId; 	
+							        $ownmsg["elementName"]=$new_eId;				    
+							        $ownmsg["elementUrl"]=$new_eId;
+							        $ownmsg["elementType"]="ModelID";
+						    	    registerOwnerShipObject($ownmsg, $accessToken, 'ModelID',$result);
         
-		        if($result["status"]=='ok'){
-		            $result["log"]= "action=update " . $q   . " \r\n";
-		            logAction($link,$username,'model','update',$name,$organization,'','success');
-		        }
-		        else{
-		            logAction($link,$username,'model','update',$name,$organization,'in ownership registration','failure');
-		        }
-		}
-		else
-		{
-			logAction($link,$username,'model','update',$name,$organization,'An error occurred when updating the model','faliure');
-			 $result["status"]='ko';
-			 $result["msg"] = "Error: An error occurred when updating the model $name. <br/>" .
-						   mysqli_error($link) .
-						   ' Please enter again the model';
-			 $result["log"]= "action=update -" . $q . " error " .  mysqli_error($link)  . "\r\n";				            
-		}
+							        if($result["status"]=='ok')
+									{
+							            $result["log"]= "action=update " . $q   . " \r\n";
+							            logAction($link,$username,'model','update',$name,$organization,'','success');
+			        				}
+							        else
+									{
+		        					    logAction($link,$username,'model','update',$name,$organization,'in ownership registration','faliure');
+						    	    }
+								}	
+								else
+								{
+									logAction($link,$username,'model','update',$name,$organization,'An error occurred when updating the model','faliure');
+									$result["status"]='ko';
+									$result["msg"] = "Error: An error occurred when updating the model $name. <br/>" .   mysqli_error($link) .   ' Please enter again the model';
+									$result["log"]= "action=update -" . $q . " error " .  mysqli_error($link)  . "\r\n";				            
+								}
+							}
+						}
+						else
+						{	
+							$result["status"]='ko';
+							$result["error_msg"] = $servicePath . " is NOT a valid servicePath";
+						}
+					}
+				}
+			}
 	}
-	else{	
-		$result["status"]='ko';
-		$result["error_msg"] = $servicePath . " is NOT a valid servicePath";
-	}
-	echo json_encode($result);
+	
+	my_log($result);
 	mysqli_close($link);
 }
 else 
 if ($action=="delete")
-{	  
-	  //Sara2510 - for logging purpose
-	  $username = mysqli_real_escape_string($link, $_REQUEST['username']);
-	  $name = mysqli_real_escape_string($link, $_REQUEST['name']);
-	  $organization = mysqli_real_escape_string($link, $_REQUEST['organization']);
-	  
-      $id = mysqli_real_escape_string($link, $_REQUEST['id']);      
-      $q = "DELETE FROM model WHERE id = '$id'";
-      $r = mysqli_query($link, $q);
-      if($r)
-	  {
-		logAction($link,$username,'model','delete',$name,$organization,'','success');
-		
-		$result["status"]='ok';
-          
-          if($accessToken!=""){
-              $elementId=$organization . ':' . $name;
-              removeOwnerShipObject($elementId,$accessToken,"ModelID",$result); #IOTModel
-          }
-          if($result["status"]='ok'){
-              $result["log"].='\n\r action: delete ok. ' . $q;
-              logAction($link,$username,'model','delete',$name,$organization,'','success');
-          }
-          else{
-              $result["log"].='\n\r action: delete ok from database, delete Ownership failed. ';
-              logAction($link,$username,'model','delete',$name,$organization,'delete ok from database, delete Ownership failed.','failure');
-          }
-		
-	  }
-	  else
-	  {
-		//Sara2510 - for logging purpose
-		logAction($link,$username,'model','delete',$name,$organization,'','faliure');
-		 $result["status"]='ko';
-		 $result["log"]= "action=delete -" . $q . " error " .  mysqli_error($link)  . "\r\n";
-		 $result["msg"] = 'Model <b>' . $name . '</b> &nbsp; deletion failed, ' .
-						   mysqli_error($link) . $q .
-						   ' Please enter again.';
-	  }
-	  echo json_encode($result);
-	  mysqli_close($link);
-}
-else 
-if($action == 'get_value_attributes')
-{
+{	
+	$missingParams=missingParameters(array('id'));
 
-	$id = mysqli_real_escape_string($link, $_REQUEST['id']);
-	
-	$result = array();
-
-	$q = "SELECT attributes FROM model WHERE id = '$id'";
-    $r = mysqli_query($link, $q);
-	if($r){ 
-		$row = mysqli_fetch_assoc($r);	
-		$result["status"]="ok";
-		$result["content"]=$row;
-		$result["log"]= "action=get_value_attributes of model " . $id   . " \r\n";
-     }
-	 else
-	 {
-	    $result['status'] = 'ko'; 
-		$result['msg'] = 'Error: errors in reading data about attributes of the model. <br/>' .
-						  generateErrorMessage($link);
-		$result["log"]= "action=get_value_attributes of model " . $id . " error " .  mysqli_error($link)  . "\r\n";
-		 
+	if (!empty($missingParams))
+	{
+		$result["status"]="ko";
+        $result['msg'] = "Missing Parameters";
+        $result["error_msg"] .= "Problem in delete model (Missing parameters: ".implode(", ",$missingParams)." )";
+        $result["log"]= "action=delete - error Missing Parameters: ".implode(", ",$missingParams)." \r\n";
 	}
-	echo json_encode($result);
+	else 
+	{
+			$id = mysqli_real_escape_string($link, $_REQUEST['id']);      
+
+			//id management
+			//get_model
+			$q  = "SELECT * FROM model WHERE id = '$id'";
+			$r = mysqli_query($link, $q);
+			if(!$r)
+			{
+				$result["status"]="ko";
+				$result['msg'] = "Unrecognized model";
+				$result["error_msg"] .= "Problem in update model (Unrecognized device)";
+				$result["log"]= "action=update - error Unrecognized device\r\n";
+			}
+			else
+			{
+				$row = mysqli_fetch_assoc($r);
+				$obj_organization=$row["organization"];
+				$name=$row["name"];
+				$eId=$obj_organization.":".$name;
+
+				if ((count($row)==0)||(!enforcementRights($username, $accessToken, $role, $eId, 'ModelID','write', $result)))
+				{
+					$result["status"]="ko";
+					$result['msg'] = "Not ownership or enough right to update";
+					$result["error_msg"] .= "Problem in delete model (Not ownership or enough right to update)";
+					$result["log"] .= "action=delete - error Not ownership or enough right to update\r\n";
+				}
+				else
+				{
+
+					$q = "DELETE FROM model WHERE id = '$id'";
+					$r = mysqli_query($link, $q);
+					if($r)
+					{
+						logAction($link,$username,'model','delete',$name,$organization,'','success');
+	
+						$result["status"]='ok';
+          
+						removeOwnerShipObject($eId,$accessToken,"ModelID",$result);
+						if($result["status"]='ok')
+						{
+							$result["log"].='\n\r action: delete ok. ' . $q;
+							logAction($link,$username,'model','delete',$name,$organization,'','success');
+						}
+						else
+						{
+							$result["log"].='\n\r action: delete ok from database, delete Ownership failed. ';
+							logAction($link,$username,'model','delete',$name,$organization,'delete ok from database, delete Ownership failed.','faliure');
+						}
+					}
+					else
+					{
+						logAction($link,$username,'model','delete',$name,$organization,'','faliure');
+						$result["status"]='ko';
+						$result["log"]= "action=delete -" . $q . " error " .  mysqli_error($link)  . "\r\n";
+						$result["msg"] = 'Model <b>' . $name . '</b> &nbsp; deletion failed, ' .  mysqli_error($link) . $q .  ' Please enter again.';
+					}
+				}
+			}
+	}
+
+	my_log($result);
+	mysqli_close($link);
+}
+else if($action == 'get_value_attributes')
+{
+	$missingParams=missingParameters(array('id'));
+
+	if (!empty($missingParams))
+	{
+		$result["status"]="ko";
+        $result['msg'] = "Missing Parameters";
+        $result["error_msg"] .= "Problem in getting model value attributes (Missing parameters: ".implode(", ",$missingParams)." )";
+        $result["log"]= "action=get_value_attributes - error Missing Parameters: ".implode(", ",$missingParams)." \r\n";
+	}
+	else 
+	{
+			$id = mysqli_real_escape_string($link, $_REQUEST['id']);
+
+            //id management
+            //get_model
+            $q  = "SELECT * FROM model WHERE id = '$id'";
+            $r = mysqli_query($link, $q);
+            if(!$r)
+            {
+                $result["status"]="ko";
+                $result['msg'] = "Unrecognized model";
+                $result["error_msg"] .= "Problem in getting model value attributes (Unrecognized device)";
+                $result["log"]= "action=get_value_attributes - error Unrecognized device\r\n";
+            }
+            else
+            {
+                $row = mysqli_fetch_assoc($r);
+                $obj_organization=$row["organization"];
+                $name=$row["name"];
+                $eId=$obj_organization.":".$name;
+
+                if ((count($row)==0)||(!enforcementRights($username, $accessToken, $role, $eId, 'ModelID','write', $result)))
+                {
+                    $result["status"]="ko";
+                    $result['msg'] = "Not ownership or enough right to update";
+                    $result["error_msg"] .= "Problem in getting model value attributes (Not ownership or enough right to update)";
+                    $result["log"] .= "action=get_value_attributes - error Not ownership or enough right to update\r\n";
+                }
+                else
+                {
+
+					$result = array();
+
+					$q = "SELECT attributes FROM model WHERE id = '$id'";
+				    $r = mysqli_query($link, $q);
+					if($r)
+					{ 
+						$row = mysqli_fetch_assoc($r);	
+						$result["status"]="ok";
+						$result["content"]=$row;
+						$result["log"]= "action=get_value_attributes of model " . $id   . " \r\n";
+				    }
+	 				else
+					{
+					    $result['status'] = 'ko'; 
+						$result['msg'] = 'Error: errors in reading data about attributes of the model. <br/>' .  generateErrorMessage($link);
+						$result["log"]= "action=get_value_attributes of model " . $id . " error " .  mysqli_error($link)  . "\r\n";
+					}
+				}
+			}
+	}
+
+	my_log($result);
 	mysqli_close($link);  
 }	
 else 

@@ -8,10 +8,10 @@ var defaultPolicyValue = [];
 
 //--------to get the drop-down menus items----------// 
 
-$.ajax({url: "../api/accessLog.php",
+$.ajax({url: "../api/device.php",
          data: {
 			 action: 'get_param_values',
-             organization: organization
+			 token:sessionToken
 			 },
          type: "POST",
          async: true,
@@ -57,10 +57,10 @@ function fetch_data(destroyOld, selected=null)
 			if (selected==null)
 			{
 				if(loggedRole == 'Root' || loggedRole == 'RootAdmin'){
-					mydata = {action: "get_log", username: loggedUser, loggedrole: loggedRole,organization: organization, no_columns: ["id"]};
+					mydata = {action: "get_log", token:sessionToken, no_columns: ["id"]};
 				}
 				else{
-					mydata = {action: "get_log", username: loggedUser, loggedrole: loggedRole, organization: organization, no_columns: ["id","access_log"]};
+					mydata = {action: "get_log", token:sessionToken, no_columns: ["id","access_log"]};
 				}
 			}
 
@@ -106,7 +106,6 @@ function fetch_data(destroyOld, selected=null)
 		"ajax" : {
 		 url:"../api/accessLog.php",
 		 data: mydata,
-		//token : sessionToken,
 		 datatype: 'json',
 		 type: "POST",                
 		},

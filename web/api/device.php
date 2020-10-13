@@ -47,7 +47,8 @@ else
 {
 	$result['status'] = 'ko';
 	$result['msg'] = 'action not present'; 
-	$result['log'] = 'action not present';
+	$result['error_msg']='action not present';
+	$result['log'] = 'device.php action not present';
 	my_log($result);
 	mysqli_close($link);
 	exit();
@@ -63,27 +64,49 @@ require '../sso/autoload.php';
 use Jumbojett\OpenIDConnectClient;
 
 $oidc = new OpenIDConnectClient($keycloakHostUri, $clientId, $clientSecret);
-$oidc->providerConfigParam(array('token_endpoint' => $keycloakHostUri.'/auth/realms/master/protocol/openid-connect/token',
-                                        'userinfo_endpoint'=>$keycloakHostUri.'/auth/realms/master/protocol/openid-connect/userinfo'));
+$oidc->providerConfigParam(array('token_endpoint'    => $keycloakHostUri.'/auth/realms/master/protocol/openid-connect/token',
+                                 'userinfo_endpoint' => $keycloakHostUri.'/auth/realms/master/protocol/openid-connect/userinfo'));
+
+$accessToken = "";
 if (isset($_REQUEST['nodered']))
 {
-	if ((isset($_REQUEST['token']))&&($_REQUEST['token']!='undefined'))
-		$accessToken = $_REQUEST['token'];
-	else $accessToken = "";
-} 
+    if ((isset($_REQUEST['token']))&&($_REQUEST['token']!='undefined'))
+        $accessToken = $_REQUEST['token'];
+}
 else
 {
-	if (isset($_REQUEST['token'])) 
-	{
-		$tkn = $oidc->refreshToken($_REQUEST['token']);
-		$accessToken = $tkn->access_token;
-	}
-	else $accessToken ="";
+    if (isset($_REQUEST['token']))
+    {
+		$mctime=microtime(true);
+        $tkn = $oidc->refreshToken($_REQUEST['token']);
+		error_log("---- device.php:".(microtime(true)-$mctime));
+        $accessToken = $tkn->access_token;
+    }
+}
+if (empty($accessToken))
+{
+    $result["status"]="ko";
+    $result['msg'] = "Access Token not present";
+    $result["error_msg"] .= "Access Token not present";
+    $result["log"]= "model.php AccessToken not present\r\n";
+    my_log($result);
+    mysqli_close($link);
+    exit();
 }
 
-if (isset($_REQUEST['username'])) 
+//retrieve username, organization and role from the accetoken
+//TODO avoid passing all the parameters for LDAP
+get_user_info($accessToken, $username, $organization, $oidc, $role, $result, $ldapBaseName, $ldapServer, $ldapPort, $ldapAdminName, $ldapAdminPwd);
+
+if ($result["status"]!="ok")
 {
-	$currentUser = $_REQUEST['username'];
+    $result["status"]="ko";
+    $result['msg'] = "Cannot retrieve user information";
+    $result["error_msg"] .= "Problem in insert context broker (Cannot retrieve user information)";
+    $result["log"]= "action=insert - error Cannot retrieve user information\r\n";
+    my_log($result);
+    mysqli_close($link);
+    exit();
 }
 
 foreach ($_REQUEST as $key =>$param) {
@@ -126,14 +149,7 @@ if ($action=="insert")
 	$missingParams=missingParameters(array('id', 'type', 'contextbroker', 'kind', 'format', 'model', 'producer',
 		'latitude', 'longitude', 'k1', 'k2', 'frequency', 'attributes'));
 
-	if (empty($accessToken))
-	{
-		$result["status"]="ko";
-        $result['msg'] = "Access Token not present";
-        $result["error_msg"] .= "Problem in insert device (Access Token not present)";
-        $result["log"]= "action=insert - error AccessToken not present\r\n";
-	}
-	else if (!empty($missingParams))
+	if (!empty($missingParams))
 	{
 		$result["status"]="ko";
         $result['msg'] = "Missing Parameters";
@@ -142,19 +158,6 @@ if ($action=="insert")
 	}
 	else 
 	{
-		//retrieve username, organization and role from the accetoken
-		//TODO avoid passing all the parameters for LDAP
-		get_user_info($accessToken, $username, $organization, $oidc, $role, $result, $ldapBaseName, $ldapServer, $ldapPort, $ldapAdminName, $ldapAdminPwd);
-
-		if ($result["status"]!="ok")
-		{
-			$result["status"]="ko";
-            $result['msg'] = "Cannot retrieve user information";
-   	        $result["error_msg"] .= "Problem in insert device (Cannot retrieve user information)";
-           	$result["log"]= "action=insert - error Cannot retrieve user information\r\n";
-		}
-		else
-		{
 			$id = mysqli_real_escape_string($link, $_REQUEST['id']);
 			$devicetype = mysqli_real_escape_string($link, $_REQUEST['type']); 
 			$contextbroker = mysqli_real_escape_string($link, $_REQUEST['contextbroker']);  
@@ -213,10 +216,9 @@ if ($action=="insert")
 				}
 				else 
 				{
-					logAction($link,$username,'device','insert',$id . " ".$contextbroker,$organization,'','failure');				
+					logAction($link,$username,'device','insert',$id . " ".$contextbroker,$organization,'','faliure');				
 				}
 			}
-		}
 	}
 	my_log($result);
     mysqli_close($link);
@@ -226,16 +228,7 @@ else if ($action=="update")
 	$missingParams=missingParameters(array('id', 'type', 'contextbroker', 'gb_old_cb', 'kind', 'format', 'model', 'producer',
 		'latitude', 'longitude', 'k1', 'k2', 'frequency'));
  
-	if (empty($accessToken))
-	{
-		$result["status"]="ko";
-		$result['msg'] = "Access Token not present";
-		$result["error_msg"] .= "Problem update the device information (Access Token not present). ";
-		$result["log"]= "action=update - error AccessToken not present\r\n";
-		my_log($result);
-		mysqli_close($link);
-	}
-	else if (!empty($missingParams))
+	if (!empty($missingParams))
     {
 		$result["status"]="ko";
 		$result['msg'] = "Missing Parameters";
@@ -246,21 +239,6 @@ else if ($action=="update")
 	}
 	else
 	{
-		//retrieve username, organization and role from the accetoken
-		//TODO avoid passing all the parameters for LDAP
-		get_user_info($accessToken, $username, $organization, $oidc, $role, $result, $ldapBaseName, $ldapServer, $ldapPort, $ldapAdminName, $ldapAdminPwd);
-
-		if ($result["status"]!="ok")
-		{
-			$result["status"]="ko";
-			$result['msg'] = "Cannot retrieve user information";
-			$result["error_msg"] .= "Problem update the device information (Cannot retrieve user information)";
-			$result["log"]= "action=update - error Cannot retrieve user information\r\n";
-			my_log($result);
-			mysqli_close($link);
-		}
-		else
-		{
 			$id = mysqli_real_escape_string($link, $_REQUEST['id']);
 			$devicetype = mysqli_real_escape_string($link, $_REQUEST['type']); 
 			$contextbroker = mysqli_real_escape_string($link, $_REQUEST['contextbroker']);  
@@ -275,8 +253,6 @@ else if ($action=="update")
 			else $producer="";
 			$latitude= mysqli_real_escape_string($link, $_REQUEST['latitude']);  
 			$longitude = mysqli_real_escape_string($link, $_REQUEST['longitude']);  
-			//$uri = mysqli_real_escape_string($link, $_REQUEST['uri']);
-			//$dev_organization = mysqli_real_escape_string($link, $_REQUEST['dev_organization']);
 			if (isset($_REQUEST['k1'])) $k1= $_REQUEST['k1'];
 			else $k1= "";
 			if (isset($_REQUEST['k2'])) $k2= $_REQUEST['k2'];
@@ -530,7 +506,7 @@ else if ($action=="update")
 				 }  
 				 else
 			  	 {
-					logAction($link,$username,'device','update',$id . " ".$contextbroker,$organization,'','failure');		
+					logAction($link,$username,'device','update',$id . " ".$contextbroker,$organization,'','faliure');		
 					$result["status"]='ko';
 					$result["error_msg"] .= "Problem in updating the device $id. "; 
 					$result["msg"] .= "\n Problem in updating the device $id: Not Present"; 
@@ -542,20 +518,12 @@ else if ($action=="update")
 				}
 			}
 		}
-	}
 }  
 else if ($action=="delete")
 {
 	$missingParams=missingParameters(array('id', 'contextbroker'));
 
-	if (empty($accessToken))
-	{
-		$result["status"]="ko";
-		$result['msg'] = "Access Token not present";
-		$result["error_msg"] .= "Problem deleting the device information (Access Token not present). ";
-		$result["log"]= "action=delete - error AccessToken not present\r\n";
-	}
-	else if (!empty($missingParams))
+	if (!empty($missingParams))
 	{
 		$result["status"]="ko";
 		$result['msg'] = "Missing Parameters";
@@ -564,23 +532,8 @@ else if ($action=="delete")
 	}
 	else
 	{
-		//retrieve username, organization and role from the accetoken
-		//TODO avoid passing all the parameters for LDAP
-		get_user_info($accessToken, $username, $organization, $oidc, $role, $result, $ldapBaseName, $ldapServer, $ldapPort, $ldapAdminName, $ldapAdminPwd);
-
-        if ($result["status"]!="ok")
-        {
-			$result["status"]="ko";
-            $result['msg'] = "Cannot retrieve user information";
-            $result["error_msg"] .= "Problem deleting the device information (Cannot retrieve user information)";
-            $result["log"]= "action=delete - error Cannot retrieve user information\r\n";
-		}
-		else
-        {
 			$id = $_REQUEST['id'];
 			$cb = $_REQUEST['contextbroker'];
-			//$url = $_REQUEST['uri']; 
-			//$dev_organization = mysqli_real_escape_string($link, $_REQUEST['dev_organization']);
 			if (isset($_REQUEST['service'])) $service = mysqli_real_escape_string($link, $_REQUEST['service']);
 			else $service ="";	
 			if (isset($_REQUEST['servicePath'])) $servicePath = mysqli_real_escape_string($link, $_REQUEST['servicePath']);
@@ -611,7 +564,6 @@ else if ($action=="delete")
                 else
                 {
 				$dev_organization=$result["content"]["organization"];
-				//$url=$result["content"]["uri"];				
 				$eId=$dev_organization.":".$cb.":".$id;
 
 				if (!enforcementRights($username, $accessToken, $role, $eId, 'IOTID','write', $result))
@@ -662,24 +614,16 @@ else if ($action=="delete")
 				}
 				}
 			}
-		}
 	}
 	my_log($result);
 	mysqli_close($link);
 }
-//in case of RootAdmin, use the username of the owner of the device
+//TODO in case of RootAdmin, use the username of the owner of the device
 else if ($action =='change_visibility')
 {
 	$missingParams=missingParameters(array('id', 'contextbroker', 'visibility'));
 
-	if (empty($accessToken))
-	{
-		$result["status"]="ko";
-        $result['msg'] = "Access Token not present";
-        $result["error_msg"] .= "Problem changing visibility (Access Token not present). ";
-        $result["log"]= "action=change_visibility - error AccessToken not present\r\n";
-	}
-	else if (!empty($missingParams))
+	if (!empty($missingParams))
 	{
         $result["status"]="ko";
         $result['msg'] = "Missing Parameters";
@@ -688,24 +632,9 @@ else if ($action =='change_visibility')
 	}
 	else
 	{
-		//retrieve username, organization and role from the accetoken
-		//TODO avoid passing all the parameters for LDAP
-		get_user_info($accessToken, $username, $organization, $oidc, $role, $result, $ldapBaseName, $ldapServer, $ldapPort, $ldapAdminName, $ldapAdminPwd);
-
-		if ($result["status"]!="ok")
-		{
-			$result["status"]="ko";
-			$result['msg'] = "Cannot retrieve user information";
-			$result["error_msg"] .= "Problem changing visibility (Cannot retrieve user information)";
-			$result["log"]= "action=change_visibility - error Cannot retrieve user information\r\n";
-		}
-		else
-		{
 			$id = mysqli_real_escape_string($link, $_REQUEST['id']);
 			$contextbroker = mysqli_real_escape_string($link, $_REQUEST['contextbroker']);
 			$visibility = mysqli_real_escape_string($link, $_REQUEST['visibility']);
-			//$uri = mysqli_real_escape_string($link, $_REQUEST['uri']);
-			//$dev_organization = mysqli_real_escape_string($link, $_REQUEST['dev_organization']);
 			if (isset($_REQUEST['service'])) $service = mysqli_real_escape_string($link, $_REQUEST['service']);
 		    else $service ="";
 		    if (isset($_REQUEST['servicePath'])) $servicePath = mysqli_real_escape_string($link, $_REQUEST['servicePath']);
@@ -817,7 +746,7 @@ else if ($action =='change_visibility')
 					}
 					else 
 					{
-						logAction($link,$username,'device','change_visibility',$id . " ".$contextbroker,$organization,'new visibility '.$visibility,'failure');			
+						logAction($link,$username,'device','change_visibility',$id . " ".$contextbroker,$organization,'new visibility '.$visibility,'faliure');			
 			
 						$result["status"]='ko';
 						$result["msg"] .= "\n Problem in changing the visibility of the device $id: " . generateErrorMessage($link); 
@@ -826,7 +755,6 @@ else if ($action =='change_visibility')
 				}
 				}
 			}
-		}
 	}
 	my_log($result);
 	mysqli_close($link);
@@ -835,14 +763,7 @@ else if ($action =='change_owner')
 {
 	$missingParams=missingParameters(array('id', 'contextbroker', 'newOwner', 'k1', 'k2', 'model'));
 
-	if (empty($accessToken))
-	{
-		$result["status"]="ko";
-        $result['msg'] = "Access Token not present";
-        $result["error_msg"] .= "Problem changing owner (Access Token not present). ";
-        $result["log"]= "action=change_owner - error AccessToken not present\r\n";
-	}
-	else if (!empty($missingParams))
+	if (!empty($missingParams))
     {
  		$result["status"]="ko";
         $result['msg'] = "Missing Parameters";
@@ -851,19 +772,6 @@ else if ($action =='change_owner')
 	}
 	else
     {
-		//retrieve username, organization and role from the accetoken
-		//TODO avoid passing all the parameters for LDAP
-		get_user_info($accessToken, $currentowner, $organization, $oidc, $role, $result, $ldapBaseName, $ldapServer, $ldapPort, $ldapAdminName, $ldapAdminPwd);
-
-		if ($result["status"]!="ok")
-		{
-			$result["status"]="ko";
-			$result['msg'] = "Cannot retrieve user information";
-			$result["error_msg"] .= "Problem changing owner (Cannot retrieve user information)";
-			$result["log"]= "action=change_owner - error Cannot retrieve user information\r\n";
-		}
-		else
-		{
 			//TODO: in this routine the error returned from the ownership is not managed and UI in not updated with error information!!!
 			$id = mysqli_real_escape_string($link, $_REQUEST['id']);
 			$cb = mysqli_real_escape_string($link, $_REQUEST['contextbroker']);
@@ -872,8 +780,6 @@ else if ($action =='change_owner')
 			$k1 = mysqli_real_escape_string($link, $_REQUEST['k1']);
 			$k2 = mysqli_real_escape_string($link, $_REQUEST['k2']);
 			$model = mysqli_real_escape_string($link, $_REQUEST['model']);
-			//$url =  mysqli_real_escape_string($link, $_REQUEST['uri']);
-			//$dev_organization =  mysqli_real_escape_string($link, $_REQUEST['dev_organization']);
 			if (isset( $_REQUEST['edgegateway_type'])) $edgegateway_type = $_REQUEST['edgegateway_type'];
 			else $edgegateway_type="";
 			if (isset( $_REQUEST['edgegateway_uri'])) $edgegateway_uri = $_REQUEST['edgegateway_uri'];
@@ -896,7 +802,7 @@ else if ($action =='change_owner')
 			{
 				//id management
 				if ($protocol == "ngsi w/MultiService") $id = $service . "." . $servicePath . "." . $id;
-				get_device($currentowner, $role, $id, $cb,  $accessToken, $link, $result);
+				get_device($username, $role, $id, $cb,  $accessToken, $link, $result);
 				if (empty($result["content"]))
                 {
                     $result["status"]="ko";
@@ -921,7 +827,7 @@ else if ($action =='change_owner')
 				{
 					//for change ownership, a new certificate has to be created (if model is authenticated)
 					$errorThrown=false;
-			        if (registerCertificatePrivateKey($link, $cb, $id, $model, $pathCertificate, $result, $currentowner))
+			        if (registerCertificatePrivateKey($link, $cb, $id, $model, $pathCertificate, $result, $username))
 		    	    {
 						$privatekey = $id . "-key.pem";
 						$certificate = $id . "-crt.pem";
@@ -932,14 +838,14 @@ else if ($action =='change_owner')
 						$r = mysqli_query($link, $q);
 						if($r)
 						{
-							logAction($link,$currentowner,'device','change_owner',$id . " ".$cb,$organization,'new owner: '.$newuser,'success');			
+							logAction($link,$username,'device','change_owner',$id . " ".$cb,$organization,'new owner: '.$newuser,'success');			
 
 							$result["msg"] .= "\n cert correctly updated";
 							$result["log"] .= "\r\n cert correctly updated\r\n";
 						}
 						else 
 						{
-							logAction($link,$currentowner,'device','change_owner',$id . " ".$cb,$organization,'new owner: '.$newuser,'faliure');
+							logAction($link,$username,'device','change_owner',$id . " ".$cb,$organization,'new owner: '.$newuser,'faliure');
 				
 							$result["msg"] .= "\n cert NOT correctly updated";
 							$result["log"] .= "\r\n cert NOT correctly updated\r\n";
@@ -960,7 +866,7 @@ else if ($action =='change_owner')
 						$ownmsg["elementName"]=$id;				    
 						$ownmsg["elementUrl"]=$url;
 						$ownmsg["deleted"]= date("Y/m/d");
-						$ownmsg["username"]=$currentowner;
+						$ownmsg["username"]=$username;
 						$ownmsg["elementDetails"]=array();
 						$ownmsg["elementDetails"]["k1"]= $k1;
 						$ownmsg["elementDetails"]["k2"]= $k2;
@@ -978,17 +884,16 @@ else if ($action =='change_owner')
 						registerOwnerShipDevice($eId, $ownmsg, $accessToken, $result);//insert new ownership
 						$result["status"]='ok';
 		
-						logAction($link,$currentowner,'device','change_owner',$id . " ".$cb,$organization,'new owner: '.$newuser,'success');	
+						logAction($link,$username,'device','change_owner',$id . " ".$cb,$organization,'new owner: '.$newuser,'success');	
 					}
 					else 
 					{
-						logAction($link,$currentowner,'device','change_owner',$id . " ".$cb,$organization,'new owner: '.$newuser,'faliure');
+						logAction($link,$username,'device','change_owner',$id . " ".$cb,$organization,'new owner: '.$newuser,'faliure');
 						$result["status"]='ko';
 					}
 				}
 				}
 			}
-		}
 	}
  	my_log($result);
    	mysqli_close($link);
@@ -997,36 +902,15 @@ else if($action == 'get_device_attributes')
 {
 	$missingParams=missingParameters(array('id', 'contextbroker'));
 
-	if (empty($accessToken))
-    {
-                $result["status"]="ko";
-                $result['msg'] = "Access Token not present";
-                $result["error_msg"] .= "Problem getting all the device attr information (Access Token not present). ";
-                $result["log"]= "action=get_device_attributes - error AccessToken not present\r\n";
-	}
-	else if (!empty($missingParams))
+	if (!empty($missingParams))
 	{
-                $result["status"]="ko";
-                $result['msg'] = "Missing Parameters";
-                $result["error_msg"] .= "Problem getting all the device attr information (Missing parameters: ".implode(", ",$missingParams)." )";
-                $result["log"]= "action=get_device_attributes - error Missing Parameters: ".implode(", ",$missingParams)." \r\n";
+		$result["status"]="ko";
+		$result['msg'] = "Missing Parameters";
+		$result["error_msg"] .= "Problem getting all the device attr information (Missing parameters: ".implode(", ",$missingParams)." )";
+		$result["log"]= "action=get_device_attributes - error Missing Parameters: ".implode(", ",$missingParams)." \r\n";
 	}
 	else
 	{
-		 //retrieve username, organization and role from the accetoken
-        //TODO avoid passing all the parameters for LDAP
-        get_user_info($accessToken, $username, $organization, $oidc, $role, $result, $ldapBaseName, $ldapServer, $ldapPort, $ldapAdminName, $ldapAdminPwd);
-
-        if ($result["status"]!="ok")
-        {
-            $result["status"]="ko";
-            $result['msg'] = "Cannot retrieve user information";
-            $result["error_msg"] .= "Problem changing owner (Cannot retrieve user information)";
-            $result["log"]= "action=change_owner - error Cannot retrieve user information\r\n";
-        }
-        else
-        {
-
 			$id = mysqli_real_escape_string($link, $_REQUEST['id']);
 			$cb = mysqli_real_escape_string($link, $_REQUEST['contextbroker']);
 			if (isset($_REQUEST['service'])) $service = mysqli_real_escape_string($link, $_REQUEST['service']);
@@ -1100,14 +984,13 @@ else if($action == 'get_device_attributes')
 					}
 					else
 					{
-						$result['status'] = 'ko'; // . $q1 . generateErrorMessage($link);
+						$result['status'] = 'ko';
 						$result['msg'] = 'Error: errors in reading data about devices. <br/>' .  generateErrorMessage($link);
 						$result['log'] .= '\n\naction:get_device_attributes. Error: errors in reading data about devices. ' . generateErrorMessage($link);				  
 					}
 				}
 				}
     		}
-		}
 	}
 	my_log($result);
 	mysqli_close($link);
@@ -1280,14 +1163,7 @@ else if (($action == "get_device_simple")||($action == "get_device"))
 {
 	$missingParams=missingParameters(array('id', 'contextbroker'));
 
-	if (empty($accessToken))
-    {
-                $result["status"]="ko";
-                $result['msg'] = "Access Token not present";
-                $result["error_msg"] .= "Problem getting the device information (Access Token not present). ";
-                $result["log"]= "action=get_device - error AccessToken not present\r\n";
-    }
-	else if (!empty($missingParams))
+	if (!empty($missingParams))
     {
                 $result["status"]="ko";
                 $result['msg'] = "Missing Parameters";
@@ -1296,12 +1172,6 @@ else if (($action == "get_device_simple")||($action == "get_device"))
     }
     else 
 	{
-        //retrieve any parameteres from the accetoken
-        //TODO avoid passing all the parameters for LDAP
-        get_user_info($accessToken, $username, $organization, $oidc, $role, $result, $ldapBaseName, $ldapServer, $ldapPort, $ldapAdminName, $ldapAdminPwd);
-
-        if ($result["status"]=="ok")
-		{
 			$id = mysqli_real_escape_string($link, $_REQUEST['id']);
         	$cb = mysqli_real_escape_string($link, $_REQUEST['contextbroker']);
 			if (isset($_REQUEST['service'])) $service = mysqli_real_escape_string($link, $_REQUEST['service']);
@@ -1348,35 +1218,11 @@ else if (($action == "get_device_simple")||($action == "get_device"))
 					}
 				}
 			}
-		}
 	}
     my_log($result);
 }
 else if ($action == "get_all_device")
 {
-	if (empty($accessToken))
-	{
-		$result["status"]="ko";
-		$result['msg'] = "Access Token not present";
-		$result["error_msg"] .= "Problem getting all the device information (Access Token not present). ";
-		$result["log"]= "action=get_all_device - error AccessToken not present\r\n";
-		my_log($result);
-	}
-	else
-	{
-		//retrieve username, organization and role from the accetoken
-		//TODO avoid passing all the parameters for LDAP
-		get_user_info($accessToken, $username, $organization, $oidc, $loggedrole, $result, $ldapBaseName, $ldapServer, $ldapPort, $ldapAdminName, $ldapAdminPwd);
-		if ($result["status"]!="ok")
-		{
-			$result["status"]="ko";
-			$result['msg'] = "Cannot retrieve user information";
-			$result["error_msg"] .= "Problem getting all the device information (Cannot retrieve user information)";
-			$result["log"]= "action=get_all_device - error Cannot retrieve user information\r\n";
-			my_log($result);
-		}
-        else
-       	{
 			if (isset($_REQUEST['length']))	$length = mysqli_real_escape_string($link, $_REQUEST['length']);
 			else $length=-1;
 			$start=1;//default is 1 but should throw an error
@@ -1481,9 +1327,9 @@ else if ($action == "get_all_device")
 								$rec["id"] = explode(".", $row["id"])[2];
 							}	
 					
-							if (((isset($result["keys"][$eid]))&&($loggedrole!=='RootAdmin'))
+							if (((isset($result["keys"][$eid]))&&($role!=='RootAdmin'))
 								||
-								((isset($result["keys"][$eid]))&& ($result["keys"][$eid]["owner"]==$username) && ($loggedrole==='RootAdmin')))
+								((isset($result["keys"][$eid]))&& ($result["keys"][$eid]["owner"]==$username) && ($role==='RootAdmin')))
 							{
 								//it's mine or RootAdmin
 								if ($row["visibility"]=="public")
@@ -1546,37 +1392,13 @@ else if ($action == "get_all_device")
 				logAction($link,$username,'device','get_all_device','',$organization,'Error: errors in reading data about devices.','faliure');
 				$output= format_result($_REQUEST["draw"], 0, 0, $data, 'Error: errors in reading data about devices. <br/>' . generateErrorMessage($link), '\n\r Error: errors in reading data about devices.' . generateErrorMessage($link), 'ko');
 		  	}   
-		}
-		my_log($output);
-	}
+	my_log($output);
 	mysqli_close($link);
 }
 //TODO can be unified with get_all_device
 //assurance on ADMIN is guarranteed by getOwnerShipDevice
 else if($action == "get_all_device_admin")
 {
-	if (empty($accessToken))
-	{
-		$result["status"]="ko";
-		$result['msg'] = "Access Token not present";
-		$result["error_msg"] .= "Problem getting all the device admin information (Access Token not present). ";
-		$result["log"]= "action=get_all_device_admin - error AccessToken not present\r\n";
-	}
-	else
-	{
-		//retrieve username, organization and role from the accetoken
-		//TODO avoid passing all the parameters for LDAP
-		get_user_info($accessToken, $username, $organization, $oidc, $loggedrole, $result, $ldapBaseName, $ldapServer, $ldapPort, $ldapAdminName, $ldapAdminPwd);
-		if ($result["status"]!="ok")
-		{
-			$result["status"]="ko";
-			$result['msg'] = "Cannot retrieve user information";
-			$result["error_msg"] .= "Problem getting all the device admin information (Cannot retrieve user information)";
-			$result["log"]= "action=get_all_device_admin - error Cannot retrieve user information\r\n";
-		}
-		else
-		{
-
 			if (isset($_REQUEST['select'])) $selection=json_decode($_REQUEST['select']);
 			else $selection= array();
 
@@ -1586,7 +1408,7 @@ else if($action == "get_all_device_admin")
 	    	  CASE WHEN mandatoryproperties AND mandatoryvalues THEN \"active\" ELSE \"idle\" END AS status1, 
 		      d.`macaddress`, d.`model`, d.`producer`, d.`longitude`, d.`latitude`, d.`protocol`, d.`format`, d.`visibility`, d.`organization`,
 		      d.`frequency`, d.`created`, d.`privatekey`, d.`certificate`, cb.`accesslink`,  cb.`accessport`,cb.`sha`, d.`subnature`, d.`static_attributes`, d.`service`, d.`servicePath` 
-			  FROM `devices` d JOIN `contextbroker` cb ON (d.contextBroker=cb.name) "; //  WHERE visibility =\"public\"";
+			  FROM `devices` d JOIN `contextbroker` cb ON (d.contextBroker=cb.name) ";
 
 			if (count($selection)!=0)
 			{
@@ -1706,8 +1528,6 @@ else if($action == "get_all_device_admin")
 				logAction($link,$username,'device','get_all_device_admin','',$organization,'','faliure');	 
 		        $output= format_result($_REQUEST["draw"], 0, 0, null, 'Error: errors in reading data about devices. <br/>' . generateErrorMessage($link), '\n\r Error: errors in reading data about devices.' . generateErrorMessage($link), 'ko');
 			}    
-		}
-	}
 	my_log($output);
 	mysqli_close($link);
 }/* never used? removed temporarly
@@ -1800,28 +1620,6 @@ else if($action == "get_all_private_device")
 }*/
 else if($action == "get_all_device_latlong")
 {
-	if (empty($accessToken))
-	{
-		$result["status"]="ko";
-		$result['msg'] = "Access Token not present";
-		$result["error_msg"] .= "Problem getting all the device information lat long(Access Token not present). ";
-		$result["log"]= "action=get_all_device_latlong - error AccessToken not present\r\n";
-	}
-	else
-	{
-		//retrieve username, organization and role from the accetoken
-		//TODO avoid passing all the parameters for LDAP
-		get_user_info($accessToken, $username, $organization, $oidc, $loggedrole, $result, $ldapBaseName, $ldapServer, $ldapPort, $ldapAdminName, $ldapAdminPwd);
-		if ($result["status"]!="ok")
-		{
-			$result["status"]="ko";
-			$result['msg'] = "Cannot retrieve user information";
-            $result["error_msg"] .= "Problem getting all the device information lat long (Cannot retrieve user information)";
-            $result["log"]= "action=get_all_device_latlong - error Cannot retrieve user information\r\n";
-        }
-        else
-        {
- 
 			$ownDevices= "";
 			if (!empty($accessToken)) 
 			{ 
@@ -1869,8 +1667,6 @@ else if($action == "get_all_device_latlong")
 				$result['msg'] = '\r\n action=get_all_device_latlong -- Error: errors in reading data about devices.' . $q .
 						  generateErrorMessage($link);
 			}    
-		}
-	}
 	my_log($result);
 	mysqli_close($link);
 }
@@ -1988,14 +1784,7 @@ else if ($action == 'download')
 {
 	$missingParams=missingParameters(array('id', 'contextbroker', 'filename'));
 
-	if (empty($accessToken))
-	{
-		$result["status"]="ko";
-		$result['msg'] = "Access Token not present";
-		$result["error_msg"] .= "Problem in download (Access Token not present)";
-		$result["log"]= "action=download - error AccessToken not present\r\n";
-	}
-	else if (!empty($missingParams))
+	if (!empty($missingParams))
 	{
 		$result["status"]="ko";
 		$result['msg'] = "Missing Parameters";
@@ -2004,19 +1793,6 @@ else if ($action == 'download')
 	}
 	else
 	{
-		//retrieve username, organization and role from the accetoken
-        //TODO avoid passing all the parameters for LDAP
-        get_user_info($accessToken, $currentUser, $organization, $oidc, $role, $result, $ldapBaseName, $ldapServer, $ldapPort, $ldapAdminName, $ldapAdminPwd);
-
-        if ($result["status"]!="ok")
-        {
-        	$result["status"]="ko";
-            $result['msg'] = "Cannot retrieve user information";
-            $result["error_msg"] .= "Problem in download (Cannot retrieve user information)";
-            $result["log"]= "action=download - error Cannot retrieve user information\r\n";
-		}
-        else
-        {
 			$result["log"]="\r\n download invoked\n";
 			
 			$id = mysqli_real_escape_string($link, $_REQUEST['id']);
@@ -2033,8 +1809,8 @@ else if ($action == 'download')
                 $result["error_msg"] .= "Problem in download (Unrecognized contextbroker/protocol)";
                 $result["log"]= "action=download - error Unrecognized contextbroker/protocol\r\n";
             }
-            else
-            {
+			else
+			{
 				//id management
 				if($protocol == "ngsi w/MultiService")  $id = $service . "." . $servicePath . "." . $id;
 				get_device($currentUser, $role, $id, $contextbroker,  $accessToken, $link, $result);
@@ -2097,10 +1873,9 @@ else if ($action == 'download')
       			        	}
 						}
 			        }	
-					}	
+				}	
 				}
 			}
-		}
 	}
 
 	my_log($result);
@@ -2110,38 +1885,16 @@ else if($action == "get_delegations")
 {
 	$missingParams=missingParameters(array('id', 'contextbroker'));
 
-	if (empty($accessToken))
-    {
-		$result["status"]="ko";
-        $result['msg'] = "Access Token not present";
-        $result["error_msg"] .= "Problem in get delegations (Access Token not present)";
-        $result["log"]= "action=get_delegations - error AccessToken not present\r\n";
-	}
-	else if (!empty($missingParams))
+	if (!empty($missingParams))
     {
 		$result["status"]="ko";
 		$result['msg'] = "Missing Parameters";
         $result["error_msg"] .= "Problem in get delegations (Missing parameters: ".implode(", ",$missingParams)." )";
         $result["log"]= "action=get_delegations - error Missing Parameters: ".implode(", ",$missingParams)." \r\n";
 	}
-    else
-    {
-		//retrieve username, organization and role from the accetoken
-		//TODO avoid passing all the parameters for LDAP
-        get_user_info($accessToken, $user, $organization, $oidc, $role, $result, $ldapBaseName, $ldapServer, $ldapPort, $ldapAdminName, $ldapAdminPwd);
-
-		if ($result["status"]!="ok")
-        {
-        	$result["status"]="ko";
-            $result['msg'] = "Cannot retrieve user information";
-            $result["error_msg"] .= "Problem in get delegations (Cannot retrieve user information)";
-            $result["log"]= "action=get_delegations - error Cannot retrieve user information\r\n";
-		}
-        else
-        {
-			//$uri =  mysqli_real_escape_string($link, $_REQUEST['uri']);
+	else
+	{
 			$cb = mysqli_real_escape_string($link, $_REQUEST['contextbroker']);
-			//$dev_organization = mysqli_real_escape_string($link, $_REQUEST['dev_organization']);
 			$id = mysqli_real_escape_string($link, $_REQUEST['id']);
 			if (isset($_REQUEST['service'])) $service = mysqli_real_escape_string($link, $_REQUEST['service']);
             else $service ="";
@@ -2161,7 +1914,7 @@ else if($action == "get_delegations")
 			{
 				//id management
 				if ($protocol == "ngsi w/MultiService")	$id = $service . "." . $servicePath . "." . $id;
-				get_device($user, $role, $id, $cb,  $accessToken, $link, $result);
+				get_device($username, $role, $id, $cb,  $accessToken, $link, $result);
 				if (empty($result["content"]))
                 {
                     $result["status"]="ko";
@@ -2183,11 +1936,10 @@ else if($action == "get_delegations")
 					}
 					else
 					{ 
-						getDelegatorDevice($accessToken, $user, $result, $eId);
+						getDelegatorDevice($accessToken, $username, $result, $eId);
 					}
 				}
 			}
-		}
 	}
 	my_log($result);
 	mysqli_close($link);
@@ -2197,14 +1949,7 @@ else if($action == "add_delegation")
 {
 	$missingParams=missingParameters(array('id', 'contextbroker', 'k1', 'k2'));
 
-	if (empty($accessToken))
-    {
-    	$result["status"]="ko";
-        $result['msg'] = "Access Token not present";
-        $result["error_msg"] .= "Problem in add delegation (Access Token not present)";
-        $result["log"]= "action=add_delegation - error AccessToken not present\r\n";
-	}
-    else if (!empty($missingParams))
+    if (!empty($missingParams))
     {
 		$result["status"]="ko";
         $result['msg'] = "Missing Parameters";
@@ -2213,23 +1958,8 @@ else if($action == "add_delegation")
 	}
     else
     {
-		//retrieve username, organization and role from the accetoken
-		//TODO avoid passing all the parameters for LDAP
-		get_user_info($accessToken, $user, $organization, $oidc, $role, $result, $ldapBaseName, $ldapServer, $ldapPort, $ldapAdminName, $ldapAdminPwd);
-
-        if ($result["status"]!="ok")
-        {
-			$result["status"]="ko";
-			$result['msg'] = "Cannot retrieve user information";
-            $result["error_msg"] .= "Problem in add delegation (Cannot retrieve user information)";
-            $result["log"]= "action=add_delegation - error Cannot retrieve user information\r\n";
-		}
-        else
-        {
 			$cb = mysqli_real_escape_string($link, $_REQUEST['contextbroker']);
-			//$dev_organization = mysqli_real_escape_string($link, $_REQUEST['dev_organization']);
 			$id = mysqli_real_escape_string($link, $_REQUEST['id']);
-			//$uri =  mysqli_real_escape_string($link, $_REQUEST['uri']);
 			$delegated_user = (isset($_REQUEST['delegated_user']))?mysqli_real_escape_string($link, $_REQUEST['delegated_user']):"";
 			$delegated_group= (isset($_REQUEST['delegated_group']))?mysqli_real_escape_string($link, $_REQUEST['delegated_group']):"";
 			$k1 = mysqli_real_escape_string($link, $_REQUEST['k1']);
@@ -2252,7 +1982,7 @@ else if($action == "add_delegation")
 			{
 				//id management
 				if ($protocol == "ngsi w/MultiService")	$id = $service . "." . $servicePath . "." . $id;
-				get_device($user, $role, $id, $cb,  $accessToken, $link, $result);
+				get_device($username, $role, $id, $cb,  $accessToken, $link, $result);
 				if (empty($result["content"]))
                 {
                     $result["status"]="ko";
@@ -2275,7 +2005,7 @@ else if($action == "add_delegation")
 				}
 				else
 				{
-					if (($delegated_user != "" || $delegated_group != "") && $user != "")
+					if (($delegated_user != "" || $delegated_group != "") && $username != "")
 					{
 						//retrieve any values of this this device
 			        	$q1 = "SELECT * FROM event_values WHERE cb = '$cb' and device='$id'";
@@ -2284,11 +2014,11 @@ else if($action == "add_delegation")
 						//delegate any values of this device
 						while($value = mysqli_fetch_assoc($values))
 						{
-							delegateDeviceValue($uri ."/" . $value["value_name"], $cb, $value["value_name"], $user, $delegated_user, $delegated_group, $accessToken, $k1, $k2, $result);
+							delegateDeviceValue($uri ."/" . $value["value_name"], $cb, $value["value_name"], $username, $delegated_user, $delegated_group, $accessToken, $k1, $k2, $result);
 						}
 
 						//delegate the device
-    	    	        delegateDeviceValue($eId, $cb, NULL, $user, $delegated_user, $delegated_group, $accessToken, $k1, $k2, $result);
+    	    	        delegateDeviceValue($eId, $cb, NULL, $username, $delegated_user, $delegated_group, $accessToken, $k1, $k2, $result);
 					}
 		    	    else
 	    	    	{
@@ -2299,7 +2029,6 @@ else if($action == "add_delegation")
 				}
 				}
 			}
-		}
 	}
     my_log($result);
 	mysqli_close($link);
@@ -2308,14 +2037,7 @@ else if($action == "remove_delegation")
 {
 	$missingParams=missingParameters(array('id', 'contextbroker', 'delegationId'));
 
-	if (empty($accessToken))
-    {
-		$result["status"]="ko";
-        $result['msg'] = "Access Token not present";
-        $result["error_msg"] .= "Problem in remove delegation (Access Token not present)";
-        $result["log"]= "action=remove_delegation - error AccessToken not present\r\n";
-	}
-    else if (!empty($missingParams))
+    if (!empty($missingParams))
     {
 		$result["status"]="ko";
 		$result['msg'] = "Missing Parameters";
@@ -2324,21 +2046,7 @@ else if($action == "remove_delegation")
 	}
 	else
 	{
-		//retrieve username, organization and role from the accetoken
-		//TODO avoid passing all the parameters for LDAP
-		get_user_info($accessToken, $user, $organization, $oidc, $role, $result, $ldapBaseName, $ldapServer, $ldapPort, $ldapAdminName, $ldapAdminPwd);
-
-		if ($result["status"]!="ok")
-		{
-			$result["status"]="ko";
-			$result['msg'] = "Cannot retrieve user information";
-			$result["error_msg"] .= "Problem in remove delegation (Cannot retrieve user information)";
-			$result["log"]= "action=remove_delegation - error Cannot retrieve user information\r\n";
-		}
-		else
-		{
 			$delegationId = mysqli_real_escape_string($link, $_REQUEST['delegationId']);
-			//$uri = mysqli_real_escape_string($link, $_REQUEST['uri']);
 			if (isset($_REQUEST['userDelegated'])) $userDelegated = mysqli_real_escape_string($link, $_REQUEST['userDelegated']);
 			if (isset($_REQUEST['groupDelegated']))
 			{
@@ -2374,7 +2082,7 @@ else if($action == "remove_delegation")
 			{
 				//id management
 				if ($protocol == "ngsi w/MultiService") $id = $service . "." . $servicePath . "." . $id;
-				get_device($user, $role, $id, $cb,  $accessToken, $link, $result);
+				get_device($username, $role, $id, $cb,  $accessToken, $link, $result);
 				if (empty($result["content"]))
                 {
                     $result["status"]="ko";
@@ -2398,7 +2106,7 @@ else if($action == "remove_delegation")
 					else
 					{
 						//remove delegation the device
-						removeDelegationValue($accessToken, $user, $delegationId, $result);
+						removeDelegationValue($accessToken, $username, $delegationId, $result);
 
 						//retrieve any values of this device
 						$q1 = "SELECT * FROM event_values WHERE cb = '$cb' and device='$id'";
@@ -2407,7 +2115,7 @@ else if($action == "remove_delegation")
 						//retrieve any delegation made on values of this this device
 						while($value = mysqli_fetch_assoc($values))
 						{
-							getDelegatorDevice($accessToken, $user, $result, $uri ."/" . $value["value_name"]);
+							getDelegatorDevice($accessToken, $username, $result, $uri ."/" . $value["value_name"]);
 							$delegated=$result["delegation"];
 							$i=0;
 							while ($i < count($delegated))
@@ -2415,12 +2123,12 @@ else if($action == "remove_delegation")
 								if (isset($delegated[$i]["userDelegated"]) && (isset($userDelegated)) && $delegated[$i]["userDelegated"]==$userDelegated)
 								{
 									$delegationId= $delegated[$i]["delegationId"];
-									removeDelegationValue($accessToken, $user, $delegationId, $result);
+									removeDelegationValue($accessToken, $username, $delegationId, $result);
 								}
 								else if (isset($delegated[$i]["groupDelegated"]) && (isset($groupDelegated)) && $delegated[$i]["groupDelegated"]==$groupDelegated)
 		    	        	    {
         	                	    $delegationId= $delegated[$i]["delegationId"];
-            	   		        	removeDelegationValue($accessToken, $user, $delegationId, $result);
+            	   		        	removeDelegationValue($accessToken, $username, $delegationId, $result);
 		        		        }
 								$i++;
 							}
@@ -2428,9 +2136,7 @@ else if($action == "remove_delegation")
 					}
 				}
 			}
-		}
 	}
-
 	my_log($result);
 	mysqli_close($link);
 }
@@ -2757,23 +2463,6 @@ else
 	$result['log'] = 'invalid action ' . $action;
 	my_log($result);
 	mysqli_close($link);
-}
-
-function retrieveKbUrl($organizationApiURI, $org)
-{
-	//retrieve the kburl -> this is needed since this api can be called from OUTSIDE of the IoT directory
-        $kburl="";
-        if (!isset($_SESSION['kbUrl']))
-        {
-		$infokburl=get_organization_info($organizationApiURI, $org);
-                if(!is_null($infokburl)){
-                	$kburl=$infokburl["kbUrl"];
-                }
-        }
-        else {
-  	      $kburl=$_SESSION['kbUrl'];
-        }
-	return $kburl;
 }
 
 function compare_values($obj_a, $obj_b) {

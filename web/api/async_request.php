@@ -1,7 +1,6 @@
 <?php
 
 include ('../config.php');
-
 require('Requests.php');
 
 $urls = array();
@@ -9,7 +8,6 @@ $headers = array();
 $params = array();
 
 $url_to_bulkphp = $redirectUri.'/api/bulkDeviceLoad.php';
-
 
 $urls[] = $url_to_bulkphp;
 
@@ -22,7 +20,6 @@ $callback = function($data, $info)
 {
 	echo $data;
 };
-
 
 $requests = new Requests();
 $requests->process($urls, $headers, $params, $callback);

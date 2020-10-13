@@ -44,27 +44,7 @@
 	$link = mysqli_connect($host, $username, $password);
     mysqli_select_db($link, $dbname);
     
-    if(!isset($_SESSION['loggedRole']))
-    {
-        header("location: unauthorizedUser.php");
-    }
-/* 
-	require '../sso/autoload.php';
-	use Jumbojett\OpenIDConnectClient;
-
-
-	if (isset($_SESSION['refreshToken'])) {
-	  $oidc = new OpenIDConnectClient($keycloakHostUri, $clientId, $clientSecret);
-	  $oidc->providerConfigParam(array('token_endpoint' => $keycloakHostUri.'/auth/realms/master/protocol/openid-connect/token'));
-	  $tkn = $oidc->refreshToken($_SESSION['refreshToken']);
-	  $accessToken = $tkn->access_token;
-	  $_SESSION['refreshToken'] = $tkn->refresh_token;
-	}
-        else  $accessToken = "";	
-	 */	
-		
 	$accessToken = "";	
-
 ?>
 
 <!DOCTYPE html>
@@ -176,7 +156,7 @@
 		 
 
           $.ajax({url: "../api/functionality.php",
-			 data: {action: 'get_functionality', page : mypage},
+			 data: {action: 'get_functionality', page : mypage, token:sessionToken},
 			 type: "GET",
 			 async: false,
 			 dataType: 'json',
@@ -435,7 +415,7 @@
                                     <div class="modalFieldCnt">
                                         <input type="text" class="modalInputTxt" name="inputNameDevice" id="inputNameDevice" onkeyup="checkStrangeCharacters(this)"> 
                                     </div>
-                                    <div class="modalFieldLabelCnt">Device</div>
+                                    <div class="modalFieldLabelCnt">Device Identifier</div>
 									<div id="inputNameDeviceMsg" class="modalFieldMsgCnt">&nbsp;</div>
                                 </div>
 

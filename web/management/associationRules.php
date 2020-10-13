@@ -47,27 +47,6 @@ if (isset($_REQUEST['redirect'])){
 	$link = mysqli_connect($host, $username, $password);
     mysqli_select_db($link, $dbname);
     
-    if(!isset($_SESSION['loggedRole']))
-    {
-        header("location: unauthorizedUser.php");
-    }
-
-
-/*require '../sso/autoload.php';
-use Jumbojett\OpenIDConnectClient;
-
-
- if (isset($_SESSION['refreshToken'])) {
-   $oidc = new OpenIDConnectClient('https://www.snap4city.org', $clientId, $clientSecret);
-   $oidc->providerConfigParam(array('token_endpoint' => 'https://www.snap4city.org/auth/realms/master/protocol/openid-connect/token'));
-   $tkn = $oidc->refreshToken($_SESSION['refreshToken']);
-   $accessToken = $tkn->access_token;
-   $_SESSION['refreshToken'] = $tkn->refresh_token;
-}
-else 
-	$accessToken ="";
-
-  */
   $accessToken = "";
 ?>
 
@@ -322,17 +301,26 @@ else
             
              <div class="row mainRow"> 
                 <?php include "mainMenu.php" ?> 
-                <div class="col-xs-12 col-md-10" id="mainCnt">
+                 <div 
+                     <?php //MM201218
+				if (($hide_menu=="hide")) {?>
+				class="col-xs-12 col-md-12" 
+				<?php }else {?>
+				class="col-xs-12 col-md-10" 
+				<?php } //MM201218 FINE?>
+                     id="mainCnt">
                     <div class="row hidden-md hidden-lg">
                         <div id="mobHeaderClaimCnt" class="col-xs-12 hidden-md hidden-lg centerWithFlex">
                             Snap4City
                         </div>
                     </div>
+<?php //MM201218
+					if (($hide_menu!="hide")) {?>
                     <div class="row" id="title_row">
                         <div class="col-xs-10 col-md-12 centerWithFlex" id="headerTitleCnt">IoT Directory: Devices</div>
                         <div class="col-xs-2 hidden-md hidden-lg centerWithFlex" id="headerMenuCnt"><!--?php include "mobMainMenu.php" ?--></div> 
                     </div>
-					
+				<?php } //MM201218 FINE ?>		
 							
                     <div class="row">
                         <div class="col-xs-12" id="mainContentCnt">
@@ -387,137 +375,109 @@ else
                             </div>
                             
                             
-							
+						<!-- TODO use apis and not direct query to DB!!!!! -->							
 							
                         <!-- the row of buttons: My devices, Delegated Devices, Add New Device; it appears in mydevices.php-->
-				
-                           
-                            <div id="managerBoard" class="row mainContentRow">
-											<!-- <div class="col-xs-12 mainContentRowDesc">My Devices Menu </div>-->
-                                
-                                <div id="uploadFileBoard" class="row mainContentRow">			
-                                <!-------context broker row--------------------->
-                                    
-                                <div class="col-xs-12 mainContentCellCntWhiteLines">	
-                                    <div class="col-xs-12 col-md-6">
-                                         <div class="paddingTop"> Context broker </div>
-                                    </div>
-                                    <div class="col-xs-12 col-md-6">
-                                    <div class="modalFieldCnt">
-                                        <select id="selectContextBrokerLD" name="selectContextBrokerLD" class="modalInputTxt">
-										<?php
-                                            $query = "SELECT name FROM contextbroker";
-                                            $result = mysqli_query($link, $query);
+						<div id="managerBoard" class="row mainContentRow">
+							<div id="uploadFileBoard" class="row mainContentRow">			
+								<div class="col-xs-12 mainContentCellCntWhiteLines">	
+									<div class="col-xs-12 col-md-6">
+										<div class="paddingTop"> Context broker </div>
+									</div>
+									<div class="col-xs-12 col-md-6">
+										<div class="modalFieldCnt">
+											<select id="selectContextBrokerLD" name="selectContextBrokerLD" class="modalInputTxt">
+												<?php
+	                                            $query = "SELECT name FROM contextbroker";
+    	                                        $result = mysqli_query($link, $query);
 
-                                            if($result)
-                                            {
-                                               while($row = $result->fetch_assoc())
-                                               {
-                                                 $nameCB=$row["name"];
-                                                 echo "<option value=\"$nameCB\">$nameCB</option>";
-                                               }
-
-                                            }
-                                            else
-                                            {
-                                                $nameCB="ERROR";
-                                                echo "<option value=\"$nameCB\">$nameCB</option>";
-                                            }
-                                        ?>
-									</select>
-                                    </div>
-                                    <!--<div class="modalFieldLabelCnt">ContextBroker</div>-->
-									<!--<div id="selectContextBrokerMMsg" class="modalFieldMsgCnt">&nbsp;</div>-->
-                                </div>
-                                    
-                                </div>
-                                    <!-------model row--------------------->
-                                    <div class="col-xs-12 mainContentCellCntWhiteLines">	
+        	                                    if($result)
+            	                                {
+                	                               while($row = $result->fetch_assoc())
+                    	                           {
+                        	                         $nameCB=$row["name"];
+                            	                     echo "<option value=\"$nameCB\">$nameCB</option>";
+                                	               }
+                                            	}
+	                                            else
+    	                                        {
+        	                                        $nameCB="ERROR";
+            	                                    echo "<option value=\"$nameCB\">$nameCB</option>";
+                	                            }
+                    	                    	?>
+											</select>
+										</div>
+									</div>
+								</div>
+								
+								<div class="col-xs-12 mainContentCellCntWhiteLines">	
                                     <div class="col-xs-12 col-md-6 ">
                                         <div class="paddingTop"> Model</div>
-                                    </div>
+									</div>
                                     <div class="col-xs-12 col-md-6">
-                                    <div class="modalFieldCnt">
-                                        <select id="selectModelLD" name="selectModelLD" class="modalInputTxt">
-										<?php
-                                            $query = "SELECT name FROM model";
-                                            $result = mysqli_query($link, $query);
+                                    	<div class="modalFieldCnt">
+                                        	<select id="selectModelLD" name="selectModelLD" class="modalInputTxt">
+												<?php
+        	                                    $query = "SELECT name FROM model";
+            	                                $result = mysqli_query($link, $query);
 
-                                            if($result)
-                                            {
-                                               echo "<option value=\"$nameM\">  </option>";
-                                                while($row = $result->fetch_assoc())
-                                               {
-                                                 $nameM=$row["name"];
-                                                 echo "<option value=\"$nameM\">$nameM</option>";
-                                               }
+                	                            if($result)
+                    	                        {
+                        	                       while($row = $result->fetch_assoc())
+                            	                   {
+                                	                 $nameM=$row["name"];
+                                    	             echo "<option value=\"$nameM\">$nameM</option>";
+                                        	       }
+                                            	}
+	                                            else
+    	                                        {
+                                                	$nameM="ERROR";
+	                                                echo "<option value=\"$nameM\">$nameM</option>";
+    	                                        }
+        		                                ?>
+											</select>
+	                                    </div>
+    	                            </div>
+                                </div>
+                                   
+								<div class="col-xs-12 mainContentCellCntWhiteLines">	
+									<div class="col-xs-12 col-md-6 ">
+										<div class="paddingTop">Edge-Gateway Type</div>
+									</div>
+									<div class="col-xs-12 col-md-6 ">
+										<div class="modalFieldCnt">
+											<select id="selectGatewayTypeLD" name="selectGatewayTypeLD" class="modalInputTxt">
+												<?php
+        	                                    /*$query = "SELECT name FROM edgegatewaytype";
+            	                                $result = mysqli_query($link, $query);
 
-                                            }
-                                            else
-                                            {
-
-                                                $nameM="ERROR";
-                                                echo "<option value=\"$nameM\">$nameM</option>";
-                                            }
-                                        ?>
-									</select>
-                                    </div>
-                                    <!--<div class="modalFieldLabelCnt">ContextBroker</div>-->
-									<!--<div id="selectModelMMsg" class="modalFieldMsgCnt">&nbsp;</div>-->
+                	                            if($result)
+                    	                        {
+                                                	while($row = $result->fetch_assoc())
+		                                            {
+        	                                         $nameGT=$row["name"];
+            	                                     echo "<option value=\"$nameGT\">$nameGT</option>";
+                	                                }
+                                            	}
+	                                            else
+    	                                        {
+                                                	$nameGT="ERROR";
+	                                                echo "<option value=\"$nameGT\">$nameGT</option>";
+    	                                        }*/
+												echo "<option value=\"\"></option>";
+        		                                ?>
+											</select>
+                                    	</div>
+	                                </div>
                                 </div>
                                     
-                                </div>
-                                    
-                                    
-                                    <!-------gateway type row--------------------->
-                                    <div class="col-xs-12 mainContentCellCntWhiteLines">	
-                                    <div class="col-xs-12 col-md-6 ">
-                                         <div class="paddingTop">Edge-Gateway Type</div>
-                                    </div>
-                                    <div class="col-xs-12 col-md-6 ">
-                                    <div class="modalFieldCnt">
-                                        <select id="selectGatewayTypeLD" name="selectGatewayTypeLD" class="modalInputTxt">
-										<?php
-                                            $query = "SELECT name FROM edgegatewaytype";
-                                            $result = mysqli_query($link, $query);
-
-                                            if($result)
-                                            {
-                                               echo "<option value=\"$nameGT\">  </option>";
-                                                while($row = $result->fetch_assoc())
-                                               {
-                                                 $nameGT=$row["name"];
-                                                 echo "<option value=\"$nameGT\">$nameGT</option>";
-                                               }
-
-                                            }
-                                            else
-                                            {
-                                                
-
-                                                $nameGT="ERROR";
-                                                echo "<option value=\"$nameGT\">$nameGT</option>";
-                                            }
-                                        ?>
-									</select>
-                                    </div>
-                                    <!--<div class="modalFieldLabelCnt">ContextBroker</div>-->
-									<!--<div id="selectModelMMsg" class="modalFieldMsgCnt">&nbsp;</div>-->
-                                </div>
-                                    
-                                </div>
-                                    <!-------gateway uri row--------------------->
-                                    <div class="col-xs-12 mainContentCellCntWhiteLines">	
+								<div class="col-xs-12 mainContentCellCntWhiteLines">	
                                     <div class="col-xs-12 col-md-6 ">
                                          <div class="paddingTop">Edge-Gateway URI</div>
                                     </div>
                                     <div class="col-xs-12 col-md-6 ">
-                                            <input type="text"  class="modalInputTxt"  id="gatewayUri"  value=" ">  
-                                        </div>
-                                    <!--<div class="modalFieldLabelCnt">ContextBroker</div>-->
-									<!--<div id="selectModelMMsg" class="modalFieldMsgCnt">&nbsp;</div>-->
-                                
-                                    
+                                	    <input type="text"  class="modalInputTxt"  id="gatewayUri"  value=" ">  
+                                    </div>
                                 </div>
                                     <!-------upload button row--------------------->
 

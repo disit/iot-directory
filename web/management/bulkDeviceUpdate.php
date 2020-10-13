@@ -47,27 +47,6 @@ if (isset($_REQUEST['redirect'])){
 	$link = mysqli_connect($host, $username, $password);
     mysqli_select_db($link, $dbname);
     
-    if(!isset($_SESSION['loggedRole']))
-    {
-        header("location: unauthorizedUser.php");
-    }
-
-
-/*require '../sso/autoload.php';
-use Jumbojett\OpenIDConnectClient;
-
-
- if (isset($_SESSION['refreshToken'])) {
-   $oidc = new OpenIDConnectClient($keycloakHostUri, $clientId, $clientSecret);
-   $oidc->providerConfigParam(array('token_endpoint' => $keycloakHostUri.'/auth/realms/master/protocol/openid-connect/token'));
-   $tkn = $oidc->refreshToken($_SESSION['refreshToken']);
-   $accessToken = $tkn->access_token;
-   $_SESSION['refreshToken'] = $tkn->refresh_token;
-}
-else 
-	$accessToken ="";
-
-  */
   $accessToken = "";
 ?>
 
@@ -979,7 +958,7 @@ else
                                 <div class="modalFieldCnt">
                                     <input type="text" class="modalInputTxt" name="inputNameDeviceM" id="inputNameDeviceM" required> 
                                 </div>
-                                <div class="modalFieldLabelCnt">Name</div>
+                                <div class="modalFieldLabelCnt">Device Identifier</div>
                                 <div id="inputNameDeviceMMsg" class="modalFieldMsgCnt">&nbsp;</div>
                             </div>
                             

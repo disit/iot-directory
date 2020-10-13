@@ -4,45 +4,104 @@ var gb_datatypes ="";
 var gb_value_units ="";
 var gb_value_types = "";
 var defaultPolicyValue = [];
-// var mynewAttributes = [];
-
 var gb_options = [];
-
 var dataTable ="";
-
 var gb_device ="";
 var gb_latitude ="";
 var gb_longitude = "";
-// var gb_key1;
-// var gb_key2;
-
 var gb_old_cb="";
-
 var valueTypeOpt = "";
 var valueUnitOpt = "";
 var gb_valVU = "";
 var gb_valVT = "";
 var _serviceIP = "../stubs";
-
 var indexValues=0;//it keeps track of unique identirier on the values, so it's possible to enforce specific value type 
 var currentEditId="";//it keeps the current id of device in edit, so it's possibile to avoid to add any time the same values of the current device id
+var filterDefaults = {
+	myOwnPrivate: 'MyOwnPrivate',
+	myOwnPublic: 'MyOwnPublic',
+	myPrivate: 'private',
+	public: 'public'
+};
+var tableFirstLoad = true;
 
-  var filterDefaults = {
-			myOwnPrivate: 'MyOwnPrivate',
-			myOwnPublic: 'MyOwnPublic',
-			myPrivate: 'private',
-            		public: 'public'
-        };
-		
-		
-     //   var existingPoolsJson = null;
-        // var internalDest = false;
-        var tableFirstLoad = true;
+//--------to get the datatypes items----------
+$.ajax({url: "../api/device.php",
+	data: {
+		action: 'get_param_values',
+		token : sessionToken
+	},
+	type: "POST",
+	async: true,
+	dataType: 'json',
+	success: function (mydata) {
+		if (mydata["status"] === 'ok') {
+			gb_datatypes= mydata["data_type"];
+			gb_value_units= mydata["value_unit"];
+			gb_value_types= mydata["value_type"];
+			addSubnature($("#selectSubnature"),mydata["subnature"]);
+			addSubnature($("#selectSubnatureM"),mydata["subnature"]);
+		}
+		else {
+			console.log("error getting the data types "+data);
+		}
+	},
+	error: function (mydata) {
+		console.log(JSON.stringify(mydata));
+		alert("Network errors. <br/> Get in touch with the Snap4City Administrator<br/>"+ JSON.stringify(mydata));
+	}
+});
 
-//Settaggio dei globals per il file usersManagement.js
- //       setGlobals(admin, existingPoolsJson);
- function ajaxRequest()
-{var request=false;
+//--------to get the datatypes items----------
+$.ajax({
+	url: "../api/contextbroker.php",
+	data: {
+		action: "get_all_contextbroker",
+		token : sessionToken
+	},
+	type: "POST",
+	async: true,
+	success: function (data) {
+		if (data["status"] === 'ok') {
+			addCB($("#selectContextBrokerM"), data);
+			addCB($("#selectContextBroker"), data);
+		}
+		else {
+			console.log("error getting the context brokers "+data);
+		}
+	},
+	error: function (data) {
+		console.log("error in the call to get the context brokers "+data);
+		alert("Network errors. <br/> Get in touch with the Snap4City Administrator<br/>"+ JSON.stringify(data));
+	}
+});
+
+//--------to get the models with their details----------------------
+$.ajax({
+	url: "../api/model.php",
+	data: {
+		action: "get_all_models",
+		token : sessionToken
+	},
+	type: "POST",
+	async: true,
+	success: function (data) {
+		if (data["status"] === 'ok') {
+			addModel($("#selectModelDevice"), data);
+		}
+		else {
+			console.log("error getting the context brokers "+data);
+		}
+	},
+	error: function (data) {
+		console.log("error in the call to get the context brokers "+data);
+		alert("Network errors. <br/> Get in touch with the Snap4City Administrator<br/>"+ JSON.stringify(data));
+	}
+});
+
+
+function ajaxRequest() {
+var request=false;
   try { request = new XMLHttpRequest()}catch(e1){
 	try{request = new ActiveXObject("Msxml2.XMLHTTP")}catch(e2){
 		try{ request = new ActiveXObject("Microsoft.XMLHTTP")
@@ -52,73 +111,6 @@ var currentEditId="";//it keeps the current id of device in edit, so it's possib
   return request
 }       
 
- $.ajax({url: "../api/device.php",
-         data: {
-			 organization : organization, 
-			 action: 'get_param_values'
-			 },
-         type: "POST",
-         async: true,
-         dataType: 'json',
-         success: function (mydata)
-         {
-		if (mydata["status"] === 'ok'){
-		   gb_datatypes= mydata["data_type"];
-		   gb_value_units= mydata["value_unit"];
-		   gb_value_types= mydata["value_type"];		 
-                  addSubnature($("#selectSubnature"),mydata["subnature"]);
-                  addSubnature($("#selectSubnatureM"),mydata["subnature"]); 
-		}
-		else {
-                        alert("An error occured when reading the data. <br/> Get in touch with the Snap4City Administrator. <br/>"+ mydata["error_msg"]);
-                } 
-         },
-		 error: function (mydata)
-		 {
-		   console.log(JSON.stringify(mydata));
-		   alert("Network errors. <br/> Get in touch with the Snap4City Administrator<br/>"+ JSON.stringify(mydata));
-		 }
-});
-    
-function addModel(element, data){
-	var $dropdown = element;
-	$.each(data['content_model'], function() {
-        	$dropdown.append("<option data_key="+this.kgenerator+" value='"+this.name+"'>"+this.name+"</option>");
-        });
-}
-
-$.ajax({
-        url: "../api/value.php",
-        data:{
-                    action: "get_cb",
-                    token : sessionToken,
-                    username: loggedUser,
-                    organization : organization,
-                    loggedrole:loggedRole
-        },
-        type: "POST",
-        async: true,
-        success: function (data)
-        {
-                    if (data["status"] === 'ok')
-                    {
-                        addCB($("#selectContextBrokerM"), data);
-                        addCB($("#selectContextBroker"), data);
-			addModel($("#selectModelDevice"), data);
-                    }
-                    else{
-                        console.log("error getting the context brokers "+data);
-                    }
-                },
-                error: function (data)
-                {
-                 console.log("error in the call to get the context brokers "+data);
-                 alert("Network errors. <br/> Get in touch with the Snap4City Administrator<br/>"+ JSON.stringify(data));
-                }
-});
-
-
- 
 function removeElementAt(parent,child) {
     var list = document.getElementById(parent);
 	// var content = child.parentElement.parentElement.parentElement.innerHTML
@@ -157,14 +149,11 @@ function download(sourcename, devicename, contextbroker) {
  	$.ajax({url: "../api/device.php",
          data: {
 			 token : sessionToken,
-		         action: 'download',
-			 //Sara2510 - for logging purpose
-			 username: loggedUser,
-			 organization : organization, 		
+	         action: 'download',
 			 filename: sourcename,
 			 id:devicename,
              contextbroker:contextbroker
-                         },
+         },
          type: "POST",
          async: true,
          dataType: 'json',
@@ -432,11 +421,11 @@ var multitenancy = "";
            
 			if (selected==null)//TODO uniform these below calls
 			{
-			  mydata = {action: "get_all_device",username: loggedUser, organization : organization,  token : sessionToken,  loggedrole:loggedRole, no_columns: ["position","d.visibility","status1","edit","delete","map"]}; 
+			  mydata = {action: "get_all_device", token : sessionToken, no_columns: ["position","d.visibility","status1","edit","delete","map"]}; 
 			}
 			else
 			{
-			  mydata = {action: "get_all_device",username: loggedUser, organization : organization,   token : sessionToken, loggedrole:loggedRole, select : selected, no_columns: ["position","d.visibility","status1","edit","delete","map"]};
+			  mydata = {action: "get_all_device", token : sessionToken,  select : selected, no_columns: ["position","d.visibility","status1","edit","delete","map"]};
 			}
     
         var page_length=10;    
@@ -458,7 +447,6 @@ var multitenancy = "";
 		"ajax" : {
 		 url:"../api/device.php",
 		 data: mydata,
-		//token : sessionToken,
 		 datatype: 'json',
 		 type: "POST",                
 		},
@@ -543,11 +531,10 @@ var multitenancy = "";
 				'data-edgegateway_uri="'+d.edgegateway_uri+'" ' +
 				'data-k1="'+d.k1+'" ' +
 				'data-k2="'+d.k2+'" ' +
-                                'data-subnature="'+d.subnature+'" '+
+                'data-subnature="'+d.subnature+'" '+
 				'data-service="'+d.service+'" ' +
 				'data-servicePath="'+d.servicePath+'" '+
-                               'data-static-attributes="'+btoa(d.staticAttributes)+'" '+
-
+                'data-static-attributes="'+btoa(d.staticAttributes)+'" '+
 				'data-status1="'+d.status1+'">Edit</button>';
 				 } else { }
 				
@@ -588,9 +575,8 @@ var multitenancy = "";
    });
   
 	if (loggedRole!='RootAdmin' && loggedRole!='ToolAdmin' && loggedRole!='AreaManager' ) {		
-	dataTable.columns( [7,8] ).visible( false );		
+		dataTable.columns( [7,8] ).visible( false );		
 	}
-  
   }	 
 
  //end of fetch function 
@@ -639,8 +625,8 @@ var multitenancy = "";
 	//select custom model
 	$("#selectModelDevice").prop('selectedIndex',1);	
 
-	  
-      $("#addDeviceModalTabs").show();
+	$("#addDeviceModalTabs").show();
+	$('.nav-tabs a[href="#addIOTBrokerTabDevice"]').tab('show');  
 	$("#addDeviceModalBody").show();
 	$('#addDeviceModal div.modalCell').show();
 	$("#addDeviceModalFooter").show();
@@ -731,6 +717,7 @@ var multitenancy = "";
 		//Edit button in dataTable 
 	$('#devicesTable tbody').on('click', 'button.editDashBtn', function () {
 		$("#editDeviceModalTabs").show();
+		$('.nav-tabs a[href="#editIOTBrokerTabDevice"]').tab('show');
 		$('#editDeviceModal div.modalCell').show();
 		$("#editDeviceCancelBtn").show();
 		$("#editDeviceConfirmBtn").show();
@@ -818,11 +805,9 @@ if (currentEditId!==id){
 			url: "../api/device.php",
 			data: {
 				action: "get_device_attributes", 
-                		id: $(this).attr("data-id"),
-				organization : organization, 
+               	id: $(this).attr("data-id"),
 				contextbroker: $(this).attr("data-contextBroker"),
-		                token : sessionToken,
-				protocol: $(this).attr('data-protocol'),
+		        token : sessionToken,
 				service: $(this).attr('data-service'),
 				servicePath: $(this).attr('data-servicePath') 
 			},
@@ -1021,9 +1006,6 @@ showEditDeviceModal();
 		$.ajax({
 			url: "../api/device.php",
 			data: {
-				organization : organization, 
-                loggedrole:loggedRole,
-                username: loggedUser,
 				action: "get_all_device_latlong",
 				token : sessionToken
 			},
@@ -1347,131 +1329,118 @@ showEditDeviceModal();
 					$("#KeyOneDeviceUser").val("");
 					$("#KeyTwoDeviceUser").val("");			
 			}
-			//console.log(nameOpt[selectednameOpt].value + " " + gb_device + " " + gb_longitude + " " + gb_latitude);
 			
 			//if(nameOpt[selectednameOpt].value !="custom" && nameOpt[selectednameOpt].value!="")
 			//{ 
 				$.ajax({
 					url: "../api/model.php",
 					data: {
-					action: "get_model",
-					organization : organization, 
-					name: nameOpt[selectednameOpt].value 
+						action: "get_model",
+						name: nameOpt[selectednameOpt].value,
+						token : sessionToken
 					},
 					type: "POST",
 					async: true,
 					datatype: 'json',
 					success: function (data) 
-					 {		
-						 if(data["status"] === 'ko')
-							{
-								  // data = data["content"];
-								  alert("An error occured when reading the data. <br/> Get in touch with the Snap4City Administrator<br/>"+ data["msg"]);
+					{		
+						if (data["status"] === 'ko') {
+							alert("An error occured when reading the data. <br/> Get in touch with the Snap4City Administrator<br/>"+ data["msg"]);
+						}
+						else if (data["status"] === 'ok') {
+							var model = data.content.name;
+							var type = data.content.devicetype;
+							var kind = data.content.kind;
+							var producer = data.content.producer;
+							//var mac = data.content.mac;
+							var frequency = data.content.frequency;
+							var contextbroker = data.content.contextbroker;
+							//var protocol = data.content.protocol;
+							var format = data.content.format;
+							var myattributes  = JSON.parse(data.content.attributes);
+							var k =0;
+							var content ="";
+							// population of the value tab with the values taken from the db						
+							while (k < myattributes.length) {
+								content += drawAttributeMenu(myattributes[k].value_name, 
+									myattributes[k].data_type, myattributes[k].value_type, myattributes[k].editable, myattributes[k].value_unit, myattributes[k].healthiness_criteria, 
+									myattributes[k].healthiness_value, myattributes[k].old_value_name, 'addlistAttributes', indexValues);
+								indexValues=indexValues+1;
+								k++;
 							}
+							$('#addlistAttributes').html(content);
+							$('#inputTypeDevice').val(data.content.devicetype);
+							$('#selectKindDevice').val(data.content.kind);
+							$('#inputProducerDevice').val(data.content.producer);
+							$('#inputFrequencyDevice').val(data.content.frequency);
+							//$('#inputMacDevice').val(data.content.mac);
+							$('#selectContextBroker').val(data.content.contextbroker);
+							$('#selectProtocolDevice').val(data.content.protocol);
+							$('#selectFormatDevice').val(data.content.format); 
+							$('#selectEdgeGatewayType').val(data.content.edgegateway_type);							
+							$('#selectSubnature').val(data.content.subnature);
+							$('#selectSubnature').trigger('change');
 
-						 else (data["status"] === 'ok')
-							{					
-						//		console.log(data.content.attributes);
-								var model = data.content.name;
-								var type = data.content.devicetype;
-								var kind = data.content.kind;
-								var producer = data.content.producer;
-								//var mac = data.content.mac;
-								var frequency = data.content.frequency;
-								var contextbroker = data.content.contextbroker;
-								//var protocol = data.content.protocol;
-								var format = data.content.format;
-								var myattributes  = JSON.parse(data.content.attributes);
-								var k =0;
-								var content ="";
-								// population of the value tab with the values taken from the db						
-								while (k < myattributes.length)
-								  {
-									//console.log(myattributes.length + " " +k); 
-									content += drawAttributeMenu(myattributes[k].value_name, 
-										 myattributes[k].data_type, myattributes[k].value_type, myattributes[k].editable, myattributes[k].value_unit, myattributes[k].healthiness_criteria, 
-										 myattributes[k].healthiness_value, myattributes[k].old_value_name, 'addlistAttributes', indexValues);
-									indexValues=indexValues+1;
-									k++;
-								  }
-								$('#addlistAttributes').html(content);
-												
-								$('#inputTypeDevice').val(data.content.devicetype);
-								$('#selectKindDevice').val(data.content.kind);
-								$('#inputProducerDevice').val(data.content.producer);
-								$('#inputFrequencyDevice').val(data.content.frequency);
-								//$('#inputMacDevice').val(data.content.mac);
-								$('#selectContextBroker').val(data.content.contextbroker);
-								$('#selectProtocolDevice').val(data.content.protocol);
-								$('#selectFormatDevice').val(data.content.format); 
-								$('#selectEdgeGatewayType').val(data.content.edgegateway_type);							
+			                subnatureChanged(false, JSON.parse(data.content.static_attributes));
 
-								$('#selectSubnature').val(data.content.subnature);
-								$('#selectSubnature').trigger('change');
-						                subnatureChanged(false, JSON.parse(data.content.static_attributes)); 
-
-								addDeviceConditionsArray['contextbroker'] = true;
-								addDeviceConditionsArray['kind'] = true;
-								addDeviceConditionsArray['format'] = true;
-								addDeviceConditionsArray['protocol'] = true;
-								checkSelectionCB();
-								checkSelectionKind();
-								checkSelectionProtocol();
-								checkSelectionFormat();
+							addDeviceConditionsArray['contextbroker'] = true;
+							addDeviceConditionsArray['kind'] = true;
+							addDeviceConditionsArray['format'] = true;
+							addDeviceConditionsArray['protocol'] = true;
+							checkSelectionCB();
+							checkSelectionKind();
+							checkSelectionProtocol();
+							checkSelectionFormat();
 								
-								
-								
-								addDeviceConditionsArray['inputTypeDevice'] = true;
-								checkDeviceType(); // checkAddDeviceConditions();
-								addDeviceConditionsArray['inputFrequencyDevice'] = true;
-								checkFrequencyType(); // checkAddDeviceConditions();
-								addDeviceConditionsArray['inputMacDevice'] = true;
-								checkMAC(); 
-								checkAtlistOneAttribute();
-								checkAddDeviceConditions();
+							addDeviceConditionsArray['inputTypeDevice'] = true;
+							checkDeviceType(); // checkAddDeviceConditions();
+							addDeviceConditionsArray['inputFrequencyDevice'] = true;
+							checkFrequencyType(); // checkAddDeviceConditions();
+							addDeviceConditionsArray['inputMacDevice'] = true;
+							checkMAC(); 
+							checkAtlistOneAttribute();
+							checkAddDeviceConditions();
 
-								getServicesByCBName($('#selectContextBroker').val(), 'add', data.content.service);
-								checkProtocol($('#selectProtocolDevice').val(), 'add', 'device');
-								$('#inputServicePathDevice').val(data.content.servicePath);
-								checkServicePath($('#inputServicePathDevice').val(), 'add', 'device');
-								checkAddDeviceConditions();
-							}
-					 },
-					 error: function (data) 
-					 {
-						 console.log("Ko result: " + JSON.stringify(data));
-						 $('#addlistAttributes').html("");
-												
-								$('#inputTypeDevice').val("");
-								//$('#selectKindDevice').val("");
-								$('#inputProducerDevice').val("");
-								$('#inputFrequencyDevice').val("600");
-								$('#inputMacDevice').val("");
-								$('#selectContextBroker').val("");
-								//$('#selectProtocolDevice').val("");
-								//$('#selectFormatDevice').val("");
-                                alert("An error occured when reading the information about model. <br/> Try again or get in touch with the Snap4City Administrator<br/>");
-													
-					 }
-					
+							getServicesByCBName($('#selectContextBroker').val(), 'add', data.content.service);
+							checkProtocol($('#selectProtocolDevice').val(), 'add', 'device');
+							$('#inputServicePathDevice').val(data.content.servicePath);
+							checkServicePath($('#inputServicePathDevice').val(), 'add', 'device');
+							checkAddDeviceConditions();
+
+                            var valOrg=data.content.cb_organization;
+                            if (valOrg) $("#selectContextBrokerMsg").html($("#selectContextBrokerMsg").html()+ " - Organization:" + valOrg);
+						}
+					},
+					error: function (data) 
+					{
+						console.log("Ko result: " + JSON.stringify(data));
+						$('#addlistAttributes').html("");
+						$('#inputTypeDevice').val("");
+						//$('#selectKindDevice').val("");
+						$('#inputProducerDevice').val("");
+						$('#inputFrequencyDevice').val("600");
+						$('#inputMacDevice').val("");
+						$('#selectContextBroker').val("");
+						//$('#selectProtocolDevice').val("");
+						//$('#selectFormatDevice').val("");
+						alert("An error occured when reading the information about model. <br/> Try again or get in touch with the Snap4City Administrator<br/>");
+					}
 				});		
              
-				  if (nameOpt[selectednameOpt].getAttribute("data_key")!="special")
-				{	 
+				if (nameOpt[selectednameOpt].getAttribute("data_key")!="special") {	 
 					 $("#KeyOneDeviceUser").attr({'disabled': 'disabled'});
 					 $("#KeyTwoDeviceUser").attr({'disabled': 'disabled'});
-				 }
-				 else{
+				}
+				else {
 					 $("#KeyOneDeviceUser").removeAttr('disabled');
 					 $("#KeyTwoDeviceUser").removeAttr('disabled');
 				 }
 		}
-		else if (nameOpt[selectednameOpt].value ==""){ // case not specified
+		else if (nameOpt[selectednameOpt].value =="") { // case not specified
 			$('#inputTypeDevice').val("");
 			//$('#selectKindDevice').val("");
 			$('#inputProducerDevice').val("");
 			$('#inputFrequencyDevice').val("600");
-			
 			$("#sigFoxDeviceUserMsg").html("");
 			$('#inputMacDevice').val("");
 			$('#selectContextBroker').val("");
@@ -1494,7 +1463,6 @@ showEditDeviceModal();
 			checkSelectionProtocol();
 			checkSelectionFormat();
 			
-			
 			addDeviceConditionsArray['inputTypeDevice'] = false;
 			checkDeviceType(); checkAddDeviceConditions();
 			addDeviceConditionsArray['inputFrequencyDevice'] = false;
@@ -1505,11 +1473,8 @@ showEditDeviceModal();
 			document.getElementById('addlistAttributes').innerHTML = "";
 			$("#addNewDeviceGenerateKeyBtn").hide();
 			checkAtlistOneAttribute();
-
-		} else // case custom 
-		{
+		} else {// case custom 
 			$("#addNewDeviceGenerateKeyBtn").show();
-			
 			$("#sigFoxDeviceUserMsg").html("Click on the generatekey botton to generate keys (if you need them)");
 			if ($('#inputTypeDevice').val()=="") 
 				addDeviceConditionsArray['inputTypeDevice'] = false;
@@ -1597,34 +1562,29 @@ showEditDeviceModal();
 		 url: "../api/device.php",
 		 data:{
 			  action: "insert",   
-			  //Sara2510 - for logging purpose
-			  username: loggedUser,
-			  
 			  attributes: JSON.stringify(mynewAttributes),
 			  id: $.trim($('#inputNameDevice').val()),
 			  type: $('#inputTypeDevice').val(),
 			  kind: $('#selectKindDevice').val(),
 			  contextbroker: $('#selectContextBroker').val(),
-			  organization : organization,  
-			  protocol: $('#selectProtocolDevice').val(),
 			  format: $('#selectFormatDevice').val(),
 			  mac: $('#inputMacDevice').val(),
 			  model: $('#selectModelDevice').val(),
 			  producer: $('#inputProducerDevice').val(),
 			  latitude: $('#inputLatitudeDevice').val(),
 			  longitude: $('#inputLongitudeDevice').val(),
-			  visibility: $('#selectVisibilityDevice').val(),
+			  visibility: $('#selectVisibilityDevice').val(),	//DEPRECATED, use default: private
 			  frequency: $('#inputFrequencyDevice').val(),
 			  token : sessionToken,
 			  k1 : $("#KeyOneDeviceUser").val(),
 			  k2 : $("#KeyTwoDeviceUser").val(),
-			  edgegateway_type : $("#selectEdgeGatewayType").val(),
-			  edgegateway_uri : $("#inputEdgeGatewayUri").val(),	  
+			  edgegateway_type : $("#selectEdgeGatewayType").val(),		//DEPRECATED
+			  edgegateway_uri : $("#inputEdgeGatewayUri").val(),	  	//DEPRECATED
 			  subnature: $('#selectSubnature').val(),
-                          static_attributes: JSON.stringify(retrieveStaticAttributes("addlistStaticAttributes")),
+              static_attributes: JSON.stringify(retrieveStaticAttributes("addlistStaticAttributes")),
 			  service : service,
 			  servicePath : servicePath 
-			 },
+		 },
 		 type: "POST",
 		 async: true,
 		 dataType: "JSON",
@@ -1815,18 +1775,12 @@ showEditDeviceModal();
 			url: "../api/device.php",
 			data:{
 				action: "delete",
-				//Sara2510 - for logging purpose
-				username: loggedUser,	
-				organization : organization, 
-				dev_organization : dev_organization, 
 				id: id, 
-				uri : uri,
 				contextbroker : contextbroker,
 				token : sessionToken,
 				service: service,
-				servicePath: servicePath,
-				protocol: protocol
-				},
+				servicePath: servicePath
+			},
 			type: "POST",
 			datatype: "json",
 			async: true,
@@ -1895,250 +1849,201 @@ showEditDeviceModal();
 	
 	$('#editDeviceConfirmBtn').off("click");
 	$("#editDeviceConfirmBtn").click(function(){
-			
 		mynewAttributes = [];
-        var regex=/[^a-z0-9:_-]/gi;
-        var someNameisWrong=false;
-        
+		var regex=/[^a-z0-9:_-]/gi;
+		var someNameisWrong=false;
 		num1 = document.getElementById('addlistAttributesM').childElementCount;
-		//console.log(num1);
-		for (var m=0; m< num1; m++)
-		{
+		for (var m=0; m< num1; m++)	{
 		  //var selOpt= document.getElementById('addlistAttributesM').childNodes[m].childNodes[2].childNodes[0].childNodes[0].options;
 		  //var selIndex= document.getElementById('addlistAttributesM').childNodes[m].childNodes[2].childNodes[0].childNodes[0].selectedIndex;
-		var newatt= {value_name: document.getElementById('addlistAttributesM').childNodes[m].childNodes[0].childNodes[0].childNodes[0].value.trim(), 
-					data_type:document.getElementById('addlistAttributesM').childNodes[m].childNodes[1].childNodes[0].childNodes[0].value.trim(),
-					value_type:document.getElementById('addlistAttributesM').childNodes[m].childNodes[2].childNodes[0].childNodes[0].value.trim(),
-					editable:document.getElementById('addlistAttributesM').childNodes[m].childNodes[4].childNodes[0].childNodes[0].value.trim(),
-					value_unit:document.getElementById('addlistAttributesM').childNodes[m].childNodes[3].childNodes[0].childNodes[0].value.trim(),
-					healthiness_criteria: document.getElementById('addlistAttributesM').childNodes[m].childNodes[5].childNodes[0].childNodes[0].value.trim(),
-					healthiness_value: document.getElementById('addlistAttributesM').childNodes[m].childNodes[6].childNodes[0].childNodes[0].value.trim(),
-                    old_value_name:document.getElementById('addlistAttributesM').childNodes[m].childNodes[7].childNodes[0].childNodes[0].value.trim()};
+			var newatt= {value_name: document.getElementById('addlistAttributesM').childNodes[m].childNodes[0].childNodes[0].childNodes[0].value.trim(), 
+				data_type:document.getElementById('addlistAttributesM').childNodes[m].childNodes[1].childNodes[0].childNodes[0].value.trim(),
+				value_type:document.getElementById('addlistAttributesM').childNodes[m].childNodes[2].childNodes[0].childNodes[0].value.trim(),
+				editable:document.getElementById('addlistAttributesM').childNodes[m].childNodes[4].childNodes[0].childNodes[0].value.trim(),
+				value_unit:document.getElementById('addlistAttributesM').childNodes[m].childNodes[3].childNodes[0].childNodes[0].value.trim(),
+				healthiness_criteria: document.getElementById('addlistAttributesM').childNodes[m].childNodes[5].childNodes[0].childNodes[0].value.trim(),
+				healthiness_value: document.getElementById('addlistAttributesM').childNodes[m].childNodes[6].childNodes[0].childNodes[0].value.trim(),
+				old_value_name:document.getElementById('addlistAttributesM').childNodes[m].childNodes[7].childNodes[0].childNodes[0].value.trim()};
 							
-                if(newatt.value_name!=""&& !regex.test(newatt.value_name) && newatt.data_type!="" && newatt.value_type!="" && newatt.editable!="" && newatt.healthiness_criteria!="" && newatt.healthiness_value!="")
-                
-                    mynewAttributes.push(newatt);	
+			if (newatt.value_name!="" && !regex.test(newatt.value_name) && newatt.data_type!="" && newatt.value_type!="" && 
+				newatt.editable!="" && newatt.healthiness_criteria!="" && newatt.healthiness_value!="")		mynewAttributes.push(newatt);	
+			else someNameisWrong=true;
+		}		
+		myAttributes= [];
+		num = document.getElementById('editlistAttributes').childElementCount;
+		for (var j=0; j< num; j++) {
+			var selectOpt_value_type= document.getElementById('editlistAttributes').childNodes[j].childNodes[2].childNodes[0].childNodes[0].options;
+			var selectIndex_value_type= document.getElementById('editlistAttributes').childNodes[j].childNodes[2].childNodes[0].childNodes[0].selectedIndex;
+			var selectOpt_data_type= document.getElementById('editlistAttributes').childNodes[j].childNodes[1].childNodes[0].childNodes[0].options;
+			var selectIndex_data_type= document.getElementById('editlistAttributes').childNodes[j].childNodes[1].childNodes[0].childNodes[0].selectedIndex;
+			var selectOpt_value_unit= document.getElementById('editlistAttributes').childNodes[j].childNodes[3].childNodes[0].childNodes[0].options;
+			var selectIndex_value_unit= document.getElementById('editlistAttributes').childNodes[j].childNodes[3].childNodes[0].childNodes[0].selectedIndex;
+			var selectOpt_hc= document.getElementById('editlistAttributes').childNodes[j].childNodes[5].childNodes[0].childNodes[0].options;
+			var selectIndex_hc= document.getElementById('editlistAttributes').childNodes[j].childNodes[5].childNodes[0].childNodes[0].selectedIndex;
+			var selectOpt_edit= document.getElementById('editlistAttributes').childNodes[j].childNodes[4].childNodes[0].childNodes[0].options;
+			var selectIndex_edit= document.getElementById('editlistAttributes').childNodes[j].childNodes[4].childNodes[0].childNodes[0].selectedIndex;
+			  
+			//Added
+			try{var dt= selectOpt_data_type[selectIndex_data_type].value}catch(err){var dt=""};
+			try{var vt= selectOpt_value_type[selectIndex_value_type].value}catch(err){var vt=""};
+			try{var vu= selectOpt_value_unit[selectIndex_value_unit].value}catch(err){var vu=""};
+						 
+			var att= {value_name: document.getElementById('editlistAttributes').childNodes[j].childNodes[0].childNodes[0].childNodes[0].value.trim(), 
+			       data_type:dt, value_type:vt, editable:selectOpt_edit[selectIndex_edit].value, value_unit:vu, healthiness_criteria: selectOpt_hc[selectIndex_hc].value,
+				   healthiness_value: document.getElementById('editlistAttributes').childNodes[j].childNodes[6].childNodes[0].childNodes[0].value.trim(),
+				   old_value_name:document.getElementById('editlistAttributes').childNodes[j].childNodes[7].childNodes[0].childNodes[0].value };
+				  
+			if (att.value_name!="" && !regex.test(att.value_name) && att.data_type!="" && att.value_type!="" && 
+				att.editable!="" && att.value_unit!="" && att.healthiness_criteria!="" && att.healthiness_value!="") myAttributes.push(att);
             else
                 someNameisWrong=true;
-		}		
-            myAttributes= [];
-			num= document.getElementById('editlistAttributes').childElementCount;
-            for (var j=0; j< num; j++)
-			{
-			  var selectOpt_value_type= document.getElementById('editlistAttributes').childNodes[j].childNodes[2].childNodes[0].childNodes[0].options;
-  			  var selectIndex_value_type= document.getElementById('editlistAttributes').childNodes[j].childNodes[2].childNodes[0].childNodes[0].selectedIndex;
-			  
-			  var selectOpt_data_type= document.getElementById('editlistAttributes').childNodes[j].childNodes[1].childNodes[0].childNodes[0].options;
-  			  var selectIndex_data_type= document.getElementById('editlistAttributes').childNodes[j].childNodes[1].childNodes[0].childNodes[0].selectedIndex;
-			  
-			  var selectOpt_value_unit= document.getElementById('editlistAttributes').childNodes[j].childNodes[3].childNodes[0].childNodes[0].options;
-  			  var selectIndex_value_unit= document.getElementById('editlistAttributes').childNodes[j].childNodes[3].childNodes[0].childNodes[0].selectedIndex;
-			  
-			  var selectOpt_hc= document.getElementById('editlistAttributes').childNodes[j].childNodes[5].childNodes[0].childNodes[0].options;
-  			  var selectIndex_hc= document.getElementById('editlistAttributes').childNodes[j].childNodes[5].childNodes[0].childNodes[0].selectedIndex;
-			  
-			  var selectOpt_edit= document.getElementById('editlistAttributes').childNodes[j].childNodes[4].childNodes[0].childNodes[0].options;
-  			  var selectIndex_edit= document.getElementById('editlistAttributes').childNodes[j].childNodes[4].childNodes[0].childNodes[0].selectedIndex;
-			  
-			  //Added
-			  try{var dt= selectOpt_data_type[selectIndex_data_type].value}catch(err){var dt=""};
-			  try{var vt= selectOpt_value_type[selectIndex_value_type].value}catch(err){var vt=""};
-			  try{var vu= selectOpt_value_unit[selectIndex_value_unit].value}catch(err){var vu=""};
-			  
-						 
-			  var att= {value_name: document.getElementById('editlistAttributes').childNodes[j].childNodes[0].childNodes[0].childNodes[0].value.trim(), 
-			       data_type:dt,
-				   value_type:vt,
-				   editable:selectOpt_edit[selectIndex_edit].value,
-				   value_unit:vu,
-				   healthiness_criteria: selectOpt_hc[selectIndex_hc].value,
-				   healthiness_value: document.getElementById('editlistAttributes').childNodes[j].childNodes[6].childNodes[0].childNodes[0].value.trim(),
-				   old_value_name:document.getElementById('editlistAttributes').childNodes[j].childNodes[7].childNodes[0].childNodes[0].value
-				   };
-				  
-			  if(att.value_name!=""&& !regex.test(att.value_name) && att.data_type!="" && att.value_type!="" && att.editable!="" && att.value_unit!="" && att.healthiness_criteria!="" && att.healthiness_value!="")
-                   myAttributes.push(att);
-                else
-                    someNameisWrong=true;
-			}
-			 
-            mydeletedAttributes= [];
-			numDel= document.getElementById('deletedAttributes').childElementCount;
-            for (var j=0; j< numDel; j++)
-			{
-			  var selectOpt_value_type= document.getElementById('deletedAttributes').childNodes[j].childNodes[2].childNodes[0].childNodes[0].options;
-  			  var selectIndex_value_type= document.getElementById('deletedAttributes').childNodes[j].childNodes[2].childNodes[0].childNodes[0].selectedIndex;
-			  
-			  var selectOpt_data_type= document.getElementById('deletedAttributes').childNodes[j].childNodes[1].childNodes[0].childNodes[0].options;
-  			  var selectIndex_data_type= document.getElementById('deletedAttributes').childNodes[j].childNodes[1].childNodes[0].childNodes[0].selectedIndex;
-			  
-			  var selectOpt_value_unit= document.getElementById('deletedAttributes').childNodes[j].childNodes[3].childNodes[0].childNodes[0].options;
-  			  var selectIndex_value_unit= document.getElementById('deletedAttributes').childNodes[j].childNodes[3].childNodes[0].childNodes[0].selectedIndex;
-			  
-			  var selectOpt_hc= document.getElementById('deletedAttributes').childNodes[j].childNodes[5].childNodes[0].childNodes[0].options;
-  			  var selectIndex_hc= document.getElementById('deletedAttributes').childNodes[j].childNodes[5].childNodes[0].childNodes[0].selectedIndex;
-			  
-			  var selectOpt_edit= document.getElementById('deletedAttributes').childNodes[j].childNodes[4].childNodes[0].childNodes[0].options;
-  			  var selectIndex_edit= document.getElementById('deletedAttributes').childNodes[j].childNodes[4].childNodes[0].childNodes[0].selectedIndex;
-			  
-			  var att= {value_name: document.getElementById('deletedAttributes').childNodes[j].childNodes[0].childNodes[0].childNodes[0].value.trim(), 
-			       data_type:selectOpt_data_type[selectIndex_data_type].value,
-				   value_type:selectOpt_value_type[selectIndex_value_type].value,
-				   editable:selectOpt_edit[selectIndex_edit].value,
-				   value_unit:selectOpt_value_unit[selectIndex_value_unit].value,
-				   healthiness_criteria: selectOpt_hc[selectIndex_hc].value,
-				   healthiness_value: document.getElementById('deletedAttributes').childNodes[j].childNodes[6].childNodes[0].childNodes[0].value.trim(),
-					//new
-				  old_value_name: document.getElementById('deletedAttributes').childNodes[j].childNodes[7].childNodes[0].childNodes[0].value
-
-				   };
-                        
-                mydeletedAttributes.push(att);                
-                	}
-
-		if(!someNameisWrong){
-		document.getElementById('editlistAttributes').innerHTML = ""; 
-		document.getElementById('addlistAttributesM').innerHTML = ""; 
-		document.getElementById('deletedAttributes').innerHTML = "";  
-		
-		$("#editDeviceModalTabs").hide();
-		$('#editDeviceModal div.modalCell').hide();
-		//$("#editDeviceModalFooter").hide();
-		$("#editDeviceCancelBtn").hide();
-		$("#editDeviceConfirmBtn").hide();
-		$("#addAttrMBtn").hide();
-		
-		$("#editDeviceModalBody").hide();
-		
-		$('#editDeviceLoadingMsg').show();
-		$('#editDeviceLoadingIcon').show();
-		// console.log(JSON.stringify(deviceJson));
-
-		var service = $('#editSelectService').val();
-		var servicePath = $('#editInputServicePathDevice').val();
-
-		if ($('#selectProtocolDeviceM').val() === "ngsi w/MultiService"){
-			// servicePath value pre-processing
-			if (servicePath[0] !== "/" || servicePath === "") servicePath = "/" + servicePath;
-			if (servicePath[servicePath.length -1] === "/" && servicePath.length > 1) servicePath = servicePath.substr(0, servicePath.length -1);
 		}
-				
-	$.ajax({
-		 url: "../api/device.php",
-		 data:{
-			action: "update", 
-			//Sara2510 - for logging purpose
-			username: loggedUser,
-			organization : organization,   			
-			newattributes: JSON.stringify(mynewAttributes),
-			attributes: JSON.stringify(myAttributes),
-			deleteattributes: JSON.stringify(mydeletedAttributes), 
-			id: $.trim($('#inputNameDeviceM').val()),
-			dev_organization: $('#inputOrganizationDeviceM').val(),
-			type: $('#inputTypeDeviceM').val(),
-			kind: $('#selectKindDeviceM').val(),
-			contextbroker: $('#selectContextBrokerM').val(),
-			gb_old_cb : gb_old_cb,
-			uri: $('#inputUriDeviceM').val(),
-			protocol: $('#selectProtocolDeviceM').val(),
-			format: $('#selectFormatDeviceM').val(),
-			mac: $('#inputMacDeviceM').val(),
-			model: $('#selectModelDeviceM').val(),
-			producer: $('#inputProducerDeviceM').val(),
-			latitude: $('#inputLatitudeDeviceM').val(),
-			longitude: $('#inputLongitudeDeviceM').val(),
-			visibility: $('#selectVisibilityDeviceM').val(),
-			frequency: $('#inputFrequencyDeviceM').val(),
-			token : sessionToken,
-			k1: $('#KeyOneDeviceUserM').val(), 
-			k2: $('#KeyTwoDeviceUserM').val(),
-			edgegateway_type : $("#selectEdgeGatewayTypeM").val(),
-			edgegateway_uri : $("#inputEdgeGatewayUriM").val(),
-                        subnature: $('#selectSubnatureM').val(),
-                        static_attributes: JSON.stringify(retrieveStaticAttributes("editlistStaticAttributes")),
-			service : service,
-			servicePath : servicePath
-		},
-		 type: "POST",
-		 async: true,
-		 success: function (data) 
-		 {
-		   //console.log(JSON.stringify(data));
-            		//console.log("myAttributes " + JSON.stringify(myAttributes));
-		   //console.log("mynewAttributes " + JSON.stringify(mynewAttributes));
-		   //console.log("mydeletedAttributes " + JSON.stringify(mydeletedAttributes));
-			if(data["status"] === 'ko')
-			{
-				console.log("Error editing Device type");
-				console.log(data);
-				
-				$('#editDeviceLoadingMsg').hide();
-				$('#editDeviceLoadingIcon').hide();
-				$('#editDeviceOkMsg').hide();
-				$('#editDeviceOkIcon').hide();
-				$('#editDeviceKoMsg').show();
-				$('#editDeviceKoIcon').show();
-				$('#editDeviceOkBtn').show();
-                
+        mydeletedAttributes= [];
+		numDel= document.getElementById('deletedAttributes').childElementCount;
+        for (var j=0; j< numDel; j++) {
+			var selectOpt_value_type= document.getElementById('deletedAttributes').childNodes[j].childNodes[2].childNodes[0].childNodes[0].options;
+  			var selectIndex_value_type= document.getElementById('deletedAttributes').childNodes[j].childNodes[2].childNodes[0].childNodes[0].selectedIndex;
+			var selectOpt_data_type= document.getElementById('deletedAttributes').childNodes[j].childNodes[1].childNodes[0].childNodes[0].options;
+  			var selectIndex_data_type= document.getElementById('deletedAttributes').childNodes[j].childNodes[1].childNodes[0].childNodes[0].selectedIndex;
+			var selectOpt_value_unit= document.getElementById('deletedAttributes').childNodes[j].childNodes[3].childNodes[0].childNodes[0].options;
+  			var selectIndex_value_unit= document.getElementById('deletedAttributes').childNodes[j].childNodes[3].childNodes[0].childNodes[0].selectedIndex;
+			var selectOpt_hc= document.getElementById('deletedAttributes').childNodes[j].childNodes[5].childNodes[0].childNodes[0].options;
+  			var selectIndex_hc= document.getElementById('deletedAttributes').childNodes[j].childNodes[5].childNodes[0].childNodes[0].selectedIndex;
+			var selectOpt_edit= document.getElementById('deletedAttributes').childNodes[j].childNodes[4].childNodes[0].childNodes[0].options;
+  			var selectIndex_edit= document.getElementById('deletedAttributes').childNodes[j].childNodes[4].childNodes[0].childNodes[0].selectedIndex;
+			var att= {value_name: document.getElementById('deletedAttributes').childNodes[j].childNodes[0].childNodes[0].childNodes[0].value.trim(), 
+			       data_type:selectOpt_data_type[selectIndex_data_type].value, value_type:selectOpt_value_type[selectIndex_value_type].value,
+				   editable:selectOpt_edit[selectIndex_edit].value, value_unit:selectOpt_value_unit[selectIndex_value_unit].value,
+				   healthiness_criteria: selectOpt_hc[selectIndex_hc].value,  
+				   healthiness_value: document.getElementById('deletedAttributes').childNodes[j].childNodes[6].childNodes[0].childNodes[0].value.trim(),
+				   //new
+				   old_value_name: document.getElementById('deletedAttributes').childNodes[j].childNodes[7].childNodes[0].childNodes[0].value  };
+                       
+			mydeletedAttributes.push(att);                
+		}
+		if (!someNameisWrong) {
+			//document.getElementById('editlistAttributes').innerHTML = ""; 
+			//document.getElementById('addlistAttributesM').innerHTML = ""; 
+			//document.getElementById('deletedAttributes').innerHTML = "";  
+		
+			$("#editDeviceModalTabs").hide();
+			$('#editDeviceModal div.modalCell').hide();
+			//$("#editDeviceModalFooter").hide();
+			$("#editDeviceCancelBtn").hide();
+			$("#editDeviceConfirmBtn").hide();
+			$("#addAttrMBtn").hide();
+			$("#editDeviceModalBody").hide();
+			$('#editDeviceLoadingMsg').show();
+			$('#editDeviceLoadingIcon').show();
+
+			var service = $('#editSelectService').val();
+			var servicePath = $('#editInputServicePathDevice').val();
+
+			if ($('#selectProtocolDeviceM').val() === "ngsi w/MultiService"){
+				// servicePath value pre-processing
+				if (servicePath[0] !== "/" || servicePath === "") servicePath = "/" + servicePath;
+				if (servicePath[servicePath.length -1] === "/" && servicePath.length > 1) servicePath = servicePath.substr(0, servicePath.length -1);
 			}
-			 
-			
-             else if (data["status"] === 'ok')
-			{
-				$('#inputNameDevice').val("");
-				$('#inputTypeDevice').val("");
-				//$('#selectKindDevice').val("");
-				$('#selectContextBroker').val("");
-                $('#inputUriDevice').val("");
-				//$('#selectProtocolDevice').val("");
-				//$('#selectFormatDevice').val("");
-				$('#createdDateDevice').val("");
-				$('#inputMacDevice').val("");
-				$('#selectModelDevice').val("");
-				$('#inputProducerDevice').val("");
-				$('#inputLatitudeDevice').val("");
-				$('#inputLongitudeDevice').val("");
-				$('#selectVisibilityDevice').val();
-				$('#inputFrequencyDevice').val();            
+				
+			$.ajax({
+				url: "../api/device.php",
+				data: {
+					action: "update", 
+					newattributes: JSON.stringify(mynewAttributes),
+					attributes: JSON.stringify(myAttributes),
+					deleteattributes: JSON.stringify(mydeletedAttributes), 
+					id: $.trim($('#inputNameDeviceM').val()),
+					type: $('#inputTypeDeviceM').val(),
+					kind: $('#selectKindDeviceM').val(),
+					contextbroker: $('#selectContextBrokerM').val(),
+					gb_old_cb : gb_old_cb,
+					format: $('#selectFormatDeviceM').val(),
+					mac: $('#inputMacDeviceM').val(),
+					model: $('#selectModelDeviceM').val(),
+					producer: $('#inputProducerDeviceM').val(),
+					latitude: $('#inputLatitudeDeviceM').val(),
+					longitude: $('#inputLongitudeDeviceM').val(),
+					visibility: $('#selectVisibilityDeviceM').val(),			//DEPRECATED: use default: private
+					frequency: $('#inputFrequencyDeviceM').val(),
+					token : sessionToken,
+					k1: $('#KeyOneDeviceUserM').val(), 
+					k2: $('#KeyTwoDeviceUserM').val(),
+					edgegateway_type : $("#selectEdgeGatewayTypeM").val(),		//DEPRECATED
+					edgegateway_uri : $("#inputEdgeGatewayUriM").val(),			//DEPRECATED
+        		    subnature: $('#selectSubnatureM').val(),
+		            static_attributes: JSON.stringify(retrieveStaticAttributes("editlistStaticAttributes")),
+					service : service,
+					servicePath : servicePath
+				},
+				type: "POST",
+				async: true,
+				success: function (data) 
+				{
+					if(data["status"] === 'ko')	{
+						console.log("Error editing Device type");
+						console.log(data);
+				
+						$('#editDeviceLoadingMsg').hide();
+						$('#editDeviceLoadingIcon').hide();
+						$('#editDeviceOkMsg').hide();
+						$('#editDeviceOkIcon').hide();
+						$('#editDeviceKoMsg').show();
+						$('#editDeviceKoIcon').show();
+						$('#editDeviceOkBtn').show();
+					}
+					else if (data["status"] === 'ok') {
+						document.getElementById('editlistAttributes').innerHTML = "";
+						document.getElementById('addlistAttributesM').innerHTML = "";
+						document.getElementById('deletedAttributes').innerHTML = "";
+						currentEditId="";
+
+						$('#inputNameDevice').val("");
+						$('#inputTypeDevice').val("");
+						//$('#selectKindDevice').val("");
+						$('#selectContextBroker').val("");
+        		        $('#inputUriDevice').val("");
+						//$('#selectProtocolDevice').val("");
+						//$('#selectFormatDevice').val("");
+						$('#createdDateDevice').val("");
+						$('#inputMacDevice').val("");
+						$('#selectModelDevice').val("");
+						$('#inputProducerDevice').val("");
+						$('#inputLatitudeDevice').val("");
+						$('#inputLongitudeDevice').val("");
+						$('#selectVisibilityDevice').val();
+						$('#inputFrequencyDevice').val();            
+        				$('#editDeviceLoadingMsg').hide();
+						$('#editDeviceLoadingIcon').hide();
+						$('#editDeviceOkMsg').show();
+						$('#editDeviceOkIcon').show();
+						$('#editDeviceKoMsg').hide();
+						$('#editDeviceKoIcon').hide();
+						$('#editDeviceOkBtn').show();
                 
-               $('#editDeviceLoadingMsg').hide();
-				$('#editDeviceLoadingIcon').hide();
-				$('#editDeviceOkMsg').show();
-				$('#editDeviceOkIcon').show();
-				$('#editDeviceKoMsg').hide();
-				$('#editDeviceKoIcon').hide();
-				$('#editDeviceOkBtn').show();
-				
-                $('#devicesTable').DataTable().destroy();
-				fetch_data(true);
-				
-	} else {console.log(data);}
+						$('#devicesTable').DataTable().destroy();
+						fetch_data(true);
+					} else {console.log(data);}
+		 		},
+				error: function (data) {
+					console.log("Ko result: " + JSON.stringify(data));
+					console.log("newattributes " + JSON.stringify(mynewAttributes));
+					console.log("attributes " + JSON.stringify(myAttributes));
+					console.log("deleteattributes " + JSON.stringify(mydeletedAttributes));
 			 
-		 },
-		 error: function (data) 
-		 {
-			 console.log("Ko result: " + JSON.stringify(data));
-			 console.log("newattributes " + JSON.stringify(mynewAttributes));
-			 console.log("attributes " + JSON.stringify(myAttributes));
-			 console.log("deleteattributes " + JSON.stringify(mydeletedAttributes));
-			 
-			    $('#editDeviceLoadingMsg').hide();
-				$('#editDeviceLoadingIcon').hide();
-				$('#editDeviceOkMsg').hide();
-				$('#editDeviceOkIcon').hide();
-				$('#editDeviceKoMsg').show();
-				$('#editDeviceKoIcon').show();
-				$('#editDeviceOkBtn').show();
-  
-		 }
-	 });
-    }
-                                     
-                   
-        else{
+					$('#editDeviceLoadingMsg').hide();
+					$('#editDeviceLoadingIcon').hide();
+					$('#editDeviceOkMsg').hide();
+					$('#editDeviceOkIcon').hide();
+					$('#editDeviceKoMsg').show();
+					$('#editDeviceKoIcon').show();
+					$('#editDeviceOkBtn').show();
+		 		}
+	 		});
+    	}
+        else {
             alert("Check the values of your device, make sure that data you entered are valid2");
         }
-});
+	});
 
 
 //EDIT DEVICE CANCEL BUTTON 		
@@ -2219,29 +2124,21 @@ showEditDeviceModal();
 //END KO RELATED BUTTONS	
 
 //CONTEXTBROKER AND PROTOCOL RELATION FOR ADD DEVICE -SELECTOR 
-
-        
-    $("#selectContextBroker").change(function() {
+	$("#selectContextBroker").change(function() {
 		var index = document.getElementById("selectContextBroker").selectedIndex;
 		var opt = document.getElementById("selectContextBroker").options;
 		var valCB= opt[index].getAttribute("my_data");
 		var valkind= opt[index].getAttribute("data_kind");
-		 //console.log("protocol" + JSON.stringify(valCB));
+		var valOrg=opt[index].getAttribute("data_org");
 
-
-		if(valkind=="external"){
-            $("#addNewDeviceCheckExternalBtn").show();
-            $("#addNewDeviceConfirmBtn").hide();
+		if(valkind=="external") {
+			$("#addNewDeviceCheckExternalBtn").show();
+			$("#addNewDeviceConfirmBtn").hide();
             //$("#selectContextBrokerMsg").hide();
-            
 			$('#inputTypeDevice').val("");
             $("#inputTypeDevice").attr("disabled", true);
 			$('#inputMacDevice').val("");
             $("#inputMacDevice").attr("disabled", true);
-			//$('#selectEdgeGatewayType').val("");
-            //$("#selectEdgeGatewayType").attr("disabled", true);
-			//$('#inputEdgeGatewayUri').val("");
-            //$("#inputEdgeGatewayUri").attr("disabled", true);
 			$('#inputProducerDevice').val("");
             $("#inputProducerDevice").attr("disabled", true);
 			$('#inputFrequencyDevice').val("600");
@@ -2254,40 +2151,28 @@ showEditDeviceModal();
             $("#inputLatitudeDevice").attr("disabled", true);
 			$('#inputLongitudeDevice').val("");
             $("#inputLongitudeDevice").attr("disabled", true);
-            
             $("#selectModelDevice").attr("disabled", true);
             $("#addNewDeviceGenerateKeyBtn").attr("disabled", true);
-            
             $('#addlistAttributes').html("");
             $("#addAttrBtn").attr("disabled", true);
-            
             $("#externalContextBrokerMsg").css("color", "#337ab7");
-             $("#externalContextBrokerMsg").html("You've selected a broker from an external environment, you need to check if your device is registered on this broker before adding it." );
-             $("#externalContextBrokerMsg").show();
-            
-            
-            
+            $("#externalContextBrokerMsg").html("You've selected a broker from an external environment, you need to check if your device is registered on this broker before adding it." );
+            $("#externalContextBrokerMsg").show();
         }
-        else{
-           
+        else {
             $("#addNewDeviceCheckExternalBtn").hide();
             $("#addNewDeviceConfirmBtn").show();
             $("#externalContextBrokerMsg").hide();
-            
             $("#inputTypeDevice").attr("disabled", false);
 			$("#inputMacDevice").attr("disabled", false);
-			//$("#selectEdgeGatewayType").attr("disabled", false);
-			//$("#inputEdgeGatewayUri").attr("disabled", false);
 			$("#inputProducerDevice").attr("disabled", false);
 			$("#inputFrequencyDevice").attr("disabled", false);
 			$("#KeyOneDeviceUser").attr("disabled", false);
 			$("#KeyTwoDeviceUser").attr("disabled", false);
 			$("#inputLatitudeDevice").attr("disabled", false);
 			$("#inputLongitudeDevice").attr("disabled", false);
-            
             $("#selectModelDevice").attr("disabled", false);
             $("#addNewDeviceGenerateKeyBtn").attr("disabled", false);
-            
             $("#addAttrBtn").attr("disabled", false);
              //$("#selectContextBrokerMsg").html("");
             
@@ -2296,7 +2181,7 @@ showEditDeviceModal();
                 document.getElementById("selectProtocolDevice").value = 'ngsi';
                 document.getElementById("selectFormatDevice").value = 'json';
             } 
-		else if(valCB ==='ngsi w/MultiService')
+			else if(valCB ==='ngsi w/MultiService')
             {
                 document.getElementById("selectProtocolDevice").value = 'ngsi w/MultiService';
                 document.getElementById("selectFormatDevice").value = 'json';
@@ -2313,26 +2198,19 @@ showEditDeviceModal();
             } 
             else
             {
-                //alert("This is a new contextBroker");
-                //console.log("an error occurred");
                 document.getElementById("selectProtocolDevice").value = '';
                 document.getElementById("selectFormatDevice").value = '';
             }
-            //checkSelectionFormat();
-            //checkSelectionProtocol();
             checkEverything();
-            //checkAddMyDeviceConditions(); 
             checkAddDeviceConditions();
-            
+
+			if (valOrg!=null) $("#selectContextBrokerMsg").html($("#selectContextBrokerMsg").html()+ " - Organization:" + valOrg);
         }
-        
-	
 	});
-	
 //END CONTEXTBROKER AND PROTOCOL RELATION FOR ADD DEVICE -SELECTOR     
  
  
- //CONTEXTBROKER AND PROTOCOL RELATION FOR EDIT DEVICE -SELECTOR 
+//CONTEXTBROKER AND PROTOCOL RELATION FOR EDIT DEVICE -SELECTOR 
  	
 	$("#selectContextBrokerM").change(function() {
 		var index = document.getElementById("selectContextBrokerM").selectedIndex;
@@ -2486,7 +2364,6 @@ function updateGroupList(ouname){
                 url: "../api/ldap.php",
                 data:{
                                           action: "get_logged_ou",
-                                          username: loggedUser,
                                           token : sessionToken
                                           },
                 type: "POST",
@@ -2609,23 +2486,19 @@ $("#addNewDeviceCheckExternalBtn").on('click', function(){
 			
     var contextbroker= $('#selectContextBroker').val();
 	var ip, port, protocol,user, accessLink, model, apikey, fiwareservice,kind;
-	$.ajax({
-		url: "../api/value.php",
+	//TODO Avoid make another request we did at startup!
+	$.ajax({				//MIGRATE to test!!!!
+		url: "../api/contextbroker.php",
 		data: {
-			  action: "get_cb", 
+			  action: "get_all_contextbroker", 
 			  token : sessionToken,
-			  cb: contextbroker,
-			  username: loggedUser,
-			  organization:organization,
-              loggedrole:loggedRole                          
 		  },
 		type: "POST",
 		async: true,
 		datatype: 'json',
 		success: function (data)
 		{
-			//nconsole.log("success");
-			var content = data["content"];
+			var content = data["data"];//TOTEST
 			for(let i = 0; i < content.length; i++){
 				if(content[i].name == contextbroker){
 					var ip = content[i].ip;
@@ -2816,18 +2689,12 @@ function activateStub(cb,deviceName, ipa,protocol,user,accesslink,accessport,mod
 				data: 
 				{	
 					action: "change_visibility",
-					//Sara2510 - for logging purpose
-					username: loggedUser,					
-					organization : organization, 
-					dev_organization : dev_organization, 
 					id: id,
 					contextbroker: contextbroker,
-					uri:uri, 
 					visibility: newVisibility,
 					token : sessionToken,
-					k1: k1,
-					k2: k2,
-					protocol:protocol,
+					k1: k1,					//DEPRECATED?
+					k2: k2,					//DEPRECATED?
 					service:service,
 					servicePath:servicePath
 				},
@@ -2897,24 +2764,18 @@ function activateStub(cb,deviceName, ipa,protocol,user,accesslink,accessport,mod
 				data: 
 				{	
 					action: "change_visibility", 
-					//Sara2510 - for logging purpose
-					username: loggedUser,
-					organization : organization, 
-					dev_organization : dev_organization, 
 					id: id,
 					contextbroker: contextbroker,
-					uri: uri,
 					visibility: newVisibility,
 					token : sessionToken,
-					k1: k1,
-					k2: k2,
-					protocol:protocol,
-                                        service:service,
-                                        servicePath:servicePath
-					},
-					type: "POST",
-					async: true,
-					dataType: 'json',
+					k1: k1,					//DEPRECATED?
+					k2: k2,					//DEPRECATED?
+                    service:service,
+                    servicePath:servicePath
+				},
+				type: "POST",
+				async: true,
+				dataType: 'json',
 				success: function(data) 
 				{
 					if (data["status"] === 'ok')
@@ -2973,21 +2834,16 @@ function activateStub(cb,deviceName, ipa,protocol,user,accesslink,accessport,mod
 		$.ajax({
 				 url: "../api/device.php",
 				 data:{
-				 action: "change_owner", 
-				 id: id,
-				 contextbroker: contextbroker,
-				 uri: uri,
-				 organization : organization, 
-		                 dev_organization:dev_organization,
-				 owner: loggedUser,
-				 newOwner:  $('#newOwner').val(),
-				 token : sessionToken,
-				 k1: k1new,
-				 k2: k2new,
-			  	 model:model,
-                                        protocol:protocol,
-                                        service:service,
-                                        servicePath:servicePath
+					 action: "change_owner", 
+					 id: id,
+					 contextbroker: contextbroker,
+					 newOwner:  $('#newOwner').val(),
+					 token : sessionToken,
+					 k1: k1new,
+					 k2: k2new,
+				  	 model:model,
+                     service:service,
+                     servicePath:servicePath
 			 },	
 			type: "POST",
 			async: true,
@@ -3074,20 +2930,15 @@ function activateStub(cb,deviceName, ipa,protocol,user,accesslink,accessport,mod
                action: "get_delegations",  // check the action and to be specified 
                id: id,
                contextbroker: contextbroker,
-               uri: uri,
-               organization : organization,   
-               dev_organization:dev_organization,
-               user : loggedUser,
                token : sessionToken,
-		protocol:protocol,
-                service:service,
-                servicePath:servicePath	
-                                    },
-                                    type: "POST",
-                                    async: true,
-                                    dataType: 'json',
-                                    success: function(data)
-                                    {
+               service:service,
+               servicePath:servicePath	
+           },
+           type: "POST",
+           async: true,
+           dataType: 'json',
+           success: function(data)
+           {
                                                                                        if (data["status"]=='ok')
                                                                                        {
 
@@ -3127,20 +2978,17 @@ function activateStub(cb,deviceName, ipa,protocol,user,accesslink,accessport,mod
                                                $('#delegationsTable tbody').on("click","i.removeDelegationBtn",function(){
                                                     var rowToRemove = $(this).parents('tr');
                                                     $.ajax({
-                                                        url: "../api/device.php",     //check the url
+                                                        url: "../api/device.php",
                                                         data:
                                                         {
-                                                                action: "remove_delegation",    // to be specified
+                                                                action: "remove_delegation",
                                                                 token : sessionToken,
-                                                                user : loggedUser,
                                                                 delegationId: $(this).parents('tr').attr('data-delegationId'),
-								uri:uri,
-								userDelegated: $(this).parents('tr').attr('data-delegated'),
-								 id: id,                                 
-								contextbroker: contextbroker,
-								protocol:protocol,
-			                                        service:service,
-                        			                servicePath:servicePath
+																userDelegated: $(this).parents('tr').attr('data-delegated'),
+															    id: id,                                 
+																contextbroker: contextbroker,
+			                                        			service:service,
+			                        			                servicePath:servicePath
                                                         },
                                                         type: "POST",
                                                         async: true,
@@ -3167,20 +3015,17 @@ function activateStub(cb,deviceName, ipa,protocol,user,accesslink,accessport,mod
                                                                               $('#delegationsTableGroup tbody').on("click","i.removeDelegationBtnGroup",function(){
                                                                                                        var rowToRemove = $(this).parents('tr');
                                                                                                        $.ajax({
-                                                                                                               url: "../api/device.php",     //check the url
+                                                                                                               url: "../api/device.php",
                                                                                                                data:
                                                                                                                {
-                                                                                                                       action: "remove_delegation",    // to be specified
-                                                                                                                       token : sessionToken,
-                                                                                                                       user : loggedUser,
-                                                                                                                       delegationId: $(this).parents('tr').attr('data-delegationId'),
-															uri:uri,
-							                                                                groupDelegated: $(this).parents('tr').attr('data-delegated'),
-							                                                                 id: id,
-							                                                                contextbroker: contextbroker,
-															protocol:protocol,
-										                                        service:service,
-										                                        servicePath:servicePath
+                                                                                                                        action: "remove_delegation",
+                                                                                                                        token : sessionToken,
+                                                                                                                        delegationId: $(this).parents('tr').attr('data-delegationId'),
+							                                                                							groupDelegated: $(this).parents('tr').attr('data-delegated'),
+							                                                                 							id: id,
+														                                                                contextbroker: contextbroker,
+										                                        										service:service,
+																				                                        servicePath:servicePath
                                                                                                                },
                                                                                                                type: "POST",
                                                                                                                async: true,
@@ -3232,19 +3077,15 @@ function activateStub(cb,deviceName, ipa,protocol,user,accesslink,accessport,mod
                                                         url: "../api/device.php",       //which api to use
                                                         data:
                                                         {
-                                                          action: "add_delegation",
-                                                          contextbroker: contextbroker,
-                                                          dev_organization: dev_organization,
-                                                          id:id,
-                                                          uri : uri,
-                                                          user : loggedUser,
-                                                          token : sessionToken,
-                                                          delegated_user: newDelegation,
-                                                          k1: newk1,
-                                                          k2: newk2,
-							protocol:protocol,
-                                        		service:service,
-		                                        servicePath:servicePath	
+                                    	                    action: "add_delegation",
+                                	                        contextbroker: contextbroker,
+                            	                            id:id,
+                        	                                token : sessionToken,
+                    	                                    delegated_user: newDelegation,
+                	                                        k1: newk1,
+            	                                            k2: newk2,
+                                        					service:service,
+					                                        servicePath:servicePath	
                                                         },
                                                         type: "POST",
                                                         async: true,
@@ -3326,17 +3167,13 @@ function activateStub(cb,deviceName, ipa,protocol,user,accesslink,accessport,mod
                                                                                                {
                                                                                                        action: "add_delegation",
                                                                                                        contextbroker: contextbroker,
-                                                                                                       dev_organization: dev_organization,
                                                                                                        id:id,
-                                                                                                       uri : uri,
-                                                                                                       user : loggedUser,
                                                                                                        token : sessionToken,
                                                                                                        delegated_group: delegatedDN,
                                                                                                        k1: newk1,
                                                                                                        k2: newk2,
-													protocol:protocol,
-								                                        service:service,
-								                                        servicePath:servicePath
+								                                        								service:service,
+																                                        servicePath:servicePath
                                                                                                },
                                                                                                type: "POST",
                                                                                                async: true,

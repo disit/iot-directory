@@ -1386,7 +1386,6 @@ function updateGroupList(ouname){
                 url: "../api/ldap.php",
                 data:{
                                           action: "get_logged_ou",
-                                          username: loggedUser,
                                           token : sessionToken
                                           },
                 type: "POST",

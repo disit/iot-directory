@@ -69,9 +69,10 @@ $.ajax({
                 //data: mydata,
 				data: {
 					  action: "get_all_models", 
-					  organization:organization,
-					  username: loggedUser,
-					  loggedrole: loggedRole
+					  //organization:organization,
+					  //username: loggedUser,
+					  //loggedrole: loggedRole,
+			          token : sessionToken
 				  },
                 type: "POST",
                 async: true,
@@ -82,10 +83,12 @@ $.ajax({
                     //console.log(modelsdata);
                 }});
 
-$.ajax({url: "../api/contextBrokerRetrieval_e.php",
+$.ajax({url: "../api/device.php",
+
          data: {
 			 action: 'get_param_values',
-             organization:organization
+             //organization:organization,
+			token : sessionToken
 			 },
          type: "POST",
          async: true,
@@ -110,12 +113,13 @@ $.ajax({url: "../api/contextBrokerRetrieval_e.php",
     var contextbroker= $('#selectContextBrokerLD').val();
 	var ip, port, protocol,user, accessLink, model, apikey, fiwareservice,kind;
 	$.ajax({
-		url: "../api/contextBrokerRetrieval_e.php",
+		url: "../api/associationRulesApi.php",
 		data: {
 			  action: "get_cb_details", 
 			  cb: contextbroker,
-			  username: loggedUser,
-			  organization:organization
+				token:sessionToken
+			  //username: loggedUser,
+			  //organization:organization
 		  },
 		type: "POST",
 		async: true,
@@ -273,7 +277,7 @@ function fetch_data(destroyOld, selected=null)
 			
 			if (selected==null)
 			{
-			  mydata = {action: "get_temporary_devices", username: loggedUser, organization:organization, no_columns: ["position","status1","edit","delete","map"]}; 
+			  mydata = {action: "get_temporary_devices", token:sessionToken, should_be_registered:"no", no_columns: ["position","status1","edit","delete","map"]}; 
 			}
 			
             
@@ -286,7 +290,7 @@ function fetch_data(destroyOld, selected=null)
 		},
 		"paging"   : true,
 		"ajax" : {
-		 url:"../api/contextBrokerRetrieval_e.php",
+		 url:"../api/bulkDeviceUpdate.php",
 		 data: mydata,
 		//token : sessionToken,
 		 datatype: 'json',
@@ -430,7 +434,7 @@ function buildPreview(attributesIf, destroyOld, selected=null)
 	
 	if (selected==null)
 	{
-	mydata = {action: "get_affected_devices", username: loggedUser,organization:organization, attributes: attributesIf, no_columns: [""]}; 
+	mydata = {action: "get_affected_devices", token:sessionToken, attributes: attributesIf, no_columns: [""]}; 
 	}
 		
 	dataPreviewTable = $('#devicePreviewTable').DataTable({
@@ -488,7 +492,7 @@ function buildPreviewValues(attributesIf, destroyOld, selected=null)
 	
 	if (selected==null)
 	{
-	mydata = {action: "get_affected_values", username: loggedUser,organization:organization, attributes: attributesIf, no_columns: [""]}; 
+	mydata = {action: "get_affected_values", token:sessionToken, attributes: attributesIf, no_columns: [""]}; 
 	}
 		
 	dataPreviewTable = $('#valuesPreviewTable').DataTable({
@@ -556,7 +560,7 @@ function buildPreviewAssociationRules(attributesIf, destroyOld, selected=null)
 	
 	if (selected==null)
 	{
-	mydata = {action: "get_rules_affecting_data", username: loggedUser,organization:organization, attributes: attributesIf, value:"value_type",no_columns: [""]}; 
+		mydata = {action: "get_rules_affecting_data", token:sessionToken, attributes: attributesIf, value:"value_type",no_columns: [""]}; 
 	}
 		
 	dataPreviewTable = $('#devicesSuggestionsTable').DataTable({
@@ -713,12 +717,13 @@ $(document).ready(function ()
 		var data= "contextbroker=" + contextbroker+ "&ip=kill"; 
 		var protocol="";
 		$.ajax({
-			url: "../api/contextBrokerRetrieval_e.php",
+			url: "../api/associationRulesApi.php",
 			data: {
 					action: "get_cb_details", 
 					cb: contextbroker,
-					username: loggedUser,
-					organization:organization
+					token:sessionToken
+					//username: loggedUser,
+					//organization:organization
 				},
 			type: "POST",
 			async: true,
@@ -754,12 +759,13 @@ $(document).ready(function ()
 		var contextbroker= document.getElementById('activeInactiveBrokes').value;
 		var ip, port, protocol,user, accessLink, model, apikey, fiwareservice,kind;
 		$.ajax({
-		url: "../api/contextBrokerRetrieval_e.php",
+		url: "../api/associationRulesApi.php",
 		data: {
 			  action: "get_cb_details", 
 			  cb: contextbroker,
-			  username: loggedUser,
-			  organization:organization
+			  token:sessionToken
+			  //username: loggedUser,
+			  //organization:organization
 		  },
 		type: "POST",
 		async: true,
@@ -822,12 +828,13 @@ $(document).ready(function ()
 		}
 
 		$.ajax({
-			url: "../api/contextBrokerRetrieval_e.php",
+			url: "../api/associationRulesApi.php",
 			data: {
 					action: "get_multiple_cb_details", 
 					cb: JSON.stringify(gb_active_brokers_names),
-					username: loggedUser,
-					organization:organization
+					token:sessionToken
+					//username: loggedUser,
+					//organization:organization
 				},
 			type: "POST",
 			async: true,
@@ -938,9 +945,9 @@ $(document).ready(function ()
 			url: "../api/device.php",
 			data: {
 				action: "get_all_device_latlong",
-                organization:organization,
-                loggedrole:loggedRole
-				//token : sessionToken
+                //organization:organization,
+                //loggedrole:loggedRole
+				token : sessionToken
 			},
 			type: "POST",
 			async: true,
@@ -1192,15 +1199,15 @@ $("#insertValidBtn").off("click");
 function insertValidDevices(){
     var data={
 				  action: "bulkload", 
-				  username: loggedUser,
+				  //username: loggedUser,
 				  token : sessionToken,
 				  data_parallel: 1,
-                  organization:organization,
-                  kbUrl:kbUrl
+                  //organization:organization,
+                  kbUrl:kbUrl,
+				  should_be_registered:"no"
 				 };
 		
-	//../api/contextBrokerRetrieval_e.php
-	$.post('../api/async_request_cb_retrieval_e.php', {'data' : data}, function(response_data) {
+	$.post('../api/async_request.php', {'data' : data}, function(response_data) {
 		
             /*var progress_modal = document.getElementById('myModal');
             var span = document.getElementsByClassName("close")[0];
@@ -1237,12 +1244,12 @@ function stop_progress(){
     }
     
      $.ajax({
-			 url: "../api/contextBrokerRetrieval_e.php",
+			 url: "../api/bulkDeviceLoad.php",
 			 data:{
 				  action: "stop_bulk", 
-				  username: loggedUser,
+				  //username: loggedUser,
 				  token : sessionToken,
-                 organization:organization
+                 //organization:organization
 				 },
 			 type: "POST",
 			 async: true,
@@ -1314,12 +1321,12 @@ function checkBulkStatus(){
         else{
         
         $.ajax({
-			 url: "../api/contextBrokerRetrieval_e.php",
+			 url: "../api/bulkDeviceLoad.php",
 			 data:{
 				  action: "get_bulk_status", 
-				  username: loggedUser,
+				  //username: loggedUser,
 				  token : sessionToken,
-                 organization:organization
+                 //organization:organization
 				 },
 			 type: "POST",
 			 async: true,
@@ -1368,7 +1375,7 @@ function checkBulkStatus(){
         
          }, 3 * 1000);//each 3 seconds 
 }
-
+/*
 function insertValidDevicesByPieces_parallel(start_index,end_index,totalDevices,bulk_offset){
     
 	end_index=totalDevices;
@@ -1381,37 +1388,33 @@ function insertValidDevicesByPieces_parallel(start_index,end_index,totalDevices,
                   end:end_index,
 				  token : sessionToken,
 				  data_parallel: 1,
-        organization:organization
+			      organization:organization,
+                  should_be_registered:"no"
 				 };
 	alert("Request sent, processing ...");	
-	//../api/contextBrokerRetrieval_e.php
-	$.post('../api/async_request_cb_retrieval_e.php', {'data' : data}, function(response_data) {
-			//console.log("done");
+	$.post('../api/async_request.php', {'data' : data}, function(response_data) {
 			response_data= JSON.parse(response_data);
-			//console.log(response_data);
-			//console.log(response_data['status']);
 			if(response_data['status']=="ok"){
 				alert("Your valid devices have been uploaded.");
 			}
 			else{
 				alert("some problems occurred while uploading your valid devices");
 			}
-			
 		});
-    
 }
 
 function insertValidDevicesByPieces(start_index,end_index,totalDevices,bulk_offset){
     
     $.ajax({
-			 url: "../api/contextBrokerRetrieval_e.php",
+			 url: "../api/bulkDeviceLoad.php",
 			 data:{
 				  action: "bulkload", 
 				  username: loggedUser,
                   start:start_index,
                   end:end_index,
 				  token : sessionToken,
-                 organization:organization
+                 organization:organization,
+				should_be_registered:"no"
 				 },
 			 type: "POST",
 			 async: true,
@@ -1436,8 +1439,6 @@ function insertValidDevicesByPieces(start_index,end_index,totalDevices,bulk_offs
 					
                         for(var i = 0; i < content.length; i++){
 						   //console.log("for i "+i+" length "+content[i].inserted);
-						 /*Sara3110  if(mydata["msg"]=="" ||typeof mydata["msg"] === 'undefined' || mydata["msg"] === null)
-						   {*/
 								if(content[i].inserted=='ok'){
 									user_message="Device: "+content[i].device+" on context broker "+ content[i].cb +" uploaded";
 									
@@ -1455,12 +1456,6 @@ function insertValidDevicesByPieces(start_index,end_index,totalDevices,bulk_offs
 									user_message="Device: "+content[i].device+" on context broker "+ content[i].cb +" is invalid,  not inserted";
 									//user_message_old= document.getElementById('myModalBody').innerHTML;			
 								}
-							/* Sara3110}
-							else{
-                                //user_message= mydata["msg"];
-								user_message="Some devices not inserted";
-									
-							}*/
 							user_message_old= document.getElementById('myModalBody').innerHTML;
                             document.getElementById('myModalBody').innerHTML= user_message_old+"<p>"+user_message+"</p>";
 						}
@@ -1501,7 +1496,7 @@ function insertValidDevicesByPieces(start_index,end_index,totalDevices,bulk_offs
                         end_index=totalDevices+1; 
                         
                         $.ajax({
-                            url: "../api/contextBrokerRetrieval_e.php",
+                            url: "../api/bulkDeviceLoad.php",
                             data:{
                                 action: "delete_after_insert",
                                 username: loggedUser, 
@@ -1571,7 +1566,7 @@ function insertValidDevicesByPieces(start_index,end_index,totalDevices,bulk_offs
 		
 		});
 }
-
+*/
 	
     $("#selectModelDevice").click(function() {
 			
@@ -1653,8 +1648,9 @@ function insertValidDevicesByPieces(start_index,end_index,totalDevices,bulk_offs
 				$.ajax({
 					url: "../api/model.php",
 					data: {
-					action: "get_model",
-					name: nameOpt[selectednameOpt].value 
+						action: "get_model",
+						name: nameOpt[selectednameOpt].value,
+						token : sessionToken
 					},
 					type: "POST",
 					async: true,
@@ -1842,17 +1838,18 @@ function insertValidDevicesByPieces(start_index,end_index,totalDevices,bulk_offs
 			/****Sara end****/
             
             $.ajax({
-                url: "../api/contextBrokerRetrieval_e.php",
+                url: "../api/bulkDeviceLoad.php",
 				data:{
 					action: "delete_temporary",
 					id: id, 
 					uri : uri,
 					//Sara2510 start
-					username: loggedUser,
+					//username: loggedUser,
 					//Sara2510 end
 					contextbroker : contextbroker,
 					token : sessionToken,
-                    organization:organization
+                    //organization:organization,
+					should_be_registered:"no"
 					},
                 type: "POST",
 				datatype: "json",
@@ -1925,12 +1922,12 @@ $('#deleteAllDevConfirmBtn').off("click");
             $("#deleteAllDevModal div.modal-body").append('<div id="deleteAllDevModalInnerDiv2" class="modalBodyInnerDiv"><i class="fa fa-circle-o-notch fa-spin" style="font-size:36px"></i></div>');
             
             $.ajax({
-                url: "../api/contextBrokerRetrieval_e.php",
+                url: "../api/bulkDeviceLoad.php",
 				data:{
 					action: "delete_all_temporary",
-					username: loggedUser, 
+					//username: loggedUser, 
 					token : sessionToken,
-                    organization:organization
+                    //organization:organization
 					},
                 type: "POST",
 				datatype: "json",
@@ -2072,12 +2069,13 @@ $('#devicesTable tbody').on('click', 'button.editDashBtn', function () {
 	$('#editDeviceModal').show();	
 
 	$.ajax({
-			url: "../api/contextBrokerRetrieval_e.php",
+			url: "../api/bulkDeviceUpdate.php",
 			data: {
 				action: "get_temporary_attributes", 
 				id: $(this).attr("data-id"),
 				contextbroker: $(this).attr("data-contextBroker"),
-                organization:organization
+				token:sessionToken
+                //organization:organization
 			},
 			type: "POST",
 			async: true,
@@ -2283,11 +2281,11 @@ error messages returned by verifyDevice are longer.
 			//console.log("attributes xyz"+JSON.stringify(myAttributes));
 		 
 		$.ajax({
-            url: "../api/contextBrokerRetrieval_e.php",
+            url: "../api/bulkDeviceLoad.php",
             data:{
 		    action: "update", 
-			username: loggedUser,
-            organization:organization,
+			//username: loggedUser,
+            //organization:organization,
 		    newattributes: JSON.stringify(mynewAttributes),
 		    attributes: JSON.stringify(myAttributes),
 		    deleteattributes: JSON.stringify(mydeletedAttributes), 
@@ -2312,7 +2310,8 @@ error messages returned by verifyDevice are longer.
 		    visibility:updatedDevice.visibility,
 		    frequency:updatedDevice.frequency,
 		    k1: updatedDevice.k1, //MM2909 this value need to be acquired from the 
-		    k2: updatedDevice.k2 //MM2909
+		    k2: updatedDevice.k2, //MM2909
+			token:sessionToken
 /***********************Sara end*************/
 		    },
             type: "POST",
@@ -2572,8 +2571,9 @@ error messages returned by verifyDevice are longer.
 				url: "../api/associationRulesApi.php",
 				data:{
 					action: "apply_rules", 
-					username: loggedUser,
-					organization:organization,
+					//username: loggedUser,
+					//organization:organization,
+					token:sessionToken,
 					attributesIf: JSON.stringify(attributesIf),
 					attributesThen: JSON.stringify(attributesThen)	    
 				},
@@ -2832,9 +2832,10 @@ $(document).on({
             url: "../api/bulkDeviceUpdate.php",
             data:{
 				action: "get_affected_devices_count", 
-				username: loggedUser,
-				organization:organization,
-				attributesIf: JSON.stringify(attributesIf)
+				//username: loggedUser,
+				//organization:organization,
+				attributesIf: JSON.stringify(attributesIf),
+				token:sessionToken
 				//attributesThen: JSON.stringify(attributesThen)	    
 			},
 			dataType: 'json',
@@ -2886,7 +2887,8 @@ $(document).on({
 			url: "../api/bulkDeviceUpdate.php",
 			data:{
 				action: "get_fields", 
-				fieldIf: fieldIf
+				fieldIf: fieldIf,
+				token:sessionToken
 			},
 			dataType: 'json',
 			type: "POST",
@@ -3007,8 +3009,9 @@ $(document).on({
 				url: "../api/bulkDeviceUpdate.php",
 				data:{
 					action: "update_all_devices", 
-					username: loggedUser,
-					organization:organization,
+					//username: loggedUser,
+					//organization:organization,
+					token:sessionToken,
 					attributesIf: JSON.stringify(attributesIf),
 					attributesThen: JSON.stringify(attributesThen)	    
 				},
@@ -3315,9 +3318,10 @@ $(document).on({
 				url: "../api/bulkDeviceUpdate.php",
 				data:{
 					action: "get_affected_values_count", 
-					username: loggedUser,
-					organization:organization,
-					attributesIf: JSON.stringify(attributesIfValues)
+					//username: loggedUser,
+					//organization:organization,
+					attributesIf: JSON.stringify(attributesIfValues),
+					token:sessionToken
 					//attributesThen: JSON.stringify(attributesThen)	    
 				},
 				dataType: 'json',
@@ -3355,9 +3359,10 @@ $(document).on({
 			url: "../api/associationRulesApi.php",
 			data:{
 				action: "suggest_associations",
-				username: loggedUser,
-				organization: organization,
-				value: "value_type"
+				//username: loggedUser,
+				//organization: organization,
+				value: "value_type",
+				token:sessionToken
 			},
 			dataType: 'json',
 			type: "POST",
@@ -3459,8 +3464,9 @@ $(document).on({
 				url: "../api/associationRulesApi.php",
 				data:{
 					action: "get_rules_affecting_count", 
-					username: loggedUser,
-					organization:organization,
+					//username: loggedUser,
+					//organization:organization,
+					token:sessionToken,
 					value: "value_type",
 					attributesIf: JSON.stringify(attributesIfValues)
 					//attributesThen: JSON.stringify(attributesThen)	    
@@ -3537,10 +3543,11 @@ $(document).on({
 				url: "../api/bulkDeviceUpdate.php",
 				data:{
 					action: "update_all_values", 
-					username: loggedUser,
-					organization:organization,
+					//username: loggedUser,
+					//organization:organization,
 					attributesIf: JSON.stringify(attributesIfValues),
-					attributesThen: JSON.stringify(attributesThenValues)	    
+					attributesThen: JSON.stringify(attributesThenValues),
+					token:sessionToken
 				},
 				dataType: 'json',
 				type: "POST",
@@ -3642,7 +3649,10 @@ function drawAttributeMenu
     //---end sara
 	
 	mydatatypes="";
-    if (data_type!="" && data_type != undefined) {labelcheck= data_type;
+    if (data_type!="" && data_type != undefined) 
+	{
+		labelcheck= data_type;
+	}
 	else { //0910Fatima
         labelcheck="";
         mydatatypes += "<option value=' ' selected> </option>";
@@ -4097,12 +4107,12 @@ function nodeJsTest(){
     
 		  
 		 $.ajax({
-			 url: "../api/contextBrokerRetrieval_e.php",
+			 url: "../api/bulkDeviceLoad.php",
 			 data:{
 				  action: "get_count_temporary_devices", 
-				  username: loggedUser,
+				  //username: loggedUser,
 				   token : sessionToken,
-                 organization:organization
+                 //organization:organization
 				 },
 			 type: "POST",
 			 async: true,
@@ -4144,15 +4154,16 @@ function nodeJsTest(){
 	
 	var test_data={
 				  action: "bulkload", 
-				  username: loggedUser,
-                  organization:organization,
+				  //username: loggedUser,
+                  //organization:organization,
                   start:1,
                   end:6,
-				  token : sessionToken
+				  token : sessionToken,
+				should_be_registered:"no"
 				  
 				 };
 	alert("Request sent");	
-	$.post('../api/contextBrokerRetrieval_e.php', {'data' : test_data, 'data_from_nodeJs':1}, function(data) {
+	$.post('../api/bulkDeviceLoad.php', {'data' : test_data, 'data_from_nodeJs':1}, function(data) {
 		});
    /*$.ajax({
 			 url: "https://www.snap4city.org/iotdirectorytest/stubs/bulkload",
@@ -4187,14 +4198,14 @@ function insertValidDevices(){
     
     var data={
 				  action: "bulkload", 
-				  username: loggedUser,
+				  //username: loggedUser,
 				  token : sessionToken,
 				  data_parallel: 1,
-                  organization:organization
+                  //organization:organization,
+                  should_be_registered:"no"
 				 };
 		
-	//../api/contextBrokerRetrieval_e.php
-	$.post('../api/async_request_cb_retrieval_e.php', {'data' : data}, function(response_data) {
+	$.post('../api/async_request.php', {'data' : data}, function(response_data) {
 		
             var progress_modal = document.getElementById('myModal');
             var span = document.getElementsByClassName("close")[0];
@@ -4227,12 +4238,12 @@ function stop_progress(){
     }
     
      $.ajax({
-			 url: "../api/contextBrokerRetrieval_e.php",
+			 url: "../api/bulkDeviceLoad.php",
 			 data:{
 				  action: "stop_bulk", 
-				  username: loggedUser,
+				  //username: loggedUser,
 				  token : sessionToken,
-                 organization:organization
+                 //organization:organization
 				 },
 			 type: "POST",
 			 async: true,
@@ -4304,11 +4315,11 @@ function checkBulkStatus(){
         else{
         
         $.ajax({
-			 url: "../api/contextBrokerRetrieval_e.php",
+			 url: "../api/bulkDeviceLoad.php",
 			 data:{
 				  action: "get_bulk_status", 
-				  username: loggedUser,
-                  organization: organization,
+				  //username: loggedUser,
+                  //organization: organization,
 				  token : sessionToken
 				 },
 			 type: "POST",
@@ -4357,6 +4368,7 @@ function checkBulkStatus(){
          }, 3 * 1000);//each 3 seconds 
 }
 
+/*
 function insertValidDevices_old(totalDevices){
 	
     var bulk_offset=10;
@@ -4385,11 +4397,11 @@ function insertValidDevicesByPieces_parallel(start_index,end_index,totalDevices,
                   end:end_index,
 				  token : sessionToken,
 				  data_parallel: 1,
-                  organization:organization
+                  organization:organization,
+                  should_be_registered:"no"
 				 };
 	alert("Request sent, processing ...");	
-	//../api/contextBrokerRetrieval_e.php
-	$.post('../api/async_request_cb_retrieval_e.php', {'data' : data}, function(response_data) {
+	$.post('../api/async_request.php', {'data' : data}, function(response_data) {
 			response_data= JSON.parse(response_data);
 			if(response_data['status']=="ok"){
 				alert("Your valid devices have been uploaded.");
@@ -4405,14 +4417,15 @@ function insertValidDevicesByPieces_parallel(start_index,end_index,totalDevices,
 function insertValidDevicesByPieces(start_index,end_index,totalDevices,bulk_offset){
     
     $.ajax({
-			 url: "../api/associationRulesApi.php",
+			 url: "../api/bulkDeviceLoad.php",
 			 data:{
 				  action: "bulkload", 
 				  username: loggedUser,
                   start:start_index,
                   end:end_index,
 				  token : sessionToken,
-                 organization:organization
+                 organization:organization,
+				should_be_registered:"no"
 				 },
 			 type: "POST",
 			 async: true,
@@ -4448,12 +4461,6 @@ function insertValidDevicesByPieces(start_index,end_index,totalDevices,bulk_offs
 									user_message="Device: "+content[i].device+" on context broker "+ content[i].cb +" is invalid,  not inserted";
 									//user_message_old= document.getElementById('myModalBody').innerHTML;			
 								}
-							/* Sara3110}
-							else{
-                                //user_message= mydata["msg"];
-								user_message="Some devices not inserted";
-									
-							}*/
 							user_message_old= document.getElementById('myModalBody').innerHTML;
                             document.getElementById('myModalBody').innerHTML= user_message_old+"<p>"+user_message+"</p>";
 						}
@@ -4494,7 +4501,7 @@ function insertValidDevicesByPieces(start_index,end_index,totalDevices,bulk_offs
                         end_index=totalDevices+1; 
                         
                         $.ajax({
-                            url: "../api/associationRulesApi.php",
+                            url: "../api/bulkDeviceLoad.php",
                             data:{
                                 action: "delete_after_insert",
                                 username: loggedUser, 
@@ -4562,7 +4569,7 @@ function insertValidDevicesByPieces(start_index,end_index,totalDevices,bulk_offs
              }
 		
 		});
-}
+}*/
 
 function checkHeadersIfValid(csvheaders){
   

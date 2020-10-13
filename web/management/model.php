@@ -44,24 +44,6 @@
     $link = mysqli_connect($host, $username, $password);
     mysqli_select_db($link, $dbname);
     
-    if(!isset($_SESSION['loggedRole']))
-    {
-        header("location: unauthorizedUser.php");
-    }
-/* 	
-	require '../sso/autoload.php';
-	use Jumbojett\OpenIDConnectClient;
-
-
-	if (isset($_SESSION['refreshToken'])) {
-	  $oidc = new OpenIDConnectClient($keycloakHostUri, $clientId, $clientSecret);
-	  $oidc->providerConfigParam(array('token_endpoint' => $keycloakHostUri.'/auth/realms/master/protocol/openid-connect/token'));
-	  $tkn = $oidc->refreshToken($_SESSION['refreshToken']);
-	  $accessToken = $tkn->access_token;
-	  $_SESSION['refreshToken'] = $tkn->refresh_token;
-	}
-	 
- */	 
 	 $accessToken = "";
 	
 ?>
@@ -174,7 +156,7 @@
  var currentDictionaryStaticAttribEdit=[];
 
           $.ajax({url: "../api/functionality.php",
-			 data: {action: 'get_functionality', page : mypage},
+			 data: {action: 'get_functionality', page : mypage, token:sessionToken},
 			 type: "GET",
 			 async: false,
 			 dataType: 'json',

@@ -1,0 +1,271 @@
+
+.ifBlockBulk
+{
+    width: 100%;
+}
+
+.ifBlockBulk th, .ifBlockBulk td
+{
+    text-align: center;
+    font-weight: normal;
+}
+
+.ifBlockBulk th, .ifBlockBulk td
+{
+    background-color: white;
+}
+
+.ifBlockBulk i.fa-plus
+{
+    font-size: 24px;
+    color: #f3cf58;
+}
+
+.ifBlockBulk i.fa-minus
+{
+    font-size: 24px;
+    color: #337ab7;
+}
+
+.ifBlockBulk i.fa-plus:hover, .ifBlockBulk i.fa-minus:hover 
+{
+    cursor: pointer;
+    color: red;
+}
+
+label[for='authorizedPages'], .ifBlockBulk
+{
+    margin-top: 10px;
+}
+
+.editable-click, a.editable-click, a.editable-click:hover
+{
+    border-bottom: none!important;
+}
+
+.ifBlockBulk th, .ifBlockBulk td
+{
+    background-color: transparent;
+}
+
+.ifBlockBulk thead tr
+{
+    background-color: rgba(0, 162, 211, 1);
+    color: white;
+}
+
+.ifBlockBulk tbody tr:nth-child(odd)
+{
+    background-color: rgb(230, 249, 255);
+}
+
+.ifBlockBulk tbody tr:nth-child(even)
+{
+    background-color: white;
+}
+
+.decisionBlockBulk
+{
+    width: 100%;
+}
+
+.decisionBlockBulk th, .decisionBlockBulk td
+{
+    text-align: center;
+    font-weight: normal;
+}
+
+.decisionBlockBulk th, .decisionBlockBulk td
+{
+    background-color: white;
+}
+
+.decisionBlockBulk i.fa-plus
+{
+    font-size: 24px;
+    color: #f3cf58;
+}
+
+.decisionBlockBulk i.fa-minus
+{
+    font-size: 24px;
+    color: #337ab7;
+}
+
+.decisionBlockBulk i.fa-plus:hover, .decisionBlockBulk i.fa-minus:hover 
+{
+    cursor: pointer;
+    color: red;
+}
+
+label[for='authorizedPages'], .decisionBlockBulk
+{
+    margin-top: 10px;
+}
+
+.editable-click, a.editable-click, a.editable-click:hover
+{
+    border-bottom: none!important;
+}
+
+.decisionBlockBulk th, .decisionBlockBulk td
+{
+    background-color: transparent;
+}
+
+.decisionBlockBulk thead tr
+{
+    background-color: rgba(0, 162, 211, 1);
+    color: white;
+}
+
+.decisionBlockBulk tbody tr:nth-child(odd)
+{
+    background-color: rgb(230, 249, 255);
+}
+
+.decisionBlockBulk tbody tr:nth-child(even)
+{
+    background-color: white;
+}
+
+
+
+.resultBlockBulk
+{
+    width: 100%;
+}
+
+.resultBlockBulk th, .resultBlockBulk td
+{
+    text-align: center;
+    font-weight: normal;
+}
+
+.resultBlockBulk th, .resultBlockBulk td
+{
+    background-color: white;
+}
+
+.resultBlockBulk i.fa-plus
+{
+    font-size: 24px;
+    color: #f3cf58;
+}
+
+.resultBlockBulk i.fa-minus
+{
+    font-size: 24px;
+    color: #337ab7;
+}
+
+.resultBlockBulk i.fa-plus:hover, .resultBlockBulk i.fa-minus:hover 
+{
+    cursor: pointer;
+    color: red;
+}
+
+label[for='authorizedPages'], .resultBlockBulk
+{
+    margin-top: 10px;
+}
+
+.editable-click, a.editable-click, a.editable-click:hover
+{
+    border-bottom: none!important;
+}
+
+.resultBlockBulk th, .resultBlockBulk td
+{
+    background-color: transparent;
+}
+
+.resultBlockBulk thead tr
+{
+    background-color: rgba(0, 162, 211, 1);
+    color: white;
+}
+
+.resultBlockBulk tbody tr:nth-child(odd)
+{
+    background-color: rgb(230, 249, 255);
+}
+
+.resultBlockBulk tbody tr:nth-child(even)
+{
+    background-color: white;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+/** SPINNER CREATION **/
+
+.loader {
+  position: relative;
+  text-align: center;
+  margin: 15px auto 35px auto;
+  z-index: 9999;
+  display: block;
+  width: 80px;
+  height: 80px;
+  border: 10px solid rgba(0, 0, 0, .3);
+  border-radius: 50%;
+  border-top-color: #000;
+  animation: spin 1s ease-in-out infinite;
+  -webkit-animation: spin 1s ease-in-out infinite;
+}
+
+/** MODAL STYLING **/
+
+.modal-content {
+  border-radius: 0px;
+  box-shadow: 0 0 20px 8px rgba(0, 0, 0, 0.7);
+}
+
+.modal-backdrop.show {
+  opacity: 0.75;
+}
+
+.loader-txt {
+  p {
+    font-size: 13px;
+    color: #666;
+    small {
+      font-size: 11.5px;
+      color: #999;
+    }
+  }
+}
+
+
+
+
+
+
+
+
+
+
+

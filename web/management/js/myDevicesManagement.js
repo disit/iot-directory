@@ -62,19 +62,19 @@ function checkDeviceNameUser()
     if($("#inputNameDeviceUser").val().length === 0)
     {
         $("#inputNameDeviceUserMsg").css("color", "red");
-        message = 'Device name is mandatory';
+        message = 'Device Identifier is mandatory';
         addMyDeviceConditionsArray['inputNameDeviceUser'] = false;
     }
     else if($("#inputNameDeviceUser").val().length < 5)
     {
         $("#inputNameDeviceUserMsg").css("color", "red");
-        message = 'Device name (at least 5 chars long)';
+        message = 'Device Identifier (at least 5 chars long)';
         addMyDeviceConditionsArray['inputNameDeviceUser'] = false;
     }
     else if(regex.test($("#inputNameDeviceUser").val()))
     {
         $("#inputNameDeviceUserMsg").css("color", "red");
-        message = 'No special characters are allowed in a device name ';
+        message = 'No special characters are allowed in a Device Identifier';
         addMyDeviceConditionsArray['inputNameDeviceUser'] = false;
     }
     else

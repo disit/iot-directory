@@ -14,35 +14,8 @@
    along with this program; if not, write to the Free Software
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA. */
 
-header("Content-type: application/json");
-header("Access-Control-Allow-Origin: *\r\n");
-include ('../config.php');
-include ('common.php');
+$result=array("status"=>"","msg"=>"","content"=>"","log"=>"", "error_msg"=>"");
 
-$link = mysqli_connect($host, $username, $password) or die("failed to connect to server !!");
-mysqli_select_db($link, $dbname);
-
-//Altrimenti restituisce in output le warning
-error_reporting(E_ERROR | E_NOTICE);
-
-
-if(!$link->set_charset("utf8")) 
-{
-    exit();
-}
-
-if(isset($_REQUEST['action']) && !empty($_REQUEST['action'])) 
-    {
-        $action = $_REQUEST['action'];
-    }
-else
-{
-    exit();
-}
-
-//print_r ($_REQUEST);
-
-$result=array("status"=>"","msg"=>"","content"=>"","log"=>"");	
 /* all the primitives return an array "result" with the following structure
 
 result["status"] = ok/ko; reports the status of the operation (mandatory)
@@ -51,30 +24,125 @@ result["content"] in case of positive execution of the operation the content ext
 result["log"] keep trace of the operations executed on the db
 
 This array should be encoded in json
-*/	
+*/
 
+
+header("Content-type: application/json");
+header("Access-Control-Allow-Origin: *\r\n");
+include ('../config.php');
+include ('common.php');
+$link = mysqli_connect($host, $username, $password) or die("failed to connect to server !!");
+mysqli_select_db($link, $dbname);
+error_reporting(E_ERROR | E_NOTICE);
+
+if(!$link->set_charset("utf8")) 
+{
+    exit();
+}
+
+if(isset($_REQUEST['action']) && !empty($_REQUEST['action'])) 
+{
+	$action = $_REQUEST['action'];
+}
+else
+{
+	$result['status'] = 'ko';
+	$result['msg'] = 'action not present'; 
+	$result['error_msg']='action not present';
+	$result['log'] = 'functionality.php action not present';
+	my_log($result);
+	mysqli_close($link);
+    exit();
+}
+
+$headers = apache_request_headers();
+if (isset($headers['Authorization']) && strlen($headers['Authorization'])>8 )
+{
+	$_REQUEST['token']=substr($headers['Authorization'],7);
+}
+
+require '../sso/autoload.php';
+use Jumbojett\OpenIDConnectClient;
+
+$oidc = new OpenIDConnectClient($keycloakHostUri, $clientId, $clientSecret);
+$oidc->providerConfigParam(array('token_endpoint'    => $keycloakHostUri.'/auth/realms/master/protocol/openid-connect/token',
+                                 'userinfo_endpoint' => $keycloakHostUri.'/auth/realms/master/protocol/openid-connect/userinfo'));
+
+$accessToken = "";
+if (isset($_REQUEST['nodered']))
+{
+    if ((isset($_REQUEST['token']))&&($_REQUEST['token']!='undefined'))
+        $accessToken = $_REQUEST['token'];
+}
+else
+{
+    if (isset($_REQUEST['token']))
+    {
+		$mctime=microtime(true);
+        $tkn = $oidc->refreshToken($_REQUEST['token']);
+		error_log("---- functionality.php:".(microtime(true)-$mctime));
+        $accessToken = $tkn->access_token;
+    }
+}
+if (empty($accessToken))
+{
+    $result["status"]="ko";
+    $result['msg'] = "Access Token not present";
+    $result["error_msg"] .= "Access Token not present";
+    $result["log"]= "functionality.php AccessToken not present\r\n";
+    my_log($result);
+    mysqli_close($link);
+    exit();
+}
+
+//retrieve username, organization and role from the accetoken
+//TODO avoid passing all the parameters for LDAP
+get_user_info($accessToken, $username, $organization, $oidc, $role, $result, $ldapBaseName, $ldapServer, $ldapPort, $ldapAdminName, $ldapAdminPwd);
+
+if ($result["status"]!="ok")
+{
+    $result["status"]="ko";
+    $result['msg'] = "Cannot retrieve user information";
+    $result["error_msg"] .= "Cannot retrieve user information";
+    $result["log"]= "functionality.php Cannot retrieve user information\r\n";
+    my_log($result);
+    mysqli_close($link);
+    exit();
+}
 	
 if ($action=="get_functionality")
 {
-	$page = mysqli_real_escape_string($link, $_REQUEST['page']);
+	$missingParams=missingParameters(array('page'));
 
-$q = "SELECT * FROM functionalities WHERE link = '$page'";
-	$r = mysqli_query($link, $q);
-	
-	if($r) 
+	if (!empty($missingParams))
 	{
-	 $result['status'] = 'ok';
-	 $result["log"] .="\n\r action: get_functionality ok " . $q;
-	 $result['content'] = array();
-     while($row = mysqli_fetch_assoc($r)) 
-     {
-	   array_push($result['content'], $row);
-	 }
-    }
-	else{
-	   $result['status'] = 'ko';
-	   $result['msg'] = 'The following error occurred' .  mysqli_error($link);
-	   $result['log'] = 'The following error occurred' .  mysqli_error($link) . $q;
+		$result["status"]="ko";
+        $result['msg'] = "Missing Parameters";
+        $result["error_msg"] .= "Problem in get functionality (Missing parameters: ".implode(", ",$missingParams)." )";
+        $result["log"]= "action=get_functionality - error Missing Parameters: ".implode(", ",$missingParams)." \r\n";
+	}
+	else 
+	{
+		$page = mysqli_real_escape_string($link, $_REQUEST['page']);
+		$q = "SELECT * FROM functionalities WHERE link = '$page'";
+		$r = mysqli_query($link, $q);
+	
+		if($r) 
+		{
+			$result['status'] = 'ok';
+			$result["log"] .="\n\r action: get_functionality ok " . $q;
+			$result['content'] = array();
+			while($row = mysqli_fetch_assoc($r)) 
+			{
+				array_push($result['content'], $row);
+			}
+		}
+		else
+		{
+			$result['status'] = 'ko';
+			$result['msg'] = 'The following error occurred' .  mysqli_error($link);
+			$result['log'] = 'The following error occurred' .  mysqli_error($link) . $q;
+		}
 	}
 
 	my_log($result);

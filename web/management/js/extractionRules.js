@@ -6,31 +6,71 @@ modelsdata=[];
 receivedData=[];
 var dataTable ="";
 requiredHeaders=["name", "devicetype", "macaddress", "frequency", "kind", "protocol", "format", "producer", /*"edge_gateway_type", "edge_gateway_uri",  commented by Sara*/ "latitude", "longitude", "value_name", "data_type", "value_type", "editable", "value_unit", "healthiness_criteria", "healthiness_value", "k1", "k2"];
-
 var gb_datatypes ="";
 var gb_value_units ="";
 var gb_value_types = "";
 var defaultPolicyValue = [];
-// var mynewAttributes = [];
-
 var gb_options = [];
-
 var gb_device ="";
 var gb_latitude ="";
 var gb_longitude = "";
 var gb_key1;
 var gb_key2;
-
 var gb_old_id="";
 var gb_old_cb="";
 var dataTable ="";
-//var _serviceIP = "http://localhost:3001";
 var _serviceIP = "../stubs";
- //var _serviceIP = "https://159.149.129.184:3001";
-
- //var _serviceIP = "https://iot-app.snap4city.org/iotdirectory";
 var timerID= undefined;
 var was_processing=0;
+
+//--------to get the datatypes items----------
+$.ajax({url: "../api/device.php",
+	data: {
+		action: 'get_param_values',
+		token : sessionToken
+	},
+	type: "POST",
+	async: true,
+	dataType: 'json',
+	success: function (mydata) {
+		if (mydata["status"] === 'ok') {
+			gb_datatypes= mydata["data_type"];
+			gb_value_units= mydata["value_unit"];
+			gb_value_types= mydata["value_type"];
+		}
+		else {
+			console.log("error getting the data types "+data);
+		}
+	},
+	error: function (mydata) {
+		console.log(JSON.stringify(mydata));
+		alert("Network errors. <br/> Get in touch with the Snap4City Administrator<br/>"+ JSON.stringify(mydata));
+	}
+});
+
+//--------to get the list of context broker----------
+$.ajax({
+	url: "../api/contextbroker.php",
+	data: {
+		action: "get_all_contextbroker",
+		token : sessionToken
+	},
+	type: "POST",
+	async: true,
+	success: function (data) {
+		if (data["status"] === 'ok') {
+			addCB($("#selectContextBroker"), data);
+			addCB($("#selectContextBrokerM"), data);
+		}
+		else {
+			console.log("error getting the context brokers "+data);
+		}
+	},
+	error: function (data) {
+		console.log("error in the call to get the context brokers "+data);
+		alert("Network errors. <br/> Get in touch with the Snap4City Administrator<br/>"+ JSON.stringify(data));
+	}
+});
 
 function ajaxRequest()
 {var request=false;
@@ -42,78 +82,30 @@ function ajaxRequest()
   }
   return request
 }
-//--------to get the models with their details----------------------//
-
-
-
-$.ajax({url: "../api/extractionRules.php",
-         data: {
-			 action: 'get_param_values',
-             organization:organization
-			 },
-         type: "POST",
-         async: true,
-         dataType: 'json',
-         success: function (mydata)
-         {
-		   gb_datatypes= mydata["data_type"];
-		   gb_value_units= mydata["value_unit"];
-		   gb_value_types= mydata["value_type"];	
-         },
-		 error: function (mydata)
-		 {
-		   console.log(JSON.stringify(mydata));
-		   alert("Network errors. <br/> Get in touch with the Snap4City Administrator<br/>"+ JSON.stringify(mydata));
-		 }
-});
 //--------------------Ajax call function to upload file data---------------------//
 
 //Sara811 - Start
    $("#newRule").off("click");
    $("#newRule").click(function(){
   
-       $.ajax({
-                url: "../api/value.php",
-                data:{
-                                          
-                    action: "get_cb",
-                    token : sessionToken, 
-                    username: loggedUser, 
-                    organization : organization, 
-                    loggedrole:loggedRole                          
-                },
-                type: "POST",
-                async: true,
-                success: function (data)
-                {
-                        
-                    if (data["status"] === 'ok')
-                    {   
 						var $dataType = $("#deviceTypeInput");        
                         $dataType.empty();
-						$dataType.append($("<option />").text(""));  								
+						//$dataType.append($("<option />").text(""));  								
                         $.each(gb_datatypes, function() {
 							$dataType.append($("<option />").val(this).text(this));  								
                         });
 						
-						var $valueType = $("#valueTypeInput");        
+						var $valueType = $("#value_type0");        
                         $valueType.empty();
-						$valueType.append($("<option />").text(""));  								
+						//$valueType.append($("<option />").text(""));  								
                         $.each(gb_value_types, function() {
-							$valueType.append($("<option />").val(this).text(this));  								
+							$valueType.append($("<option />").val(this.value).text(this.label));  								
                         });
 
-						var $valueUnit = $("#deviceValueUnit");        
-                        $valueUnit.empty();
-                        $.each(gb_value_units, function() {
-							$valueUnit.append($("<option />").val(this).text(this));  								
-                        });
-						
-                        var $dropdown = $("#selectContextBroker");        
-                        $dropdown.empty();
-                        $.each(data['content_cb'], function() {
-							$dropdown.append($("<option />").val(this.name).text(this.name));  						
-                        });
+						var $valueUnit = $("#value_unit0");        
+                        //$valueUnit.empty();//starting with default first one
+						var valid=getValidValueUnit($valueType.val(), "");
+						$valueUnit.html(valid);
 						
 						
                         
@@ -128,17 +120,6 @@ $.ajax({url: "../api/extractionRules.php",
                           $("#addDeviceModalFooter").show();
 						
                         showAddDeviceModal();
-                        }
-                    else{
-                        console.log("error getting the context brokers and models "+data); 
-                    }
-                },
-                error: function (data)
-                {
-                 console.log("error in the call to get the context brokers and models "+data);   
-                }
-          });
-       
 	
    });
 
@@ -196,7 +177,7 @@ function fetch_data(destroyOld, selected=null)
 			
 			if (selected==null)
 			{
-			  mydata = {action: "get_rules", username: loggedUser, organization:organization,loggedrole:loggedRole, no_columns: ["position","edit","delete"]}; 
+			  mydata = {action: "get_rules", token : sessionToken, no_columns: ["position","edit","delete"]}; 
 			}
 			
             
@@ -618,10 +599,8 @@ $(document).ready(function ()
 				data:{
 					action: "delete_rule",
 					id: id, 
-					username: loggedUser,
 					contextbroker : contextbroker,
 					token : sessionToken,
-                    organization:organization
 					},
                 type: "POST",
 				datatype: "json",
@@ -667,11 +646,10 @@ $(document).ready(function ()
             });
         });
        
-
+//EDIT<F4><F4><F4><F4>
 $('#devicesTable tbody').on('click', 'button.editDashBtn', function () {
 	$("#editDeviceModalBody").show();
 	$('#editDeviceModalTabs').show();
-
 	$("#editDeviceLoadingMsg").hide();
 	$("#editDeviceLoadingIcon").hide();
 	$("#editDeviceOkMsg").hide();
@@ -681,12 +659,11 @@ $('#devicesTable tbody').on('click', 'button.editDashBtn', function () {
 	$("#editDeviceModalFooter").show();
 	$("#editDeviceModalLabel").html("Edit device - " + $(this).attr("data-id"));
 	$("#editDeviceModal").modal('show');
-	  
 	   
 	var id = $(this).attr('data-id');
-		gb_old_id = id;
+	gb_old_id = id;
 	var contextbroker = $(this).attr('data-contextBroker');
-			gb_old_cb = contextbroker;
+	gb_old_cb = contextbroker;
 	var kind = $(this).attr('data-kind');
 	if(kind.localeCompare("property")==0){
 		 $("#dataTypeSelM").hide();
@@ -720,70 +697,37 @@ $('#devicesTable tbody').on('click', 'button.editDashBtn', function () {
 
 	var $dataType = $("#inputDataTypeM");        
 	$dataType.empty();
-	$dataType.append($("<option />").text(""));  	
+	//$dataType.append($("<option />").text(""));  	
     $dataType.append($("<option selected/>").val(data_type).text(data_type));	
 	$.each(gb_datatypes, function() {
         if(this != data_type)
 		$dataType.append($("<option />").val(this).text(this));  								
 	});
 	
-	var $valueType = $("#inputValueTypeM");        
+	var $valueType = $("#Mvalue_type0");        
 	$valueType.empty();
-	$valueType.append($("<option />").text(""));  
-    $valueType.append($("<option selected/>").val(value_type).text(value_type));		
+	//$valueType.append($("<option />").text(""));  
+    //$valueType.append($("<option selected/>").val(value_type).text(value_type));		
 	$.each(gb_value_types, function() {
-        if(this != value_type)
-		$valueType.append($("<option />").val(this).text(this));  								
+        if(this.value != value_type)
+			$valueType.append($("<option />").val(this.value).text(this.label));  							
+		else 
+			$valueType.append($("<option selected/>").val(this.value).text(this.label));
 	});
 
-	var $valueUnit = $("#valueUnitDeviceM");        
+	var $valueUnit = $("#Mvalue_unit0");        
 	$valueUnit.empty();
-    $valueUnit.append($("<option selected/>").val(value_unit).text(value_unit));		
+    /*$valueUnit.append($("<option selected/>").val(value_unit).text(value_unit));		
 	$.each(gb_value_units, function() {
         if(this != value_unit)
-		$valueUnit.append($("<option />").val(this).text(this));  								
-	});
+		$valueUnit.append($("<option />").val(this.value).text(this.label));  								
+	});*/
+	$valueUnit.html(getValidValueUnit($valueType.val(),value_unit));
 	//sara -> could be a problem
-	$('#editDeviceModal').show();	
+	//$('#editDeviceModal').show();	
 
-		$.ajax({
-                url: "../api/value.php",
-                data:{
-                                          
-                    action: "get_cb",
-                    token : sessionToken, 
-                    username: loggedUser, 
-                    organization : organization, 
-                    loggedrole:loggedRole                          
-                },
-                type: "POST",
-                async: true,
-                success: function (data)
-                {
-                        
-                    if (data["status"] === 'ok')
-                    {        
-                        var $dropdown = $("#selectContextBrokerM");        
-                        $dropdown.empty();
-                        $dropdown.append($("<option selected/>").val(contextbroker).text(contextbroker));
-                        $.each(data['content'], function() {
-                            if(this.name != contextbroker)
-                            $dropdown.append($("<option />").val(this.name).text(this.name));        
-                        });
-                          showEditDeviceModal();
+	showEditDeviceModal();
 
-                         //$('#editDeviceModal').show();
-				
-                        }
-                    else{
-                        console.log("error getting the context brokers "+data); 
-                    }
-                },
-                error: function (data)
-                {
-                 console.log("error in the call to get the context brokers "+data);   
-                }
-          });
 });	 
 
 $('#editRuleConfirmBtn').off("click");
@@ -804,8 +748,6 @@ $("#editRuleConfirmBtn").click(function(){
         url: "../api/extractionRules.php",
         data:{
 		    action: "update", 
-			username: loggedUser,
-            organization:organization,
 			id: $('#inputNameRuleM').val(),
 		    contextbroker: $('#selectContextBrokerM').val(),
 			selector:  $('#inputSelectorM').val(),
@@ -814,9 +756,10 @@ $("#editRuleConfirmBtn").click(function(){
 			format: $('#inputFormatM').val(),
 			kind: $('#selectKindDeviceM').val(),
 			data_type: $('#inputDataTypeM').val(),
-			value_type: $('#inputValueTypeM').val(),
-			value_unit: $('#valueUnitDeviceM').val(),
-			structure_flag: $('#structureValueFlagM').val()
+			value_type: $('#Mvalue_type0').val(),
+			value_unit: $('#Mvalue_unit0').val(),
+			structure_flag: $('#structureValueFlagM').val(),
+        	token : sessionToken
 		},
         type: "POST",
         async: true,
@@ -987,18 +930,16 @@ $('#devicesTable thead').css("font-size", "1em");
 		 url: "../api/extractionRules.php",
 		 data:{
 			  action: "insert",   
-			  //Sara2510 - for logging purpose
-			  username: loggedUser,
-			  organization : organization,  
 			  id: $('#inputNameRule').val(),
 			  contextbroker: $('#selectContextBroker').val(),
 			  format: $('#inputFormat').val(),
 			  selector: $('#inputSelector').val(),
 			  kind: $('#selectKindDevice').val(),
 			  data_type: $('#deviceTypeInput').val(),
-			  value_type: $('#valueTypeInput').val(),
-			  value_unit: $('#deviceValueUnit').val(), 
-			  structure_flag: $('#structureValueFlag').val()
+			  value_type: $('#value_type0').val(),
+			  value_unit: $('#value_unit0').val(), 
+			  structure_flag: $('#structureValueFlag').val(),
+		      token : sessionToken
 			},
 		 type: "POST",
 		 async: true,

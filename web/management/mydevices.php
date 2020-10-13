@@ -46,12 +46,6 @@ if (isset($_REQUEST['redirect'])){
 	$link = mysqli_connect($host, $username, $password);
     mysqli_select_db($link, $dbname);
     
-    if(!isset($_SESSION['loggedRole']))
-    {
-        header("location: unauthorizedUser.php");
-    }
- 
-   
 require '../sso/autoload.php';
 use Jumbojett\OpenIDConnectClient;
 
@@ -174,7 +168,7 @@ if (isset($_SESSION['refreshToken'])) {
          var functionality = [];
 
           $.ajax({url: "../api/functionality.php",
-			 data: {action: 'get_functionality', page : mypage},
+			 data: {action: 'get_functionality', page : mypage, token:sessionToken},
 			 type: "GET",
 			 async: false,
 			 dataType: 'json',
@@ -204,7 +198,7 @@ if (isset($_SESSION['refreshToken'])) {
 		<script  src="js/devicesEditManagement.js"></script>
 		<script  src="js/fieldsManagement.js"></script>
         <script  src="../js/dashboard_mng.js"></script>
-		
+		<script  src="js/common.js"></script>	
 		
 		<!-- leaflet scripts -->
 		
@@ -359,7 +353,7 @@ if (isset($_SESSION['refreshToken'])) {
 										<div class="modalFieldCnt">
 											<input type="text" class="modalInputTxt" name="inputNameDeviceUser" id="inputNameDeviceUser" onkeyup="checkStrangeCharacters(this)" required> 
 										</div>
-										<div class="modalFieldLabelCnt">Name</div>
+										<div class="modalFieldLabelCnt">Identifier</div>
 										<div id="inputNameDeviceUserMsg" class="modalFieldMsgCnt">&nbsp;</div>
 									</div>
 									
@@ -472,6 +466,25 @@ if (isset($_SESSION['refreshToken'])) {
 									</div> 	 
                                 </div>
 								-->
+								<div id="addStaticTabModel" hidden="true">
+									<div class="row">
+										<div class="col-xs-12 col-md-6 modalCell">
+											<div class="modalFieldCnt">
+												<select id="selectSubnature" name="selectSubnature" class="modalInputTxt" disabled>
+													<option></option>
+												</select>
+											</div>
+											<div class="modalFieldLabelCnt">Subnature</div>
+										</div>
+									</div>
+									<div class="row">
+										<div id="addlistStaticAttributes"></div>
+									</div>
+									<div class="row">
+										<div class="pull-left"><button type="text" id="addNewStaticBtn" class="btn confirmBtn" style="display: none;">Add Attribute</button></div>
+									</div>
+								</div>
+
 								<div id="addMyDeviceModalFooter" class="modal-footer"> 
 										<button type="button" id="addMyNewDeviceConfirmBtn" class="btn btn-primary">Submit Device</button>  
 								</div> 	

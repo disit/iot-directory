@@ -4,56 +4,71 @@ var gb_datatypes ="";
 var gb_value_units ="";
 var gb_value_types = "";
 var defaultPolicyValue = [];
-// var mynewAttributes = [];
-
 var gb_options = [];
-
 var gb_device ="";
 var gb_latitude ="";
 var gb_longitude = "";
 var gb_key1;
 var gb_key2;
-
 var dataTable ="";
-
 var indexValues=0;//it keeps track of unique identirier on the values, so it's possible to enforce specific value type
+var filterDefaults = {
+	myOwnPrivate: 'MyOwnPrivate',
+	myOwnPublic: 'MyOwnPublic',
+	myPrivate: 'private',
+	public: 'public'
+};
+var tableFirstLoad = true;
 
-  var filterDefaults = {
-			myOwnPrivate: 'MyOwnPrivate',
-			myOwnPublic: 'MyOwnPublic',
-			myPrivate: 'private',
-            		public: 'public'
-        };
-		
-		
-     //   var existingPoolsJson = null;
-        // var internalDest = false;
-        var tableFirstLoad = true;
-
-
-		
-$.ajax({
-	 url: "../api/device.php",
-         data: {
+//--------to get the datatypes items----------
+$.ajax({url: "../api/device.php",
+	data: {
 		action: 'get_param_values',
-		organization:organization
-	 },
-         type: "POST",
-         async: true,
-         dataType: 'json',
-         success: function (mydata)
-         {
-		   gb_datatypes= mydata["data_type"];
-		   gb_value_units= mydata["value_unit"];
-		   gb_value_types= mydata["value_type"];		   
-		   addSubnature($("#selectSubnature"),mydata["subnature"]);
-		   addSubnature($("#selectSubnatureM"),mydata["subnature"]);
-         },
-		 error: function (mydata)
-		 {
-		   console.log(JSON.stringify(mydata));
-		   alert("Network errors. <br/> Get in touch with the Snap4City Administrator<br/>"+ JSON.stringify(mydata));
-		 }
+		token : sessionToken
+	},
+	type: "POST",
+	async: true,
+	dataType: 'json',
+	success: function (mydata) {
+		if (mydata["status"] === 'ok') {
+			gb_datatypes= mydata["data_type"];
+			gb_value_units= mydata["value_unit"];
+			gb_value_types= mydata["value_type"];
+			addSubnature($("#selectSubnature"),mydata["subnature"]);
+			addSubnature($("#selectSubnatureM"),mydata["subnature"]);
+		}
+		else {
+			console.log("error getting the data types "+data);
+		}
+	},
+	error: function (mydata) {
+		console.log(JSON.stringify(mydata));
+		alert("Network errors. <br/> Get in touch with the Snap4City Administrator<br/>"+ JSON.stringify(mydata));
+	}
+});
+
+//--------to get the list of context broker----------
+$.ajax({
+	url: "../api/contextbroker.php",
+	data: {
+		action: "get_all_contextbroker",
+		token : sessionToken
+	},
+	type: "POST",
+	async: true,
+	success: function (data) {
+		if (data["status"] === 'ok') {
+			addCB($("#selectContextBrokerM"), data);					
+			addCB($("#selectContextBroker"), data);
+		}
+		else {
+			console.log("error getting the context brokers "+data);
+		}
+	},
+	error: function (data) {
+		console.log("error in the call to get the context brokers "+data);
+		alert("Network errors. <br/> Get in touch with the Snap4City Administrator<br/>"+ JSON.stringify(data));
+	}
 });
 
 //export model for sensor
@@ -98,38 +113,6 @@ function exporta(name,devicetype, frequency, kind, protocol, format, producer, a
         element.click();
         document.body.removeChild(element);
 }
-
-$.ajax({              
-	url: "../api/value.php",
-        data:{
-                    action: "get_cb",
-                    token : sessionToken,
-                    username: loggedUser,
-                    organization : organization,
-                    loggedrole:loggedRole
-	},
-        type: "POST",
-        async: true,
-        success: function (data)
-        {
-                    if (data["status"] === 'ok')
-                    {
-			addCB($("#selectContextBrokerM"), data);
-			addCB($("#selectContextBroker"), data);
-                    }
-                    else{
-                        console.log("error getting the context brokers "+data);
-                    }
-                },
-                error: function (data)
-                {
-                 console.log("error in the call to get the context brokers "+data);
-		 alert("Network errors. <br/> Get in touch with the Snap4City Administrator<br/>"+ JSON.stringify(data));
-                }
-});
-
-
-
 
 function removeElementAt(parent,child) {
     var list = document.getElementById(parent);
@@ -282,42 +265,32 @@ var multitenancy = "";
         }
         
   
-  function fetch_data(destroyOld, selected=null)
-  {
-	  
-	  
-		if(destroyOld)
-            {
-				$('#modelTable').DataTable().clear().destroy();
-                tableFirstLoad = true;			
-            }
-           
-			if (selected==null)
-			{
-			  mydata = {action: "get_all_models_DataTable",username:loggedUser,loggedrole: loggedRole, token : sessionToken,  organization:organization, no_columns: ["position", "owner", "edit","delete"]}; 
-			}
-			else
-			{			  
-                //not used this case
-                mydata = {action: "get_model", select : selected, token : sessionToken,loggedrole:loggedRole, organization:organization, no_columns: ["position", "owner", "edit","delete"]};
-			}
+function fetch_data(destroyOld/*, selected=null*/)
+{
+	if(destroyOld) {
+		$('#modelTable').DataTable().clear().destroy();
+		tableFirstLoad = true;			
+	}
+	mydata = {
+		action: "get_all_models_DataTable",
+		token : sessionToken,  
+		no_columns: ["position", "owner", "edit","delete"]
+	}; 
 			
-   dataTable = $('#modelTable').DataTable({
-    "processing" : true,
-    "serverSide" : true,
-	"responsive": {
-        details: false
+	dataTable = $('#modelTable').DataTable({
+		"processing" : true,
+		"serverSide" : true,
+		"responsive": {
+			details: false
 		},
-	"paging"   : true,
- 	"ajax" : {
-	 url: "../api/model.php",
-	 data: mydata,
-	 datatype: 'json',
-     type: "POST"
-    },
-
-	"columns": [
-           {
+		"paging"   : true,
+		"ajax" : {
+			url: "../api/model.php",
+			data: mydata,
+			datatype: 'json',
+			type: "POST"
+		},
+		"columns": [ {
 			"class":          "details-control",
 			"name": "position",
 			"orderable":      false,
@@ -325,118 +298,115 @@ var multitenancy = "";
 			"defaultContent": "",
 			"render": function () {
 					 return '<i class="fa fa-plus-square" aria-hidden="true"></i>';
-				 },
+			},
 			width:"15px"
-            }, 	
-			{"name": "name", "data": function ( row, type, val, meta ) {
-			
+		},{
+			"name": "name", 
+			"data": function ( row, type, val, meta ) {
 				return row.name;
-				} },			
-			{"name": "description", "data": function ( row, type, val, meta ) {
+			} 
+		},{
+			"name": "description", 
+			"data": function ( row, type, val, meta ) {
 				  return row.description;
-				} },	
-            {"name": "visibility", "data": function ( row, type, val, meta ) {
-			
-				  				  
-				if (row.visibility=='MyOwnPrivate'){   
-					return '<button type="button"  class=\"myOwnPrivateBtn\" onclick="changeVisibility(\''+ row.name + '\',\''+ row.visibility + '\',\''+ row.organization + '\',\''+ row.organization +':'+row.name+ '\')">' + row.visibility + '</button>';																				
-					} 
-				else if (row.visibility=='MyOwnPublic'){
-					return '<button type="button"  class=\"myOwnPublicBtn\" onclick="changeVisibility(\''+ row.name + '\',\''+ row.visibility + '\',\''+ row.organization + '\',\''+ row.organization +':'+row.name + '\')">' + row.visibility + '</button>';
-					}
-				else if (row.visibility=='public') 
-				{
+			}	 
+		},{
+			"name": "visibility", 
+			"data": function ( row, type, val, meta ) {
+				if (row.visibility=='MyOwnPrivate') {   
+					return '<button type="button"  class=\"myOwnPrivateBtn\" onclick="changeVisibility(\''+ row.name + '\',\''+ row.visibility + 
+						'\',\''+ row.organization + '\',\''+ row.organization +':'+row.name+ '\')">' + row.visibility + '</button>';
+				} 
+				else if (row.visibility=='MyOwnPublic') {
+					return '<button type="button"  class=\"myOwnPublicBtn\" onclick="changeVisibility(\''+ row.name + '\',\''+ row.visibility + 
+						'\',\''+ row.organization + '\',\''+ row.organization +':'+row.name + '\')">' + row.visibility + '</button>';
+				}
+				else if (row.visibility=='public') {
 					return '<button type="button"  class=\"publicBtn\" >' + row.visibility + '</button>';
-					}
-				else // value is private
-				{
-				  return "<div class=\"delegatedBtn\">"+ row.visibility + "</div>";								  
-					}
-					
-				} },
-			{"name": "organization", "data": function ( row, type, val, meta ) {
-			
+				}
+				else  {// value is private
+					return "<div class=\"delegatedBtn\">"+ row.visibility + "</div>";								  
+				}
+			} 
+		},{
+			"name": "organization", 
+			"data": function ( row, type, val, meta ) {
 				  return row.organization;
-				} },
-			{"name": "owner", "data": function ( row, type, val, meta ) {
-			
+			} 
+		},{
+			"name": "owner", 
+			"data": function ( row, type, val, meta ) {
 				  return row.owner;
-				} },
-			{"name": "kind", "data": function ( row, type, val, meta ) {
-			
+			} 
+		},{
+			"name": "kind", 
+			"data": function ( row, type, val, meta ) {
 				  return row.kind;
-				} },
-			{"name": "producer", "data": function ( row, type, val, meta ) {
-			
+			} 
+		},{
+			"name": "producer", 
+			"data": function ( row, type, val, meta ) {
 				  return row.producer;
-				} },
-			{"name": "devicetype", "data": function ( row, type, val, meta ) {
-			
+			} 
+		},{
+			"name": "devicetype", 
+			"data": function ( row, type, val, meta ) {
 				  return row.devicetype;
-				} },
-       
-			{
-                data: null,
-				"name": "edit",
-				"orderable":      false,
-                className: "center",
-				render: function(d) {
-                //defaultContent: '<button type="button" id="edit" class="editDashBtn data-id="'+ row.name +'"">Edit</button>'
-				return '<button type="button" class="editDashBtn" ' +
-				'data-id="'+d.id+'" ' +
-				'data-organization="'+d.organization+'" ' +
-				'data-name="'+d.name+'" ' +
-				'data-kind="'+d.kind+'" ' +
-				'data-description="'+d.description+'" ' +
-				'data-devicetype="'+d.devicetype+'" ' +
-				'data-producer="'+d.producer+'" ' +
-				'data-frequency="'+d.frequency+'" ' +
-				'data-format="'+d.format+'" ' +
-				'data-link="'+d.link+'" ' +
-				'data-protocol="'+d.protocol+'" ' +
-				'data-contextbroker="'+d.contextbroker+'" ' +
-				'data-healthiness_criteria="'+d.healthiness_criteria+'" ' +
-				'data-healthiness_value="'+d.healthiness_value+'" ' +
-				'data-kgenerator="'+d.kgenerator+'" ' +
-				'data-edgegateway_type="'+d.edgegateway_type+'" ' +
-				'data-attributes="'+d.attributes+'" ' +
-				'data-k1="'+d.k1+'" ' +
-				'data-k2="'+d.k2+'" ' +
-				'data-subnature="'+d.subnature+'" '+
-				'data-static-attributes="'+btoa(d.static_attributes)+'" '+
-				'data-service="'+d.service+'" ' + 
-				'data-servicePath="'+d.servicePath+'" '+ 
-				'data-policy="'+d.policy+'">Edit</button>';
-				
+			} 
+		},{
+			data: null,
+			"name": "edit",
+			"orderable":      false,
+			className: "center",
+			render: function(d) {
+				if (loggedRole=='RootAdmin' || d.visibility=='MyOwnPrivate' || d.visibility=='MyOwnPublic') {			
+					return '<button type="button" class="editDashBtn" ' +
+					'data-id="'+d.id+'" ' +
+					'data-organization="'+d.organization+'" ' +
+					'data-name="'+d.name+'" ' +
+					'data-kind="'+d.kind+'" ' +
+					'data-description="'+d.description+'" ' +
+					'data-devicetype="'+d.devicetype+'" ' +
+					'data-producer="'+d.producer+'" ' +
+					'data-frequency="'+d.frequency+'" ' +
+					'data-format="'+d.format+'" ' +
+					'data-link="'+d.link+'" ' +
+					'data-protocol="'+d.protocol+'" ' +
+					'data-contextbroker="'+d.contextbroker+'" ' +
+					'data-healthiness_criteria="'+d.healthiness_criteria+'" ' +
+					'data-healthiness_value="'+d.healthiness_value+'" ' +
+					'data-kgenerator="'+d.kgenerator+'" ' +
+					'data-edgegateway_type="'+d.edgegateway_type+'" ' +
+					'data-attributes="'+d.attributes+'" ' +
+					'data-k1="'+d.k1+'" ' +
+					'data-k2="'+d.k2+'" ' +
+					'data-subnature="'+d.subnature+'" '+
+					'data-static-attributes="'+btoa(d.static_attributes)+'" '+
+					'data-service="'+d.service+'" ' + 
+					'data-servicePath="'+d.servicePath+'" '+ 
+					'data-policy="'+d.policy+'">Edit</button>';
 				}
-            },
-			{
-                data: null,
-				"name": "delete",
-				"orderable":      false,
-                className: "center",
-                //defaultContent: '<button type="button" id="delete" class="delDashBtn delete">Delete</button>'
-				render: function(d) {
-				return '<button type="button" class="delDashBtn" ' +
-				'data-name="'+d.name+'" ' +
-				'data-id="'+d.id+'">Delete</button>';
+			}
+		},{
+			data: null,
+			"name": "delete",
+			"orderable":      false,
+			className: "center",
+			render: function(d) {
+				if (loggedRole=='RootAdmin' || d.visibility=='MyOwnPrivate' || d.visibility=='MyOwnPublic') {
+					return '<button type="button" class="delDashBtn" ' +
+					'data-name="'+d.name+'" ' +
+					'data-id="'+d.id+'">Delete</button>';
 				}
-            }
-        ], 
-    "order" : []
-    
-	 
-   });
-   
+			}
+		}], 
+		"order" : []
+	});
 
 	//TODO can we use the get_functionalities here??
-	if (loggedRole!='RootAdmin' && loggedRole!='ToolAdmin') {		
-		dataTable.columns( [4,5,9,10] ).visible( false );//avoid to show Organization, owner, edit and delete
+	if (loggedRole!='RootAdmin') {		
+		dataTable.columns( [5] ).visible( false );//hide Owner
 	}
-	if (loggedRole=='ToolAdmin') {		
-		dataTable.columns( [5] ).visible( false );//avoid to show owner		
-	}
-  
   }
 
   
@@ -589,7 +559,8 @@ var multitenancy = "";
 		// This is loading validation when the cursor is on 
 	$("#addModelBtn").off("click");
 	$('#addModelBtn').click(function(){
-                        $("#addModelModalTabs").show();
+		$("#addModelModalTabs").show();
+		$('.nav-tabs a[href="#addInfoTabModel"]').tab('show');
                         $('#addModelModalBody').show();
                                     $('#addModelModal div.modalCell').show();
                         $('#addNewModelCancelBtn').show();
@@ -632,240 +603,197 @@ var multitenancy = "";
         	        checkAddModelConditions();
 	        });
   
+//--------------------------------------------------------------------------------------------------------------ADD NEW MODEL
 		$('#addNewModelConfirmBtn').off("click");
-        $('#addNewModelConfirmBtn').click(function(){
-		
-		    mynewAttributes = [];
-            var regex=/[^a-z0-9_-]/gi;
-            var someNameisWrong=false;
-            var msg_whatiswrong="";
+		$('#addNewModelConfirmBtn').click(function() {
+			mynewAttributes = [];
+			var regex=/[^a-z0-9_-]/gi;
+			var someNameisWrong=false;
+			var msg_whatiswrong="";
 			num1 = document.getElementById('addlistAttributes').childElementCount;
-            for (var m=0; m< num1; m++)
+			for (var m=0; m< num1; m++)
 			{
-                var newatt= {value_name: document.getElementById('addlistAttributes').childNodes[m].childNodes[0].childNodes[0].childNodes[0].value.trim(), 
-			                   data_type:document.getElementById('addlistAttributes').childNodes[m].childNodes[1].childNodes[0].childNodes[0].value.trim(),
-				          value_type:document.getElementById('addlistAttributes').childNodes[m].childNodes[2].childNodes[0].childNodes[0].value.trim(),
-					    editable:document.getElementById('addlistAttributes').childNodes[m].childNodes[4].childNodes[0].childNodes[0].value.trim(),
-					  value_unit:document.getElementById('addlistAttributes').childNodes[m].childNodes[3].childNodes[0].childNodes[0].value.trim(),
-		  	       healthiness_criteria: document.getElementById('addlistAttributes').childNodes[m].childNodes[5].childNodes[0].childNodes[0].value.trim(),
-				  healthiness_value: document.getElementById('addlistAttributes').childNodes[m].childNodes[6].childNodes[0].childNodes[0].value.trim()};
-				
-				//if (newatt.value_name!="" && newatt.data_type!="" && newatt.value_type!="" && newatt.editable!="" && newatt.value_unit!="" && newatt.healthiness_criteria!="" && newatt.healthiness_value!="") 
-                    
+				var newatt= {value_name: document.getElementById('addlistAttributes').childNodes[m].childNodes[0].childNodes[0].childNodes[0].value.trim(), 
+							data_type:document.getElementById('addlistAttributes').childNodes[m].childNodes[1].childNodes[0].childNodes[0].value.trim(),
+							value_type:document.getElementById('addlistAttributes').childNodes[m].childNodes[2].childNodes[0].childNodes[0].value.trim(),
+							editable:document.getElementById('addlistAttributes').childNodes[m].childNodes[4].childNodes[0].childNodes[0].value.trim(),
+							value_unit:document.getElementById('addlistAttributes').childNodes[m].childNodes[3].childNodes[0].childNodes[0].value.trim(),
+							healthiness_criteria: document.getElementById('addlistAttributes').childNodes[m].childNodes[5].childNodes[0].childNodes[0].value.trim(),
+							healthiness_value: document.getElementById('addlistAttributes').childNodes[m].childNodes[6].childNodes[0].childNodes[0].value.trim()};
                 
-                /*if (newatt.value_name!=""&& !regex.test(newatt.value_name) && newatt.value_name.length>=3 &&newatt.data_type!="" && newatt.value_type!="" && newatt.editable!="" && newatt.value_unit!="" && newatt.healthiness_criteria!="" && newatt.healthiness_value!="") 
-           
-                    mynewAttributes.push(newatt);
-        
-                else
-                    someNameisWrong=true;*/
-                
-                if (newatt.value_name==""||regex.test(newatt.value_name) || newatt.value_name.length<3){
-                    someNameisWrong=true;
-                    msg_whatiswrong +="The Value name must be at least 3 characters. No special characters are allowed. "
-                }
-                if(newatt.data_type==""){
-                     someNameisWrong=true;
-                    msg_whatiswrong +="The data type cannot be empty. ";
-                }
-                 if(newatt.value_type==""){
-                     someNameisWrong=true;
-                    msg_whatiswrong +="The value type cannot be empty. ";
-                }
-                if(newatt.editable==""){
-                     someNameisWrong=true;
-                    msg_whatiswrong +="The field 'Editable' must be specified. ";
-                }
-                if(newatt.value_unit==""){
-                     someNameisWrong=true;
-                    msg_whatiswrong +="The field 'value unit' must be specified. ";
-                }
-                if(newatt.healthiness_criteria==""){
-                     someNameisWrong=true;
-                    msg_whatiswrong +="The field 'healthiness criteria' must be specified. ";
-                }
-                if(newatt.healthiness_value==""){
-                     someNameisWrong=true;
-                    msg_whatiswrong +="The field 'healthiness value' must be specified. ";
-                }
-                if(!someNameisWrong){
-                    mynewAttributes.push(newatt);
-                }
-                
-                
+				if (newatt.value_name==""||regex.test(newatt.value_name) || newatt.value_name.length<2) {
+					someNameisWrong=true;
+					msg_whatiswrong +="The Value name must be at least 2 characters. No special characters are allowed. "
+				}
+				if(newatt.data_type=="") {
+					someNameisWrong=true;
+					msg_whatiswrong +="The data type cannot be empty. ";
+				}
+				if(newatt.value_type=="") {
+					someNameisWrong=true;
+					msg_whatiswrong +="The value type cannot be empty. ";
+				}
+				if(newatt.editable=="") {
+					someNameisWrong=true;
+					msg_whatiswrong +="The field 'Editable' must be specified. ";
+				}
+				if(newatt.value_unit=="") {
+					someNameisWrong=true;
+					msg_whatiswrong +="The field 'value unit' must be specified. ";
+				}
+				if(newatt.healthiness_criteria=="") {
+					someNameisWrong=true;
+					msg_whatiswrong +="The field 'healthiness criteria' must be specified. ";
+				}
+				if(newatt.healthiness_value=="") {
+					someNameisWrong=true;
+					msg_whatiswrong +="The field 'healthiness value' must be specified. ";
+				}
+				if(!someNameisWrong) {
+					mynewAttributes.push(newatt);
+				}
 			}
             
-            if(!someNameisWrong){
-                
-			document.getElementById('addlistAttributes').innerHTML = "";			
+			if(!someNameisWrong) {
+				//document.getElementById('addlistAttributes').innerHTML = "";			
 		
-			$("#addModelModalTabs").hide();
-			$('#addModelModalBody').hide();
-			$('#addModelModal div.modalCell').hide();
-            		$('#addNewModelCancelBtn').hide();
+				$("#addModelModalTabs").hide();
+				$('#addModelModalBody').hide();
+				$('#addModelModal div.modalCell').hide();
+            	$('#addNewModelCancelBtn').hide();
 		        $('#addNewModelConfirmBtn').hide();
-			$('#addNewModelOkBtn').hide();
-			$('#addModelOkMsg').hide();
-			$('#addModelOkIcon').hide();	
-			$('#addModelKoMsg').hide();
-			$('#addModelKoIcon').hide();	
-			$('#addModelLoadingMsg').show();
-			$('#addModelLoadingIcon').show();    
+				$('#addNewModelOkBtn').hide();
+				$('#addModelOkMsg').hide();
+				$('#addModelOkIcon').hide();	
+				$('#addModelKoMsg').hide();
+				$('#addModelKoIcon').hide();	
+				$('#addModelLoadingMsg').show();
+				$('#addModelLoadingIcon').show();    
 
-			var service = $('#selectService').val();
-			var servicePath = $('#inputServicePathModel').val();
+				var service = $('#selectService').val();
+				var servicePath = $('#inputServicePathModel').val();
 
-			if ($('#selectProtocolModel').val() === "ngsi w/MultiService"){
-				// servicePath value pre-processing
-				if (servicePath[0] !== "/" || servicePath === "") servicePath = "/" + servicePath;
-				if (servicePath[servicePath.length -1] === "/" && servicePath.length > 1) servicePath = servicePath.substr(0, servicePath.length -1);
-			}
+				if ($('#selectProtocolModel').val() === "ngsi w/MultiService"){
+					// servicePath value pre-processing
+					if (servicePath[0] !== "/" || servicePath === "") servicePath = "/" + servicePath;
+					if (servicePath[servicePath.length -1] === "/" && servicePath.length > 1) servicePath = servicePath.substr(0, servicePath.length -1);
+				}
 	
-             $.ajax({
-                 url: "../api/model.php",
-                 data:{
-					  action: "insert",   
-					  //Sara2510 - for logging purpose
-					  username: loggedUser,
-					  organization: organization,
-					  
-					  attributes: JSON.stringify(mynewAttributes),
-					  name: $('#inputNameModel').val(),
-					  description: $('#inputDescriptionModel').val(),
-					  type: $('#inputTypeModel').val(),
-					  kind: $('#selectKindModel').val(),
-					  producer: $('#inputProducerModel').val(),
-					  frequency: $('#inputFrequencyModel').val(),	  
-					  //policy: $('#inputPolicyModel').val(),
-					  kgenerator: $('#selectKGeneratorModel').val(),
-					  edgegateway_type:$('#selectEdgeGatewayType').val(),
-					  contextbroker: $('#selectContextBroker').val(),
-					  protocol: $('#selectProtocolModel').val(),
-					  format: $('#selectFormatModel').val(),
-					 //active: $('#selectActiveModel').val(),
-					  hc: $('#selectHCModel').val(),
-					  hv: $('#inputHVModel').val(),
-					  subnature: $('#selectSubnature').val(),		
-					  static_attributes: JSON.stringify(retrieveStaticAttributes("addlistStaticAttributes")),
-					  service: service,
-					  servicePath: servicePath,
-					  token : sessionToken
-					 },
-                 type: "POST",
-                 async: true,
-                 dataType: "JSON",
-				 timeout: 0,
-                 success: function (mydata) 
-                 {
-					if(mydata["status"] === 'ko')
-                    {
-                        console.log("Error adding Model");
-                        console.log(mydata);
+    	         $.ajax({
+	                url: "../api/model.php",
+    	            data: {
+						action: "insert",   
+						attributes: JSON.stringify(mynewAttributes),
+					  	name: $('#inputNameModel').val(),
+					  	description: $('#inputDescriptionModel').val(),
+					  	type: $('#inputTypeModel').val(),
+					  	kind: $('#selectKindModel').val(),
+					  	producer: $('#inputProducerModel').val(),
+					  	frequency: $('#inputFrequencyModel').val(),	  
+					  	kgenerator: $('#selectKGeneratorModel').val(),
+						edgegateway_type:$('#selectEdgeGatewayType').val(),
+					    contextbroker: $('#selectContextBroker').val(),
+					    protocol: $('#selectProtocolModel').val(),
+					    format: $('#selectFormatModel').val(),
+					  	hc: $('#selectHCModel').val(),
+					  	hv: $('#inputHVModel').val(),
+					  	subnature: $('#selectSubnature').val(),		
+					  	static_attributes: JSON.stringify(retrieveStaticAttributes("addlistStaticAttributes")),
+					  	service: service,
+					  	servicePath: servicePath,
+					  	token : sessionToken
+					},
+					type: "POST",
+                 	async: true,
+                 	dataType: "JSON",
+				 	timeout: 0,
+					success: function (mydata) {
+						if(mydata["status"] === 'ko') {
+                        	console.log("Error adding Model");
+                        	console.log(mydata);
 			              
-                        $('#addModelModalTabs').hide();
-						$('#addModelModalBody').hide();	
-						$('#addModelModal div.modalCell').hide();
-						//$('#addContextBrokerModalFooter').hide();
-                        $('#addNewModelCancelBtn').hide();
-						$('#addNewModelConfirmBtn').hide();
-						$('#addNewModelOkBtn').show();
-						$('#addModelOkMsg').hide();
-						$('#addModelOkIcon').hide();	
-						$('#addModelLoadingMsg').hide();
-                        $('#addModelLoadingIcon').hide();
-                        $('#addModelKoMsg').show();
-						$('#addModelKoMsg div:first-child').html(mydata["error_msg"]);
-                        $('#addModelKoIcon').show();
-                 
-				 
-				 
-				 
-				 
-                   
-                    }			 
-					else if (mydata["status"] === 'ok')
-                    {
-						console.log("Added Model");
-
-
-                        //empty information
-			$('#inputNameModel').val("");
-                        $('#inputDescriptionModel').val("");
-                        $('#inputTypeModel').val("");
-                        $('#selectKindModel').val("");
-                        $('#selectHCModel').val("");
-                        $('#inputHVModel').val("");
-                        $('#selectContextBroker').val("");
-                        $('#selectProtocolModel').val("");
-                        $('#selectFormatModel').val("");
-                        $('#inputProducerModel').val("");
-                        $('#inputFrequencyModel').val("");
-                        $('#selectKGeneratorModel').val("");
-                        $('#addlistAttributes').html("");
-			$('#selectSubnature').val("");
-			$('#selectSubnature').trigger("change");
-			$("#addNewStaticBtn").hide();
-                        removeStaticAttributes();                       
-
+	                        $('#addModelModalTabs').hide();
+							$('#addModelModalBody').hide();	
+							$('#addModelModal div.modalCell').hide();
+							//$('#addContextBrokerModalFooter').hide();
+                	        $('#addNewModelCancelBtn').hide();
+							$('#addNewModelConfirmBtn').hide();
+							$('#addNewModelOkBtn').show();
+							$('#addModelOkMsg').hide();
+							$('#addModelOkIcon').hide();	
+							$('#addModelLoadingMsg').hide();
+            	            $('#addModelLoadingIcon').hide();
+                	        $('#addModelKoMsg').show();
+							$('#addModelKoMsg div:first-child').html(mydata["error_msg"]);
+                        	$('#addModelKoIcon').show();
+	                    }			 
+						else if (mydata["status"] === 'ok') {
+							console.log("Added Model");
+	
+    	                    //empty information
+							$('#inputNameModel').val("");
+            	            $('#inputDescriptionModel').val("");
+                	        $('#inputTypeModel').val("");
+                    	    $('#selectKindModel').val("");
+	                        $('#selectHCModel').val("");
+    	                    $('#inputHVModel').val("");
+        	                $('#selectContextBroker').val("");
+            	            $('#selectProtocolModel').val("");
+                	        $('#selectFormatModel').val("");
+                    	    $('#inputProducerModel').val("");
+	                        $('#inputFrequencyModel').val("");
+    	                    $('#selectKGeneratorModel').val("");
+        	                $('#addlistAttributes').html("");
+							$('#selectSubnature').val("");
+							$('#selectSubnature').trigger("change");
+							$("#addNewStaticBtn").hide();
+                        	removeStaticAttributes();                       
  
-                        $('#addModelLoadingMsg').hide();
-                        $('#addModelLoadingIcon').hide();
-						$('#addModelKoMsg').hide();
-						$('#addModelKoIcon').hide();
-						
-						$('#addModelModalTabs').hide();
-						$('#addModelModalBody').hide();	
-						$('#addModelModal div.modalCell').hide();
-						//$('#addContextBrokerModalFooter').hide();
-						$('#addNewModelCancelBtn').hide();
-						$('#addNewModelConfirmBtn').hide();
-
-
-
-
-                        $('#addNewModelOkBtn').show();
-						
-                        $('#addModelOkMsg').show();
-                        $('#addModelOkIcon').show();
-
-                                                
-						$('#dashboardTotNumberCnt .pageSingleDataCnt').html(parseInt($('#dashboardTotNumberCnt .pageSingleDataCnt').html()) + 1);
+	                        $('#addModelLoadingMsg').hide();
+    	                    $('#addModelLoadingIcon').hide();
+							$('#addModelKoMsg').hide();
+							$('#addModelKoIcon').hide();
+							$('#addModelModalTabs').hide();
+							$('#addModelModalBody').hide();	
+							$('#addModelModal div.modalCell').hide();
+							//$('#addContextBrokerModalFooter').hide();
+							$('#addNewModelCancelBtn').hide();
+							$('#addNewModelConfirmBtn').hide();
+	
+    	                    $('#addNewModelOkBtn').show();
+        	                $('#addModelOkMsg').show();
+            	            $('#addModelOkIcon').show();
+							$('#dashboardTotNumberCnt .pageSingleDataCnt').html(parseInt($('#dashboardTotNumberCnt .pageSingleDataCnt').html()) + 1);
                         
-                        $('#modelTable').DataTable().destroy();
-                        fetch_data(true);
-             						
-                    } 
-					 
-                 },
-                 error: function (mydata) {
-					   console.log("Error insert model");  
-					   console.log("Error status -- Ko result: " + JSON.stringify(mydata));
-                                            
-                     $("#addModelModal").modal('hide');
-					 
-					 $('#addModelModalTabs').hide();
-					 $('#addModelModalBody').hide();	
-					 $('#addModelModal div.modalCell').hide();
-					 $('#addModelModalFooter').hide();
-					 $('#addModelOkMsg').hide();
-					 $('#addModelOkIcon').hide();	
-                     $('#addModelKoMsg').show();
-					 $('#addModelKoIcon').show();
-                     $('#addNewModelCancelBtn').hide();
-                     $('#addNewModelConfirmBtn').hide();
-                     $('#addNewModelOkBtn').show();	
-                     $('#addModelLoadingMsg').hide();
-                     $('#addModelLoadingIcon').hide();                  
-                     
-                 }
-             });
-            
-        }
-            else{
+                    	    $('#modelTable').DataTable().destroy();
+                        	fetch_data(true);
+	                    } 
+    	            },
+					error: function (mydata) {
+						console.log("Error insert model");  
+						console.log("Error status -- Ko result: " + JSON.stringify(mydata));
+                    	                        
+		                $("#addModelModal").modal('hide');
+					    $('#addModelModalTabs').hide();
+					    $('#addModelModalBody').hide();	
+					    $('#addModelModal div.modalCell').hide();
+					    $('#addModelModalFooter').hide();
+					    $('#addModelOkMsg').hide();
+					    $('#addModelOkIcon').hide();	
+                        $('#addModelKoMsg').show();
+					    $('#addModelKoIcon').show();
+                        $('#addNewModelCancelBtn').hide();
+                        $('#addNewModelConfirmBtn').hide();
+                        $('#addNewModelOkBtn').show();	
+                        $('#addModelLoadingMsg').hide();
+                        $('#addModelLoadingIcon').hide();                  
+                 	}
+             	});
+        	}
+            else {
                  alert("Check the values of your device, make sure that data you entered are valid. "+ msg_whatiswrong);
-            }
-                                          
-        });
+        	}
+		});
  
  
 // END ADD NEW MODEL  
@@ -917,11 +845,6 @@ var multitenancy = "";
 				data:{
 					action: "delete",
 					id: id, 
-					//Sara2510 - for logging purpose
-					name: name,
-					username: loggedUser,
-                     organization:organization,
-					
 					token : sessionToken
 					},
                 type: "POST",
@@ -1004,8 +927,9 @@ var multitenancy = "";
                 });
 	
 
-	$('#modelTable tbody').on('click', 'button.editDashBtn', function () {                         	
-		$('#editModelModalTabs').show();
+	$('#modelTable tbody').on('click', 'button.editDashBtn', function () {                        
+       		$('#editModelModalTabs').show();
+			$('.nav-tabs a[href="#editInfoTabModel"]').tab('show');
 			$("#editModelModalBody").show();
 			//$('#editContextBrokerModalBody div.modalCell').show();
 			$("#editModelModalFooter").show();
@@ -1020,7 +944,7 @@ var multitenancy = "";
             $('#editModelKoMsg').hide();
             $('#editModelKoIcon').hide();
             $('#editModelOkBtn').hide();
-        
+ 
             $('#editModelModal div.modalCell').show();
 		    $("#addAttrMBtn").show();
         $('#editlistAttributes').html("");
@@ -1073,12 +997,11 @@ var multitenancy = "";
 		
 	$.ajax({
 		url: "../api/model.php",
-		 data: {
-			  action: "get_value_attributes", 
-			   id: $(this).attr("data-id"),
-			   id: $(this).attr("data-id"),
-              organization:organization
-			  },
+		data: {
+			action: "get_value_attributes", 
+			id: $(this).attr("data-id"),
+			token : sessionToken
+		},
 		type: "POST",
 		async: true,
 		dataType: 'json',
@@ -1161,7 +1084,7 @@ var multitenancy = "";
 					healthiness_value: document.getElementById('addlistAttributesM').childNodes[m].childNodes[6].childNodes[0].childNodes[0].value.trim()};
 						   //MARCO: mynewAttributes.push(newatt);
 							
-            if(newatt.value_name!=""&& !regex.test(newatt.value_name) && newatt.value_name.length>=3&& newatt.data_type!="" && newatt.value_type!="" && newatt.editable!="" && newatt.value_unit!="" && newatt.healthiness_criteria!="" &&  newatt.healthiness_value!="")
+            if(newatt.value_name!=""&& !regex.test(newatt.value_name) && newatt.value_name.length>=2&& newatt.data_type!="" && newatt.value_type!="" && newatt.editable!="" && newatt.value_unit!="" && newatt.healthiness_criteria!="" &&  newatt.healthiness_value!="")
                 
                     myAttributes.push(newatt);	
             else
@@ -1195,7 +1118,7 @@ var multitenancy = "";
 			   healthiness_criteria: selectOpt_hc[selectIndex_hc].value,
 			   healthiness_value: document.getElementById('editlistAttributes').childNodes[j].childNodes[6].childNodes[0].childNodes[0].value.trim()};
 			
-            if(att.value_name!=""&& !regex.test(att.value_name) && att.value_name.length>=3 && att.data_type!="" && att.value_type!="" && att.editable!="" && att.value_unit!="" && att.healthiness_criteria!="" && att.healthiness_value!="")
+            if(att.value_name!=""&& !regex.test(att.value_name) && att.value_name.length>=2 && att.data_type!="" && att.value_type!="" && att.editable!="" && att.value_unit!="" && att.healthiness_criteria!="" && att.healthiness_value!="")
                 
                     myAttributes.push(att);	
             else
@@ -1264,14 +1187,7 @@ var multitenancy = "";
 			 url: "../api/model.php",
 			 data:{
 			 action: "update", 
-			 //MARCO newattributes: JSON.stringify(mynewAttributes),
 			 attributes: JSON.stringify(myAttributes),
-			 //MARCO deleteattributes: JSON.stringify(mydeletedAttributes), 
-				  //Sara2510 - for logging purpose
-				  username: loggedUser,
-                  organization:organization,
-                  obj_organization:$('#inputOrganizationModelM').val(),
-	
 				  id: $('#inputIdModelM').val(),
 				  name: $('#inputNameModelM').val(),
 				  description: $('#inputDescriptionModelM').val(),
@@ -1279,19 +1195,18 @@ var multitenancy = "";
 				  kind: $('#selectKindModelM').val(),
 				  producer: $('#inputProducerModelM').val(),
 				  frequency: $('#inputFrequencyModelM').val(),	  
-				  //policy: $('#inputPolicyModelM').val(),
 				  kgenerator: $('#selectKGeneratorModelM').val(),
 				  edgegateway_type:$('#selectEdgeGatewayTypeM').val(),
 				  contextbroker: $('#selectContextBrokerM').val(),
 				  protocol: $('#selectProtocolModelM').val(),
 				  format: $('#selectFormatModelM').val(),
-				 //active: $('#selectActiveModelM').val(),
 				  hc: $('#selectHCModelM').val(),
 				  hv: $('#inputHVModelM').val(),
 				  subnature: $('#selectSubnatureM').val(),
 				  static_attributes: JSON.stringify(retrieveStaticAttributes("editlistStaticAttributes")),
 				  service: service,
-				  servicePath: servicePath
+				  servicePath: servicePath,
+                  token : sessionToken
 				 },
 			 type: "POST",
 			 async: true,
@@ -1469,7 +1384,8 @@ var multitenancy = "";
 		var index = document.getElementById("selectContextBroker").selectedIndex;
 		var opt = document.getElementById("selectContextBroker").options;
 		var valCB= opt[index].getAttribute("my_data");
-
+		var valOrg=opt[index].getAttribute("data_org");
+	
 		if(valCB ==='ngsi')
 		{
 			document.getElementById("selectProtocolModel").value = 'ngsi';
@@ -1498,6 +1414,8 @@ var multitenancy = "";
 		
 		checkModelSelectionCB_all();			
 		checkAddModelConditions();
+
+		if (valOrg!=null) $("#selectContextBrokerMsg").html($("#selectContextBrokerMsg").html()+ " - Organization:" + valOrg);
 	});
 
 	$("#selectContextBrokerM").change(function() {
@@ -1505,7 +1423,7 @@ var multitenancy = "";
                 var index = document.getElementById("selectContextBrokerM").selectedIndex;
                 var opt = document.getElementById("selectContextBrokerM").options;
                 var valCB= opt[index].getAttribute("my_data");
-
+				var valOrg=opt[index].getAttribute("data_org");
 
                 if(valCB ==='ngsi')
                 {
@@ -1535,6 +1453,8 @@ var multitenancy = "";
 
                 checkModelSelectionCBM_all();
                 checkEditModelConditions();
+
+				if (valOrg!=null) $("#selectContextBrokerMsgM").html($("#selectContextBrokerMsgM").html()+ " - Organization:" + valOrg);
         });
 	
 	
@@ -1653,7 +1573,6 @@ function updateGroupList(ouname){
                 url: "../api/ldap.php",
                 data:{
                                           action: "get_logged_ou",
-                                          username: loggedUser,
                                           token : sessionToken
                                           },
                 type: "POST",

@@ -4,48 +4,88 @@ var gb_datatypes ="";
 var gb_value_units ="";
 var gb_value_types = "";
 var defaultPolicyValue = [];
-// var mynewAttributes = [];
-
 var gb_device ="";
 var gb_latitude ="";
 var gb_longitude = "";
-// var gb_key1;
-// var gb_key2;
-
 var dataTable ="";
-
 var indexValues=0;//it keeps track of unique identirier on the values, so it's possible to enforce specific value type 
-
-
-//var existingPoolsJson = null;
-// var internalDest = false;
 var tableFirstLoad = true;
-
 var gb_old_cb="";
-//GET PARAM VALUES 
 
-	$.ajax({url: "../api/device.php",
-         data: {
-			 organization : organization, 
-			 action: 'get_param_values'
-			 },
-         type: "POST",
-         async: true,
-         dataType: 'json',
-         success: function (mydata)
-         {
-		   gb_datatypes= mydata["data_type"];
-		   gb_value_units= mydata["value_unit"];
-		   gb_value_types= mydata["value_type"];		  
-                  addSubnature($("#selectSubnatureM"),mydata["subnature"]);
- 
-         },
-		 error: function (mydata)
-		 {
-		   console.log(JSON.stringify(mydata));
-		   alert("Network errors. <br/> Get in touch with the Snap4City Administrator<br/>"+ JSON.stringify(mydata));
-		 }
-	});
+//--------to get the datatypes items----------
+$.ajax({url: "../api/device.php",
+	data: {
+		action: 'get_param_values',
+		token : sessionToken
+	},
+	type: "POST",
+	async: true,
+	dataType: 'json',
+	success: function (mydata) {
+		if (mydata["status"] === 'ok') {
+			gb_datatypes= mydata["data_type"];
+			gb_value_units= mydata["value_unit"];
+			gb_value_types= mydata["value_type"];
+			addSubnature($("#selectSubnature"),mydata["subnature"]);
+			addSubnature($("#selectSubnatureM"),mydata["subnature"]);
+		}
+		else {
+			console.log("error getting the data types "+data);
+		}
+	},
+	error: function (mydata) {
+		console.log(JSON.stringify(mydata));
+		alert("Network errors. <br/> Get in touch with the Snap4City Administrator<br/>"+ JSON.stringify(mydata));
+	}
+});
+
+//--------to get the list of context broker----------
+$.ajax({
+	url: "../api/contextbroker.php",
+	data: {
+		action: "get_all_contextbroker",
+		token : sessionToken
+	},
+	type: "POST",
+	async: true,
+	success: function (data) {
+		if (data["status"] === 'ok') {
+			addCB($("#selectContextBrokerM"), data);
+			addCB($("#selectContextBroker"), data);
+		}
+		else {
+			console.log("error getting the context brokers "+data);
+		}
+	},
+	error: function (data) {
+		console.log("error in the call to get the context brokers "+data);
+		alert("Network errors. <br/> Get in touch with the Snap4City Administrator<br/>"+ JSON.stringify(data));
+	}
+});
+
+//--------to get the list of context broker----------
+$.ajax({
+	url: "../api/model.php",
+	data: {
+		action: "get_all_models",
+		token : sessionToken
+	},
+	type: "POST",
+	async: true,
+	success: function (data) {
+		if (data["status"] === 'ok') {
+			addModel($("#selectModelDevice"), data);
+		}
+		else {
+			console.log("error getting the context brokers "+data);
+		}
+	},
+	error: function (data) {
+		console.log("error in the call to get the context brokers "+data);
+		alert("Network errors. <br/> Get in touch with the Snap4City Administrator<br/>"+ JSON.stringify(data));
+	}
+});
+
      
 	function removeElementAt(parent,child) {
 		var list = document.getElementById(parent);
@@ -63,42 +103,6 @@ var gb_old_cb="";
 		checkEditAtlistOneAttribute();
 	}
 
-function addModel(element, data){
-	var $dropdown = element;
-	$.each(data['content_model'], function() {
-        	$dropdown.append("<option data_key="+this.kgenerator+" value='"+this.name+"'>"+this.name+"</option>");
-        });
-}
-
-$.ajax({
-        url: "../api/value.php",
-        data:{
-                    action: "get_cb",
-                    token : sessionToken,
-                    username: loggedUser,
-                    organization : organization,
-                    loggedrole:loggedRole
-        },
-        type: "POST",
-        async: true,
-        success: function (data)
-        {
-                    if (data["status"] === 'ok')
-                    {
-                        addCB($("#selectContextBrokerM"), data);
-                        addCB($("#selectContextBroker"), data);
-			addModel($("#selectModelDevice"), data);
-                    }
-                    else{
-                        console.log("error getting the context brokers "+data);
-                    }
-                },
-                error: function (data)
-                {
-                 console.log("error in the call to get the context brokers "+data);
-                 alert("Network errors. <br/> Get in touch with the Snap4City Administrator<br/>"+ JSON.stringify(data));
-                }
-});
 
 
 	function drawAttributeMenu
@@ -406,6 +410,8 @@ return "<div class=\"row\" style=\"border:2px solid blue;\" id=\"value"+indice+"
 				render: function(d) {
 
                 //defaultContent: '<button type="button" id="edit" class="editDashBtn data-id="'+ row.name +'"">Edit</button>'
+				if (loggedRole=='RootAdmin' || d.visibility =='MyOwnPublic' || d.visibility == 'MyOwnPrivate') {
+
 				return '<button type="button" class="editDashBtn" ' +
 				'data-id="'+d.id+'" ' +
 				'data-contextBroker="'+d.contextBroker+'" ' +
@@ -438,6 +444,7 @@ return "<div class=\"row\" style=\"border:2px solid blue;\" id=\"value"+indice+"
 				//"data-owner": row.owner,
 				//"data-sha1": row.sha,		
 				}
+				}
             },
 			{
                 data: null,
@@ -446,6 +453,7 @@ return "<div class=\"row\" style=\"border:2px solid blue;\" id=\"value"+indice+"
                 className: "center",
                 //defaultContent: '<button type="button" id="delete" class="delDashBtn delete">Delete</button>'
 				render: function(d) {
+				if (loggedRole=='RootAdmin' || d.visibility =='MyOwnPublic' || d.visibility == 'MyOwnPrivate') {
 				return '<button type="button" class="delDashBtn" ' +
 				'data-id="'+d.id+'" ' +
 				'data-contextBroker="'+d.contextBroker+'" ' +
@@ -455,6 +463,7 @@ return "<div class=\"row\" style=\"border:2px solid blue;\" id=\"value"+indice+"
 				'data-servicePath="'+d.servicePath+'" '+
                 		'data-uri="'+d.uri+'">Delete</button>';
 				}
+				}				
             },
 			{
                 data: null,
@@ -805,8 +814,9 @@ return "<div class=\"row\" style=\"border:2px solid blue;\" id=\"value"+indice+"
 			url: "../api/model.php",
 			data: {
 			action: "get_model",
-			organization : organization, 
-			name: nameOpt[selectednameOpt].value 
+			//organization : organization, 
+			name: nameOpt[selectednameOpt].value ,
+            token : sessionToken
 			},
 			type: "POST",
 			async: true,
@@ -2156,7 +2166,6 @@ function updateGroupList(ouname){
                 url: "../api/ldap.php",
                 data:{
                                           action: "get_logged_ou",
-                                          username: loggedUser,
                                           token : sessionToken
                                           },
                 type: "POST",

@@ -31,19 +31,14 @@ class Requests
 
 		do {
 			$mrc = curl_multi_exec($this->handle, $active);
-
 			if ($state = curl_multi_info_read($this->handle))
 			{
 				$info = curl_getinfo($state['handle']);
-				
 				$callback(curl_multi_getcontent($state['handle']), $info);
 				curl_multi_remove_handle($this->handle, $state['handle']);
 			}
-
 			usleep(10000); // stop wasting CPU cycles and rest for a couple ms
-
 		} while ($mrc == CURLM_CALL_MULTI_PERFORM || $active);
-
 	}
 
 	public function __destruct()

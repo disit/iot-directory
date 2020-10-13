@@ -9,17 +9,14 @@ receivedData=[];
 var dataPreviewTable ="";
 var previewFirstLoad=false;
 var previewValuesFirstLoad=false;
-
 var dataTable ="";
 requiredHeaders=["name", "devicetype", "macaddress", "frequency", "kind", "protocol", "format", "producer", /*"edge_gateway_type", "edge_gateway_uri",  commented by Sara*/ "latitude", "longitude", "value_name", "data_type", "value_type", "editable", "value_unit", "healthiness_criteria", "healthiness_value", "k1", "k2", "subnature", "static_attributes", "service", "service_path"];
-
 var gb_datatypes ="";
 var gb_value_units ="";
 var gb_value_types = "";
 var defaultPolicyValue = [];
 var devicenamesArray = new Array();
 var valueNamesArray = new Array();
-
 devicenamesArray['if'] = 0;
 devicenamesArray['then'] = 0;
 valueNamesArray['if']=0;
@@ -27,72 +24,90 @@ valueNamesArray['then']=0;
 var indexHealthinessIf = [];
 var idCounterThen=0;
 var idCounterIf=0;
-// var mynewAttributes = [];
-
 var ifPages = [];
-
 var gb_options = [];
-
 var gb_device ="";
 var gb_latitude ="";
 var gb_longitude = "";
 var gb_key1;
 var gb_key2;
-
 var gb_old_id="";
 var gb_old_cb="";
-
 var timerID= undefined;
 var was_processing=0;
-
 var indexValues=0;//it keeps track of unique identirier on the values, so it's possible to enforce specific value type
 
-//--------to get the drop-down menus items----------// 
+//--------to get the datatypes items----------
 $.ajax({url: "../api/device.php",
 	data: {
 		action: 'get_param_values',
-		organization:organization
+		token : sessionToken
 	},
 	type: "POST",
 	async: true,
 	dataType: 'json',
-	success: function (mydata)
-	{
-		if (mydata["status"] === 'ok'){
+	success: function (mydata) {
+		if (mydata["status"] === 'ok') {
 			gb_datatypes= mydata["data_type"];
 			gb_value_units= mydata["value_unit"];
-			gb_value_types= mydata["value_type"];	
-			 addSubnature($("#selectSubnatureM"),mydata["subnature"]);
+			gb_value_types= mydata["value_type"];
+			addSubnature($("#selectSubnatureM"),mydata["subnature"]);
 		}
 		else {
-			alert("An error occured when reading the data. <br/> Get in touch with the Snap4City Administrator. <br/>"+ mydata["error_msg"]);
+			console.log("error getting the data types "+data);
 		}
 	},
-	error: function (mydata)
-	{
+	error: function (mydata) {
 		console.log(JSON.stringify(mydata));
 		alert("Network errors. <br/> Get in touch with the Snap4City Administrator<br/>"+ JSON.stringify(mydata));
 	}
 });
 
+//--------to get the list of context broker----------
+$.ajax({
+	url: "../api/contextbroker.php",
+	data: {
+		action: "get_all_contextbroker",
+		token : sessionToken
+	},
+	type: "POST",
+	async: true,
+	success: function (data) {
+		if (data["status"] === 'ok') {
+			addCB($("#selectContextBrokerM"), data);					
+			addCB($("#selectContextBrokerLD"), data);
+		}
+		else {
+			console.log("error getting the context brokers "+data);
+		}
+	},
+	error: function (data) {
+		console.log("error in the call to get the context brokers "+data);
+		alert("Network errors. <br/> Get in touch with the Snap4City Administrator<br/>"+ JSON.stringify(data));
+	}
+});
 
-//--------to get the models with their details----------------------//
+//--------to get the models with their details----------------------
 $.ajax({
 	url: "../api/model.php",
 	data: {
 		action: "get_all_models",
-		organization:organization,
-		username: loggedUser,
-		loggedrole:loggedRole,
-		token: sessionToken,
+		token : sessionToken
 	},
 	type: "POST",
 	async: true,
-	datatype: 'json',
-	success: function (data)
-	{
-		modelsdata = data["content"];
-		//console.log(modelsdata);
+	success: function (data) {
+		if (data["status"] === 'ok') {
+			modelsdata = data["content"];
+			addModel($("#selectModelLD"), data);
+		}
+		else {
+			console.log("error getting the context brokers "+data);
+		}
+	},
+	error: function (data) {
+		console.log("error in the call to get the context brokers "+data);
+		alert("Network errors. <br/> Get in touch with the Snap4City Administrator<br/>"+ JSON.stringify(data));
 	}
 });
 
@@ -117,10 +132,10 @@ function sendJsonToDb(jsondata){
 		url: "../api/bulkDeviceLoad.php",
 		data:{
 			action: "insert",  
-			username: loggedUser,
+			//username: loggedUser,
 			jsondata: JSON.stringify(jsondataPiece),
 			token: sessionToken,
-			organization:organization
+			//organization:organization
 		},
 		type: "POST",
 		async: true,//ATTENTION
@@ -500,7 +515,7 @@ function fetch_data(destroyOld, selected=null)
 		
 		if (selected==null)
 		{
-		  mydata = {action: "get_temporary_devices", username: loggedUser,organization:organization, no_columns: ["position","edit","delete","map"]}; 
+		  mydata = {action: "get_temporary_devices", should_be_registered: "yes", token:sessionToken, no_columns: ["position","edit","delete","map"]}; 
 		}
 			
 		dataTable = $('#devicesTable').DataTable({
@@ -633,7 +648,7 @@ function buildPreview(attributesIf, destroyOld, selected=null)
 	
 	if (selected==null)
 	{
-	mydata = {action: "get_affected_devices", username: loggedUser,organization:organization, attributes: attributesIf, no_columns: [""]}; 
+		mydata = {action: "get_affected_devices", token:sessionToken, attributes: attributesIf, no_columns: [""]}; 
 	}
 		
 	dataPreviewTable = $('#devicePreviewTable').DataTable({
@@ -691,7 +706,7 @@ function buildPreviewValues(attributesIf, destroyOld, selected=null)
 	
 	if (selected==null)
 	{
-	mydata = {action: "get_affected_values", username: loggedUser,organization:organization, attributes: attributesIf, no_columns: [""]}; 
+		mydata = {action: "get_affected_values", token:sessionToken, attributes: attributesIf, no_columns: [""]}; 
 	}
 		
 	dataPreviewTable = $('#valuesPreviewTable').DataTable({
@@ -755,7 +770,7 @@ $(document).ready(function ()
 	checkBulkStatus();	
 //fetch_data function will load the device table 	
 	fetch_data(false);	
-	$.ajax({
+/*	$.ajax({
 		url: "../api/value.php",
 		data:{
 			action: "get_cb",
@@ -792,7 +807,7 @@ $(document).ready(function ()
 		{
 		 console.log("error in the call to get the context brokers and models "+data);   
 		}
-	});	
+	});	*/
 //detail control for device dataTable
 	var detailRows = [];
   	
@@ -865,9 +880,9 @@ $(document).ready(function ()
 			url: "../api/device.php",
 			data: {
 				action: "get_all_device_latlong",
-                organization:organization,
-                loggedrole:loggedRole
-				//token : sessionToken
+                //organization:organization,
+                //loggedrole:loggedRole
+				token : sessionToken
 			},
 			type: "POST",
 			async: true,
@@ -1137,7 +1152,8 @@ $(document).ready(function ()
 					url: "../api/model.php",
 					data: {
 					action: "get_model",
-					name: nameOpt[selectednameOpt].value 
+					name: nameOpt[selectednameOpt].value,
+						token : sessionToken 
 					},
 					type: "POST",
 					async: true,
@@ -1323,11 +1339,12 @@ $(document).ready(function ()
 				id: id, 
 				uri : uri,
 				//Sara2510 start
-				username: loggedUser,
+				//username: loggedUser,
 				//Sara2510 end
 				contextbroker : contextbroker,
 				token : sessionToken,
-				organization:organization
+				//organization:organization,
+				should_be_registered:"yes"
 				},
 			type: "POST",
 			datatype: "json",
@@ -1398,9 +1415,9 @@ $(document).ready(function ()
 			url: "../api/bulkDeviceLoad.php",
 			data:{
 				action: "delete_all_temporary",
-				username: loggedUser, 
+				//username: loggedUser, 
 				token : sessionToken,
-				organization:organization
+				//organization:organization
 				},
 			type: "POST",
 			datatype: "json",
@@ -1573,65 +1590,17 @@ $(document).ready(function ()
 		//UserEditKey();
 		checkEditDeviceConditions();
 		
-		$.ajax({
-			url: "../api/value.php",
-			data:{
-				action: "get_cb",
-				token : sessionToken, 
-				username: loggedUser, 
-				organization : organization, 
-				loggedrole:loggedRole                          
-			},
-			type: "POST",
-			async: true,
-			success: function (data)
-			{
-				/*if (data["status"] === 'ok')
-				{        
-                    var $dropdown = $("#selectContextBrokerM");        
-					$dropdown.empty();
-					$dropdown.append($("<option />").val(contextbroker).text(contextbroker));
-
-					$.each(data['content'], function() {
-						$dropdown.append($("<option />").val(this.name).text(this.name));        
-					});
-					showEditDeviceModal();
-
-					 $('#editDeviceModal').show();
-			
-				}
-                else{
-                    console.log("error getting the context brokers "+data); 
-				}*/
-				if (data["status"] === 'ok')
-                    {        
-                        var $dropdown = $("#selectContextBrokerM");        
-                        $dropdown.empty();
-                        $.each(data['content'], function() {
-                            //if(this.kind !='external'|| this.name.toLowerCase()==contextbroker.toLowerCase())
-                            $dropdown.append($("<option />").val(this.name).text(this.name));        
-                        });
-						$('#selectContextBrokerM').val(contextbroker);
 	
 						showEditDeviceModal();				
-                        }
-                    else{
-                        console.log("error getting the context brokers "+data); 
-                    }
-            },
-            error: function (data)
-            {
-                console.log("error in the call to get the context brokers "+data);   
-            }
-        });
 
 		$.ajax({
 			url: "../api/bulkDeviceUpdate.php",
 			data: {
 				action: "get_temporary_attributes", 
 				id: $(this).attr("data-id"),
-				organization:organization,
-				contextbroker: $(this).attr("data-contextBroker")
+				//organization:organization,
+				contextbroker: $(this).attr("data-contextBroker"),
+				token:sessionToken
 			},
 			type: "POST",
 			async: true,
@@ -1851,8 +1820,8 @@ $(document).ready(function ()
             url: "../api/bulkDeviceLoad.php",
             data:{
 		    action: "update", 
-			username: loggedUser,
-            organization:organization,
+			//username: loggedUser,
+            //organization:organization,
 		    newattributes: JSON.stringify(mynewAttributes),
 		    attributes: JSON.stringify(myAttributes),
 		    deleteattributes: JSON.stringify(mydeletedAttributes), 
@@ -1881,7 +1850,8 @@ $(document).ready(function ()
 			subnature:updatedDevice.subnature, 
 			static_attributes:updatedDevice.static_attributes,
 			service : service,
-			servicePath : servicePath
+			servicePath : servicePath,
+			token:sessionToken
 /***********************Sara end*************/
 		    },
             type: "POST",
@@ -2084,7 +2054,6 @@ $(document).ready(function ()
 	   checkUpdateButton();
 
 	}); 
-
 	
 	/************ update all devices  */
 	
@@ -2313,9 +2282,10 @@ $(document).on({
             url: "../api/bulkDeviceUpdate.php",
             data:{
 				action: "get_affected_devices_count", 
-				username: loggedUser,
-				organization:organization,
-				attributesIf: JSON.stringify(attributesIf)
+				//username: loggedUser,
+				//organization:organization,
+				attributesIf: JSON.stringify(attributesIf),
+				token:sessionToken
 				//attributesThen: JSON.stringify(attributesThen)	    
 			},
 			dataType: 'json',
@@ -2367,7 +2337,8 @@ $(document).on({
 			url: "../api/bulkDeviceUpdate.php",
 			data:{
 				action: "get_fields", 
-				fieldIf: fieldIf
+				fieldIf: fieldIf,
+				token:sessionToken
 			},
 			dataType: 'json',
 			type: "POST",
@@ -2487,9 +2458,10 @@ $(document).on({
 			$.ajax({
 				url: "../api/bulkDeviceUpdate.php",
 				data:{
-					action: "update_all_devices", 
-					username: loggedUser,
-					organization:organization,
+					action: "update_all_devices",
+					token:sessionToken, 
+					//username: loggedUser,
+					//organization:organization,
 					attributesIf: JSON.stringify(attributesIf),
 					attributesThen: JSON.stringify(attributesThen)	    
 				},
@@ -2812,8 +2784,9 @@ $(document).on({
 				url: "../api/bulkDeviceUpdate.php",
 				data:{
 					action: "get_affected_values_count", 
-					username: loggedUser,
-					organization:organization,
+					token:sessionToken,
+					//username: loggedUser,
+					//organization:organization,
 					attributesIf: JSON.stringify(attributesIfValues)
 					//attributesThen: JSON.stringify(attributesThen)	    
 				},
@@ -2894,8 +2867,9 @@ $(document).on({
 				url: "../api/bulkDeviceUpdate.php",
 				data:{
 					action: "update_all_values", 
-					username: loggedUser,
-					organization:organization,
+					token:sessionToken,
+					//username: loggedUser,
+					//organization:organization,
 					attributesIf: JSON.stringify(attributesIfValues),
 					attributesThen: JSON.stringify(attributesThenValues)	    
 				},
@@ -3139,10 +3113,12 @@ function verifyDevice(deviceToverify){
 
 	//verify consistency subnature and its attributes
 	if (deviceToverify.subnature!==""){
-        	if (!verifySubnature(deviceToverify.subnature, deviceToverify.static_attributes)){
-                	answer.isvalid=false;
-                        msg+="-The static attributes of the device do not comply with its subnature ("+deviceToverify.subnature+")";
-                }
+			// TODO remove this comment or enable in another way this verify... 
+			// if was removed beecause it delay too much
+        	//if (!verifySubnature(deviceToverify.subnature, deviceToverify.static_attributes)){
+            //    	answer.isvalid=false;
+            //            msg+="-The static attributes of the device do not comply with its subnature ("+deviceToverify.subnature+")";
+            //    }
         }
 	  
 	if(msg.length>0) answer.isvalid=false;
@@ -3449,9 +3425,9 @@ function nodeJsTest(){
 			 url: "../api/bulkDeviceLoad.php",
 			 data:{
 				  action: "get_count_temporary_devices", 
-				  username: loggedUser,
+				  //username: loggedUser,
 				   token : sessionToken,
-				 organization:organization
+				 //organization:organization
 				 },
 			 type: "POST",
 			 async: true,
@@ -3495,12 +3471,13 @@ function nodeJsTest(){
 	
 	var test_data={
 				  action: "bulkload", 
-				  username: loggedUser,
-				  organization:organization,
+				  //username: loggedUser,
+				  //organization:organization,
 				  kbUrl:kbUrl,
 				  start:1,
 				  end:6,
-				  token : sessionToken
+				  token : sessionToken,
+					should_be_registered:"yes"
 				  
 				 };
 	alert("Request sent");	
@@ -3514,11 +3491,12 @@ function insertValidDevices(){
 	
 	var data={
 				  action: "bulkload", 
-				  username: loggedUser,
+				  //username: loggedUser,
 				  token : sessionToken,
 				  data_parallel: 1,
-				  organization:organization,
-				  kbUrl:kbUrl
+				  //organization:organization,
+				  kbUrl:kbUrl,
+				should_be_registered:"yes"
 				 };
 		
 	//../api/bulkDeviceLoad.php
@@ -3560,9 +3538,9 @@ function stop_progress(){
 			 url: "../api/bulkDeviceLoad.php",
 			 data:{
 				  action: "stop_bulk", 
-				  username: loggedUser,
+				  //username: loggedUser,
 				  token : sessionToken,
-				 organization:organization
+				 //organization:organization
 				 },
 			 type: "POST",
 			 async: true,
@@ -3639,8 +3617,8 @@ timerID = setInterval(function() {
 		 url: "../api/bulkDeviceLoad.php",
 		 data:{
 			  action: "get_bulk_status", 
-			  username: loggedUser,
-			  organization: organization,
+			  //username: loggedUser,
+			  //organization: organization,
 			  token : sessionToken
 			 },
 		 type: "POST",
@@ -3689,17 +3667,9 @@ timerID = setInterval(function() {
 	
 	 }, 3 * 1000);//each 3 seconds 
 }
-
+/*
 function insertValidDevices_old(totalDevices){
 	
-	/*console.log("called");
-	var progress_modal = document.getElementById('myModal');
-	var span = document.getElementsByClassName("close")[0];
-	var spin = document.getElementById("loader_spin");
-	var progress_ok=document.getElementById('progress_ok');
-	progress_modal.style.display = "block";
-	spin.style.display="block";
-	progress_ok.style.display="none";*/
 	var bulk_offset=10;
 	var start_index=1;
 	var end_index=bulk_offset;
@@ -3726,7 +3696,8 @@ function insertValidDevicesByPieces_parallel(start_index,end_index,totalDevices,
 				  end:end_index,
 				  token : sessionToken,
 				  data_parallel: 1,
-				  organization:organization
+				  organization:organization,
+                    should_be_registered:"yes"
 				 };
 	alert("Request sent, processing ...");	
 	//../api/bulkDeviceLoad.php
@@ -3751,7 +3722,8 @@ function insertValidDevicesByPieces(start_index,end_index,totalDevices,bulk_offs
 				  start:start_index,
 				  end:end_index,
 				  token : sessionToken,
-				 organization:organization
+				 organization:organization,
+                    should_be_registered:"yes"
 				 },
 			 type: "POST",
 			 async: true,
@@ -3773,8 +3745,6 @@ function insertValidDevicesByPieces(start_index,end_index,totalDevices,bulk_offs
 					
 						for(var i = 0; i < content.length; i++){
 						   //console.log("for i "+i+" length "+content[i].inserted);
-						 /*Sara3110  if(mydata["msg"]=="" ||typeof mydata["msg"] === 'undefined' || mydata["msg"] === null)
-						   {*/
 								if(content[i].inserted=='ok'){
 									user_message="Device: "+content[i].device+" on context broker "+ content[i].cb +" uploaded";
 									
@@ -3792,12 +3762,6 @@ function insertValidDevicesByPieces(start_index,end_index,totalDevices,bulk_offs
 									user_message="Device: "+content[i].device+" on context broker "+ content[i].cb +" is invalid,  not inserted";
 									//user_message_old= document.getElementById('myModalBody').innerHTML;			
 								}
-							/* Sara3110}
-							else{
-								//user_message= mydata["msg"];
-								user_message="Some devices not inserted";
-									
-							}*/
 							user_message_old= document.getElementById('myModalBody').innerHTML;
 							document.getElementById('myModalBody').innerHTML= user_message_old+"<p>"+user_message+"</p>";
 						}
@@ -3907,7 +3871,7 @@ function insertValidDevicesByPieces(start_index,end_index,totalDevices,bulk_offs
 			 }
 		
 		});
-}
+}*/
 
 function checkHeadersIfValid(csvheaders){
   

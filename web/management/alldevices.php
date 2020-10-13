@@ -46,11 +46,6 @@ if (isset($_REQUEST['redirect'])){
 	$link = mysqli_connect($host, $username, $password);
     mysqli_select_db($link, $dbname);
     
-    if(!isset($_SESSION['loggedRole']))
-    {
-        header("location: unauthorizedUser.php");
-    }
- 
  
 require '../sso/autoload.php';
 use Jumbojett\OpenIDConnectClient;
@@ -175,7 +170,7 @@ use Jumbojett\OpenIDConnectClient;
 		var currentDictionaryStaticAttribEdit=[];
 
           $.ajax({url: "../api/functionality.php",
-			 data: {action: 'get_functionality', page : mypage},
+			 data: {action: 'get_functionality', page : mypage, token:sessionToken},
 			 type: "GET",
 			 async: false,
 			 dataType: 'json',
