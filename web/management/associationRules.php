@@ -14,43 +14,37 @@
    You should have received a copy of the GNU General Public License
    along with this program; if not, write to the Free Software
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA. */
-    include('../config.php');
+	include('../config.php');
 
-	//include('process-form.php');
+	session_start();
 	
-    session_start();
-	
-	
-	 ///// SHOW FRAME PARAMETER /////
-if (isset($_REQUEST['showFrame'])){
-	if ($_REQUEST['showFrame'] == 'false'){
-		//echo ('true');
-		$hide_menu= "hide";
-	}else{
-		$hide_menu= "";
-	}	
-}else{$hide_menu= "";} 
-//// SHOW FRAME PARAMETER  ////
+	///// SHOW FRAME PARAMETER /////
+	if (isset($_REQUEST['showFrame'])) {
+		if ($_REQUEST['showFrame'] == 'false') {
+			$hide_menu= "hide";
+		} else {
+			$hide_menu= "";
+		}	
+	} else $hide_menu= "";  
+	//// SHOW FRAME PARAMETER  ////
    
-if (!isset($_GET['pageTitle'])){
-	$default_title = "IoT Directory: List of Devices";
-}else{
-	$default_title = "";
-}
+	if (!isset($_GET['pageTitle'])) {
+		$default_title = "IoT Directory: List of Devices";
+	} else {
+		$default_title = "";
+	}
 
-if (isset($_REQUEST['redirect'])){
-	$access_denied = "denied";
-}else{
-	$access_denied = "";
-}	
+	if (isset($_REQUEST['redirect'])) {
+		$access_denied = "denied";
+	} else {	
+		$access_denied = "";
+	}	
 
 	$link = mysqli_connect($host, $username, $password);
     mysqli_select_db($link, $dbname);
     
-  $accessToken = "";
+	$accessToken = "";
 ?>
-
-
 
 <!DOCTYPE html>
 <html>
@@ -90,20 +84,21 @@ if (isset($_REQUEST['redirect'])){
        <link rel="stylesheet" href="../boostrapTable/dist/bootstrap-table.css">
        <script src="../boostrapTable/dist/bootstrap-table.js"></script>
 	   <script src="../boostrapTable/dist/bootstrap-table-filter-control.js"></script>
-	   
-	   	   <!-- DataTables -->
-	   
+	  
+        <!-- select2 -->
+        <link href="https://cdn.jsdelivr.net/npm/select2@4.0.13/dist/css/select2.min.css" rel="stylesheet" />
+        <script src="https://cdn.jsdelivr.net/npm/select2@4.0.13/dist/js/select2.min.js"></script>
+ 
+	   	<!-- DataTables -->
 	    <script type="text/javascript" charset="utf8" src="../js/DataTables/datatables.js"></script>
         <link rel="stylesheet" type="text/css" href="../js/DataTables/datatables.css">
         <script type="text/javascript" charset="utf8" src="../js/DataTables/dataTables.bootstrap.min.js"></script>
         <script type="text/javascript" charset="utf8" src="../js/DataTables/dataTables.responsive.min.js"></script>
         <script type="text/javascript" charset="utf8" src="../js/DataTables/responsive.bootstrap.min.js"></script>
 		
-		
         <link rel="stylesheet" type="text/css" href="../css/DataTables/dataTables.bootstrap.min.css">
         <link rel="stylesheet" type="text/css" href="../css/DataTables/responsive.bootstrap.min.css">
         <link rel="stylesheet" type="text/css" href="../css/DataTables/jquery.dataTables.min.css">
-
 
        <!-- Questa inclusione viene sempre DOPO bootstrap-table.js -->
        <script src="../boostrapTable/dist/locale/bootstrap-table-en-US.js"></script>
@@ -121,80 +116,49 @@ if (isset($_REQUEST['redirect'])){
        <!-- Font awesome icons -->
         <link rel="stylesheet" href="../js/fontAwesome/css/font-awesome.min.css">
 
-     <!--    <link href="https://fonts.googleapis.com/css?family=Cabin:400,500,600,700|Catamaran|Varela+Round" rel="stylesheet"> -->
-        
         <!-- Custom CSS -->
         <link href="../css/dashboard.css" rel="stylesheet">
         <link href="../css/bulkDeviceLoad.css" rel="stylesheet">
 
-	
 		<script>
-		 var loggedRole = "<?php echo $_SESSION['loggedRole']; ?>";
-		 var loggedUser = "<?php echo $_SESSION['loggedUsername']; ?>";
-         var admin = "<?php echo $_SESSION['loggedRole']; ?>";
-         var organization = "<?php echo $_SESSION['organization']; ?>";
-                 var kbUrl = "<?php echo $_SESSION['kbUrl']; ?>";
-                 var gpsCentreLatLng = "<?php echo $_SESSION['gpsCentreLatLng']; ?>";
-                 var zoomLevel = "<?php echo $_SESSION['zoomLevel']; ?>";    
-		 var titolo_default = "<?php echo $default_title; ?>";	
-		 var access_denied = "<?php echo $access_denied; ?>";
-		 var nascondi= "<?php echo $hide_menu; ?>";
-		 var sessionEndTime = "<?php echo $_SESSION['sessionEndTime']; ?>";
-         var sessionToken = "<?php  if (isset($_SESSION['refreshToken'])) echo $_SESSION['refreshToken']; else echo ""; ?>";
-		 var _serviceIP = "<?php echo $_serviceIP; ?>"
-		 var mypage = location.pathname.split("/").slice(-1)[0];
-         var functionality = [];
-/*
-          $.ajax({url: "../api/functionality.php",
-			 data: {action: 'get_functionality', page : mypage},
-			 type: "GET",
-			 async: false,
-			 dataType: 'json',
-			 success: function (mydata)
-			 {
-			   // console.log(JSON.stringify(mydata));
-			   if (mydata["status"]=='ok')
-				 functionality = mydata["content"];
-			   else
-				  console.log("Error from the DB" + mydata["msg"]);		   
-			 },
-			 error: function (mydata)
-			 {
-			   console.log(JSON.stringify(mydata));
-			 }
-		 });
-		 */
+			var loggedRole = "<?php echo $_SESSION['loggedRole']; ?>";
+			var loggedUser = "<?php echo $_SESSION['loggedUsername']; ?>";
+         	var admin = "<?php echo $_SESSION['loggedRole']; ?>";
+         	var organization = "<?php echo $_SESSION['organization']; ?>";
+         	var kbUrl = "<?php echo $_SESSION['kbUrl']; ?>";
+         	var gpsCentreLatLng = "<?php echo $_SESSION['gpsCentreLatLng']; ?>";
+         	var zoomLevel = "<?php echo $_SESSION['zoomLevel']; ?>";    
+		 	var titolo_default = "<?php echo $default_title; ?>";	
+		 	var access_denied = "<?php echo $access_denied; ?>";
+		 	var nascondi= "<?php echo $hide_menu; ?>";
+		 	var sessionEndTime = "<?php echo $_SESSION['sessionEndTime']; ?>";
+        	var sessionToken = "<?php  if (isset($_SESSION['refreshToken'])) echo $_SESSION['refreshToken']; else echo ""; ?>";
+			var mypage = location.pathname.split("/").slice(-1)[0];
+        	var functionality = [];
+			var currentDictionaryStaticAttribEdit=[];
 		</script>
  
         <!-- Custom scripts -->
-		<!--
-		<script  src="js/devices.js"></script>	-->
+		<script  src="js/common.js"></script>	
 		<script  src="js/devicesManagement.js"></script>	
 		<script  src="js/devicesEditManagement.js"></script>
         <script  src="../js/dashboard_mng.js"></script>
 
-		
 		<!-- leaflet scripts -->
-		
 		<script  src="../js/leaflet.js"></script>
 		<script  src="../js/leaflet.draw.js"></script>
 		<script  src="../js/jquery.fancytree-all.min.js"></script>
 		
         <style>
-        
             .labelinput{
                 padding: 10px;
                 background: red; 
                 display: table;
                 color: #fff;
-                 }
-
-
-
+            }
             input[type="file"] {
                 display: none;
             }
-            
             /* The Modal (background) */
             .progress-modal {
                 display: none; /* Hidden by default */
@@ -209,7 +173,6 @@ if (isset($_REQUEST['redirect'])){
                 background-color: rgb(0,0,0); /* Fallback color */
                 background-color: rgba(0,0,0,0.4); /* Black w/ opacity */
             }
-
             /* Modal Content */
             .progress-modal-content {
                 position: relative;
@@ -224,13 +187,11 @@ if (isset($_REQUEST['redirect'])){
                 animation-name: animatetop;
                 animation-duration: 0.4s
             }
-
             /* Add Animation */
             @-webkit-keyframes animatetop {
                 from {top:-300px; opacity:0} 
                 to {top:0; opacity:1}
             }
-
             @keyframes animatetop {
                 from {top:-300px; opacity:0}
                 to {top:0; opacity:1}
@@ -243,29 +204,23 @@ if (isset($_REQUEST['redirect'])){
                 font-size: 28px;
                 font-weight: bold;
             }
-
             .close:hover,
             .close:focus {
                 color: #000;
                 text-decoration: none;
                 cursor: pointer;
             }
-
             .progress-modal-header {
                 padding: 2px 10px;
                 background-color:#00A2D3;
                 color: white;
             }
-
             .progress-modal-body {padding: 2px 16px;}
-
             .progress-modal-footer {
                 padding: 2px 4px;
                 background-color: #00A2D3;
                 color: white;
             }
-            
-            
             .loader {
               border: 8px solid #f3f3f3;
               border-radius: 50%;
@@ -275,25 +230,16 @@ if (isset($_REQUEST['redirect'])){
               -webkit-animation: spin 2s linear infinite; /* Safari */
               animation: spin 2s linear infinite;
             }
-
             /* Safari */
             @-webkit-keyframes spin {
               0% { -webkit-transform: rotate(0deg); }
               100% { -webkit-transform: rotate(360deg); }
             }
-
             @keyframes spin {
               0% { transform: rotate(0deg); }
               100% { transform: rotate(360deg); }
             }
-            
-
         </style>
-		
-		
-        
-        <!--<link href="https://fonts.googleapis.com/css?family=Cabin:400,500,600,700|Catamaran|Varela+Round" rel="stylesheet">
-        <link href="https://fonts.googleapis.com/css?family=Montserrat" rel="stylesheet">-->
 	</head>
     <body class="guiPageBody">
 		<div class="container-fluid">
@@ -336,15 +282,10 @@ if (isset($_REQUEST['redirect'])){
                                             $u= md5($_SESSION['loggedUsername']);
 											$query = "SELECT count(*) AS qt FROM temporary_devices WHERE status='valid' AND username ='".$u."' AND should_be_registered= 'no' AND deleted IS null";
                                             $result = mysqli_query($link, $query);
-                                            
-                                            if($result)
-                                            {
+                                            if($result) {
                                                $row = $result->fetch_assoc();
-												//echo $_SESSION['loggedUsername'];
 												echo $row['qt'] . ' valid devices';
-                                            }
-                                            else
-                                            {
+                                            } else {
 												echo '- valid devices';
                                             }
                                         ?>  
@@ -356,22 +297,15 @@ if (isset($_REQUEST['redirect'])){
                                             $u= md5($_SESSION['loggedUsername']);
 											$query = "SELECT count(*) AS qt FROM temporary_devices WHERE status='invalid' AND should_be_registered= 'no' AND username ='".$u."' AND deleted IS null";
                                             $result = mysqli_query($link, $query);
-                                            
-                                            if($result)
-                                            {
+                                            if($result) {
                                                $row = $result->fetch_assoc();
                                                echo $row['qt'] . ' invalid devices';
-                                            }
-                                            else
-                                            {
+                                            } else {
                                                 echo '- invalid devices';
                                             }
                                         ?> 
                                     </div>
-
                                 </div>
-                                 
-
                             </div>
                             
                             
@@ -386,9 +320,10 @@ if (isset($_REQUEST['redirect'])){
 									</div>
 									<div class="col-xs-12 col-md-6">
 										<div class="modalFieldCnt">
+											<!--TODO make a api call  -->
 											<select id="selectContextBrokerLD" name="selectContextBrokerLD" class="modalInputTxt">
-												<?php
-	                                            $query = "SELECT name FROM contextbroker";
+												<!--?php
+	                                            $query = "SELECT name FROM contextbroker  WHERE kind like 'external'";
     	                                        $result = mysqli_query($link, $query);
 
         	                                    if($result)
@@ -404,7 +339,7 @@ if (isset($_REQUEST['redirect'])){
         	                                        $nameCB="ERROR";
             	                                    echo "<option value=\"$nameCB\">$nameCB</option>";
                 	                            }
-                    	                    	?>
+                    	                    	?-->
 											</select>
 										</div>
 									</div>
@@ -416,9 +351,11 @@ if (isset($_REQUEST['redirect'])){
 									</div>
                                     <div class="col-xs-12 col-md-6">
                                     	<div class="modalFieldCnt">
+											  <!--TODO make a api call  -->
                                         	<select id="selectModelLD" name="selectModelLD" class="modalInputTxt">
-												<?php
-        	                                    $query = "SELECT name FROM model";
+											<option data_key="normal" value="custom">custom</option>
+												<!--?php
+        	                                    $query = "SELECT name FROM model m JOIN contextbroker c ON m.contextbroker = c.name WHERE c.kind LIKE 'external'";
             	                                $result = mysqli_query($link, $query);
 
                 	                            if($result)
@@ -431,10 +368,10 @@ if (isset($_REQUEST['redirect'])){
                                             	}
 	                                            else
     	                                        {
-                                                	$nameM="ERROR";
+                                                	$nameM="custom";
 	                                                echo "<option value=\"$nameM\">$nameM</option>";
     	                                        }
-        		                                ?>
+        		                                ?-->
 											</select>
 	                                    </div>
     	                            </div>
@@ -479,16 +416,16 @@ if (isset($_REQUEST['redirect'])){
                                 	    <input type="text"  class="modalInputTxt"  id="gatewayUri"  value=" ">  
                                     </div>
                                 </div>
-                                    <!-------upload button row--------------------->
+                                    <!-- upload button row -->
 
 
                                      <div class="uploadBulkLoad pull-left">
                                         <button type="text" id="suggestionsButton" name="suggestionsButton" class="btn btn-info">Suggest Modifications</button>
                                      </div>
                                       <div class="uploadBulkLoad pull-right">
-                                        <button type="text" id="activeBrokers" name="activeBrokers" class="btn btn-info">Show active brokers</button>
+                                        <button type="text" id="activeBrokers" name="activeBrokers" class="btn btn-info">Show active broker discovery</button>
 
-                                         <button type="text" id="retrieveButton" name="myDevice"class="btn btn-primary">Retrieves devices</button>
+                                         <button type="text" id="retrieveButton" name="myDevice"class="btn btn-primary">Retrieve devices</button>
                                      </div>
                                  
                             </div>
@@ -505,7 +442,7 @@ if (isset($_REQUEST['redirect'])){
 									 <thead>
 									  <tr>
 										<th></th>	
-									    <th data-cellTitle="name">IoT Device</th>
+									    <th data-cellTitle="name">Device Identifier</th>
 										<th data-cellTitle="contextbroker">IOT Broker</th>
 										<th data-cellTitle="protocol">Protocol</th>
 										<th data-cellTitle="format">Format</th>
@@ -532,22 +469,22 @@ if (isset($_REQUEST['redirect'])){
             </div>
         </div>
         
-        <!-- window to show active brokers -->
+        <!-- window to show active broker discovery-->
 
         <div class="modal fade" id="activeBrokersModal" tabindex="-1" role="dialog" aria-hidden="true">
             <div class="modal-dialog" role="document">
               <div class="modal-content">
               <div class="modalHeader centerWithFlex">
-                Active brokers
+                Active broker discovery
                 </div>
                 <div id="displayAllBrokers" class="row mainContentRow">
                     <div class="modal-body">
 
                         <div id="selectBroker" class="col-xs-12 mainContentRowDesc" >
-                            <div id="selectBrokersActive" class="col-xs-12 col-md-6">
+                            <div id="selectBrokersActive" class="col-xs-12 col-md-8">
                                 <select id="activeInactiveBrokes"></select>
                             </div>
-							<div class="col-xs-12 col-md-6">
+							<div class="col-xs-12 col-md-8">
 								<button type="button" id="activateButton" class="btn btn-success" style="display: none;">Activate</button>
 								<button type="button" id="inactivateButton" class="btn btn-danger"  >Inactivate</button>
 							</div>
@@ -696,7 +633,7 @@ if (isset($_REQUEST['redirect'])){
 													<table id="devicePreviewTable" class="table" cellspacing="0" width="100%">
 														<thead>
 															<tr>
-																<th data-cellTitle="name">IOT Device</th>
+																<th data-cellTitle="name">Device Identifier</th>
 																<th data-cellTitle="contextbroker">IOT Broker</th>
 																<th data-cellTitle="protocol">Protocol</th>
 																<th data-cellTitle="format">Format</th>
@@ -798,7 +735,7 @@ if (isset($_REQUEST['redirect'])){
 													<table id="valuesPreviewTable" class="table" cellspacing="0" width="100%">
 														<thead>
 															<tr>
-																<th data-cellTitle="name">IOT Device</th>
+																<th data-cellTitle="name">Device Identifier</th>
 																<th data-cellTitle="contextbroker">IOT Broker</th>
 																<th data-cellTitle="value_name">Value Name</th>
 																<th data-cellTitle="data_type">Data Type</th>
@@ -915,7 +852,7 @@ if (isset($_REQUEST['redirect'])){
 													<table id="devicesSuggestionsTable" class="table" cellspacing="0" width="100%">
 														<thead>
 															<tr>
-																<th data-cellTitle="name">IOT Device</th>
+																<th data-cellTitle="name">Device Identifier</th>
 																<th data-cellTitle="contextbroker">IOT Broker</th>
 																<th data-cellTitle="value_name">Value Name</th>
 																<th data-cellTitle="data_type">Data Type</th>
@@ -1001,6 +938,7 @@ if (isset($_REQUEST['redirect'])){
                         <li class="active"><a data-toggle="tab" href="#editIOTBrokerTabDevice">IoT Broker</a></li>
 						<li><a data-toggle="tab" href="#editInfoTabDevice">Info</a></li>
                         <li><a data-toggle="tab" href="#editGeoPositionTabDevice">Position</a></li>
+						<li><a data-toggle="tab" href="#editStaticTabModel">Static Attributes</a></li>
                         <li><a data-toggle="tab" href="#editSchemaTabDevice">Values</a></li>
 						<!--<li><a data-toggle="tab" href="#editStatusTabDevice">Status</a></li>-->
 						
@@ -1017,7 +955,7 @@ if (isset($_REQUEST['redirect'])){
                                     <div class="modalFieldCnt">
                                         <select id="selectContextBrokerM" name="selectContextBrokerM" class="modalInputTxt">
 										<?php
-                                            $query = "SELECT name FROM contextbroker";
+                                            $query = "SELECT name FROM contextbroker WHERE kind like 'external'";
                                             $result = mysqli_query($link, $query);
 
                                             if($result)
@@ -1064,6 +1002,7 @@ if (isset($_REQUEST['redirect'])){
 											<option value="coap">coap</option>
 											<option value="mqtt">mqtt</option>
 											<option value="ngsi">ngsi</option>
+											<option value="ngsi w/MultiService">ngsi w/MultiService</option>
 										</select>
                                     </div>
                                     <div class="modalFieldLabelCnt">Protocol</div>
@@ -1082,7 +1021,25 @@ if (isset($_REQUEST['redirect'])){
                                 </div>
                                
 							</div>
-				 
+ <!-- Start MultiService + ServicePath Section -->
+                                     				<div class = "row" id = "editMultiServiceAndServicePath">
+                                     					<div class="col-xs-12 col-md-6 modalCell">
+                                                             	            <div class="modalFieldCnt">
+                                                                     	        <input type="text" class="modalInputTxt" name="deviceService" id="deviceService" required>
+                                     	                                    </div>
+                                             	                            <div id="editSelectServiceLabel" class="modalFieldLabelCnt">Service/Tenant</div>
+                                     					    <div id="editSelectServiceMsg" class="modalFieldMsgCnt">&nbsp;</div>
+                                     	                                </div>
+
+                                     					<div class="col-xs-12 col-md-6 modalCell">
+                                     						<div class="modalFieldCnt">
+                                                     		                        <input type="text" class="modalInputTxt" name="editInputServicePathDevice" id="editInputServicePathDevice" required>
+                                                                     		</div>
+                                     		                                <div id="editInputServicePathLabel" class="modalFieldLabelCnt">ServicePath</div>
+                                     						<div id="editInputServicePathMsg" class="modalFieldMsgCnt">&nbsp;</div>
+                                             	                        </div>
+                                     				</div>
+                                     				<!-- End MultiService + ServicePath Section -->				 
                         </div>
                           <!-- Info tab -->
                         <div id="editInfoTabDevice" class="tab-pane fade">
@@ -1093,7 +1050,7 @@ if (isset($_REQUEST['redirect'])){
                                     <div class="modalFieldCnt">
                                         <input type="text" class="modalInputTxt" name="inputNameDeviceM" id="inputNameDeviceM" required> 
                                     </div>
-                                    <div class="modalFieldLabelCnt">Name</div>
+                                    <div class="modalFieldLabelCnt">Device Identifier</div>
 									<div id="inputNameDeviceMMsg" class="modalFieldMsgCnt">&nbsp;</div>
                                 </div>
 								
@@ -1263,17 +1220,47 @@ if (isset($_REQUEST['redirect'])){
 									<div id="inputLongitudeDeviceMMsg" class="modalFieldMsgCnt">&nbsp;</div>
                                 </div>
                             </div>
-							
-								<div class="form-row iot-directory-form-row">
-									<link rel="stylesheet" href="../css/leaflet.css" />
-									<link rel="stylesheet" href="../css/leaflet.draw.css" />
-									<div id="editLatLong" style="width: 100%; height: 400px" class="modal-body modalBody">
-								</div>
+							<h1>&nbsp;</h1>							
+							<div class="form-row iot-directory-form-row">
+								<link rel="stylesheet" href="../css/leaflet.css" />
+								<link rel="stylesheet" href="../css/leaflet.draw.css" />
+								<div id="editLatLong" style="width: 100%; height: 400px" class="modal-body modalBody"></div>
 							</div> 
-							
-							
+							<div id="positionMsgHintM" class="modalFieldMsgCnt" hidden="true"><h1>&nbsp;</h1><p class="text-danger font-weight-bold">WARNING: the indicated GPS Position has to be intended as the Initial Position of the Device. To see the Current Position of the Device, please proceed via Service Map</p></div>		
                         </div>
-                        
+                       
+						<!-- Static Attributes tab -->
+						<div id="editStaticTabModel" class="tab-pane fade">
+							<div class="row">
+								<div class="col-xs-12 col-md-8 modalCell" >
+									<div class="custom-control custom-checkbox">
+										<input type="checkbox" class="custom-control-input" id="isMobileTickM">
+										<label class="custom-control-label" for="isMobileTickM">Device in Mobility</label>
+									</div>
+								</div>
+							</div>
+							<div class="row">
+								<div class="col-xs-12 col-md-6 modalCell">
+									<div class="modalFieldLabelCnt">Subnature</div>
+									<div class="modalFieldCnt">
+										<select id="selectSubnatureM" name="selectSubnatureM" class="modalInputTxt">
+											<option></option>
+										</select>
+									</div>
+								</div>
+							</div>
+							<div class="row">
+								<div class="col-xs-12 col-md-12 modalCell">
+									<div id="editlistStaticAttributes"></div>
+								</div>
+							</div>
+							<div class="row">
+								<div class="col-xs-12 col-md-12 modalCell">
+									<div class="pull-left"><button type="text" id="addNewStaticBtnM" class="btn confirmBtn" style="display: none;">Add Attribute</button></div>
+								</div>
+							</div>
+						</div>
+ 
                         <!-- Attribute tab -->
                         <div id="editSchemaTabDevice" class="tab-pane fade">
                            
@@ -1282,6 +1269,7 @@ if (isset($_REQUEST['redirect'])){
 							<div id="deletedAttributes" style="display:none"></div>
 							<!-- <div class="pull-left"><i id="addAttrMBtn" class="fa fa-plus-square" style="font-size:36px; color: #ffcc00"></i></div> -->
 							<div class="pull-left"><button id="addAttrMBtn" class="btn btn-primary">Add Value</button></div>
+							<div id="editlistAttributesMsg" class="modalFieldMsgCnt">&nbsp;</div>
                         </div>
 						
 						<!-- Semantic Labeling tab -->

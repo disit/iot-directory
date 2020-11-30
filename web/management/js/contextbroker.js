@@ -59,9 +59,9 @@ function format ( d ) {
 	// `d` is the original data object for the row
   	return '<div class="container-fluid">' +
 				'<div class="row">' +
-					'<div class="col-xs-6 col-sm-6" style="background-color:#E6E6FA;"><b>IOT Broker URI:</b>' + "  " + d.accesslink+ '</div>' +
+					'<div class="col-xs-6 col-sm-6" style="background-color:#E6E6FA;"><b>Broker URI:</b>' + "  " + d.accesslink+ '</div>' +
 					'<div class="clearfix visible-xs"></div>' +
-					'<div class="col-xs-6 col-sm-6" style="background-color:#E6E6FA;"><b>IOT Broker Port:</b>' + "  " + d.accessport + '</div>' +								
+					'<div class="col-xs-6 col-sm-6" style="background-color:#E6E6FA;"><b>Broker Port:</b>' + "  " + d.accessport + '</div>' +								
 				'</div>' +
 				'<div class="row">' +
 					'<div class="col-xs-6 col-sm-6" style="background-color:#D6CADD;"><b>Latitude:</b>' + "  " + d.latitude + '</div>' +
@@ -233,8 +233,6 @@ function fetch_data(destroyOld, selected=null) {
     $(document).ready(function () 
     {
 	
-//default hide Subscription tab
-//TODO
 	
 //fetch_data function will load the contextbroker table 	
 		fetch_data(false);	
@@ -702,7 +700,7 @@ function fetch_data(destroyOld, selected=null) {
 				$("#substatusCBMMsg").text("Subscription id:\n"+$(this).attr("data-subscription_id").replace(/,/g,"\n"));
 			}
 			$("#inputUrlOrionCallbackM").val($(this).attr("data-urlnificallback"));
-			if ($(this).attr("data-kind") === "internal" && $(this).attr("data-protocol"))
+			if ($(this).attr("data-protocol"))
 			{
 				$("#tab-editCB-4").show();
 			}
@@ -710,6 +708,11 @@ function fetch_data(destroyOld, selected=null) {
 			{
 				$("#tab-editCB-4").hide();
 			}
+
+			if($(this).attr("data-kind") === "internal"){
+				$('#selectUrlOrionCallbackMsgHint').hide();
+			}
+
 			editCBSManagementButtonPressed($(this).attr("data-services"));
 			showEditCbModal();
 	});
@@ -788,17 +791,23 @@ function fetch_data(destroyOld, selected=null) {
                  {
 			if(data["status"] === 'ko')
 			{
-                            
                             $('#editContextBrokerLoadingMsg').hide();
                             $('#editContextBrokerLoadingIcon').hide();
                             $('#editContextBrokerOkMsg').hide();
                             $('#editContextBrokerOkIcon').hide();
+							$("#editContextBrokerKoMsg").html(data["error_msg"]);
                             $('#editContextBrokerKoMsg').show();
                             $('#editContextBrokerKoIcon').show();
                             $('#editContextBrokerOkBtn').show();
+							console.log("finito ko");
+					
+							 setTimeout(function(){		//force reload to avoid servicepath mismatch
+			                   location.reload();
+            			    }, 500);
 			}
-			else (data["status"] === 'ok')
+			else if (data["status"] === 'ok')
 			{
+							console.log("starting");
                             $('#inputNameCBM').val("");
                             $('#inputIpCBM').val("");
                             $('#inputPortCBM').val("");
@@ -832,7 +841,7 @@ function fetch_data(destroyOld, selected=null) {
 
                             $('#contextBrokerTable').DataTable().destroy();
 			    fetch_data(true);
-                     }
+            }
                  },
                  error: function (data) 
                  {
@@ -1258,7 +1267,7 @@ function fetch_data(destroyOld, selected=null) {
                 var kind_value = document.getElementById("selectKindCB").value;
 
 
-                if(kind_value ==='internal' && value.indexOf('ngsi')!=-1)
+                if(value.indexOf('ngsi')!=-1)
                 {
                         $("#tab-addCB-4").show();
                 }
@@ -1276,7 +1285,7 @@ function fetch_data(destroyOld, selected=null) {
 	
 		if(value ==='internal')
 		{
-
+			$("#selectUrlOrionCallbackMsgHint").hide();
 			$("#loginExternal").hide();
 			$("#loginInternal").show();
 			document.getElementById("inputApiKeyCB").value = '';
@@ -1285,6 +1294,7 @@ function fetch_data(destroyOld, selected=null) {
 		} 
 		else if(value ==='external')
 		{
+			$("#selectUrlOrionCallbackMsgHint").show();
 			$("#loginInternal").hide();
 			$("#loginExternal").show();
 			document.getElementById("inputLoginCB").value = '';
@@ -1313,7 +1323,7 @@ function fetch_data(destroyOld, selected=null) {
 
 
 
-		if(value ==='internal' && protocol_value.indexOf('ngsi')!=-1)	
+		if(protocol_value.indexOf('ngsi')!=-1)	
 		{
 			$("#tab-addCB-4").show();
 		}
@@ -1331,7 +1341,7 @@ function fetch_data(destroyOld, selected=null) {
                 var kind_value = document.getElementById("selectKindCBM").value;
 
 
-                if(kind_value ==='internal' && value.indexOf('ngsi')!=-1)
+                if(value.indexOf('ngsi')!=-1)
                 {
                         $("#tab-editCB-4").show();
                 }
@@ -1352,7 +1362,7 @@ function fetch_data(destroyOld, selected=null) {
                 var protocol_value = document.getElementById("selectProtocolCBM").value;
 
 
-                if(value ==='internal' && protocol_value.indexOf('ngsi')!=-1)
+                if(protocol_value.indexOf('ngsi')!=-1)
                 {
                         $("#tab-editCB-4").show();
                 }
@@ -2245,7 +2255,7 @@ function drawMapAll(data, divName){
 
                  redIcon = new L.Icon({
 
-                                iconUrl: 'https://www.snap4city.org/iotdirectorytest/markerPrivate.png',
+                                iconUrl: '../img/markerPrivate.png',
                                 iconSize: new L.Point(32, 32),
                                 iconAnchor: new L.Point(16, 16),
                                 popupAnchor: new L.Point(0, -18)
@@ -2254,7 +2264,7 @@ function drawMapAll(data, divName){
 
                 blueIcon = new L.Icon({
 
-                                iconUrl: 'https://www.snap4city.org/iotdirectorytest/markerPublic.png',
+                                iconUrl: '../img/markerPublic.png',
                                 iconSize: new L.Point(32, 32),
                                 iconAnchor: new L.Point(16, 16),
                                 popupAnchor: new L.Point(0, -18)
@@ -2262,7 +2272,7 @@ function drawMapAll(data, divName){
                             });
                 greenIcon = new L.Icon({
 
-                                iconUrl: 'https://www.snap4city.org/iotdirectorytest/markerGreen.png',
+                                iconUrl: '../img/markerGreen.png',
                                 iconSize: new L.Point(32, 32),
                                 iconAnchor: new L.Point(16, 16),
                                 popupAnchor: new L.Point(0, -18)

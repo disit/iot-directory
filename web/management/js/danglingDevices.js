@@ -2225,7 +2225,7 @@ function drawMap(latitude,longitude, id, devicetype, kind, divName){
 
                  redIcon = new L.Icon({
 
-                                iconUrl: 'https://www.snap4city.org/iotdirectorytest/markerPrivate.png',
+                                iconUrl: '../img/markerPrivate.png',
                                 iconSize: new L.Point(32, 32),
                                 iconAnchor: new L.Point(16, 16),
                                 popupAnchor: new L.Point(0, -18)
@@ -2234,7 +2234,7 @@ function drawMap(latitude,longitude, id, devicetype, kind, divName){
 
                 blueIcon = new L.Icon({
 
-                                iconUrl: 'https://www.snap4city.org/iotdirectorytest/markerPublic.png',
+                                iconUrl: '../img/markerPublic.png',
                                 iconSize: new L.Point(32, 32),
                                 iconAnchor: new L.Point(16, 16),
                                 popupAnchor: new L.Point(0, -18)
@@ -2242,7 +2242,7 @@ function drawMap(latitude,longitude, id, devicetype, kind, divName){
                             });
                 greenIcon = new L.Icon({
 
-                                iconUrl: 'https://www.snap4city.org/iotdirectorytest/markerGreen.png',
+                                iconUrl: '../img/markerGreen.png',
                                 iconSize: new L.Point(32, 32),
                                 iconAnchor: new L.Point(16, 16),
                                 popupAnchor: new L.Point(0, -18)

@@ -6,23 +6,23 @@ function showEditModelModal()
 {
     modelnamesArray = new Array();
     editModelConditionsArray['inputNameModelM'] = false;
-    editModelConditionsArray['inputDescriptionModelM'] = false;
+//    editModelConditionsArray['inputDescriptionModelM'] = false;
     editModelConditionsArray['inputTypeModelM'] = false;
-    editModelConditionsArray['inputProducerModelM'] = false;
+///    editModelConditionsArray['inputProducerModelM'] = false;
 
     $("#editModelConfirmBtn").attr("disabled", false);       
 	
 	$("#editInfoTabModel #inputNameModelM").on('input', checkModelNameM); 
 	$("#editInfoTabModel #inputNameModelM").on('input', checkEditModelConditions);
 	
-	$("#editInfoTabModel #inputDescriptionModelM").on('input', checkModelDescriptionM);
-	$("#editInfoTabModel #inputDescriptionModelM").on('input', checkEditModelConditions);
+//	$("#editInfoTabModel #inputDescriptionModelM").on('input', checkModelDescriptionM);
+//	$("#editInfoTabModel #inputDescriptionModelM").on('input', checkEditModelConditions);
 	
 	$("#editInfoTabModel #inputTypeModelM").on('input', checkModelDeviceTypeM);
 	$("#editInfoTabModel #inputTypeModelM").on('input', checkEditModelConditions);
 	
-	$("#editInfoTabModel #inputProducerModelM").on('input', checkModelProducerM);
-	$("#editInfoTabModel #inputProducerModelM").on('input', checkEditModelConditions);
+//	$("#editInfoTabModel #inputProducerModelM").on('input', checkModelProducerM);
+//	$("#editInfoTabModel #inputProducerModelM").on('input', checkEditModelConditions);
 
 	//field without constrains
 	$("#editInfoTabModel #selectKindModelM").on('input', checkEditModelConditions);
@@ -33,9 +33,9 @@ function showEditModelModal()
         $("#editInfoTabModel #selectEdgeGatewayTypeM").on('input', checkEditModelConditions);
 	
 	checkModelNameM();
-	checkModelDescriptionM();
+//n	checkModelDescriptionM();
 	checkModelDeviceTypeM();
-	checkModelProducerM();
+//	checkModelProducerM();
 	
 	$("#editModelModal").modal('show');      
 }
@@ -208,7 +208,7 @@ function checkEditAtlistOneAttributeM()
     $("#editlistAttributesMsg").html(message);
 }
 
-
+/*
 function checkModelDescriptionM()
 {
     var message = null;
@@ -235,7 +235,7 @@ function checkModelDescriptionM()
     }
     
     $("#inputDescriptionModelMMsg").html(message);
-}
+}*/
 
 function checkModelDeviceTypeM()
 {
@@ -264,7 +264,7 @@ function checkModelDeviceTypeM()
     
     $("#inputTypeModelMMsg").html(message);
 }
-
+/*
 function checkModelProducerM()
 {
     var message = null;
@@ -292,7 +292,7 @@ function checkModelProducerM()
     
     $("#inputProducerModelMMsg").html(message);
 }
-
+*/
 
 
 function checkEditModelConditions()

@@ -208,6 +208,12 @@ if ($action=="insert")
 }*/
 else if ($action=="get_rules")
 {
+			if (!isset($_REQUEST['length']))	$_REQUEST['length']=-1;
+			if (!isset($_REQUEST['draw'])) $_REQUEST['draw']=1;
+			if (!isset($_REQUEST['columns'])) $_REQUEST["columns"]=array();
+			if (!isset($_REQUEST['select'])) $_REQUEST['select']= array();
+
+
 	$q = "SELECT contextbroker, id, selector, kind, format, data_type, value_type,value_unit, structure_flag FROM extractionRules"; 
 	if ($role == 'ToolAdmin' || $role == 'RootAdmin')
 	{

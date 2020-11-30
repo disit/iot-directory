@@ -1,5 +1,3 @@
-console.log('entered');
-
 //values retrieved from snapIoTDirectory_cbRetrieval_c 
 var ORION_CB = process.argv[2]; 
 var DEVICE_NAME = process.argv[3];
@@ -14,6 +12,8 @@ var ORGANIZATION=process.argv[11];
 var PATH = process.argv[12];
 var KINDBROKER = process.argv[13];
 var APIKEY = process.argv[14];
+var SERVICE = process.argv[15];
+var SERVICE_PATH = process.argv[16];
 
 //Static values
 var ORION_PROTOCOL = "ngsi";
@@ -58,9 +58,6 @@ var http = require("http");
 
 var XMLHttpRequest = require("xmlhttprequest").XMLHttpRequest;
 
-console.log('db?');
-
-
 const ini = require('ini');
 const config = ini.parse(fs.readFileSync('./snap4cityBroker/db_config.ini', 'utf-8'));
 const c_host = config.database.host;
@@ -69,7 +66,6 @@ const c_port = config.database.port;
 const c_password = config.database.password;
 const c_database = config.database.database;
 
-
 var cid = mysql.createConnection({
     host: c_host,
     port: c_port,
@@ -77,7 +73,6 @@ var cid = mysql.createConnection({
     password: c_password,
     database: c_database
   });
-  
 
 cid.connect(function(err){
       if(err){ 
@@ -86,30 +81,47 @@ cid.connect(function(err){
              }
     console.log('Connection established');
 });
+
+var req = new XMLHttpRequest();
+var link = "../api/device.php";
+req.open("POST", link, true);
+
+req.onreadystatechange = function() {
+	if (this.readyState === XMLHttpRequest.DONE && this.status === 200) {
+		let resp= JSON.parse(this.responseText);
+		console.log(resp);
+		gb_datatypes= resp["data_type"];
+		gb_value_units= resp["value_unit"];
+		gb_value_types= resp["value_type"];
+	}
+}
+req.send("organization="+ORGANIZATION+"&action=get_param_values");
+
  
 /*  MAIN PROGRAM */
 
 var httpRequestOutput="";
 
-var link ="";
+link ="";
 var limit = 1000;
 var offset2 = 900;
 var offset = 0;
 var smallSearch=0;
 
-if(ACCESS_PORT !== undefined && ACCESS_PORT.localeCompare("null")!==0 && ACCESS_PORT.localeCompare("")!==0  ){
-        ACCESS_LINK = ACCESS_LINK+":"+ACCESS_PORT;
-}
+if (!ACCESS_LINK.startsWith("http"))
+    ACCESS_LINK="http://"+ACCESS_LINK;
 
-//console.log("localeCompare if external");
+if(ACCESS_PORT !== undefined && ACCESS_PORT.localeCompare("null")!==0 && ACCESS_PORT.localeCompare("")!==0  )
+	ACCESS_LINK = ACCESS_LINK+":"+ACCESS_PORT;
+
 if(PATH == undefined || PATH.localeCompare("null")==0 || PATH.localeCompare("")==0  ){
 	link = ACCESS_LINK;
 }
 else{
 	link = ACCESS_LINK+ PATH;	
 }
+
 if(!link.includes(DEVICE_NAME)){
-	console.log("include");
 	let link_provv = link.split("?");
 	link  = link_provv[0] + "/" + DEVICE_NAME;
 	console.log("Link "+ link);
@@ -121,23 +133,15 @@ var xhttp = new XMLHttpRequest();
 
 retrieveData(xhttp, link);
 
-function retrieveData(xtp, link){
+function retrieveData(xhttp, link){
 	var promiseAcquisition = new Promise(function(resolve2, reject){	
 		xhttp = new XMLHttpRequest();  
-
-		if(APIKEY !== null && APIKEY !== undefined && APIKEY.localeCompare("null")!==0){
-			//console.log("apikey not null" + ORION_CB + APIKEY);		
-			console.log("link ss"+ link);
-			xhttp.open("GET", link, true);
+		xhttp.open("GET", link, true);
+		if(APIKEY !== null && APIKEY !== undefined && APIKEY.localeCompare("null")!==0)
 			xhttp.setRequestHeader("apikey",APIKEY);
-			xhttp.send(); 
-		}//end if APIKEY != NULL
-		else
-		{ //if apikey is not defined
-			console.log("apikey null");
-			xhttp.open("GET", link, true);
-			xhttp.send(); 
-		}
+		xhttp.setRequestHeader("Fiware-Service", SERVICE);
+		xhttp.setRequestHeader("Fiware-ServicePath", SERVICE_PATH);
+		xhttp.send(); 
 
 		xhttp.onreadystatechange = function() {
 			console.log("readyState " + this.readyState + " status " + this.status + this.responseText );
@@ -164,20 +168,12 @@ function retrieveData(xtp, link){
 			
 			if (obj instanceof Array)
 			{
-
-			//console.log("length obj "+obj.length);
-			//console.log("obj "+obj);
 				for (i=0; i < obj.length; i++) {
-				//	console.log("obkid: " + obj[i].id);
 					let index= obj[i].id.toLowerCase();
-					//console.log("index "+ index);
-					
 					orionDevices.push(index);
 					orionDevicesSchema[index.toLowerCase()]= obj[i];
 					orionDevicesType[index.toLowerCase()]= obj[i].type;
-
 				}
-			
 			}
 			else
 			{ 
@@ -186,73 +182,7 @@ function retrieveData(xtp, link){
 				orionDevicesType[obj.id.toLowerCase()]= obj.type;
 			}
 					 
-			//if(typeof gb_value_units === undefined || gb_value_units.length <=0 )
-			//	getParam(cid);
 			if(typeof modelsdata === undefined || MODEL.localeCompare("custom")==0|| modelsdata.length <=0 )
-				getModels(cid);
-			
-			var promiseValueType = new Promise(function(resolveValueType,rejectValueType){
-			var valueType  = "SELECT value_type FROM value_types ORDER BY value_type";
-
-				if(gb_value_types === undefined || gb_value_types.length <= 0){
-					cid.query(valueType, function (err, result, fields) {
-										
-						// console.log(sql);
-						if (err) {console.log("sql "+valueType); throw err;}
-					//	console.log("result qye")
-						for (i = 0; i < result.length; i++) {
-							gb_value_types.push(result[i].value_type);
-						}
-						resolveValueType();	  
-					}); //query
-				}
-				else{
-					resolveValueType();	  				
-				}
-			});//end promiseValueType
-			promiseValueType.then(function(resolveValueType){
-				
-				var promiseDataType = new Promise(function(resolveDataType, rejectDataType){
-					var dataType= "SELECT data_type FROM data_types order by data_type";
-						
-						if(gb_datatypes === undefined || gb_datatypes.length <= 0){
-							cid.query(dataType, function (err, result, fields) {
-
-								// console.log(sql);
-								if (err) {console.log("sql "+dataType); throw err;}
-								
-								for (i = 0; i < result.length; i++) {
-									gb_datatypes.push(result[i].data_type);
-								}
-						
-								resolveDataType();
-							}); //query
-						}
-						else{
-								resolveDataType();
-						}
-				});//end promise data type
-				promiseDataType.then(function(resolveDataType){
-					var promiseUnit = new Promise(function(resolveUnit, rejectUnit){
-						var valueUnit= "SELECT DISTINCT value_unit_default FROM value_types ORDER BY value_unit_default";
-						
-						if(gb_value_units === undefined || gb_value_units.length <= 0){
-							cid.query(valueUnit, function (err, result, fields) {
-
-							// console.log(sql);
-								if (err) {console.log("sql "+valueUnit); throw err;}
-								for (i = 0; i < result.length; i++) {
-								  gb_value_units.push(result[i].value_unit_default);
-								}
-								resolveUnit();
-							}); //query
-						}
-						else{
-							resolveUnit();
-						}
-					});//end promiseUnit
-					promiseUnit.then(function(resolveDataType){					
-											
 						//checking if the devices already exist in the platform
 						//console.log("registeredDevices " +registeredDevices.length + " orion length "+ orionDevices.length);
 						var newDevices=orionDevices;
@@ -292,18 +222,11 @@ function retrieveData(xtp, link){
 
 						var se = [];
 						var sesc = [];
-						//console.log("nodup "+ newDevices.length);
-							//			console.log("oriondeviceschema2 "+ JSON.stringify(orionDevicesSchema));
 						var ruleJSON,parser;
 						promiseExtractionRules.then(function(resolveExtraction){
-							/*for (var key in orionDevicesSchema) {
-								console.log(key);			
-							}*/
-							//console.log("new devices "+ newDevices +  "registeredDevices "+ registeredDevices );
 
 							var type;
 							var sensor;
-							//var sensorApplied = new Object();
 							var rule;
 							var devAttr = new Object();
 							for (var i=0; i < newDevices.length; i++)
@@ -315,15 +238,12 @@ function retrieveData(xtp, link){
 									console.log("topic undefined "+ topic + "m " + JSON.stringify(orionDevicesSchema));
 									continue;
 								}
-							console.log("topic fdf" + topic);
-
 								for(var j in extractionRulesAtt){
 
 									rule= extractionRulesAtt[j]["selector"];
 									var id = extractionRulesAtt[j]["id"];
 									rule = JSON.stringify(rule);
 									
-								//	console.log("rule "+ rule);
 									rule = rule.replace(/\\/g, "");
 									rule = rule.replace("PM2,5","PM2x5");
 									rule = rule.replace("PM2.5","PM2y5");
@@ -433,12 +353,6 @@ function retrieveData(xtp, link){
 							
 
 							console.log(JSON.stringify(toVerify));
-						/*	se.push(storeDevice(USER,topic,MODEL,KIND,devAttr["devicetype"],
-							ORION_PROTOCOL,FREQUENCY, devAttr["format"], ORION_CB,devAttr["latitude"],
-							devAttr["longitude"],devAttr["mac"],validity,verify.message,"no",ORGANIZATION, EDGE_GATEWAY_TYPE,EDGE_GATEWAY_URI,devAttr["k1"],devAttr["k2"]));
-							//console.log("Se "+ JSON.stringify(se));							   
-							*/
-						    // var value_type = getValueType(obj1.arr);
 
 							}//end for i 
 
@@ -447,10 +361,6 @@ function retrieveData(xtp, link){
 								console.log("no extraction rules found, returning error msg");
 								console.error("extraction rules not found");
 							});
-					});//promise unit then 
-				});//end then promise data type
-
-			});//end then value type 
 			
 				
 			}//end readystate == 4

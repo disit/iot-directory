@@ -99,32 +99,40 @@ $.ajax({
 	}
 });
 
-
 function ajaxRequest() {
-var request=false;
-  try { request = new XMLHttpRequest()}catch(e1){
-	try{request = new ActiveXObject("Msxml2.XMLHTTP")}catch(e2){
-		try{ request = new ActiveXObject("Microsoft.XMLHTTP")
-		}catch(e3){request = false}
-	}
-  }
-  return request
+	var request=false;
+	try { 
+		request = new XMLHttpRequest()
+	} 
+	catch(e1) {
+		try {
+			request = new ActiveXObject("Msxml2.XMLHTTP")
+		}
+		catch(e2) {
+			try { 
+				request = new ActiveXObject("Microsoft.XMLHTTP")
+			}
+			catch(e3) {
+				request = false
+			}
+		}
+  	}
+	return request
 }       
 
 function removeElementAt(parent,child) {
-    var list = document.getElementById(parent);
-	// var content = child.parentElement.parentElement.parentElement.innerHTML
-  // console.log("elemento cancellato " + document.getElementById('deletedAttributes').innerHTML);
+	var list = document.getElementById(parent);
 	if (parent=="editlistAttributes") 
-	{     document.getElementById('deletedAttributes').appendChild(child.parentElement.parentElement.parentElement);}
-	else list.removeChild(child.parentElement.parentElement.parentElement);
+		document.getElementById('deletedAttributes').appendChild(child.parentElement.parentElement.parentElement);
+	else 
+		list.removeChild(child.parentElement.parentElement.parentElement);
 	checkAtlistOneAttribute();
 	checkEditAtlistOneAttribute();
 }
 
 
 //NEEDED SOMEWHERE??
-const url = 'https://helsinki.snap4city.org/ServiceMap/api/v1/value_type/';
+/*const url = 'https://helsinki.snap4city.org/ServiceMap/api/v1/value_type/';
   fetch(url)
   .then((resp) => resp.json())
   .then(function(data) {
@@ -143,47 +151,11 @@ const url = 'https://helsinki.snap4city.org/ServiceMap/api/v1/value_type/';
   })
   .catch(function(error) {
     console.log(error);
-  });  
+  });  */
 
-function download(sourcename, devicename, contextbroker) {
- 	$.ajax({url: "../api/device.php",
-         data: {
-			 token : sessionToken,
-	         action: 'download',
-			 filename: sourcename,
-			 id:devicename,
-             contextbroker:contextbroker
-         },
-         type: "POST",
-         async: true,
-         dataType: 'json',
-         success: function (mydata)
-         {
-		//console.log(mydata);
-		var element = document.createElement('a');
-		element.setAttribute('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent(mydata.msg));
-    		element.setAttribute('download', sourcename.substr(sourcename.indexOf("/", 2)+1));
-    		element.style.display = 'none';
-    		document.body.appendChild(element);
-    		element.click();
-    		document.body.removeChild(element);
-         },
-         error: function (mydata)
-         {
-		console.log(mydata);
-         }
-	});
-}
-
-function drawAttributeMenu
-(attrName, data_type, value_type, editable, value_unit, healthiness_criteria, value_refresh_rate, old_value_name, parent, indice)
+function drawAttributeMenu (attrName, data_type, value_type, editable, value_unit, healthiness_criteria, value_refresh_rate, old_value_name, parent, indice)
 {
-	//console.log("attrname= "+attrName);
-	//console.log("value_type= "+value_type);
-	//console.log("parent1= "+parent);
-	//console.log("old_value_name= "+old_value_name);
-	
-	if (attrName==""){
+	if (attrName=="") {
 		msg="<div style=\"color:red;\" class=\"modalFieldMsgCnt\"></div>";
 	}
 	else {
@@ -191,16 +163,16 @@ function drawAttributeMenu
 	}
 
 	options="";
-	if (value_type==""){
-		 options+="<option hidden disabled selected value=\"NOT VALID OPTION\"> -- select an option -- </option>";
+	if (value_type=="") {
+		options+="<option hidden disabled selected value=\"NOT VALID OPTION\"> -- select an option -- </option>";
 		msg_value_type="<div style=\"color:red;\" class=\"modalFieldMsgCnt\">Value type is mandatory</div>";
 	}
-	else
+	else {
 		msg_value_type="<div style=\"color:#337ab7;\" class=\"modalFieldMsgCnt\">Ok</div>";
+	}
 
 	for (var n=0; n < gb_value_types.length; n++)
 	{
-		//console.log("check against: "+gb_value_types[n].value);
 		if (value_type == gb_value_types[n].value) 
 			options += "<option value=\""+gb_value_types[n].value+"\" selected>"+ gb_value_types[n].label+ "</option>";
 		else 
@@ -229,7 +201,6 @@ function drawAttributeMenu
 	  else mydatatypes += "<option value=\""+gb_datatypes[n]+"\">"+ gb_datatypes[n]+ "</option>";
 	}
 	
- //console.log("parent2= "+parent);
 	return "<div class=\"row\" style=\"border:2px solid blue;\" id=\"value"+indice+"\">"+
 		
 		"<div class=\"col-xs-6 col-md-3 modalCell\">" +
@@ -283,87 +254,44 @@ function drawAttributeMenu
 
 		"<button class=\"btn btn-danger\" onclick=\"removeElementAt('" + parent + "',this); return true;\">Remove Value</button></div></div></div>";
 }		
-  
-  
-
-  /*function updateDeviceTimeout()
-        {
-            $("#editDeviceOkModal").modal('hide');
-            setTimeout(function(){
-               location.reload();
-            }, 500);
-        }*/
-        
-		/* 
-		 $q = "SELECT d.`contextBroker`, d.`id`, d.`uri`, d.`devicetype`, d.`kind`, 
-	      CASE WHEN mandatoryproperties AND mandatoryvalues THEN \"active\" ELSE \"idle\" END AS status1, 
-	     d.`macaddress`, d.`model`, d.`producer`, d.`longitude`, d.`latitude`, d.`protocol`, d.`format`, d.`visibility`, 
-	     d.`frequency`, d.`created`, d.`privatekey`, d.`certificate`, cb.`accesslink`, cb.`accessport`, cb.`sha` FROM `devices` d JOIN `contextbroker` cb ON (d.contextBroker=cb.name) "; //  WHERE visibility =\"public\"";
-	 */
-     
  
- 
-  function format ( d ) {
-	 
-var multitenancy = "";
-	if (d.service && d.servicePath){
-		multitenancy = '<div class="row">' + 
-			'<div class="col-xs-6 col-sm-6" style="background-color:#B3D9FF;"><b>Service/Tenant:</b>' + "  " + d.service + '</div>' +
-			'<div class="clearfix visible-xs"></div>' +
-			'<div class="col-xs-6 col-sm-6" style="background-color:#B3D9FF;"><b>ServicePath:</b>' + "  " + d.servicePath  + '</div>' +	
-		'</div>' ;
+function format ( d ) {
+	var multitenancy = "";
+	if (d.service || d.servicePath) {
+		multitenancy = 
+			'<div class="row">' + 
+				'<div class="col-xs-6 col-sm-6" style="background-color:#E6E6FA;"><b>Service/Tenant:</b>' + "  " + d.service + '</div>' +
+				'<div class="clearfix visible-xs"></div>' +
+				'<div class="col-xs-6 col-sm-6" style="background-color:#E6E6FA;"><b>ServicePath:</b>' + "  " + d.servicePath  + '</div>' +	
+			'</div>' ;
 	}
  
-	  var showKey="";
-	  
-	  if (d.visibility =='MyOwnPublic' || d.visibility == 'MyOwnPrivate' || d.visibility=='delegated'){
+	var showKey="";
+	if (d.visibility =='MyOwnPublic' || d.visibility == 'MyOwnPrivate' || d.visibility=='delegated') {
 		if(d.k1!="" && d.k2!="")
-          showKey =  '<div class="row">' +
-			'<div class="col-xs-6 col-sm-6" style="background-color:#D6CADD;"><b>K1:</b>' + "  " + d.k1 + '</div>' +
-			'<div class="clearfix visible-xs"></div>' +
-			'<div class="col-xs-6 col-sm-6" style="background-color:#D6CADD;"><b>K2:</b>' + "  " + d.k2  + '</div>' +	
-		'</div>' ;	  
-		}
+        	showKey =  
+				'<div class="row">' +
+					'<div class="col-xs-6 col-sm-6" style="background-color:#D6CADD;"><b>K1:</b>' + "  " + d.k1 + '</div>' +
+					'<div class="clearfix visible-xs"></div>' +
+					'<div class="col-xs-6 col-sm-6" style="background-color:#D6CADD;"><b>K2:</b>' + "  " + d.k2  + '</div>' +	
+				'</div>' ;	  
+	}
 	else showKey=""; 
+
+	var showPayload='<div class="row">' +
+            '<div class="col-xs-6 col-sm-6" style="background-color:#E6E6FA;"><button class="btn btn-info my-small-button" onclick="datainspect(\''+
+            d.id+'\',\''+d.devicetype+'\',\''+d.contextBroker+'\',\''+d.service+'\',\''+d.servicePath+'\',\'v1\');return true;"><b>PAYLOAD NGSI v1</b></button></div>' +
+            '<div class="clearfix visible-xs"></div>';
+	if (d.version=='v2')
+		showPayload=showPayload+'<div class="col-xs-6 col-sm-6" style="background-color:#E6E6FA;"><button class="btn btn-info my-small-button" onclick="datainspect(\''+
+                d.id+'\',\''+d.devicetype+'\',\''+d.contextBroker+'\',\''+d.service+'\',\''+d.servicePath+'\',\'v2\');return true;"><b>PAYLOAD NGSI v2</b></button></div>';
+	showPayload=showPayload+'</div>';
 	
-	var txtCert="";
-	if (d.privatekey!="" && d.privatekey!= null && (d.visibility =='MyOwnPublic' || d.visibility == 'MyOwnPrivate')){
-	
-	x = new Date(d.created);
-	x.setFullYear(x.getFullYear() + 1);
-	//x.setDate(x.getDate()-1);
-	y = x.toString();
-	
-	//console.log(x);
-	//var tu = x.getYear();
-		txtCert  = '<div class="row">' +
-			'<div class="col-xs-6 col-sm-6" style="background-color:#E6E6FA;"><b>Created on:</b>' + "  " + d.created + '</div>' +
-			'<div class="clearfix visible-xs"></div>' +
-			'<div class="col-xs-6 col-sm-6" style="background-color:#E6E6FA;"><b>Expire on:</b>' + "  " + y + '</div>' +
-			'</div>'+ 
-			
-			'<div class="row">' +
-			'<div class="col-xs-6 col-sm-6" style="background-color:#D6CADD;"><button class="btn btn-warning" onclick="download(\'\/private\/'+d.privatekey+'\',\''+d.id+'\',\''+d.contextBroker+'\');return true;"><b>private key</b></button></div>' +
-			'<div class="clearfix visible-xs"></div>' +
-			'<div class="col-xs-6 col-sm-6" style="background-color:#D6CADD;"><button class="btn btn-warning" onclick="download(\'\/certsdb\/'+d.certificate+'\',\''+d.id+'\',\''+d.contextBroker+'\');return true;"><b>certificate</b></button></div>' +
-			'</div>' +
-			'<div class="row">' +
-			'<div class="col-xs-6 col-sm-6" style="background-color:#E6E6FA;"><b>SHA1:</b>' + "  " + d.sha + '</div>' +
-			'<div class="clearfix visible-xs"></div>' +
-			'</div>';
-    }
-	else
-		txtCert = '<div class="row">' +
-			'<div class="col-xs-6 col-sm-6" style="background-color:#D6CADD;"><b>Created on:</b>' + "  " + d.created + '</div>' +
-			'<div class="clearfix visible-xs"></div>' +
-                        '</div>'; 
-	
-	// `d` is the original data object for the row
   	return '<div class="container-fluid">' +
 		'<div class="row">' +
-				'<div class="col-xs-6 col-sm-6" style="background-color:#E6E6FA;"><b>IoT Broker URI:</b>' + "  " + d.accesslink +'</div>' +
-				'<div class="clearfix visible-xs"></div>' +
-				'<div class="col-xs-6 col-sm-6" style="background-color:#E6E6FA;"><b>IoT Broker Port:</b>' + "  " + d.accessport + '</div>' +                        
+			'<div class="col-xs-6 col-sm-6" style="background-color:#E6E6FA;"><b>Broker URI:</b>' + "  " + d.accesslink +'</div>' +
+			'<div class="clearfix visible-xs"></div>' +
+			'<div class="col-xs-6 col-sm-6" style="background-color:#E6E6FA;"><b>Broker Port:</b>' + "  " + d.accessport + '</div>' +                        
 		'</div>' +
 		'<div class="row">' +
 			'<div class="col-xs-6 col-sm-6" style="background-color:#D6CADD;"><b>Kind:</b>' + "  " + d.kind + '</div>' +	
@@ -391,25 +319,20 @@ var multitenancy = "";
 			'<div class="col-xs-6 col-sm-6" style="background-color:#D6CADD;"><b>Latitude:</b>' + "  " + d.latitude  + '</div>' +
 		'</div>' +                              
 		'<div class="row">' +
-			'<div class="col-xs-6 col-sm-6" style="background-color:#E6E6FA;"><b>Gateway/Edge Type:</b>' + "  " + d.edgegateway_type + '</div>' +
+			'<div class="col-xs-12 col-sm-12" style="background-color:#E6E6FA;"><b>Device Uri:</b>' + "  <a href=\""+d.uri+"\">" + d.uri + '</a></div>' +
+		'</div>'+
+		'<div class="row">' +
+			'<div class="col-xs-6 col-sm-6" style="background-color:#D6CADD;"><b>Organization:</b>' + "  " + d.organization + '</div>' +
 			'<div class="clearfix visible-xs"></div>' +
-			'<div class="col-xs-6 col-sm-6" style="background-color:#E6E6FA;"><b>Gateway/Edge Uri:</b>' + "  " + d.edgegateway_uri  + '</div>' +	
 		'</div>' +
-		'<div class="row">' +
-                        '<div class="col-xs-12 col-sm-12" style="background-color:#D6CADD;"><b>Device Uri:</b>' + "  <a href=\""+d.uri+"\">" + d.uri + '</a></div>' +
-                        '<div class="clearfix visible-xs"></div>' +
-                '</div>' + showKey +
-		'<div class="row">' +
-			'<div class="col-xs-6 col-sm-6" style="background-color:#E6E6FA;"><b>Organization:</b>' + "  " + d.organization + '</div>' +
-			'<div class="clearfix visible-xs"></div>' +
-		'</div>' + txtCert +multitenancy
+		showPayload + 
+		multitenancy +
+		showKey +
+		getInfoCert(d.privatekey, d.visibility, d.created, d.id, d.contextBroker, d.certificate, d.sha) +
 	'</div>' ;
-	
 }
 
 //DataTable fetch_data function 
-
-
 	function fetch_data(destroyOld, selected=null)
 	{
 		//console.log("Enter:" + selected);
@@ -573,10 +496,6 @@ var multitenancy = "";
     "order" : [] 
 	  
    });
-  
-	if (loggedRole!='RootAdmin' && loggedRole!='ToolAdmin' && loggedRole!='AreaManager' ) {		
-		dataTable.columns( [7,8] ).visible( false );		
-	}
   }	 
 
  //end of fetch function 
@@ -797,6 +716,11 @@ if (currentEditId!==id){
 		$('#selectSubnatureM').val(subnature);
 		$('#selectSubnatureM').trigger('change');
 		subnatureChanged(true, JSON.parse(atob($(this).attr("data-static-attributes"))));    
+
+        if ($("#isMobileTickM").is(":checked"))
+            $("#positionMsgHintM").show();
+        else
+            $("#positionMsgHintM").hide();
 
         //UserEditKey();
         checkEditDeviceConditions();
@@ -1581,7 +1505,7 @@ showEditDeviceModal();
 			  edgegateway_type : $("#selectEdgeGatewayType").val(),		//DEPRECATED
 			  edgegateway_uri : $("#inputEdgeGatewayUri").val(),	  	//DEPRECATED
 			  subnature: $('#selectSubnature').val(),
-              static_attributes: JSON.stringify(retrieveStaticAttributes("addlistStaticAttributes")),
+              static_attributes: JSON.stringify(retrieveStaticAttributes("addlistStaticAttributes", false,"isMobileTick")),
 			  service : service,
 			  servicePath : servicePath 
 		 },
@@ -1734,7 +1658,7 @@ showEditDeviceModal();
         
     }
         else{
-            alert("Check the values of your device, make sure that data you entered are valid1");
+            alert("Check the values of your device, make sure that data you entered are valid");
         }
 });		 	 
 		//add lines related to attributes - addAttrBtnUser		
@@ -1971,7 +1895,7 @@ showEditDeviceModal();
 					edgegateway_type : $("#selectEdgeGatewayTypeM").val(),		//DEPRECATED
 					edgegateway_uri : $("#inputEdgeGatewayUriM").val(),			//DEPRECATED
         		    subnature: $('#selectSubnatureM').val(),
-		            static_attributes: JSON.stringify(retrieveStaticAttributes("editlistStaticAttributes")),
+		            static_attributes: JSON.stringify(retrieveStaticAttributes("editlistStaticAttributes", false, "isMobileTickM")),
 					service : service,
 					servicePath : servicePath
 				},
@@ -2123,6 +2047,24 @@ showEditDeviceModal();
 		
 //END KO RELATED BUTTONS	
 
+//START ISMOBILE PROPERTIES
+
+    $("#isMobileTick").change(function(){
+		if(this.checked) 
+			$("#positionMsgHint").show();
+		else 
+			$("#positionMsgHint").hide();
+    });
+
+    $("#isMobileTickM").change(function(){
+        if(this.checked)
+            $("#positionMsgHintM").show();
+        else
+            $("#positionMsgHintM").hide();
+    });
+
+//END ISMOBILE PROPERTIES
+
 //CONTEXTBROKER AND PROTOCOL RELATION FOR ADD DEVICE -SELECTOR 
 	$("#selectContextBroker").change(function() {
 		var index = document.getElementById("selectContextBroker").selectedIndex;
@@ -2131,12 +2073,38 @@ showEditDeviceModal();
 		var valkind= opt[index].getAttribute("data_kind");
 		var valOrg=opt[index].getAttribute("data_org");
 
+		if(valCB ==='ngsi') {
+			document.getElementById("selectProtocolDevice").value = 'ngsi';
+			document.getElementById("selectFormatDevice").value = 'json';
+		}
+		else if(valCB ==='ngsi w/MultiService')	{
+			document.getElementById("selectProtocolDevice").value = 'ngsi w/MultiService';
+			document.getElementById("selectFormatDevice").value = 'json';
+		}
+		else if(valCB ==='mqtt') {
+			document.getElementById("selectProtocolDevice").value = 'mqtt';
+			document.getElementById("selectFormatDevice").value = 'csv';
+		}
+		else if (valCB ==='amqp') {
+			document.getElementById("selectProtocolDevice").value = 'amqp';
+			document.getElementById("selectFormatDevice").value = 'csv';
+		}
+		else {
+			document.getElementById("selectProtocolDevice").value = '';
+			document.getElementById("selectFormatDevice").value = '';
+		}
+
+		$('#selectProtocolDevice').prop('disabled', true); // if you select the CB we already know what protocol it has, there's no reason to change it
+        $('#selectFormatDevice').prop('disabled', true); // if you select the CB we already know what protocol it has, there's no reason to change it
+
+		if (valOrg!=null) $("#selectContextBrokerMsg").html($("#selectContextBrokerMsg").html()+ " - Organization:" + valOrg);
+
 		if(valkind=="external") {
 			$("#addNewDeviceCheckExternalBtn").show();
 			$("#addNewDeviceConfirmBtn").hide();
-            //$("#selectContextBrokerMsg").hide();
-			$('#inputTypeDevice').val("");
-            $("#inputTypeDevice").attr("disabled", true);
+
+			//$('#inputTypeDevice').val("");
+            //$("#inputTypeDevice").attr("disabled", true);
 			$('#inputMacDevice').val("");
             $("#inputMacDevice").attr("disabled", true);
 			$('#inputProducerDevice').val("");
@@ -2155,14 +2123,15 @@ showEditDeviceModal();
             $("#addNewDeviceGenerateKeyBtn").attr("disabled", true);
             $('#addlistAttributes').html("");
             $("#addAttrBtn").attr("disabled", true);
-            $("#externalContextBrokerMsg").css("color", "#337ab7");
+            
+			$("#externalContextBrokerMsg").css("color", "#337ab7");
             $("#externalContextBrokerMsg").html("You've selected a broker from an external environment, you need to check if your device is registered on this broker before adding it." );
             $("#externalContextBrokerMsg").show();
         }
         else {
             $("#addNewDeviceCheckExternalBtn").hide();
             $("#addNewDeviceConfirmBtn").show();
-            $("#externalContextBrokerMsg").hide();
+
             $("#inputTypeDevice").attr("disabled", false);
 			$("#inputMacDevice").attr("disabled", false);
 			$("#inputProducerDevice").attr("disabled", false);
@@ -2174,38 +2143,13 @@ showEditDeviceModal();
             $("#selectModelDevice").attr("disabled", false);
             $("#addNewDeviceGenerateKeyBtn").attr("disabled", false);
             $("#addAttrBtn").attr("disabled", false);
-             //$("#selectContextBrokerMsg").html("");
-            
-            if(valCB ==='ngsi')
-            {
-                document.getElementById("selectProtocolDevice").value = 'ngsi';
-                document.getElementById("selectFormatDevice").value = 'json';
-            } 
-			else if(valCB ==='ngsi w/MultiService')
-            {
-                document.getElementById("selectProtocolDevice").value = 'ngsi w/MultiService';
-                document.getElementById("selectFormatDevice").value = 'json';
-            }
-            else if(valCB ==='mqtt')
-            {
-                document.getElementById("selectProtocolDevice").value = 'mqtt';
-                document.getElementById("selectFormatDevice").value = 'csv';
-            } 
-            else if (valCB ==='amqp')
-            {
-                document.getElementById("selectProtocolDevice").value = 'amqp';
-                document.getElementById("selectFormatDevice").value = 'csv';
-            } 
-            else
-            {
-                document.getElementById("selectProtocolDevice").value = '';
-                document.getElementById("selectFormatDevice").value = '';
-            }
-            checkEverything();
-            checkAddDeviceConditions();
 
-			if (valOrg!=null) $("#selectContextBrokerMsg").html($("#selectContextBrokerMsg").html()+ " - Organization:" + valOrg);
+			$("#externalContextBrokerMsg").hide();
+            
         }
+
+		checkEverything();
+		checkAddDeviceConditions();
 	});
 //END CONTEXTBROKER AND PROTOCOL RELATION FOR ADD DEVICE -SELECTOR     
  
@@ -2485,7 +2429,16 @@ $("#addNewDeviceCheckExternalBtn").on('click', function(){
     $("#addDeviceCheckExternalLoadingIcon").show();
 			
     var contextbroker= $('#selectContextBroker').val();
-	var ip, port, protocol,user, accessLink, model, apikey, fiwareservice,kind;
+
+	var deviceService = $('#selectService').val();
+	var deviceServicePath = $('#inputServicePathDevice').val();
+
+	if ($('#selectProtocolDevice').val() === "ngsi w/MultiService"){
+		// servicePath value pre-processing
+		if (deviceServicePath[0] !== "/" || deviceServicePath === "") deviceServicePath = "/" + deviceServicePath;
+		if (deviceServicePath[deviceServicePath.length -1] === "/" && deviceServicePath.length > 1) deviceServicePath = deviceServicePath.substr(0, deviceServicePath.length -1);
+	}
+
 	//TODO Avoid make another request we did at startup!
 	$.ajax({				//MIGRATE to test!!!!
 		url: "../api/contextbroker.php",
@@ -2522,7 +2475,7 @@ $("#addNewDeviceCheckExternalBtn").on('click', function(){
 					}
 					//console.log("ACTIVATE STUD "+ kind);
 					//console.log("full link "+ accesslink+path);
-					activateStub(contextbroker,device_name,ipa,"extract",user,accesslink,accessport,model,edge_gateway_type,edge_gateway_uri,path,apikey,kind, latid, longi);			
+					activateStub(contextbroker,device_name,ipa,"extract",user,accesslink,accessport,model,edge_gateway_type,edge_gateway_uri,path,apikey,kind, latid, longi, deviceService, deviceServicePath);			
 				}
 			}
 			
@@ -2536,7 +2489,7 @@ $("#addNewDeviceCheckExternalBtn").on('click', function(){
 	});
 	   
 });  // end of ready-state
-function activateStub(cb,deviceName, ipa,protocol,user,accesslink,accessport,model,edge_type,edge_uri,path, apikey,kind, latid, longi)
+function activateStub(cb,deviceName, ipa,protocol,user,accesslink,accessport,model,edge_type,edge_uri,path, apikey,kind, latid, longi, deviceService, deviceServicePath)
 {
 	//console.log("log "+ cb + " "+ipa+" "+accesslink+" "+accessport+" "+model+ " api "+ apikey + " organization "+ organization + " kind "+kind);
 	var data;
@@ -2546,6 +2499,9 @@ function activateStub(cb,deviceName, ipa,protocol,user,accesslink,accessport,mod
 	else{
 		data = "contextbroker=" + cb + "&device_name="+ deviceName + "&ip=" + ipa + "&user=" +user+ "&al="+accesslink + "&ap="+accessport+"&model="+model+ "&edge_gateway_type="+edge_type+"&edge_gateway_uri="+edge_uri+"&organization="+organization+"&path="+path+"&kind="+kind;		
 	}
+
+	data+="&service="+deviceService+"&service_path="+deviceServicePath;
+
 	var service = _serviceIP + "/api/"+protocol;
 	
 	//console.log(data);
@@ -2568,7 +2524,7 @@ function activateStub(cb,deviceName, ipa,protocol,user,accesslink,accessport,mod
             confirm("The Context Broker "+ cb+" is not reacheable");
         }
 	else if(resp.message.indexOf("path malformed")==0){
-            confirm("The Context Broker "+ cb+" contains an access path malformed");
+            confirm("The Context Broker "+ cb+" contains a malformed access path");
         }
 	else if(resp.message.indexOf("extraction rules not found")==0){
             confirm("No extraction rules have been defined for the Context Broker "+ cb);
@@ -2584,7 +2540,7 @@ function activateStub(cb,deviceName, ipa,protocol,user,accesslink,accessport,mod
             $("#addNewDeviceConfirmBtn").show();
             //$("#selectContextBrokerMsg").show();
             
-		$('#inputTypeDevice').val(msg.devicetype);
+		//$('#inputTypeDevice').val(msg.devicetype);		type now is inserted in input
             $("#inputTypeDevice").attr("disabled", false);
 		$('#inputMacDevice').val("");
             $("#inputMacDevice").attr("disabled", false);
@@ -2619,7 +2575,7 @@ function activateStub(cb,deviceName, ipa,protocol,user,accesslink,accessport,mod
             
             $("#selectModelDevice").attr("disabled", false);
             $("#selectModelDevice").val(msg.model);
-            $("#selectProtocolDevice").val(msg.protocol);
+            //$("#selectProtocolDevice").val(msg.protocol);
             $("#selectKindDevice").val(msg.kind);
           
             $("#addNewDeviceGenerateKeyBtn").attr("disabled", false);
@@ -3417,7 +3373,7 @@ function drawMap(latitude,longitude, id, devicetype, kind, divName){
 
                  redIcon = new L.Icon({
 
-                                iconUrl: 'https://www.snap4city.org/iotdirectorytest/markerPrivate.png',
+                                iconUrl: '../img/markerPrivate.png',
                                 iconSize: new L.Point(32, 32),
                                 iconAnchor: new L.Point(16, 16),
                                 popupAnchor: new L.Point(0, -18)
@@ -3426,7 +3382,7 @@ function drawMap(latitude,longitude, id, devicetype, kind, divName){
 
                 blueIcon = new L.Icon({
 
-                                iconUrl: 'https://www.snap4city.org/iotdirectorytest/markerPublic.png',
+                                iconUrl: '../img/markerPublic.png',
                                 iconSize: new L.Point(32, 32),
                                 iconAnchor: new L.Point(16, 16),
                                 popupAnchor: new L.Point(0, -18)
@@ -3434,7 +3390,7 @@ function drawMap(latitude,longitude, id, devicetype, kind, divName){
                             });
                 greenIcon = new L.Icon({
 
-                                iconUrl: 'https://www.snap4city.org/iotdirectorytest/markerGreen.png',
+                                iconUrl: '../img/markerGreen.png',
                                 iconSize: new L.Point(32, 32),
                                 iconAnchor: new L.Point(16, 16),
                                 popupAnchor: new L.Point(0, -18)

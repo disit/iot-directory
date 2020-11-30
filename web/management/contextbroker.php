@@ -19,25 +19,24 @@
     session_start();
 
 	 ///// SHOW FRAME PARAMETER /////
-	if (isset($_REQUEST['showFrame'])){
-		if ($_REQUEST['showFrame'] == 'false'){
-			//echo ('true');
+	if (isset($_REQUEST['showFrame'])) {
+		if ($_REQUEST['showFrame'] == 'false') {
 			$hide_menu= "hide";
-		}else{
+		} else {
 			$hide_menu= "";
 		}	
-	}else{$hide_menu= "";} 
-//// SHOW FRAME PARAMETER  ////
+	} else $hide_menu= ""; 
+	//// SHOW FRAME PARAMETER  ////
    
-	if (!isset($_GET['pageTitle'])){
+	if (!isset($_GET['pageTitle'])) {
 		$default_title = "IoT Directory: Context Brokers";
-	}else{
+	} else {
 		$default_title = "";
 	}
 
-	if (isset($_REQUEST['redirect'])){
+	if (isset($_REQUEST['redirect'])) {
 		$access_denied = "denied";
-	}else{
+	} else {
 		$access_denied = "";
 	}	
     
@@ -47,7 +46,6 @@
 	require '../sso/autoload.php';
 	use Jumbojett\OpenIDConnectClient;
 
-
 	if (isset($_SESSION['refreshToken'])) {
 	  $oidc = new OpenIDConnectClient($keycloakHostUri, $clientId, $clientSecret);
 	  $oidc->providerConfigParam(array('token_endpoint' => $keycloakHostUri.'/auth/realms/master/protocol/openid-connect/token'));
@@ -55,8 +53,6 @@
 	  $accessToken = $tkn->access_token;
 	  $_SESSION['refreshToken'] = $tkn->refresh_token;
 	}
-	 
-	
 ?>
 
 <!DOCTYPE html>
@@ -98,21 +94,16 @@
        <script src="../boostrapTable/dist/bootstrap-table.js"></script>
 	   <script src="../boostrapTable/dist/bootstrap-table-filter-control.js"></script>
 	   
-	   
 	    <!-- DataTables -->
-	   
 	    <script type="text/javascript" charset="utf8" src="../js/DataTables/datatables.js"></script>
         <link rel="stylesheet" type="text/css" href="../js/DataTables/datatables.css">
         <script type="text/javascript" charset="utf8" src="../js/DataTables/dataTables.bootstrap.min.js"></script>
         <script type="text/javascript" charset="utf8" src="../js/DataTables/dataTables.responsive.min.js"></script>
         <script type="text/javascript" charset="utf8" src="../js/DataTables/responsive.bootstrap.min.js"></script>
 		
-		
         <link rel="stylesheet" type="text/css" href="../css/DataTables/dataTables.bootstrap.min.css">
         <link rel="stylesheet" type="text/css" href="../css/DataTables/responsive.bootstrap.min.css">
         <link rel="stylesheet" type="text/css" href="../css/DataTables/jquery.dataTables.min.css">
-
-
 
        <!-- Questa inclusione viene sempre DOPO bootstrap-table.js -->
        <script src="../boostrapTable/dist/locale/bootstrap-table-en-US.js"></script>
@@ -139,78 +130,67 @@
 			height: 100vh;
 			<?php if ($hide_menu=="hide") echo "display:none"; //MM201218 ?>
 		}
-        
         </style>
         
-        <!-- Custom scripts -->
+<!-- Custom scripts -->
 <script>
- var loggedRole = "<?php echo $_SESSION['loggedRole']; ?>";
- var loggedUser = "<?php echo $_SESSION['loggedUsername']; ?>";
- var admin = "<?php echo $_SESSION['loggedRole']; ?>";
-
+	var loggedRole = "<?php echo $_SESSION['loggedRole']; ?>";
+	var loggedUser = "<?php echo $_SESSION['loggedUsername']; ?>";
+	var admin = "<?php echo $_SESSION['loggedRole']; ?>";
     var organization = "<?php echo $_SESSION['organization']; ?>";
-    console.log("loggedRole is "+ loggedRole);
-    console.log("loggedUser is "+ loggedUser);
-    console.log("orgnization is "+ organization);
-    
     var kbUrl = "<?php echo $_SESSION['kbUrl']; ?>";
     var gpsCentreLatLng = "<?php echo $_SESSION['gpsCentreLatLng']; ?>";
     var zoomLevel = "<?php echo $_SESSION['zoomLevel']; ?>";
-    
-    
- var titolo_default = "<?php echo $default_title; ?>";	
- var access_denied = "<?php echo $access_denied; ?>";
- var nascondi= "<?php echo $hide_menu; ?>";
- var sessionEndTime = "<?php echo $_SESSION['sessionEndTime']; ?>"; 
- var sessionToken = "<?php  if (isset($_SESSION['refreshToken'])) echo $_SESSION['refreshToken']; else echo ""; ?>";
- var creatorVisibile = true;
- var detailView = true;
- //var statusVisibile = true;
- var mypage = location.pathname.split("/").slice(-1)[0];
-         var functionality = [];
+	var titolo_default = "<?php echo $default_title; ?>";	
+	var access_denied = "<?php echo $access_denied; ?>";
+	var nascondi= "<?php echo $hide_menu; ?>";
+	var sessionEndTime = "<?php echo $_SESSION['sessionEndTime']; ?>"; 
+	var sessionToken = "<?php  if (isset($_SESSION['refreshToken'])) echo $_SESSION['refreshToken']; else echo ""; ?>";
+	var creatorVisibile = true;
+	var detailView = true;
+	var mypage = location.pathname.split("/").slice(-1)[0];
+	var functionality = [];
 
-          $.ajax({url: "../api/functionality.php",
-			 data: {action: 'get_functionality', page : mypage, token:sessionToken},
-			 type: "GET",
-			 async: false,
-			 dataType: 'json',
-			 success: function (mydata)
-			 {
-			   if (mydata["status"]=='ok')
-				 functionality = mydata["content"];
-			   else{
-				  console.log("Error from the DB" + mydata["msg"]);		   
+    $.ajax({
+		url: "../api/functionality.php",
+		data: {
+			action: 'get_functionality', 
+			page : mypage, 
+			token: sessionToken
+		},
+		type: "GET",
+		async: false,
+		dataType: 'json',
+		success: function (mydata) {
+			if (mydata["status"]=='ok')
+				functionality = mydata["content"];
+			else {
+				console.log("Error from the DB" + mydata["msg"]);		   
 				alert("An error occured when reading the data. <br/> Get in touch with the Snap4City Administrator. <br/>"+ mydata["error_msg"]);
-				}
-			 },
-			 error: function (mydata)
-			 {
-			   console.log(JSON.stringify(mydata));
-			 }
-		 }); 
+			}
+		},
+		error: function (mydata) {
+			console.log(JSON.stringify(mydata));
+			alert("An error occured when reading the data. <br/> Get in touch with the Snap4City Administrator");
+		}
+	}); 
 </script>
 
-        <script type="text/javascript" src="../js/dashboard_mng.js"></script>
+	<script type="text/javascript" src="../js/dashboard_mng.js"></script>
 
-<!-- Custom scripts -->
-<script type="text/javascript" src="js/contextbroker.js"></script>
+	<!-- Custom scripts -->
+	<script type="text/javascript" src="js/contextbroker.js"></script>
 		
+	<!-- Custom scripts -->
+	<script type="text/javascript" src="js/cbsManagement.js"></script>
+	<script type="text/javascript" src="js/cbsEditManagement.js"></script>
+	<script type="text/javascript" src="js/fieldsManagement.js"></script>
 		
-<!-- Custom scripts -->
-<script type="text/javascript" src="js/cbsManagement.js"></script>
-<script type="text/javascript" src="js/cbsEditManagement.js"></script>
-<script type="text/javascript" src="js/fieldsManagement.js"></script>
-
- 
-		
-		<!-- leaflet scripts -->
-		
-		<script type="text/javascript" src="../js/leaflet.js"></script>
-		<script type="text/javascript" src="../js/leaflet.draw.js"></script>
-		<script type="text/javascript" src="../js/jquery.fancytree-all.min.js"></script>
+	<!-- leaflet scripts -->
+	<script type="text/javascript" src="../js/leaflet.js"></script>
+	<script type="text/javascript" src="../js/leaflet.draw.js"></script>
+	<script type="text/javascript" src="../js/jquery.fancytree-all.min.js"></script>
         
-        <!--<link href="https://fonts.googleapis.com/css?family=Cabin:400,500,600,700|Catamaran|Varela+Round" rel="stylesheet">
-        <link href="https://fonts.googleapis.com/css?family=Montserrat" rel="stylesheet">-->
     </head>
     <body class="guiPageBody">
         <div class="container-fluid">
@@ -242,30 +222,20 @@
                         <div class="col-xs-12" id="mainContentCnt">
                             <div id="synthesis" class="row hidden-xs hidden-sm mainContentRow">
                                 <div class="col-xs-12 mainContentRowDesc"></div>
-								
-                                <div id="dashboardTotNumberCnt" class="col-md-2 mainContentCellCnt">
+                                <div id="dashboardTotNumberCnt" class="col-md-3 mainContentCellCnt">
                                     <div class="col-md-12 centerWithFlex pageSingleDataCnt">
                                         <?php
                                             $query = "SELECT count(*) AS qt FROM contextbroker";
                                             $result = mysqli_query($link, $query);
-                                            
-                                            if($result)
-                                            {
+                                            if($result) {
                                                $row = $result->fetch_assoc();                                
-                                               echo $row['qt'];
-                                            }
-                                            else
-                                            {
-                                                echo '-';
+                                               echo $row['qt'].' Total';
+                                            } else {
+                                                echo '-'.' Total';
                                             }
                                         ?>
                                     </div>
-									<!-- MM 0105 -->
-                                    <div class="col-md-12 centerWithFlex pageSingleDataLabel">
-                                        Total
-                                    </div>
                                 </div>
-                               
                               </div>
                             <div class="row mainContentRow">
                                 <div class="col-xs-12 mainContentRowDesc"></div>
@@ -574,6 +544,7 @@
 							<input type="text" class="modalInputTxt" name="inputUrlOrionCallback" id="inputUrlOrionCallback">
 						</div>
 						<div class="modalFieldLabelCnt">Url Orion Callback</div>
+						<div id="selectUrlOrionCallbackMsgHint" class="modalFieldMsgCnt">ATTENZIONE: Se il CB e' esterno, la callback uri deve essere visibile e raggiungibile dall'esterno</div>
 						<div id="selectUrlOrionCallbackMsg" class="modalFieldMsgCnt">&nbsp;</div>
 					</div>
 				</div>
@@ -879,6 +850,7 @@
                                                         <input type="text" class="modalInputTxt" name="inputUrlOrionCallbackM" id="inputUrlOrionCallbackM">
                                                 </div>
                                                 <div id="urlOrionCallbackLabelM" class="modalFieldLabelCnt">Url Orion Callback</div>
+												<div id="selectUrlOrionCallbackMsgHintM" class="modalFieldMsgCnt">ATTENZIONE: Se il CB e' esterno, la callback uri deve essere visibile e raggiungibile dall'esterno</div>
                                                 <div id="selectUrlOrionCallbackMsgM" class="modalFieldMsgCnt">&nbsp;</div>
                                         </div>
                                 </div>

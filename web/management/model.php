@@ -16,36 +16,34 @@
 
 	include('../config.php');
 
-    session_start();
+	session_start();
 
-	 ///// SHOW FRAME PARAMETER /////
-	if (isset($_REQUEST['showFrame'])){
-		if ($_REQUEST['showFrame'] == 'false'){
-			//echo ('true');
+	///// SHOW FRAME PARAMETER /////
+	if (isset($_REQUEST['showFrame'])) {
+		if ($_REQUEST['showFrame'] == 'false') {
 			$hide_menu= "hide";
-		}else{
+		} else {
 			$hide_menu= "";
 		}	
-	}else{$hide_menu= "";} 
-//// SHOW FRAME PARAMETER  ////
+	} else $hide_menu= "";
+	//// SHOW FRAME PARAMETER  ////
    
-	if (!isset($_GET['pageTitle'])){
+	if (!isset($_GET['pageTitle'])) {
 		$default_title = "IoT Directory: Models";
-	}else{
+	} else {
 		$default_title = "";
 	}
 
-	if (isset($_REQUEST['redirect'])){
+	if (isset($_REQUEST['redirect'])) {
 		$access_denied = "denied";
-	}else{
+	} else {
 		$access_denied = "";
 	}	
     
-    $link = mysqli_connect($host, $username, $password);
-    mysqli_select_db($link, $dbname);
+	$link = mysqli_connect($host, $username, $password);
+	mysqli_select_db($link, $dbname);
     
-	 $accessToken = "";
-	
+	$accessToken = "";
 ?>
 
 <!DOCTYPE html>
@@ -87,28 +85,25 @@
        <script src="../boostrapTable/dist/bootstrap-table.js"></script>
 	   <script src="../boostrapTable/dist/bootstrap-table-filter-control.js"></script>
 	  
-	<!-- select2 -->
-	<link href="https://cdn.jsdelivr.net/npm/select2@4.0.13/dist/css/select2.min.css" rel="stylesheet" />
-	<script src="https://cdn.jsdelivr.net/npm/select2@4.0.13/dist/js/select2.min.js"></script>
+		<!-- select2 -->
+		<link href="https://cdn.jsdelivr.net/npm/select2@4.0.13/dist/css/select2.min.css" rel="stylesheet" />
+		<script src="https://cdn.jsdelivr.net/npm/select2@4.0.13/dist/js/select2.min.js"></script>
 	   
 	    <!-- DataTables -->
-	   
 	    <script type="text/javascript" charset="utf8" src="../js/DataTables/datatables.js"></script>
         <link rel="stylesheet" type="text/css" href="../js/DataTables/datatables.css">
         <script type="text/javascript" charset="utf8" src="../js/DataTables/dataTables.bootstrap.min.js"></script>
         <script type="text/javascript" charset="utf8" src="../js/DataTables/dataTables.responsive.min.js"></script>
         <script type="text/javascript" charset="utf8" src="../js/DataTables/responsive.bootstrap.min.js"></script>
 		
-		
         <link rel="stylesheet" type="text/css" href="../css/DataTables/dataTables.bootstrap.min.css">
         <link rel="stylesheet" type="text/css" href="../css/DataTables/responsive.bootstrap.min.css">
         <link rel="stylesheet" type="text/css" href="../css/DataTables/jquery.dataTables.min.css">
 
-
-       <!-- Questa inclusione viene sempre DOPO bootstrap-table.js -->
-       <script src="../boostrapTable/dist/locale/bootstrap-table-en-US.js"></script>
+		<!-- Questa inclusione viene sempre DOPO bootstrap-table.js -->
+		<script src="../boostrapTable/dist/locale/bootstrap-table-en-US.js"></script>
        
-       <!-- Bootstrap slider -->
+		<!-- Bootstrap slider -->
         <script src="../bootstrapSlider/bootstrap-slider.js"></script>
         <link href="../bootstrapSlider/css/bootstrap-slider.css" rel="stylesheet"/>
         
@@ -130,63 +125,63 @@
 			height: 100vh;
 			<?php if ($hide_menu=="hide") echo "display:none"; //MM201218 ?>
 		}
-        
         </style>
         
-        <!-- Custom scripts -->
+<!-- Custom scripts -->
 <script>
- var loggedRole = "<?php echo $_SESSION['loggedRole']; ?>";
- var loggedUser = "<?php echo $_SESSION['loggedUsername']; ?>";
- var admin = "<?php echo $_SESSION['loggedRole']; ?>";
- var organization = "<?php echo $_SESSION['organization']; ?>";
-                 var kbUrl = "<?php echo $_SESSION['kbUrl']; ?>";
-                 var gpsCentreLatLng = "<?php echo $_SESSION['gpsCentreLatLng']; ?>";
-                 var zoomLevel = "<?php echo $_SESSION['zoomLevel']; ?>";    
- var titolo_default = "<?php echo $default_title; ?>";	
- var access_denied = "<?php echo $access_denied; ?>";
- var nascondi= "<?php echo $hide_menu; ?>";
- var sessionEndTime = "<?php echo $_SESSION['sessionEndTime']; ?>"; 
- var sessionToken = "<?php  if (isset($_SESSION['refreshToken'])) echo $_SESSION['refreshToken']; else echo ""; ?>";
- var creatorVisibile = true;
- var detailView = true;
- //var statusVisibile = true;
- var mypage = location.pathname.split("/").slice(-1)[0];
-         var functionality = [];
- var currentDictionaryStaticAttribAdd=[];
- var currentDictionaryStaticAttribEdit=[];
+	var loggedRole = "<?php echo $_SESSION['loggedRole']; ?>";
+	var loggedUser = "<?php echo $_SESSION['loggedUsername']; ?>";
+	var admin = "<?php echo $_SESSION['loggedRole']; ?>";
+	var organization = "<?php echo $_SESSION['organization']; ?>";
+	var kbUrl = "<?php echo $_SESSION['kbUrl']; ?>";
+	var gpsCentreLatLng = "<?php echo $_SESSION['gpsCentreLatLng']; ?>";
+	var zoomLevel = "<?php echo $_SESSION['zoomLevel']; ?>";    
+	var titolo_default = "<?php echo $default_title; ?>";	
+	var access_denied = "<?php echo $access_denied; ?>";
+	var nascondi= "<?php echo $hide_menu; ?>";
+	var sessionEndTime = "<?php echo $_SESSION['sessionEndTime']; ?>"; 
+	var sessionToken = "<?php  if (isset($_SESSION['refreshToken'])) echo $_SESSION['refreshToken']; else echo ""; ?>";
+	var creatorVisibile = true;
+	var detailView = true;
+	var mypage = location.pathname.split("/").slice(-1)[0];
+	var functionality = [];
+	var currentDictionaryStaticAttribAdd=[];
+	var currentDictionaryStaticAttribEdit=[];
 
-          $.ajax({url: "../api/functionality.php",
-			 data: {action: 'get_functionality', page : mypage, token:sessionToken},
-			 type: "GET",
-			 async: false,
-			 dataType: 'json',
-			 success: function (mydata)
-			 {
-			   if (mydata["status"]=='ok')
-				 functionality = mydata["content"];
-			   else{
-				  console.log("Error from the DB" + mydata["msg"]);		   
+	$.ajax({url: "../api/functionality.php",
+		data: {
+			action: 'get_functionality', 
+			page : mypage, 
+			token:sessionToken
+		},
+		type: "GET",
+		async: false,
+		dataType: 'json',
+		success: function (mydata)
+		{
+			if (mydata["status"]=='ok')
+				functionality = mydata["content"];
+			else {
+				console.log("Error from the DB" + mydata["msg"]);		   
 				alert("An error occured when reading the data. <br/> Get in touch with the Snap4City Administrator. <br/>"+ mydata["error_msg"]);
-				}
-			 },
-			 error: function (mydata)
-			 {
-			   console.log(JSON.stringify(mydata));
-			 }
-		 }); 
+			}
+		},
+		error: function (mydata) {
+			console.log(JSON.stringify(mydata));
+			alert("An error occured when reading the data. <br/> Get in touch with the Snap4City Administrator.");
+		}
+	}); 
 </script>
 
-        <script type="text/javascript" src="../js/dashboard_mng.js"></script>
+		<script type="text/javascript" src="../js/dashboard_mng.js"></script>
 
-<!-- Custom scripts -->
-<script type="text/javascript" src="js/model.js"></script>
-<script type="text/javascript" src="js/modelManagement.js"></script>
-<script type="text/javascript" src="js/modelEditManagement.js"></script>
-<script type="text/javascript" src="js/fieldsManagement.js"></script>
-<script type="text/javascript" src="js/common.js"></script>        
+		<!-- Custom scripts -->
+		<script type="text/javascript" src="js/model.js"></script>
+		<script type="text/javascript" src="js/modelManagement.js"></script>
+		<script type="text/javascript" src="js/modelEditManagement.js"></script>
+		<script type="text/javascript" src="js/fieldsManagement.js"></script>
+		<script type="text/javascript" src="js/common.js"></script>        
         
-<!--<link href="https://fonts.googleapis.com/css?family=Cabin:400,500,600,700|Catamaran|Varela+Round" rel="stylesheet">
-        <link href="https://fonts.googleapis.com/css?family=Montserrat" rel="stylesheet">-->
     </head>
     <body class="guiPageBody">
         <div class="container-fluid">
@@ -567,21 +562,33 @@
 
 			<!-- Attributes tab -->
 			<div id="addStaticTabModel" class="tab-pane fade">
+                <div class="row">
+					<div class="col-xs-12 col-md-8 modalCell" >
+						<div class="custom-control custom-checkbox">
+					    	<input type="checkbox" class="custom-control-input" id="isMobileTick">
+						    <label class="custom-control-label" for="isMobileTick">Device in Mobility</label>
+						</div>
+					</div>
+				</div>
 				<div class="row">	
 					<div class="col-xs-12 col-md-8 modalCell" >
 						<div class="modalFieldCnt">
+							<div class="modalFieldLabelCnt">Subnature</div>
 							<select id="selectSubnature" name="selectSubnature" class="modalInputTxt">
 								<option></option>
 							</select>
 						</div>
-						<div class="modalFieldLabelCnt">Subnature</div>
 					</div>
 				</div>
 				<div class="row">
-					<div id="addlistStaticAttributes"></div>
+					<div class="col-xs-12 col-md-12 modalCell" >
+						<div id="addlistStaticAttributes"></div>
+					</div>
 				</div>
 				<div class="row">
-					<div class="pull-left"><button type="text" id="addNewStaticBtn" class="btn confirmBtn" style="display: none;">Add Attribute</button></div>
+					<div class="col-xs-12 col-md-12 modalCell" >
+						<div class="pull-left"><button type="text" id="addNewStaticBtn" class="btn confirmBtn" style="display: none;">Add Attribute</button></div>
+					</div>
 				</div>
 			</div>
                     </div>
@@ -913,21 +920,34 @@
 			
 			<!-- Attributes tab -->
                         <div id="editStaticTabModel" class="tab-pane fade">
+			                <div class="row">
+                    			<div class="col-xs-12 col-md-8 modalCell" >
+            		            	<div class="custom-control custom-checkbox">
+			                            <input type="checkbox" class="custom-control-input" id="isMobileTickM">
+                        			    <label class="custom-control-label" for="isMobileTickM">Device in Mobility</label>
+            			            </div>
+			                    </div>
+            			    </div>
+
                                 <div class="row">
                                         <div class="col-xs-12 col-md-6 modalCell">
                                                 <div class="modalFieldCnt">
+														<div class="modalFieldLabelCnt">Subnature</div>
                                                         <select id="selectSubnatureM" name="selectSubnatureM" class="modalInputTxt">
                                                                 <option></option>
                                                         </select>
                                                 </div>
-                                                <div class="modalFieldLabelCnt">Subnature</div>
                                         </div>
                                 </div>
 				<div class="row">
+					<div class="col-xs-12 col-md-12 modalCell" >
                                         <div id="editlistStaticAttributes"></div>
+					</div>
                                 </div>
 				<div class="row">
-					<div class="pull-left"><button type="text" id="addNewStaticBtnM" class="btn confirmBtn" style="display: none;">Add Attribute</button></div>
+					<div class="col-xs-12 col-md-12 modalCell" >
+						<div class="pull-left"><button type="text" id="addNewStaticBtnM" class="btn confirmBtn" style="display: none;">Add Attribute</button></div>
+					</div>
 				</div>
                         </div>	
 	

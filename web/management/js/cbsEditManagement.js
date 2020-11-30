@@ -237,17 +237,22 @@ function checkEditCbpassword()
 
 function checkEditCbConditions()
 {
+//	checkEditCbUrlOrionCallback();
+
+
     var enableButton = true;
-    //console.log(editCbConditionsArray);
+    console.log(editCbConditionsArray);
     for(var key in editCbConditionsArray) 
     {
+		console.log("check _"+key);
         if(editCbConditionsArray[key] === false)
         {
+			console.log("false");
             enableButton = false;
             break;
         }
     }
-    //console.log("value enabled" +  enableButton);
+    console.log("value enabled" +  enableButton);
     if(enableButton)
     {
         $("#editContextBrokerConfirmBtn").attr("disabled", false);
@@ -288,6 +293,8 @@ function checkEditCbUrlOrionCallback()
                 $("#selectUrlOrionCallbackMsgM").css("color", "#337ab7");
         }
     }
+	else
+		editCbConditionsArray['inputUrlOrionCallbackM'] = true;
     //else is not considered because this tab is not showed
 
     $("#selectUrlOrionCallbackMsgM").html(message);
@@ -321,7 +328,7 @@ function checkEditCbServices(){
         if (values.length == 1){
             //console.log("un solo service");
 
-            var serviceRegex = /^([a-z]|_){1,25}$/;
+            var serviceRegex = /^([a-z]|_|[0-9]){1,25}$/;
             if (values[0] !== "" && !serviceRegex.test(values[0])) {
                 message = `Check your values <br>
                         <ul>
@@ -345,7 +352,7 @@ function checkEditCbServices(){
             //console.log("più services");
 
             for(const value of values){
-                var serviceRegex = /^([a-z]|_){1,25}$/;
+                var serviceRegex = /^([a-z]|_|[0-9]){1,25}$/;
                 if(!serviceRegex.test(value)){
                     message = `Check your values <br>
                         <ul>

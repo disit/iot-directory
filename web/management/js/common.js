@@ -134,29 +134,29 @@ function checkSubnatureChanged(element, old, nuovo, info, edit){
 //called on edit + add
 function subnatureChanged(edit, staticAttributes){
 
-	//console.log("SUBNATURE CHANGED:"+edit);
-
 	removeStaticAttributes(edit);
 
 	//get new subnature that has been selected
 	if (edit){
 		subnatureNew=$("#selectSubnatureM").val();
-		if (subnatureNew===""){
-                	$("#addNewStaticBtnM").hide();
-        	}
+		if (subnatureNew==="") {
+			$("#addNewStaticBtnM").hide();
+		}
 		else {
 			$("#addNewStaticBtnM").show();
 		}
 	}
 	else{
 		subnatureNew=$("#selectSubnature").val();
-		if (subnatureNew===""){
-         	       $("#addNewStaticBtn").hide();
+		if (subnatureNew==="") {
+			$("#addNewStaticBtn").hide();
 		}
-		else{
+		else {
 			$("#addNewStaticBtn").show();
 		}
 	}
+
+	updateIsMobile(edit, staticAttributes);//isMobile attributes is done separatly
 
 	if (subnatureNew!==""){
 		//retrieve new avaialbaility
@@ -249,7 +249,10 @@ function createRowElem(initialValueDictiornary, initialValue, currentDictionaryS
 	var atLeastOneSelected=false;
         var modalInputTxt0 = document.createElement("select");
 	for (var i = 0; i <currentDictionaryStaticAttrib.length; i++) {
-		if ((currentDictionaryStaticAttrib[i].type==="http://www.w3.org/2001/XMLSchema#string")&&(checkNotInsert(alreadyInserted, currentDictionaryStaticAttrib[i].uri))){
+		if ((currentDictionaryStaticAttrib[i].type==="http://www.w3.org/2001/XMLSchema#string") &&
+				(checkNotInsert(alreadyInserted, currentDictionaryStaticAttrib[i].uri))&&
+				(currentDictionaryStaticAttrib[i].uri!=="http://www.disit.org/km4city/schema#isMobile"))//isMobile management outside 
+		{
 			var option = document.createElement("option");
 			option.value = currentDictionaryStaticAttrib[i].uri;
 			option.text = currentDictionaryStaticAttrib[i].label;
@@ -318,17 +321,24 @@ function createRowElem(initialValueDictiornary, initialValue, currentDictionaryS
 }
 
 //called on edit + add
-function retrieveStaticAttributes(source, all){
+//if all is true, it return also the entryes that have no value... to be used to present a new valid entry
+function retrieveStaticAttributes(source, all, isMobileTick){
 	var staticArr = $('#'+source+' div[name="additionalRow"]').find("select");
 	var staticArr2=  $('#'+source+' div[name="additionalRow"]').find("input");
 	var staticValues = [];
 	for(let i = 0; i < staticArr.length; i++){
-		if ((staticArr2[i].value)||(all!== undefined)){
+		if ((staticArr2[i].value)||(all!== true)){
 			var array = [];
 			array.push(staticArr[i].value);
 			array.push(staticArr2[i].value);
 			staticValues.push(array);
 		}
+	}
+	if ((isMobileTick!==undefined)&&$('#'+isMobileTick).is(':checked')){			//management of the isMobile attributes is done differently
+		var array = [];
+		array.push("http://www.disit.org/km4city/schema#isMobile");
+		array.push("true");
+		staticValues.push(array);
 	}
 	return staticValues;
 }
@@ -624,7 +634,7 @@ function checkServicePath(value, mode, context) {
         case 0:
         case 1:
 
-            // In this case, following operations are made only for graphical pourpose
+            // In this case, following operations are made only for graphical purpose
             // During model creation, these operations must be done before sending data to server
             var valueToPrint = value;
             // console.log(valueToPrint);
@@ -1033,4 +1043,115 @@ function fillMultiTenancyFormSection(serviceVal, servicePathVal, brokerName, con
     }).fail(function(){
         alert("Something wrong during getting services");
     });
+}
+//--------------------------------------------------------------------------------------------------------------------------------------------- isMobile management
+
+function updateIsMobile(edit, staticAttributes) {
+	var element="#isMobileTick";
+	if (edit)
+		element="#isMobileTickM"
+
+	if (checkIsMobile(staticAttributes))
+		$(element).prop('checked', true);
+	else
+		$(element).prop('checked', false);
+}
+
+function checkIsMobile(staticAttributes) {
+	if (staticAttributes!==undefined)
+		for(let i = 0; i < staticAttributes.length; i++){
+			if ((staticAttributes[i][0]=="http://www.disit.org/km4city/schema#isMobile")&&
+				(staticAttributes[i][1]=="true"))
+				return true;
+		}
+	return false;
+}
+
+
+//------------------------------------------------------------------------------------------------------------------------------------------ INFO LABEL
+function getInfoCert(privatekey, visibility, created, id, contextbroker, certificate, sha) {
+	var txtCert="";
+	if (privatekey!="" && privatekey!= null && (visibility =='MyOwnPublic' || visibility == 'MyOwnPrivate')) {
+		x = new Date(created);
+		x.setFullYear(x.getFullYear() + 1);
+		y = x.toString();
+		txtCert  = 
+			'<div class="row">' +
+				'<div class="col-xs-6 col-sm-6" style="background-color:#E6E6FA;"><b>Created on:</b>' + "  " + created + '</div>' +
+				'<div class="clearfix visible-xs"></div>' +
+				'<div class="col-xs-6 col-sm-6" style="background-color:#E6E6FA;"><b>Expire on:</b>' + "  " + y + '</div>' +
+			'</div>'+
+			'<div class="row">' +
+				'<div class="col-xs-6 col-sm-6" style="background-color:#D6CADD;"><button class="btn btn-primary my-small-button" onclick="download(\'\/private\/'+
+				privatekey+'\',\''+id+'\',\''+contextbroker+'\');return true;"><b>PRIVATE KEY</b></button></div>' +
+				'<div class="clearfix visible-xs"></div>' +
+				'<div class="col-xs-6 col-sm-6" style="background-color:#D6CADD;"><button class="btn btn-primary my-small-button" onclick="download(\'\/certsdb\/'+
+				certificate+'\',\''+id+'\',\''+contextbroker+'\');return true;"><b>CERTIFICATE</b></button></div>' +
+			'</div>' +
+			'<div class="row">' +
+				'<div class="col-xs-6 col-sm-6" style="background-color:#E6E6FA;"><a href="https://www.snap4city.org/ca/ca.pem" download>'+
+				'<button class="btn btn-primary my-small-button"><b>CA CERTIFICATE</b></button></a></div>' +
+				'<div class="clearfix visible-xs"></div>' +
+				'<div class="col-xs-6 col-sm-6" style="background-color:#E6E6FA;"><b>SHA1:</b>' + "  " + sha + '</div>' +
+			'</div>';
+	}
+	else
+		txtCert = 
+			'<div class="row">' +
+				'<div class="col-xs-12 col-sm-12" style="background-color:#E6E6FA;"><b>Created on:</b>' + "  " + created + '</div>' +
+				'<div class="clearfix visible-xs"></div>' +
+			'</div>';
+	return txtCert;
+}
+
+function download(sourcename, devicename, contextbroker) {
+	$.ajax({url: "../api/device.php",
+		data: {
+			token : sessionToken,
+			action: 'download',
+			filename: sourcename,
+			organization : organization,
+			id: devicename,
+			contextbroker: contextbroker
+		},
+		type: "POST",
+		async: true,
+		dataType: 'json',
+		success: function (mydata) {
+			var element = document.createElement('a');
+			element.setAttribute('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent(mydata.msg));
+			element.setAttribute('download', sourcename.substr(sourcename.indexOf("/", 2)+1));
+			element.style.display = 'none';
+			document.body.appendChild(element);
+			element.click();
+			document.body.removeChild(element);
+		},
+		error: function (mydata)
+		{
+			console.log("error:".mydata);
+			alert("Error in reading data. Please get in touch with the Snap4city Administrator");
+		}
+	});
+}
+
+function datainspect(id, type, contextbroker, service, servicePath, version) {
+	if (service!="null" && servicePath!="null")
+		$('<form method="post" action="../api/device.php" target="_blank">'+
+		'<input type="hidden" name="token" value="'+sessionToken+'">'+
+		'<input type="hidden" name="action" value="get_device_data">'+
+		'<input type="hidden" name="id" value="'+id+'">'+
+		'<input type="hidden" name="type" value="'+type+'">'+
+		'<input type="hidden" name="contextbroker" value="'+contextbroker+'">'+
+		'<input type="hidden" name="service" value="'+service+'">'+
+		'<input type="hidden" name="servicePath" value="'+servicePath+'">'+
+		'<input type="hidden" name="version" value="'+version+'">'+
+		'</form>').appendTo('body').submit().remove();
+	else $('<form method="post" action="../api/device.php" target="_blank">'+
+		'<input type="hidden" name="token" value="'+sessionToken+'">'+
+		'<input type="hidden" name="action" value="get_device_data">'+
+		'<input type="hidden" name="id" value="'+id+'">'+
+		'<input type="hidden" name="type" value="'+type+'">'+
+		'<input type="hidden" name="contextbroker" value="'+contextbroker+'">'+
+		'<input type="hidden" name="version" value="'+version+'">'+
+		'</form>').appendTo('body').submit().remove();
 }

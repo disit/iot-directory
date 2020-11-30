@@ -77,7 +77,7 @@ function exporta(name,devicetype, frequency, kind, protocol, format, producer, a
 
 	var arr=JSON.parse(atob(attributes));
 	for (var i = 0; i < arr.length; i++){
-		var value="<DEVICENAME>,"+devicetype+",<MACADDRESS>,"+frequency+","+kind+","+protocol+","+format+","+producer+",<LAT>,<LONG>,";
+		var value="<DEVICENAME>,"+devicetype+",\"\","+frequency+","+kind+","+protocol+","+format+","+producer+",<LAT>,<LONG>,";
 		var obj = arr[i];
 		for (var key in obj){
 			var attrName = key;
@@ -100,7 +100,7 @@ function exporta(name,devicetype, frequency, kind, protocol, format, producer, a
 		//TODO: also other fields probably need to be escaped like above (for other special character, live COMMA, SEMICOLON, ...)
 		var staticAtt="\""+atob(staticAttributes).replace(/"/g, "\"\"")+"\"";
 
-		var txt=txt+value+"<K1>,<K2>,"+subnature+","+staticAtt+","+service+","+servicePa+"\r\n";
+		var txt=txt+value+"\"\",\"\","+subnature+","+staticAtt+","+service+","+servicePa+"\r\n";
 	}
 
 	var txt=txt+"\r\n";
@@ -227,18 +227,16 @@ function drawAttributeMenu
 }		
   
 function format ( d ) {
-
-var multitenancy = "";
-	if (d.service && d.servicePath){
+	var multitenancy = "";
+	if (d.service && d.servicePath) {
 		multitenancy = '<div class="row">' + 
 			'<div class="col-xs-6 col-sm-6" style="background-color:#B3D9FF;"><b>Service/Tenant:</b>' + "  " + d.service + '</div>' +
 			'<div class="clearfix visible-xs"></div>' +
 			'<div class="col-xs-6 col-sm-6" style="background-color:#B3D9FF;"><b>ServicePath:</b>' + "  " + d.servicePath  + '</div>' +	
-		'</div>' ;
+			'</div>' ;
 	}
 
-
-		// `d` is the original data object for the row
+	// `d` is the original data object for the row
   	return '<div class="container-fluid">' +
 	'<div class="row">' +
 		'<div class="col-xs-6 col-sm-6" style="background-color:#D6CADD;"><b>Frequency:</b>' + "  " + d.frequency +'</div>' +
@@ -251,7 +249,7 @@ var multitenancy = "";
 		'<div class="col-xs-6 col-sm-6" style="background-color:#E6E6FA;"><b>Key Generator:</b>' + "  " + d.kgenerator + '</div>' +
 	'</div>' + multitenancy+ 
 	'<div class="row">' +
-                '<div class="col-xs-6 col-sm-6" style="background-color:#E6E6FA;"><button class="btn btn-warning" onclick="exporta(\''+d.name+'\',\''+d.devicetype+'\',\''+d.frequency+'\',\''+d.kind+'\',\''+d.protocol+'\',\''+d.format+'\',\''+d.producer+'\',\''+btoa(d.attributes)+'\',\''+d.subnature+'\',\''+btoa(d.static_attributes)+'\',\''+d.service+'\',\''+btoa(d.servicePath)+'\');return true;"><b>export</b></button></div>' +
+	    '<div class="col-xs-6 col-sm-6" style="background-color:#E6E6FA;"><button class="btn btn-info my-small-button" onclick="exporta(\''+d.name+'\',\''+d.devicetype+'\',\''+d.frequency+'\',\''+d.kind+'\',\''+d.protocol+'\',\''+d.format+'\',\''+d.producer+'\',\''+btoa(d.attributes)+'\',\''+d.subnature+'\',\''+btoa(d.static_attributes)+'\',\''+d.service+'\',\''+btoa(d.servicePath)+'\');return true;"><b>EXPORT</b></button></div>' +
         '</div>' + 
     '</div>' ;
 }
@@ -410,35 +408,34 @@ function fetch_data(destroyOld/*, selected=null*/)
   }
 
   
-    $(document).ready(function () 
-    {
-
-//fetch_data function will load the device table 	
+	$(document).ready(function () 
+	{
+		//fetch_data function will load the device table 	
 		fetch_data(false);	
 		
-//detail control for device dataTable
-	var detailRows = [];	
+		//detail control for device dataTable
+		var detailRows = [];	
 
-  $('#modelTable tbody').on('click', 'td.details-control', function () {
-    var tr = $(this).closest('tr');
-	var tdi = tr.find("i.fa");
-    var row = dataTable.row( tr );
+		$('#modelTable tbody').on('click', 'td.details-control', function () {
+			var tr = $(this).closest('tr');
+			var tdi = tr.find("i.fa");
+			var row = dataTable.row( tr );
  
-    if ( row.child.isShown() ) {
-		// This row is already open - close it
-        row.child.hide();
-        tr.removeClass('shown');
-		tdi.first().removeClass('fa-minus-square');
-        tdi.first().addClass('fa-plus-square');
-    }
-    else {
-		 // Open this row
-        row.child( format(row.data()) ).show();
-        tr.addClass('shown');
-		 tdi.first().removeClass('fa-plus-square');
-         tdi.first().addClass('fa-minus-square');
-    }
-});
+			if ( row.child.isShown() ) {
+				// This row is already open - close it
+				row.child.hide();
+				tr.removeClass('shown');
+				tdi.first().removeClass('fa-minus-square');
+				tdi.first().addClass('fa-plus-square');
+			}
+			else {
+				// Open this row
+				row.child( format(row.data()) ).show();
+				tr.addClass('shown');
+				tdi.first().removeClass('fa-plus-square');
+				tdi.first().addClass('fa-minus-square');
+			}
+		});
 	
 	
 	//Titolo Default
@@ -698,7 +695,7 @@ function fetch_data(destroyOld/*, selected=null*/)
 					  	hc: $('#selectHCModel').val(),
 					  	hv: $('#inputHVModel').val(),
 					  	subnature: $('#selectSubnature').val(),		
-					  	static_attributes: JSON.stringify(retrieveStaticAttributes("addlistStaticAttributes")),
+					  	static_attributes: JSON.stringify(retrieveStaticAttributes("addlistStaticAttributes", false, "isMobileTick")),
 					  	service: service,
 					  	servicePath: servicePath,
 					  	token : sessionToken
@@ -905,95 +902,81 @@ function fetch_data(destroyOld/*, selected=null*/)
 
 //START EDIT MODEL 
 
-		//add lines related to attributes in case of edit
+	//add lines related to attributes in case of edit
 	$("#addAttrMBtn").off("click");
 	$("#addAttrMBtn").click(function(){				
-	   content = drawAttributeMenu("","", "", "", "", "", "300", 'addlistAttributesM', indexValues);
-	   indexValues=indexValues+1;
-		//editDeviceConditionsArray['addlistAttributesM'] = true;
-	   $('#addlistAttributesM').append(content);
-	checkEditAtlistOneAttributeM();
-	$("#editSchemaTabModel #addistAttributesM .row input:even").each(function(){checkModelValueNameM($(this));});
-	checkEditModelConditions();
-        
+		content = drawAttributeMenu("","", "", "", "", "", "300", 'addlistAttributesM', indexValues);
+		indexValues=indexValues+1;
+		$('#addlistAttributesM').append(content);
+		checkEditAtlistOneAttributeM();
+		$("#editSchemaTabModel #addistAttributesM .row input:even").each(function(){checkModelValueNameM($(this));});
+		checkEditModelConditions();
 	});	
 	
-	 $("#editSchemaTabModel").off("click");
-                $("#editSchemaTabModel").on('click keyup', function(){
-
-                        //checkAtlistOneAttribute();
-                        $("#editSchemaTabModel #addlistAttributesM .row input:even").each(function(){checkModelValueNameM($(this));});
-                        checkEditModelConditions();
-                });
-	
+	$("#editSchemaTabModel").off("click");
+	$("#editSchemaTabModel").on('click keyup', function(){
+		$("#editSchemaTabModel #addlistAttributesM .row input:even").each(function(){checkModelValueNameM($(this));});
+		checkEditModelConditions();
+	});
 
 	$('#modelTable tbody').on('click', 'button.editDashBtn', function () {                        
-       		$('#editModelModalTabs').show();
-			$('.nav-tabs a[href="#editInfoTabModel"]').tab('show');
-			$("#editModelModalBody").show();
-			//$('#editContextBrokerModalBody div.modalCell').show();
-			$("#editModelModalFooter").show();
-            $("#editModelCancelBtn").show();
-            $("#editModelConfirmBtn").show();
-			$("#editModelModal").modal('show');
-			$("#editModelModalLabel").html("Edit Model - " + $(this).attr("data-name"));
-            $('#editModelLoadingMsg').hide();
-            $('#editModelLoadingIcon').hide();
-            $('#editModelOkMsg').hide();		
-            $('#editModelOkIcon').hide();
-            $('#editModelKoMsg').hide();
-            $('#editModelKoIcon').hide();
-            $('#editModelOkBtn').hide();
- 
-            $('#editModelModal div.modalCell').show();
-		    $("#addAttrMBtn").show();
-        $('#editlistAttributes').html("");
-		
-        
-        
+		$('#editModelModalTabs').show();
+		$('.nav-tabs a[href="#editInfoTabModel"]').tab('show');
+		$("#editModelModalBody").show();
+		$("#editModelModalFooter").show();
+		$("#editModelCancelBtn").show();
+		$("#editModelConfirmBtn").show();
+		$("#editModelModal").modal('show');
+		$("#editModelModalLabel").html("Edit Model - " + $(this).attr("data-name"));
+		$('#editModelLoadingMsg').hide();
+		$('#editModelLoadingIcon').hide();
+		$('#editModelOkMsg').hide();		
+		$('#editModelOkIcon').hide();
+		$('#editModelKoMsg').hide();
+		$('#editModelKoIcon').hide();
+		$('#editModelOkBtn').hide();
+		$('#editModelModal div.modalCell').show();
+		$("#addAttrMBtn").show();
+		$('#editlistAttributes').html("");
 		  
-		  var id = $(this).attr('data-id');
-		  var obj_organization = $(this).attr('data-organization');
-		  var name = $(this).attr('data-name');
-		  var description = $(this).attr('data-description');
-		  var type = $(this).attr('data-devicetype');
-		  var kind =  $(this).attr('data-kind');
-		  var producer = $(this).attr('data-producer');
-		  var frequency = $(this).attr('data-frequency');
-		  //var policy =  $(this).attr('data-policy');
-		  var kgenerator = $(this).attr('data-kgenerator');
-		  var edgegateway_type=$(this).attr('data-edgegateway_type');
-		  var contextbroker = $(this).attr('data-contextBroker');
-		  var protocol = $(this).attr('data-protocol');
-		  var format = $(this).attr('data-format');
-		  //var active = $(this).attr('data-active');
-		  var hc = $(this).attr('data_healthiness_criteria');
-		  var hv = $(this).attr('data_healthiness_value');
-		 var subnature= $(this).attr('data-subnature');		  
+		var id = $(this).attr('data-id');
+		var obj_organization = $(this).attr('data-organization');
+		var name = $(this).attr('data-name');
+		var description = $(this).attr('data-description');
+		var type = $(this).attr('data-devicetype');
+		var kind =  $(this).attr('data-kind');
+		var producer = $(this).attr('data-producer');
+		var frequency = $(this).attr('data-frequency');
+		var kgenerator = $(this).attr('data-kgenerator');
+		var edgegateway_type=$(this).attr('data-edgegateway_type');
+		var contextbroker = $(this).attr('data-contextBroker');
+		var protocol = $(this).attr('data-protocol');
+		var format = $(this).attr('data-format');
+		var hc = $(this).attr('data_healthiness_criteria');
+		var hv = $(this).attr('data_healthiness_value');
+		var subnature= $(this).attr('data-subnature');		  
 		  
-			$('#inputIdModelM').val(id);
-			$('#inputOrganizationModelM').val(obj_organization);
-			$('#inputNameModelM').val(name);
-			$('#inputDescriptionModelM').val(description);
-			$('#inputTypeModelM').val(type);
-			$('#selectKindModelM').val(kind);
-			$('#inputProducerModelM').val(producer);	
-			$('#inputFrequencyModelM').val(frequency);	
-			//$('#inputPolicyModelM').val(policy);	
-			$('#selectKGeneratorModelM').val(kgenerator);
-			$('#selectEdgeGatewayTypeM').val(edgegateway_type);
-			$('#selectContextBrokerM').val(contextbroker);
-			$('#selectProtocolModelM').val(protocol);
-			$('#selectFormatModelM').val(format);
-			//$('#selectActiveModelM').val(active);
-			$('#selectHCModelM').val(hc);															  
-			$('#inputHVModelM').val(hv);	
-			$('#selectSubnatureM').val(subnature);
-			$('#selectSubnatureM').trigger('change');
-			subnatureChanged(true, JSON.parse(atob($(this).attr("data-static-attributes"))));	
-			fillMultiTenancyFormSection($(this).attr('data-service'), $(this).attr('data-servicePath'), contextbroker, 'model');
-			
-                        showEditModelModal();
+		$('#inputIdModelM').val(id);
+		$('#inputOrganizationModelM').val(obj_organization);
+		$('#inputNameModelM').val(name);
+		$('#inputDescriptionModelM').val(description);
+		$('#inputTypeModelM').val(type);
+		$('#selectKindModelM').val(kind);
+		$('#inputProducerModelM').val(producer);	
+		$('#inputFrequencyModelM').val(frequency);	
+		$('#selectKGeneratorModelM').val(kgenerator);
+		$('#selectEdgeGatewayTypeM').val(edgegateway_type);
+		$('#selectContextBrokerM').val(contextbroker);
+		$('#selectProtocolModelM').val(protocol);
+		$('#selectFormatModelM').val(format);
+		$('#selectHCModelM').val(hc);															  
+		$('#inputHVModelM').val(hv);	
+		$('#selectSubnatureM').val(subnature);
+		$('#selectSubnatureM').trigger('change');
+		subnatureChanged(true, JSON.parse(atob($(this).attr("data-static-attributes"))));	
+		fillMultiTenancyFormSection($(this).attr('data-service'), $(this).attr('data-servicePath'), contextbroker, 'model');
+
+		showEditModelModal();
 		
 	$.ajax({
 		url: "../api/model.php",
@@ -1203,7 +1186,7 @@ function fetch_data(destroyOld/*, selected=null*/)
 				  hc: $('#selectHCModelM').val(),
 				  hv: $('#inputHVModelM').val(),
 				  subnature: $('#selectSubnatureM').val(),
-				  static_attributes: JSON.stringify(retrieveStaticAttributes("editlistStaticAttributes")),
+				  static_attributes: JSON.stringify(retrieveStaticAttributes("editlistStaticAttributes", false, "isMobileTickM")),
 				  service: service,
 				  servicePath: servicePath,
                   token : sessionToken

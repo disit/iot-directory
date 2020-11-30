@@ -688,9 +688,9 @@ else if ($action=="bulkload")
 	$username = md5($username);
     
 	//---find total number of valid divices to be inserted-------
-    $totalValid=0;
-    $qcount = "SELECT count(*) FROM temporary_devices WHERE username = '$username'AND 
-			status='valid' AND organization= '$organization' AND should_be_registered='$should_be_registered' AND  deleted IS null;";
+	$totalValid=0;
+	$qcount = "SELECT count(*) FROM temporary_devices WHERE username = '$username'AND 
+		status='valid' AND organization= '$organization' AND should_be_registered='$should_be_registered' AND  deleted IS null;";
 	$rcount = mysqli_query($link, $qcount);
     
 	if($rcount)
@@ -701,64 +701,63 @@ else if ($action=="bulkload")
     
 	try
 	{
-    	//---update the bulk_status table that the bulk is processing----------
-	    $qupdate= "INSERT INTO bulkload_status (username, is_bulk_processing, number_processed,totale, is_finished ) 
-					VALUES('".$username."', 1, 0,".$totalValid.", 0) ON DUPLICATE KEY UPDATE is_bulk_processing=1, number_processed=0, totale=".$totalValid.", is_finished=0;";
-	    $b=mysqli_query($link, $qupdate);
-   		 //-----------------------------------------------
+		//---update the bulk_status table that the bulk is processing----------
+		$qupdate= "INSERT INTO bulkload_status (username, is_bulk_processing, number_processed,totale, is_finished ) 
+			VALUES('".$username."', 1, 0,".$totalValid.", 0) ON DUPLICATE KEY UPDATE is_bulk_processing=1, number_processed=0, totale=".$totalValid.", is_finished=0;";
+		$b=mysqli_query($link, $qupdate);
+		//-----------------------------------------------
 	
 		$q = "SELECT contextBroker, id, devicetype, model, status, macaddress,frequency,kind, 
-		 protocol,format,latitude, longitude, visibility, k1, k2,producer, edge_gateway_type, edge_gateway_uri, 
-		 validity_msg, subnature, static_attributes, service, servicePath FROM temporary_devices WHERE username = '$username' 
-		 AND deleted IS null AND organization='$organization' AND  should_be_registered='$should_be_registered';";
+			protocol,format,latitude, longitude, visibility, k1, k2,producer, edge_gateway_type, edge_gateway_uri, 
+			validity_msg, subnature, static_attributes, service, servicePath FROM temporary_devices WHERE username = '$username' 
+			AND deleted IS null AND organization='$organization' AND  should_be_registered='$should_be_registered';";
 		$r = mysqli_query($link, $q);	
 	
-	    $resultInfo = array();
+		$resultInfo = array();
 		$result["content"]=array();
-	    $counter=0;
-    	$numberValidProcessed=0;
-    
-	    $continue_processing=1;
+		$counter=0;
+		$numberValidProcessed=0;
+		$continue_processing=1;
 
 		if($r) 
 		{
-       		//all temporal rows are found
+			//all temporal rows are found
 			while($row = mysqli_fetch_assoc($r)) 
 			{	
+				set_time_limit(ini_get('max_execution_time'));
 				if($row['status']=='valid')
 				{
-                    if($counter==50)
+					if($counter==50)
 					{
 						$oidc = new OpenIDConnectClient($keycloakHostUri, $clientId, $clientSecret);
-                        $oidc->providerConfigParam(array('token_endpoint' => $keycloakHostUri.'/auth/realms/master/protocol/openid-connect/token'));
-
-                        $tkn = $oidc->refreshToken($node_data->token);
-                        $accessToken = $tkn->access_token;
+						$oidc->providerConfigParam(array('token_endpoint' => $keycloakHostUri.'/auth/realms/master/protocol/openid-connect/token'));
+						$tkn = $oidc->refreshToken($node_data->token);
+						$accessToken = $tkn->access_token;
                          
 						usleep(500000);//sleep for 500 ms after each 50 insertion
-                        $counter=0;
+						$counter=0;
                         
-                        //---update the bulk_status table----------
-	                    $qupdate= "UPDATE bulkload_status SET  number_processed=".$numberValidProcessed." WHERE username = '".$username."';";
-                        mysqli_query($link, $qupdate);
-                        //-----------------------------------------------
+						//---update the bulk_status table----------
+						$qupdate= "UPDATE bulkload_status SET  number_processed=".$numberValidProcessed." WHERE username = '".$username."';";
+						mysqli_query($link, $qupdate);
+						//-----------------------------------------------
                         
-    	                $qcontinue= "select is_bulk_processing from bulkload_status where username= '".$username."';";
-        	            $rc= mysqli_query($link, $qcontinue);
-                        if($rc)
+						$qcontinue= "select is_bulk_processing from bulkload_status where username= '".$username."';";
+						$rc= mysqli_query($link, $qcontinue);
+						if($rc)
 						{
-                        	$row_continue = mysqli_fetch_assoc($rc);
-                            $continue_processing=intval($row_continue['is_bulk_processing']);
-                            if($continue_processing==0)
-                            	break;
-                        }
+							$row_continue = mysqli_fetch_assoc($rc);
+							$continue_processing=intval($row_continue['is_bulk_processing']);
+							if($continue_processing==0)
+								break;
+						}
 					}
-                    $counter=$counter+1;
-                    $numberValidProcessed=$numberValidProcessed+1;
-                    if($numberValidProcessed>$totalValid)
-                        break;
+					$counter=$counter+1;
+					$numberValidProcessed=$numberValidProcessed+1;
+					if($numberValidProcessed>$totalValid)
+			                        break;
                     
-                    $q1 = "SELECT * FROM temporary_event_values WHERE device = '".$row["id"]."' AND cb = '".$row["contextBroker"]."'";
+					$q1 = "SELECT * FROM temporary_event_values WHERE device = '".$row["id"]."' AND cb = '".$row["contextBroker"]."'";
 					$r1 = mysqli_query($link, $q1);
 					$deviceattributes = array();
 					if($r1)
@@ -768,27 +767,27 @@ else if ($action=="bulkload")
 							$rec1=array();
 							$rec1["value_name"]=$row1["value_name"];
 							$rec1["data_type"]=$row1["data_type"];
-						    $rec1["value_type"]=$row1["value_type"];
-						    $rec1["editable"]=$row1["editable"];
-						    $rec1["value_unit"]=$row1["value_unit"];
-						    $rec1["healthiness_criteria"]=$row1["healthiness_criteria"];
-						    if($rec1["healthiness_criteria"]=="refresh_rate") 
+							$rec1["value_type"]=$row1["value_type"];
+							$rec1["editable"]=$row1["editable"];
+							$rec1["value_unit"]=$row1["value_unit"];
+							$rec1["healthiness_criteria"]=$row1["healthiness_criteria"];
+							if($rec1["healthiness_criteria"]=="refresh_rate") 
 								$rec1["healthiness_value"]=$row1["value_refresh_rate"];
-						    if($rec1["healthiness_criteria"]=="different_values") 
+							if($rec1["healthiness_criteria"]=="different_values") 
 								$rec1["healthiness_value"]=$row1["different_values"];
-						    if($rec1["healthiness_criteria"]=="within_bounds") 
+							if($rec1["healthiness_criteria"]=="within_bounds") 
 								$rec1["healthiness_value"]=$row1["value_bounds"];						  
- 						    array_push($deviceattributes, $rec1);    
+							array_push($deviceattributes, $rec1);    
 						}
 
 						//static att has to be escaped for compatibility to insert device without bulk. removing here and there this escape can eventually semplify the scenario
 						$staticATT=mysqli_real_escape_string($link, $row["static_attributes"]);
 
 						insert_device($link, $row["id"],$row["devicetype"],$row["contextBroker"],$row["kind"],$row["protocol"],$row["format"],
-						$row["macaddress"],$row["model"],$row["producer"],$row["latitude"],$row["longitude"],
-						$row["visibility"], $row["frequency"], $row["k1"], $row["k2"], $row["edge_gateway_type"],
-						$row["edge_gateway_uri"],json_decode(json_encode($deviceattributes)),$row["subnature"], $staticATT ,$pathCertificate,
-						$accessToken,$result,$should_be_registered,$organization,$kbUrl,$username, $row["service"], $row["servicePath"]);
+							$row["macaddress"],$row["model"],$row["producer"],$row["latitude"],$row["longitude"],
+							$row["visibility"], $row["frequency"], $row["k1"], $row["k2"], $row["edge_gateway_type"],
+							$row["edge_gateway_uri"],json_decode(json_encode($deviceattributes)),$row["subnature"], $staticATT ,$pathCertificate,
+							$accessToken,$result,$should_be_registered,$organization,$kbUrl,$username, $row["service"], $row["servicePath"]);
                        
 						$rec = array();
 						$rec["device"]=$row["id"]; 
@@ -799,11 +798,11 @@ else if ($action=="bulkload")
 							logAction($link,$usernameNotHashed,'device','bulkload',$row["id"] . " ".$row["contextBroker"],$organization,$result["msg"],'success');
 							$rec["inserted"]="ok";
 							
-                            $qdelete = "DELETE FROM temporary_devices  WHERE username = '$username' AND 
-							id = '".$row["id"]."' AND contextBroker = '".$row["contextBroker"]."'
-							AND deleted is null AND should_be_registered='$should_be_registered' AND status = 'valid'";
+							$qdelete = "DELETE FROM temporary_devices  WHERE username = '$username' AND 
+								id = '".$row["id"]."' AND contextBroker = '".$row["contextBroker"]."'
+								AND deleted is null AND should_be_registered='$should_be_registered' AND status = 'valid'";
                             
-                            $qdelete = mysqli_query($link, $qdelete);
+							$qdelete = mysqli_query($link, $qdelete);
 						 
 							if($qdelete)
 							{

@@ -15,7 +15,7 @@
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA. */
 
 
-$result=array("status"=>"","msg"=>"","content"=>"","log"=>"");	
+$result=array("status"=>"","msg"=>"","content"=>"","log"=>"", "error_msg"=>"");	
 /* all the primitives return an array "result" with the following structure
 
 result["status"] = ok/ko; reports the status of the operation (mandatory)

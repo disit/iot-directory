@@ -1,27 +1,14 @@
 <?php
-
 include ('../config.php');
-require('Requests.php');
-
-$urls = array();
-$headers = array();
-$params = array();
-
-$url_to_bulkphp = $redirectUri.'/api/bulkDeviceLoad.php';
-
-$urls[] = $url_to_bulkphp;
-
-$headers[] = array('Content-Type:application/json');
-$payload = json_encode( $_POST['data'] );
-
-$params[] = $payload;
-
-$callback = function($data, $info)
-{
-	echo $data;
-};
-
-$requests = new Requests();
-$requests->process($urls, $headers, $params, $callback);
-
+$parts=parse_url($redirectUri.'/api/bulkDeviceLoad.php');
+$fp = fsockopen($parts['host'], isset($parts['port'])?$parts['port']:80, $errno, $errstr, 30);
+$out = "POST ".$parts['path']." HTTP/1.1\r\n";
+$out.= "Host: ".$parts['host']."\r\n";
+$out.= "Content-Type: application/json\r\n";
+$post_string = json_encode( $_POST['data'] );
+$out.= "Content-Length: ".strlen($post_string)."\r\n";
+$out.= "Connection: Close\r\n\r\n";
+$out.= $post_string;
+fwrite($fp, $out);
+fclose($fp);
 ?>

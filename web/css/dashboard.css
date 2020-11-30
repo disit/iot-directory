@@ -397,6 +397,12 @@ body
     padding-right: 0px;
 }
 
+.my-small-button
+{
+	font-size: 10px !important;
+	padding: 1px 5px !important;
+}
+
 .smallTopMargin
 {
     margin-top: 5px;
@@ -664,6 +670,13 @@ label[for='alrThrFlagM'], label[for='alrAxisSelM'], label[for='alrRangeMinM'], l
 {
     padding-left: 5px; 
     padding-right: 5px;
+}
+
+.simple-modal
+{
+    margin-left: 20px !important;
+    margin-right: 20px !important;
+	text-align: left;
 }
 
 .info-modal

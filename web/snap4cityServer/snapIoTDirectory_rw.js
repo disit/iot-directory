@@ -68,7 +68,7 @@ router.route('/ngsi')
 					brokerActive += key +"; ";
 				}
 			}
-			console.log(brokerActive);
+			console.log("Active Broker:"+ brokerActive);
 
 		}else{
 			console.log("Broker "+ req.body.contextbroker + " is already active.");
@@ -94,6 +94,8 @@ router.route('/ngsi')
 			req.body.apikey
 		];
 
+	 console.log("Passed parameters: "+args);
+
 	 const child_ngsi = spawn('node',args, {
 		//  detached: true,
 		 stdio: 'inherit'
@@ -105,11 +107,78 @@ router.route('/ngsi')
 	for (var key of registeredStub.keys()) {
 	  regBroker += key + "; ";
 	}
-	console.log(regBroker);
+	console.log(""+regBroker);
 	   // child.unref();
 	}  
 });
 
+router.route('/ngsi_w_MultiService')
+	.post(function(req, res) {
+		var args = [];
+
+		//console.log(req);
+
+		if(registeredStub.get(req.body.contextbroker) != undefined)
+		{
+			if(req.body.ip == "kill"){
+				registeredStub.get(req.body.contextbroker).kill();
+				registeredStub.delete(req.body.contextbroker);
+
+				var brokerActive = 'killing ' + req.body.contextbroker;
+				if(registeredStub.size == 0){
+					brokerActive += '. There are no active brokers left.';
+				}
+				else{
+					brokerActive += '. Broker still active: ';
+
+					for (var key of registeredStub.keys()) {
+						brokerActive += key +"; ";
+					}
+				}
+				console.log(brokerActive);
+
+			}else{
+				console.log("Broker "+ req.body.contextbroker + " is already active.");
+				res.json({ message: 'stub already active for ORION context broker ' + req.body.contextbroker});
+			}
+		}
+		else
+		{
+			console.log("Retrieval from "+ req.body.contextbroker + " activated.");
+			//registeredStub.push(req.body.contextbroker);
+			args= ['./snap4cityBroker/ngsiMTSP2IoTDirectory_rw.js',
+				req.body.contextbroker,
+				req.body.ip,
+				req.body.user,
+				req.body.al,
+				req.body.ap,
+				req.body.model,
+				req.body.edge_gateway_type,
+				req.body.edge_gateway_uri,
+				req.body.organization,
+				req.body.path,
+				req.body.kind,
+				req.body.apikey,
+				req.body.token
+			];
+
+			console.log(args);
+
+			const child_ngsi = spawn('node',args, {
+				//  detached: true,
+				stdio: 'inherit'
+			});
+
+			registeredStub.set(req.body.contextbroker, child_ngsi);
+
+			var regBroker = "Broker registered: ";
+			for (var key of registeredStub.keys()) {
+				regBroker += key + "; ";
+			}
+			console.log(regBroker);
+			// child.unref();
+		}
+	});
 
 router.route('/nodered-ngsi')
  .post(function(req, res) {
@@ -151,6 +220,8 @@ router.route('/extract')
 
 		//registeredStub.push(req.body.contextbroker);
 
+	 	console.log("Request: "+req);
+
 		args= ['./snap4cityBroker/externalBroker.js',
 			req.body.contextbroker,
 			req.body.device_name,
@@ -166,10 +237,14 @@ router.route('/extract')
 			req.body.organization,
 			req.body.path,
 			req.body.kind,
-			req.body.apikey
+			req.body.apikey,
+			req.body.service,
+			req.body.service_path
 		];
 	
 		console.log("invoking extract");
+
+		console.log("Passed parameters: "+args);
 	
 		const child_ngsi = spawn('node',args, {stdio: 'pipe' });
 	
@@ -204,6 +279,66 @@ router.route('/extract')
 			child_ngsi.kill();
                 });
 });
+
+router.route('/discover')
+	.post(function(req, res) {
+		var args = [];
+
+		//registeredStub.push(req.body.contextbroker);
+
+		console.log("Request: "+ req);
+
+		args= ['./snap4cityBroker/discovery.js',
+			req.body.contextbroker,
+			req.body.ip,
+			req.body.port,
+			req.body.al,
+			req.body.ap,
+			req.body.path,
+			req.body.organization,
+			req.body.login,
+			req.body.password,
+			req.body.tenant,
+			req.body.servicepath,
+			req.body.apikey
+		];
+
+		console.log("invoking discovery");
+
+		console.log("Passed parameters: "+args);
+
+		const child_discover = spawn('node',args, {stdio: 'pipe' });
+
+		registeredStub.set(req.body.contextbroker, child_discover);
+
+		//TODO how to uniform these two following Promise and function/then?
+		//correct returning
+		var promiseRes_stdout = new Promise(function(resolve, reject){
+			child_discover.stdout.on('data', function(data) {
+				let result = JSON.parse(data);
+				//console.log("RESULT: "+result);
+				resolve(result);
+			});
+		});
+		promiseRes_stdout.then(function(msg){
+			console.log("returing stdout:"+msg);
+			res.json({ message: msg});
+			child_discover.kill();
+		});
+
+		//error mngt
+		var promiseRes_stderr = new Promise(function(resolve, reject){
+			child_discover.stderr.on('data', (data) => {
+				console.log("stderr: ${data}");
+				resolve(data.toString());
+			});
+		});
+		promiseRes_stderr.then(function(msg){
+			console.log("returing stderr:"+msg);
+			res.json({ message: msg});
+			child_discover.kill();
+		});
+	});
 
 //Do not put this part in production
 router.route('/rawdata')

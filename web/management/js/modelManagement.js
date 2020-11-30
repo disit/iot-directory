@@ -6,9 +6,9 @@ function showAddModelModal()
 {
     modelnamesArray = new Array();
     addModelConditionsArray['inputNameModel'] = false;
-    addModelConditionsArray['inputDescriptionModel'] = false;
+//    addModelConditionsArray['inputDescriptionModel'] = false;
     addModelConditionsArray['inputTypeModel'] = false;
-    addModelConditionsArray['inputProducerModel'] = false;
+//    addModelConditionsArray['inputProducerModel'] = false;
   
   
 
@@ -18,20 +18,20 @@ function showAddModelModal()
 	$("#addInfoTabModel #inputNameModel").on('input', checkModelName); 
 	$("#addInfoTabModel #inputNameModel").on('input', checkAddModelConditions);
 	
-	$("#addInfoTabModel #inputDescriptionModel").on('input', checkModelDescription);
+//	$("#addInfoTabModel #inputDescriptionModel").on('input', checkModelDescription);
 	$("#addInfoTabModel #inputDescriptionModel").on('input', checkAddModelConditions);
 	
 	$("#addInfoTabModel #inputTypeModel").on('input', checkModelDeviceType);
 	$("#addInfoTabModel #inputTypeModel").on('input', checkAddModelConditions);
 	
 	
-	$("#addInfoTabModel #inputProducerModel").on('input', checkModelProducer);
+//	$("#addInfoTabModel #inputProducerModel").on('input', checkModelProducer);
 	$("#addInfoTabModel #inputProducerModel").on('input', checkAddModelConditions);
 	
 	checkModelName();
-	checkModelDescription();
+//	checkModelDescription();
 	checkModelDeviceType();
-	checkModelProducer();
+//	checkModelProducer();
 	
 	checkModelSelectionCB_all();
 	checkAtlistOneAttribute();
@@ -185,7 +185,7 @@ function checkModelValueName(current)
     
     element.html(message);
 }
-
+/*
 function checkModelDescription()
 {
     var message = null;
@@ -212,7 +212,7 @@ function checkModelDescription()
     }
     
     $("#inputDescriptionModelMsg").html(message);
-}
+}*/
 
 function checkModelDeviceType()
 {
@@ -243,7 +243,7 @@ function checkModelDeviceType()
     
     $("#inputTypeModelMsg").html(message);
 }
-
+/*
 function checkModelProducer()
 {
     var message = null;
@@ -270,7 +270,7 @@ function checkModelProducer()
     }
     
     $("#inputProducerModelMsg").html(message);
-}
+}*/
 
 
 

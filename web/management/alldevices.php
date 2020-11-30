@@ -476,7 +476,7 @@ use Jumbojett\OpenIDConnectClient;
 										<thead>
 										  <tr>
 											<th></th>	
-											<th data-cellTitle="name">IOT Device</th> 
+											<th data-cellTitle="name">Device Identifier</th> 
 											<th data-cellTitle="contextbroker">IOT Broker</th>
 									  	    <th data-cellTitle="devicetype">Device Type</th> 
 											<th data-cellTitle="model">Model</th>
@@ -1234,30 +1234,42 @@ use Jumbojett\OpenIDConnectClient;
 									<div id="editLatLong" style="width: 100%; height: 400px" class="modal-body modalBody">
 								</div>
 							</div> 
-							
-							
+							<h1>&nbsp;</h1>							
+							<div id="positionMsgHintM" class="modalFieldMsgCnt" hidden="true"><h1>&nbsp;</h1><p class="text-danger font-weight-bold">WARNING: the indicated GPS Position has to be intended as the Initial Position of the Device. To set the Current Position of the Device, please proceed via Service Map</p></div>
                         </div>
 
 
                        <!-- Static Attributes tab -->
-                        <div id="editStaticTabModel" class="tab-pane fade">
+            	            <div id="editStaticTabModel" class="tab-pane fade">
+								<div class="row">
+									<div class="col-xs-12 col-md-8 modalCell" >
+										<div class="custom-control custom-checkbox">
+											<input type="checkbox" class="custom-control-input" id="isMobileTickM">
+											<label class="custom-control-label" for="isMobileTickM">Device in Mobility</label>
+										</div>
+									</div>
+								</div>
                                 <div class="row">
                                         <div class="col-xs-12 col-md-6 modalCell">
+												<div class="modalFieldLabelCnt">Subnature</div>
                                                 <div class="modalFieldCnt">
                                                         <select id="selectSubnatureM" name="selectSubnatureM" class="modalInputTxt">
                                                                 <option></option>
                                                         </select>
                                                 </div>
-                                                <div class="modalFieldLabelCnt">Subnature</div>
                                         </div>
                                 </div>
-				<div class="row">
-                                        <div id="editlistStaticAttributes"></div>
+								<div class="row">
+									<div class="col-xs-12 col-md-12 modalCell">
+										<div id="editlistStaticAttributes"></div>
+									</div>
                                 </div>
                                 <div class="row">
-                                        <div class="pull-left"><button type="text" id="addNewStaticBtnM" class="btn confirmBtn" style="display: none;">Add Attribute</button></div>
+									<div class="col-xs-12 col-md-12 modalCell">
+										<div class="pull-left"><button type="text" id="addNewStaticBtnM" class="btn confirmBtn" style="display: none;">Add Attribute</button></div>
+									</div>
                                 </div>
-                        </div>
+							</div>
 
 
                         

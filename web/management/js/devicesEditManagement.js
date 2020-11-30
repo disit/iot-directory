@@ -250,86 +250,84 @@ function UserEditKey()
 	
 function checkEditDeviceConditions()
 {
-
-        //check that any value has a correct name/syntax
-        var n = $('#editSchemaTabDevice #editlistAttributes .row input:even').filter(function(){return this.value.length>=2}).length;
+	//check that any value has a correct name/syntax
+	var n = $('#editSchemaTabDevice #editlistAttributes .row input:even').filter(function(){return this.value.length>=2}).length;
 	var nx= $('#editSchemaTabDevice #addlistAttributesM .row input:even').filter(function(){return this.value.length>=2}).length;
-        var n1 =$('#editSchemaTabDevice #editlistAttributes .row input:even').length;
+	var n1 =$('#editSchemaTabDevice #editlistAttributes .row input:even').length;
 	var n1x =$('#editSchemaTabDevice #addlistAttributesM .row input:even').length;
 
-        //console.log("n: "+n+" n1:"+n1+" nx:"+nx+" n1x:"+n1x);
-        if ((n+nx)==(n1+n1x))
-        {
-                editDeviceConditionsArray['attributeWithName'] = true;
-        }
-        else
-        {
-                editDeviceConditionsArray['attributeWithName'] = false;
-        }
+	//console.log("n: "+n+" n1:"+n1+" nx:"+nx+" n1x:"+n1x);
+	if ((n+nx)==(n1+n1x))
+	{
+		editDeviceConditionsArray['attributeWithName'] = true;
+	}
+	else
+	{
+		editDeviceConditionsArray['attributeWithName'] = false;
+	}
 
-        //check that any value has a correct name/syntax. this enforce is done here since the list of values is dynamic
-        var regex=/[^a-z0-9:._-]/gi;
-        var o = $('#editSchemaTabDevice #editlistAttributes .row input:even').filter(function(){return !regex.test(this.value)}).length;
+	//check that any value has a correct name/syntax. this enforce is done here since the list of values is dynamic
+	var regex=/[^a-z0-9:._-]/gi;
+	var o = $('#editSchemaTabDevice #editlistAttributes .row input:even').filter(function(){return !regex.test(this.value)}).length;
 	var ox = $('#editSchemaTabDevice #addlistAttributesM .row input:even').filter(function(){return !regex.test(this.value)}).length;
 
-        //console.log("o: "+o+" n1:"+n1+" ox:"+ox);
-        if ((o+ox)==(n1+n1x))
-        {
-                editDeviceConditionsArray['specialChars'] = true;
-        }
-        else
-        {
-                editDeviceConditionsArray['specialChars'] = false;
-        }
+	//console.log("o: "+o+" n1:"+n1+" ox:"+ox);
+	if ((o+ox)==(n1+n1x))
+	{
+		editDeviceConditionsArray['specialChars'] = true;
+	}
+	else
+	{
+		editDeviceConditionsArray['specialChars'] = false;
+	}
 
-        //check that any value has a value type selected
-        var p = $('#editSchemaTabDevice #editlistAttributes select[id*="value_type"]').filter(function(){return this.value!=="NOT VALID OPTION"}).length;
+	//check that any value has a value type selected
+	var p = $('#editSchemaTabDevice #editlistAttributes select[id*="value_type"]').filter(function(){return this.value!=="NOT VALID OPTION"}).length;
 	var px = $('#editSchemaTabDevice #addlistAttributesM select[id*="value_type"]').filter(function(){return this.value!=="NOT VALID OPTION"}).length;
 
-        //console.log("p: "+p+" n1:"+n1+" px:"+px);
-        if ((p+px)==(n1+n1x))
-        {
-                editDeviceConditionsArray['attributeWithValueType'] = true;
-        }
-        else
-        {
-                editDeviceConditionsArray['attributeWithValueType'] = false;
-        }
+	//console.log("p: "+p+" n1:"+n1+" px:"+px);
+	if ((p+px)==(n1+n1x))
+	{
+		editDeviceConditionsArray['attributeWithValueType'] = true;
+	}
+	else
+	{
+		editDeviceConditionsArray['attributeWithValueType'] = false;
+	}
 
-        //check that any value has a value unit selected
-        var c = $('#editSchemaTabDevice #editlistAttributes select[id*="value_unit"]').filter(function(){return this.value!=="NOT VALID OPTION"}).length;
+	//check that any value has a value unit selected
+	var c = $('#editSchemaTabDevice #editlistAttributes select[id*="value_unit"]').filter(function(){return this.value!=="NOT VALID OPTION"}).length;
 	var cx = $('#editSchemaTabDevice #addlistAttributesM select[id*="value_unit"]').filter(function(){return this.value!=="NOT VALID OPTION"}).length;
 
-        //console.log("c: "+c+" n1:"+n1+" cx:"+cx);
-        if ((c+cx)==(n1+n1x))
-        {
-                editDeviceConditionsArray['attributeWithValueUnit'] = true;
-        }
-        else
-        {
-                editDeviceConditionsArray['attributeWithValueUnit'] = false;
-        }
+	//console.log("c: "+c+" n1:"+n1+" cx:"+cx);
+	if ((c+cx)==(n1+n1x))
+	{
+		editDeviceConditionsArray['attributeWithValueUnit'] = true;
+	}
+	else
+	{
+		editDeviceConditionsArray['attributeWithValueUnit'] = false;
+	}
 
-    var enableButton = true;
-	
-    for(var key in editDeviceConditionsArray) 
-    {
-        if(editDeviceConditionsArray[key] === false)
-        {
-		enableButton = false;
-		//console.log("need:" + key);
-		break;
-        }
-    }
+	var enableButton = true;
+	for(var key in editDeviceConditionsArray) 
+	{
+		if(editDeviceConditionsArray[key] === false)
+		{
+			enableButton = false;
+			console.log("need:" + key);
+			break;
+		}
+	}
     
-    if(enableButton)
-    {
-        $("#editDeviceConfirmBtn").attr("disabled", false);
-    }
-    else
-    {
-        $("#editDeviceConfirmBtn").attr("disabled", true);
-    }
+	if(enableButton)
+	{
+		$("#editDeviceConfirmBtn").attr("disabled", false);
+	}
+	else
+	{
+		$("#editDeviceConfirmBtn").attr("disabled", true);
+	}
 }
 
 //don't use ConditionsArray here since the list of Values is dynamic and should be checked in all together in checkAddDeviceConditions

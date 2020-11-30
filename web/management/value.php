@@ -14,30 +14,30 @@
    You should have received a copy of the GNU General Public License
    along with this program; if not, write to the Free Software
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA. */
-   include('../config.php');
 
-    session_start();
+	include('../config.php');
 
-///// SHOW FRAME PARAMETER /////
-	if (isset($_REQUEST['showFrame'])){
-		if ($_REQUEST['showFrame'] == 'false'){
-			//echo ('true');
+	session_start();
+
+	///// SHOW FRAME PARAMETER /////
+	if (isset($_REQUEST['showFrame'])) {
+		if ($_REQUEST['showFrame'] == 'false') {
 			$hide_menu= "hide";
-		}else{
+		} else {
 			$hide_menu= "";
 		}	
-	}else{$hide_menu= "";} 
-//// SHOW FRAME PARAMETER  ////
+	} else $hide_menu= ""; 
+	//// SHOW FRAME PARAMETER  ////
    
-	if (!isset($_GET['pageTitle'])){
+	if (!isset($_GET['pageTitle'])) {
 		$default_title = "IoT Directory : Sensors and Actuators";
-	}else{
+	} else {
 		$default_title = "";
 	}
 
-	if (isset($_REQUEST['redirect'])){
+	if (isset($_REQUEST['redirect'])) {
 		$access_denied = "denied";
-	}else{
+	} else {
 		$access_denied = "";
 	}
 	
@@ -86,8 +86,7 @@
        <script src="../boostrapTable/dist/bootstrap-table.js"></script>
 	   <script src="../boostrapTable/dist/bootstrap-table-filter-control.js"></script>
 	   
-	   
-	     <!-- DataTables -->
+		<!-- DataTables -->
 	   
 	    <script type="text/javascript" charset="utf8" src="../js/DataTables/datatables.js"></script>
         <link rel="stylesheet" type="text/css" href="../js/DataTables/datatables.css">
@@ -95,11 +94,9 @@
         <script type="text/javascript" charset="utf8" src="../js/DataTables/dataTables.responsive.min.js"></script>
         <script type="text/javascript" charset="utf8" src="../js/DataTables/responsive.bootstrap.min.js"></script>
 		
-		
         <link rel="stylesheet" type="text/css" href="../css/DataTables/dataTables.bootstrap.min.css">
         <link rel="stylesheet" type="text/css" href="../css/DataTables/responsive.bootstrap.min.css">
         <link rel="stylesheet" type="text/css" href="../css/DataTables/jquery.dataTables.min.css">
-
 
        <!-- Questa inclusione viene sempre DOPO bootstrap-table.js -->
        <script src="../boostrapTable/dist/locale/bootstrap-table-en-US.js"></script>
@@ -111,11 +108,9 @@
         <!-- Filestyle -->
         <script type="text/javascript" src="../js/filestyle/src/bootstrap-filestyle.min.js"></script>
 
-       <!-- Font awesome icons -->
+		<!-- Font awesome icons -->
         <link rel="stylesheet" href="../js/fontAwesome/css/font-awesome.min.css">
 
-      <!--  <link href="https://fonts.googleapis.com/css?family=Cabin:400,500,600,700|Catamaran|Varela+Round" rel="stylesheet"> -->
-		
         <!-- Custom CSS -->
         <link href="../css/dashboard.css" rel="stylesheet">
 		
@@ -127,70 +122,66 @@
 			height: 100vh;
 			<?php if ($hide_menu=="hide") echo "display:none"; //MM201218 ?>
 		}
-        
         </style>
         
         <!-- Custom scripts -->
-
-
 		<script>
-		 var loggedRole = "<?php echo $_SESSION['loggedRole']; ?>";
-                 var loggedUser = "<?php echo $_SESSION['loggedUsername']; ?>";
-		 var admin = "<?php echo $_SESSION['loggedRole']; ?>";
-        
-        var organization = "<?php echo $_SESSION['organization']; ?>";
-                 var kbUrl = "<?php echo $_SESSION['kbUrl']; ?>";
-                 var gpsCentreLatLng = "<?php echo $_SESSION['gpsCentreLatLng']; ?>";
-                 var zoomLevel = "<?php echo $_SESSION['zoomLevel']; ?>"; 
-            
-		 var titolo_default = "<?php echo $default_title; ?>";	
-		 var access_denied = "<?php echo $access_denied; ?>";
-		 var nascondi= "<?php echo $hide_menu; ?>";
-		 var sessionEndTime = "<?php echo $_SESSION['sessionEndTime']; ?>";
-	     var sessionToken = "<?php  if (isset($_SESSION['refreshToken'])) echo $_SESSION['refreshToken']; else echo ""; ?>";		 
-		 var mypage = location.pathname.split("/").slice(-1)[0];
-         var functionality = [];
-		 var editButton = 1;
-		 var deleteButton = 1;
-		 var mapButton = 1;
-		 
+			var loggedRole = "<?php echo $_SESSION['loggedRole']; ?>";
+			var loggedUser = "<?php echo $_SESSION['loggedUsername']; ?>";
+			var admin = "<?php echo $_SESSION['loggedRole']; ?>";
+			var organization = "<?php echo $_SESSION['organization']; ?>";
+			var kbUrl = "<?php echo $_SESSION['kbUrl']; ?>";
+			var gpsCentreLatLng = "<?php echo $_SESSION['gpsCentreLatLng']; ?>";
+			var zoomLevel = "<?php echo $_SESSION['zoomLevel']; ?>"; 
+			var titolo_default = "<?php echo $default_title; ?>";	
+			var access_denied = "<?php echo $access_denied; ?>";
+			var nascondi= "<?php echo $hide_menu; ?>";
+			var sessionEndTime = "<?php echo $_SESSION['sessionEndTime']; ?>";
+			var sessionToken = "<?php  if (isset($_SESSION['refreshToken'])) echo $_SESSION['refreshToken']; else echo ""; ?>";		 
+			var mypage = location.pathname.split("/").slice(-1)[0];
+			var functionality = [];
+			var editButton = 1;
+			var deleteButton = 1;
+			var mapButton = 1;
 
-          $.ajax({url: "../api/functionality.php",
-			 data: {action: 'get_functionality', page : mypage, token:sessionToken},
-			 type: "GET",
-			 async: false,
-			 dataType: 'json',
-			 success: function (mydata)
-			 {
-			   if (mydata["status"]=='ok')
-				 functionality = mydata["content"];
-			   else{
-				  console.log("Error from the DB" + mydata["msg"]);		   
-				alert("An error occured when reading the data. <br/> Get in touch with the Snap4City Administrator. <br/>"+ mydata["error_msg"]);	
-			   }
-			 },
-			 error: function (mydata)
-			 {
-			   console.log(JSON.stringify(mydata));
-			 }
-		 });		 
+			$.ajax({
+				url: "../api/functionality.php",
+				data: {
+					action: 'get_functionality', 
+					page : mypage, 
+					token: sessionToken
+				},
+				type: "GET",
+				async: false,
+				dataType: 'json',
+				success: function (mydata)
+				{
+					if (mydata["status"]=='ok')
+						functionality = mydata["content"];
+					else {
+						console.log("Error from the DB" + mydata["msg"]);		   
+						alert("An error occured when reading the data. <br/> Get in touch with the Snap4City Administrator. <br/>"+ mydata["error_msg"]);	
+					}
+				},
+				error: function (mydata)
+				{
+					console.log(JSON.stringify(mydata));
+					alert("An error occured when reading the data. <br/> Get in touch with the Snap4City Administrator");
+				}
+			});		 
 		</script>
 
         <script type="text/javascript" src="../js/dashboard_mng.js"></script>
 
         <script type="text/javascript" src="js/value.js"></script>
         <script type="text/javascript" src="js/fieldsManagement.js"></script>
-	<script type="text/javascript" src="js/common.js"></script>	
+		<script type="text/javascript" src="js/common.js"></script>	
 
 		<!-- leaflet scripts -->
-		
 		<script type="text/javascript" src="../js/leaflet.js"></script>
 		<script type="text/javascript" src="../js/leaflet.draw.js"></script>
 		<script type="text/javascript" src="../js/jquery.fancytree-all.min.js"></script>
 		
-		        
-        <!--<link href="https://fonts.googleapis.com/css?family=Cabin:400,500,600,700|Catamaran|Varela+Round" rel="stylesheet">
-        <link href="https://fonts.googleapis.com/css?family=Montserrat" rel="stylesheet">-->
 	</head>
     <body class="guiPageBody">
 		<div class="container-fluid">
@@ -223,74 +214,46 @@
                         <div class="col-xs-12" id="mainContentCnt">
                             <div id="synthesis" class="row hidden-xs hidden-sm mainContentRow">
                                 <div class="col-xs-12 mainContentRowDesc"></div>
-                                <div id="dashboardTotNumberCnt" class="col-md-2 mainContentCellCnt">
+                                <div id="dashboardTotNumberCnt" class="col-md-3 mainContentCellCnt">
                                     <div class="col-md-12 centerWithFlex pageSingleDataCnt">
                                         <?php
                                             $query = "SELECT count(*) AS qt FROM event_values";
                                             $result = mysqli_query($link, $query);
-                                            
-                                            if($result)
-                                            {
+                                            if($result) {
                                                $row = $result->fetch_assoc();
-                                              // $dashboardsQt = $row['qt'];
-                                               echo $row['qt'];
-                                            }
-                                            else
-                                            {
-                                               // $dashboardsQt = "-";
-                                                echo '-';
+                                               echo $row['qt'].' Total';
+                                            } else {
+                                                echo '-'.' Total';
                                             }
                                         ?>
-                                    </div>
-									<!-- MM 0105 -->
-                                    <div class="col-md-12 centerWithFlex pageSingleDataLabel">
-                                        Total 
                                     </div>
                                 </div>
-                                <div id="dashboardTotActiveCnt" class="col-md-2 mainContentCellCnt">
+                                <div id="dashboardTotActiveCnt" class="col-md-3 mainContentCellCnt">
                                     <div class="col-md-12 centerWithFlex pageSingleDataCnt">
-                                        <?php //MM
-                                            $query = "SELECT count(*) AS qt FROM event_values WHERE editable =0"; // v JOIN devices d ON (v.cb=d.contextbroker and v.device=d.id) where d.kind='sensor'";
+                                        <?php 
+                                            $query = "SELECT count(*) AS qt FROM event_values WHERE editable =0"; 
                                             $result = mysqli_query($link, $query);
-                                            
-                                            if($result)
-                                            {
+                                            if($result) {
                                                $row = $result->fetch_assoc();
-                                              // $dashboardsQt = $row['qt'];
-                                               echo $row['qt'];
-                                            }
-                                            else
-                                            {
-                                               // $dashboardsQt = "-";
-                                                echo '-';
+                                               echo $row['qt']. ' Sensor';
+                                            } else   {
+                                                echo '-'. ' Sensor';
                                             }
                                         ?>
-                                    </div>
-                                    <div class="col-md-12 centerWithFlex pageSingleDataLabel">
-                                        Sensors
                                     </div>
                                 </div>
-                                <div id="dashboardTotPermCnt" class="col-md-2 mainContentCellCnt">
+                                <div id="dashboardTotPermCnt" class="col-md-3 mainContentCellCnt">
                                     <div class="col-md-12 centerWithFlex pageSingleDataCnt">
-                                        <?php //MM
-                                            $query = "SELECT count(*) AS qt FROM event_values v WHERE editable=1;"; //JOIN devices d ON (v.cb=d.contextbroker and v.device=d.id) where d.kind='actuator'";
+                                        <?php 
+                                            $query = "SELECT count(*) AS qt FROM event_values v WHERE editable=1;"; 
                                             $result = mysqli_query($link, $query);
-                                            
-                                            if($result)
-                                            {
+                                            if ($result) {
                                                $row = $result->fetch_assoc();
-                                              // $dashboardsQt = $row['qt'];
-                                               echo $row['qt'];
-                                            }
-                                            else
-                                            {
-                                               // $dashboardsQt = "-";
-                                                echo '-';
+                                               echo $row['qt'].' Actuators';
+                                            } else {
+                                                echo '-'. ' Actuators';
                                             }
                                         ?>
-                                    </div>
-                                    <div class="col-md-12 centerWithFlex pageSingleDataLabel">
-                                        Actuators
                                     </div>
                                 </div>
 			
@@ -304,7 +267,7 @@
 									<div id="displayDevicesMapSA" class="pull-right"><button type="button" class="btn btn-primary btn-round"><span class="glyphicon glyphicon-globe" title="Location of Values on Map"  style="font-size:36px; color: #0000ff"></span></button></div>
 									</div>
 									<div class="col-xs-12 col-md-6 modalCell" style= "background-color: rgb(241, 245, 244);">
-									<div class="pull-right"><button id="addValueBtn"  class="btn btn-primary">New Value</button></div>
+									<div class="pull-right"><button id="addValueBtn"  class="btn btn-primary">Add New Sensor<BR>and Actuator</button></div>
 									</div>
 								</div>
 								<div>
@@ -313,7 +276,7 @@
 									  <tr>
 										<th></th>	
 										<th data-cellTitle="contextbroker">IOT Broker</th>
-										<th data-cellTitle="device">IOT Device</th>
+										<th data-cellTitle="device">Device Identifier</th>
 										<th data-cellTitle="valueName">Value Name</th>
 										<th data-cellTitle="valueType">Value Type</th>
 										<th data-cellTitle="ownership">Ownership</th>
@@ -361,7 +324,7 @@
             <div class="modal-dialog" role="document">
               <div class="modal-content">
                 <div class="modalHeader centerWithFlex">
-                  Add new value
+                  Add new Sensor and Actuator
                 </div>
         
 		
@@ -369,9 +332,9 @@
 					<div id="addValueModalBody" class="modal-body modalBody">
 				
                 
-					<ul id="addValueModalTabs" class="nav nav-tabs nav-justified">
+					<!--ul id="addValueModalTabs" class="nav nav-tabs nav-justified">
 						<li class="active"><a data-toggle="tab" href="#addInfoTabValue">Value to Be Added </a></li>
-                    </ul>
+                    </ul-->
                     
 					
                     <div class="tab-content">

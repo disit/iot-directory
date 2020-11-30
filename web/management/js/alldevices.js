@@ -86,34 +86,23 @@ $.ajax({
 	}
 });
 
-     
-	function removeElementAt(parent,child) {
-		var list = document.getElementById(parent);
-		// var content = child.parentElement.parentElement.parentElement.innerHTML
-	  // console.log("elemento cancellato " + document.getElementById('deletedAttributes').innerHTML);
-        //console.log(parent);
-        //console.log(child);
-        //console.log(child.parentElement);
-        //console.log(child.parentElement.parentElement);
-        //console.log(child.parentElement.parentElement.parentElement);
-        if (parent=="editlistAttributes") 
-		{     document.getElementById('deletedAttributes').appendChild(child.parentElement.parentElement.parentElement);}
-        else list.removeChild(child.parentElement.parentElement.parentElement);
-		checkAtlistOneAttribute();
-		checkEditAtlistOneAttribute();
-	}
+function removeElementAt(parent,child) {
+	var list = document.getElementById(parent);
+	if (parent=="editlistAttributes")     
+		document.getElementById('deletedAttributes').appendChild(child.parentElement.parentElement.parentElement);
+	else 
+		list.removeChild(child.parentElement.parentElement.parentElement);
+	checkAtlistOneAttribute();
+	checkEditAtlistOneAttribute();
+}
 
-
-
-	function drawAttributeMenu
-(attrName, data_type, value_type, editable, value_unit, healthiness_criteria, value_refresh_rate, old_value_name, parent, indice)
-{
+function drawAttributeMenu (attrName, data_type, value_type, editable, value_unit, healthiness_criteria, value_refresh_rate, old_value_name, parent, indice) {
     if (attrName=="")
 		msg="<div style=\"color:red;\" class=\"modalFieldMsgCnt\"></div>";
 	else 
 		msg="<div class=\"modalFieldMsgCnt\">&nbsp;</div>";
 	
-options="";
+	options="";
 	if (value_type==""){
 		 options+="<option hidden disabled selected value=\"NOT VALID OPTION\"> -- select an option -- </option>";
 		msg_value_type="<div style=\"color:red;\" class=\"modalFieldMsgCnt\">Value type is mandatory</div>";
@@ -123,7 +112,6 @@ options="";
 
 	for (var n=0; n < gb_value_types.length; n++)
 	{
-		//console.log("check against: "+gb_value_types[n].value);
 		if (value_type == gb_value_types[n].value) 
 			options += "<option value=\""+gb_value_types[n].value+"\" selected>"+ gb_value_types[n].label+ "</option>";
 		else 
@@ -152,7 +140,7 @@ options="";
 	  else mydatatypes += "<option value=\""+gb_datatypes[n]+"\">"+ gb_datatypes[n]+ "</option>";
 	}
 
-return "<div class=\"row\" style=\"border:2px solid blue;\" id=\"value"+indice+"\">"+
+	return "<div class=\"row\" style=\"border:2px solid blue;\" id=\"value"+indice+"\">"+
 		
 		"<div class=\"col-xs-6 col-md-3 modalCell\">" +
         	"<div class=\"modalFieldCnt\" title=\"Insert a name for the sensor/actuator\"><input type=\"text\" class=\"modalInputTxt\""+
@@ -204,76 +192,46 @@ return "<div class=\"row\" style=\"border:2px solid blue;\" id=\"value"+indice+"
 		"<div class=\"col-xs-6 col-md-3 modalCell\"><div class=\"modalFieldCnt\">" +
 
 		"<button class=\"btn btn-danger\" onclick=\"removeElementAt('" + parent + "',this); return true;\">Remove Value</button></div></div></div>";
-		
 }			
-	  
 
-  function updateDeviceTimeout()
-        {
-            $("#editDeviceOkModal").modal('hide');
-            setTimeout(function(){
-               location.reload();
-            }, 500);
-        }
-   
-
-
-// Table row DetailView
-
-  function format ( d ) {
-	  
-	   var showKey="";
-	  
-	  if (d.visibility =='MyOwnPublic' || d.visibility == 'MyOwnPrivate'|| d.visibility=='delegated'){
+function format ( d ) {
+	var showKey="";
+	if (d.visibility =='MyOwnPublic' || d.visibility == 'MyOwnPrivate'|| d.visibility=='delegated') {
 		if(d.k1!="" && d.k2!="")
-          showKey =  '<div class="row">' +
-			'<div class="col-xs-6 col-sm-6" style="background-color:#D6CADD;"><b>K1:</b>' + "  " + d.k1 + '</div>' +
-			'<div class="clearfix visible-xs"></div>' +
-			'<div class="col-xs-6 col-sm-6" style="background-color:#D6CADD;"><b>K2:</b>' + "  " + d.k2  + '</div>' +	
-		'</div>'; 	  
-		}
+			showKey =  
+				'<div class="row">' +
+					'<div class="col-xs-6 col-sm-6" style="background-color:#D6CADD;"><b>K1:</b>' + "  " + d.k1 + '</div>' +
+					'<div class="clearfix visible-xs"></div>' +
+					'<div class="col-xs-6 col-sm-6" style="background-color:#D6CADD;"><b>K2:</b>' + "  " + d.k2  + '</div>' +	
+				'</div>'; 	  
+	}
+
 	var multitenancy = "";
-	if (d.service && d.servicePath){
-		multitenancy = '<div class="row">' + 
-			'<div class="col-xs-6 col-sm-6" style="background-color:#B3D9FF;"><b>Service/Tenant:</b>' + "  " + d.service + '</div>' +
-			'<div class="clearfix visible-xs"></div>' +
-			'<div class="col-xs-6 col-sm-6" style="background-color:#B3D9FF;"><b>ServicePath:</b>' + "  " + d.servicePath  + '</div>' +	
-		'</div>' ;
+	if (d.service || d.servicePath){
+		multitenancy = 
+			'<div class="row">' + 
+				'<div class="col-xs-6 col-sm-6" style="background-color:#B3D9FF;"><b>Service/Tenant:</b>' + "  " + d.service + '</div>' +
+				'<div class="clearfix visible-xs"></div>' +
+				'<div class="col-xs-6 col-sm-6" style="background-color:#B3D9FF;"><b>ServicePath:</b>' + "  " + d.servicePath  + '</div>' +	
+			'</div>' ;
 	}	
 	
-	var txtCert="";
-		if (d.privatekey!= null && d.privatekey!="" && (d.visibility =='MyOwnPublic' || d.visibility == 'MyOwnPrivate'))
-			txtCert  = '<div class="row">' +   
-							'<div class="col-xs-6 col-sm-6" style="background-color:#D6CADD;"><b>private key:</b> ' + "<a href=\"../certificate/" + d.privatekey + "\" target=\"_blank\" download=\""+d.id+"-key.pem\">Download</a></div>" +
-							'<div class="clearfix visible-xs"></div>' +
-							'<div class="col-xs-6 col-sm-6" style="background-color:#D6CADD;"><b>certificate:</b>' + "<a href=\"../certificate/" + d.certificate + "\" target=\"_blank\" download=\""+d.id+"-key.pem\">Download</a></div>" +	
-						'</div>' +
-						'<div class="row">' +
-							'<div class="col-xs-6 col-sm-6" style="background-color:#E6E6FA;"><b>SHA1:</b>' + "  " + d.sha + '</div>' +
-							'<div class="clearfix visible-xs"></div>' +
-						'</div>' + 
-						'<div class="row">' +
-							'<div class="col-xs-6 col-sm-6" style="background-color:#E6E6FA;"><b>Created on:</b>' + "  " + d.created + '</div>' +
-							'<div class="clearfix visible-xs"></div>' +
-						'</div>';
-		else 
-			txtCert = '<div class="row">' +
-							'<div class="col-xs-6 col-sm-6" style="background-color:#E6E6FA;"><b>Created on:</b>' + "  " + d.created + '</div>' +
-							'<div class="clearfix visible-xs"></div>' +
-						'</div>';
-	
-	// `d` is the original data object for the row
   	return '<div class="container-fluid">' +
-		'<div class="row">' +
-			'<div class="col-xs-6 col-sm-6" style="background-color:#D6CADD;"><b>IoT Broker URI:</b>' + "  " + d.accesslink + '</div>' +
-			'<div class="clearfix visible-xs"></div>' +
-			'<div class="col-xs-6 col-sm-6" style="background-color:#D6CADD;"><b>Kind:</b>' + "  " + d.kind + '</div>' +								
-		'</div>' +
-		'<div class="row">' +
-			'<div class="col-xs-6 col-sm-6" style="background-color:#E6E6FA;"><b>Device Type:</b>' + "  " + d.devicetype + '</div>' +
-			'<div class="clearfix visible-xs"></div>' +
-			'<div class="col-xs-6 col-sm-6" style="background-color:#E6E6FA;"><b>Format:</b>' + "  " + d.format + '</div>' +
-		'</div>' + 
+        '<div class="row">' +
+            '<div class="col-xs-6 col-sm-6" style="background-color:#E6E6FA;"><b>Broker URI:</b>' + "  " + d.accesslink +'</div>' +
+            '<div class="clearfix visible-xs"></div>' +
+            '<div class="col-xs-6 col-sm-6" style="background-color:#E6E6FA;"><b>Broker Port:</b>' + "  " + d.accessport + '</div>' +
+        '</div>' +
+        '<div class="row">' +
+            '<div class="col-xs-6 col-sm-6" style="background-color:#D6CADD;"><b>Kind:</b>' + "  " + d.kind + '</div>' +
+            '<div class="clearfix visible-xs"></div>' +
+            '<div class="col-xs-6 col-sm-6" style="background-color:#D6CADD;"><b>Visibility:</b>' + "  " + d.visibility + '</div>' +
+        '</div>' +
+        '<div class="row">' +
+            '<div class="col-xs-6 col-sm-6" style="background-color:#E6E6FA;"><b>Device Type:</b>' + "  " + d.devicetype + '</div>' +
+            '<div class="clearfix visible-xs"></div>' +
+            '<div class="col-xs-6 col-sm-6" style="background-color:#E6E6FA;"><b>Format:</b>' + "  " + d.format + '</div>' +
+        '</div>' +
 		'<div class="row">' +
 			'<div class="col-xs-6 col-sm-6" style="background-color:#D6CADD;"><b>Protocol:</b>' + "  " + d.protocol + '</div>' +
 			'<div class="clearfix visible-xs"></div>' +
@@ -290,21 +248,27 @@ return "<div class=\"row\" style=\"border:2px solid blue;\" id=\"value"+indice+"
 				'<div class="col-xs-6 col-sm-6" style="background-color:#D6CADD;"><b>Latitude:</b>' + "  " + d.latitude  + '</div>' +
 		'</div>' +                             
 		'<div class="row">' +
-			'<div class="col-xs-6 col-sm-6" style="background-color:#E6E6FA;"><b>Gateway/Edge Type:</b>' + "  " + d.edgegateway_type + '</div>' +
-			'<div class="clearfix visible-xs"></div>' +
-			'<div class="col-xs-6 col-sm-6" style="background-color:#E6E6FA;"><b>Gateway/Edge Uri:</b>' + "  " + d.edgegateway_uri  + '</div>' +	
-		'</div>' +
-		'<div class="row">' +
-                        '<div class="col-xs-12 col-sm-12" style="background-color:#D6CADD;"><b>Device Uri:</b>' + "  <a href=\""+d.uri+"\">" + d.uri + '</a></div>' +
-                        '<div class="clearfix visible-xs"></div>' +
-                '</div>'+
-		showKey + txtCert +multitenancy +
+        '<div class="col-xs-12 col-sm-12" style="background-color:#E6E6FA;"><b>Device Uri:</b>' + "  <a href=\""+d.uri+"\">" + d.uri + '</a></div>' +
+        		'<div class="clearfix visible-xs"></div>' +
+        '</div>'+
+        '<div class="row">' +
+            '<div class="col-xs-6 col-sm-6" style="background-color:#D6CADD;"><b>Organization:</b>' + "  " + d.organization + '</div>' +
+            '<div class="clearfix visible-xs"></div>' +
+        '</div>' +
+        '<div class="row">' +
+            '<div class="col-xs-6 col-sm-6" style="background-color:#E6E6FA;"><button class="btn btn-info my-small-button" onclick="datainspect(\''+
+            d.id+'\',\''+d.devicetype+'\',\''+d.contextBroker+'\',\''+d.service+'\',\''+d.servicePath+'\',\'v1\');return true;"><b>PAYLOAD NGSI v1</b></button></div>' +
+            '<div class="clearfix visible-xs"></div>' +
+            '<div class="col-xs-6 col-sm-6" style="background-color:#E6E6FA;"><button class="btn btn-info my-small-button" onclick="datainspect(\''+
+            d.id+'\',\''+d.devicetype+'\',\''+d.contextBroker+'\',\''+d.service+'\',\''+d.servicePath+'\',\'v2\');return true;"><b>PAYLOAD NGSI v2</b></button></div>' +
+        '</div>' +
+		showKey + 
+		getInfoCert(d.privatekey, d.visibility, d.created, d.id, d.contextBroker, d.certificate, d.sha)+ 
+		multitenancy +
 	'</div>' ;
-	
 }
    
 //DataTable fetch_data function 
-   
 	function fetch_data(destroyOld, selected=null)
         {
             if(destroyOld)
@@ -433,8 +397,8 @@ return "<div class=\"row\" style=\"border:2px solid blue;\" id=\"value"+indice+"
 				'data-edgegateway_uri="'+d.edgegateway_uri+'" ' +
 				'data-k1="'+d.k1+'" ' +
 				'data-k2="'+d.k2+'" ' +
-                                'data-subnature="'+d.subnature+'" '+
-                                'data-static-attributes="'+btoa(d.staticAttributes)+'" '+
+				'data-subnature="'+d.subnature+'" '+
+				'data-static-attributes="'+btoa(d.staticAttributes)+'" '+
 				'data-service="'+d.service+'" ' +
 				'data-servicePath="'+d.servicePath+'" ' +
 				'data-status1="'+d.status1+'">Edit</button>';
@@ -453,16 +417,16 @@ return "<div class=\"row\" style=\"border:2px solid blue;\" id=\"value"+indice+"
                 className: "center",
                 //defaultContent: '<button type="button" id="delete" class="delDashBtn delete">Delete</button>'
 				render: function(d) {
-				if (loggedRole=='RootAdmin' || d.visibility =='MyOwnPublic' || d.visibility == 'MyOwnPrivate') {
-				return '<button type="button" class="delDashBtn" ' +
-				'data-id="'+d.id+'" ' +
-				'data-contextBroker="'+d.contextBroker+'" ' +
-				'data-organization="'+d.organization+'" ' +
-				'data-protocol="'+d.protocol+'" ' +
-				'data-service="'+d.service+'" ' +
-				'data-servicePath="'+d.servicePath+'" '+
+					if (loggedRole=='RootAdmin' || d.visibility =='MyOwnPublic' || d.visibility == 'MyOwnPrivate') {
+						return '<button type="button" class="delDashBtn" ' +
+						'data-id="'+d.id+'" ' +
+						'data-contextBroker="'+d.contextBroker+'" ' +
+						'data-organization="'+d.organization+'" ' +
+						'data-protocol="'+d.protocol+'" ' +
+						'data-service="'+d.service+'" ' +
+						'data-servicePath="'+d.servicePath+'" '+
                 		'data-uri="'+d.uri+'">Delete</button>';
-				}
+					}
 				}				
             },
 			{
@@ -1150,7 +1114,7 @@ return "<div class=\"row\" style=\"border:2px solid blue;\" id=\"value"+indice+"
 			  edgegateway_type : $("#selectEdgeGatewayType").val(),
 			  edgegateway_uri : $("#inputEdgeGatewayUri").val(),
                           subnature: $('#selectSubnature').val(),
-                          static_attributes: JSON.stringify(retrieveStaticAttributes("addStaticTabModel"))
+                          static_attributes: JSON.stringify(retrieveStaticAttributes("addStaticTabModel", false))
 					  
 			 },
 		 type: "POST",
@@ -1558,7 +1522,6 @@ return "<div class=\"row\" style=\"border:2px solid blue;\" id=\"value"+indice+"
 		$('#inputUriDeviceM').val(uri);
 		$('#selectProtocolDeviceM').val(protocol);
 		$('#selectFormatDeviceM').val(format);
-		//$('#createdDateDeviceM').val($(this).parents('tr').attr('data-created'));
 		$('#inputMacDeviceM').val(macaddress);
 		$('#selectModelDeviceM').val(model);								
 		$('#inputProducerDeviceM').val(producer);
@@ -1571,9 +1534,14 @@ return "<div class=\"row\" style=\"border:2px solid blue;\" id=\"value"+indice+"
 		$('#selectEdgeGatewayTypeM').val(gtw_type);
 		$('#inputEdgeGatewayUriM').val(gtw_uri);	  
 
-                $('#selectSubnatureM').val(subnature);
+        $('#selectSubnatureM').val(subnature);
 		$('#selectSubnatureM').trigger('change');
-                subnatureChanged(true, JSON.parse(atob($(this).attr("data-static-attributes"))));
+        subnatureChanged(true, JSON.parse(atob($(this).attr("data-static-attributes"))));
+
+		if ($("#isMobileTickM").is(":checked"))
+			$("#positionMsgHintM").show();
+		else
+			$("#positionMsgHintM").hide();	
 
 		fillMultiTenancyFormSection($(this).attr('data-service'), $(this).attr('data-servicePath'), contextbroker, 'device');
 
@@ -1799,9 +1767,7 @@ showEditDeviceModal();
 			 url: "../api/device.php",
 			 data:{
 		action: "update",
-		/*Sara711 / logging*/
 		username: loggedUser,
-		
 		newattributes: JSON.stringify(mynewAttributes),
 		attributes: JSON.stringify(myAttributes),
 		deleteattributes: JSON.stringify(mydeletedAttributes), 
@@ -1810,7 +1776,7 @@ showEditDeviceModal();
 		type: $('#inputTypeDeviceM').val(),
 		kind: $('#selectKindDeviceM').val(),
 		contextbroker: $('#selectContextBrokerM').val(),
-        	gb_old_cb : gb_old_cb,
+		gb_old_cb : gb_old_cb,
 		organization : organization, 
 		uri: $('#inputUriDeviceM').val(),
 		protocol: $('#selectProtocolDeviceM').val(),
@@ -1827,8 +1793,8 @@ showEditDeviceModal();
 		k2: $('#KeyTwoDeviceUserM').val(),
 		edgegateway_type : $("#selectEdgeGatewayTypeM").val(),
 		edgegateway_uri : $("#inputEdgeGatewayUriM").val(),
-                subnature: $('#selectSubnatureM').val(),
-                static_attributes: JSON.stringify(retrieveStaticAttributes("editlistStaticAttributes")),
+		subnature: $('#selectSubnatureM').val(),
+		static_attributes: JSON.stringify(retrieveStaticAttributes("editlistStaticAttributes", false, "isMobileTickM")),
 		service : service,
 		servicePath : servicePath
 			 },
@@ -1941,7 +1907,14 @@ showEditDeviceModal();
                 checkSubnatureChanged($('#selectSubnatureM'), e.params.args.data.id, "", e, true);
         });
 
-
+//START ISMOBILE PROPERTIES
+	$("#isMobileTickM").change(function(){
+		if(this.checked)
+			$("#positionMsgHintM").show();
+		else
+			$("#positionMsgHintM").hide();
+	});
+//END ISMOBILE PROPERTIES
 	
 //ADD DEVICE CANCEL BUTTON 
 			
@@ -3438,7 +3411,7 @@ function drawMapAll(data, divName){
 
                  redIcon = new L.Icon({
 
-                                iconUrl: 'https://www.snap4city.org/iotdirectorytest/markerPrivate.png',
+                                iconUrl: '../img/markerPrivate.png',
                                 iconSize: new L.Point(32, 32),
                                 iconAnchor: new L.Point(16, 16),
                                 popupAnchor: new L.Point(0, -18)
@@ -3447,7 +3420,7 @@ function drawMapAll(data, divName){
 
                 blueIcon = new L.Icon({
 
-                                iconUrl: 'https://www.snap4city.org/iotdirectorytest/markerPublic.png',
+                                iconUrl: '../img/markerPublic.png',
                                 iconSize: new L.Point(32, 32),
                                 iconAnchor: new L.Point(16, 16),
                                 popupAnchor: new L.Point(0, -18)
@@ -3455,7 +3428,7 @@ function drawMapAll(data, divName){
                             });
                 greenIcon = new L.Icon({
 
-                                iconUrl: 'https://www.snap4city.org/iotdirectorytest/markerGreen.png',
+                                iconUrl: '../img/markerGreen.png',
                                 iconSize: new L.Point(32, 32),
                                 iconAnchor: new L.Point(16, 16),
                                 popupAnchor: new L.Point(0, -18)

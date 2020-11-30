@@ -226,7 +226,7 @@ $accessToken = "";
 						
 				             <div id="synthesis" class="row hidden-xs hidden-sm mainContentRow">
                              <!--   <div  class="col-xs-12 mainContentRowDesc"></div> -->
-                                <div id="dashboardTotNumberCnt" class="col-md-2 mainContentCellCnt">
+                                <div id="dashboardTotNumberCnt" class="col-md-3 mainContentCellCnt">
                                     <div class="col-md-12 centerWithFlex pageSingleDataCnt">
                                         <?php
                                             $query = "SELECT count(*) AS qt FROM devices";
@@ -235,16 +235,13 @@ $accessToken = "";
                                             if($result)
                                             {
                                                $row = $result->fetch_assoc();
-												echo $row['qt'];
+												echo $row['qt'].' Devices';
                                             }
                                             else
                                             {
-												echo '-';
+												echo '-'.' Devices';
                                             }
                                         ?>
-                                    </div>
-                                    <div class="col-md-12 centerWithFlex pageSingleDataLabel">
-                                        devices
                                     </div>
                                 </div>
 							</div>
@@ -265,7 +262,7 @@ $accessToken = "";
 									 <thead>
 									  <tr>
 										<th></th>	
-									    <th data-cellTitle="name">IOT Device</th>
+									    <th data-cellTitle="name">Device Identifier</th>
 										<th data-cellTitle="contextbroker">IOT Broker</th>
 										<th data-cellTitle="devicetype">Device Type</th>
 										<th data-cellTitle="model">Model</th>

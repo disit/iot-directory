@@ -14,43 +14,38 @@
    You should have received a copy of the GNU General Public License
    along with this program; if not, write to the Free Software
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA. */
-    include('../config.php');
-    //include('process-form.php');
-	
-    session_start();
-	
-	
-	 ///// SHOW FRAME PARAMETER /////
-if (isset($_REQUEST['showFrame'])){
-	if ($_REQUEST['showFrame'] == 'false'){
-		//echo ('true');
-		$hide_menu= "hide";
-	}else{
-		$hide_menu= "";
-	}	
-}else{$hide_menu= "";} 
-//// SHOW FRAME PARAMETER  ////
-   
-if (!isset($_GET['pageTitle'])){
-	$default_title = "IoT Directory: Devices";
-}else{
-	$default_title = "";
-}
 
-if (isset($_REQUEST['redirect'])){
-	$access_denied = "denied";
-}else{
-	$access_denied = "";
-}	
+	include('../config.php');
+	
+	session_start();
+	
+	///// SHOW FRAME PARAMETER /////
+	if (isset($_REQUEST['showFrame'])) {
+		if ($_REQUEST['showFrame'] == 'false') {
+			$hide_menu= "hide";
+		} else {
+			$hide_menu= "";
+		}	
+	} else $hide_menu= ""; 
+	//// SHOW FRAME PARAMETER  ////
+   
+	if (!isset($_GET['pageTitle'])) {
+		$default_title = "IoT Directory: Devices";
+	} else {
+		$default_title = "";
+	}
+
+	if (isset($_REQUEST['redirect'])) {
+		$access_denied = "denied";
+	} else {
+		$access_denied = "";
+	}	
 
 	$link = mysqli_connect($host, $username, $password);
     mysqli_select_db($link, $dbname);
     
-$accessToken = "";
-   
+	$accessToken = "";
 ?>
-
-
 
 <!DOCTYPE html>
 <html>
@@ -92,7 +87,6 @@ $accessToken = "";
 	   <script src="../boostrapTable/dist/bootstrap-table-filter-control.js"></script>
 	   
 	   <!-- DataTables -->
-	   
 	    <script type="text/javascript" charset="utf8" src="../js/DataTables/datatables.js"></script>
         <link rel="stylesheet" type="text/css" href="../js/DataTables/datatables.css">
         <script type="text/javascript" charset="utf8" src="../js/DataTables/dataTables.bootstrap.min.js"></script>
@@ -122,8 +116,6 @@ $accessToken = "";
        <!-- Font awesome icons -->
         <link rel="stylesheet" href="../js/fontAwesome/css/font-awesome.min.css">
 
-     <!--    <link href="https://fonts.googleapis.com/css?family=Cabin:400,500,600,700|Catamaran|Varela+Round" rel="stylesheet"> -->
-        
         <!-- Custom CSS -->
         <link href="../css/dashboard.css" rel="stylesheet">
 		<style> .btn-round { width: 30px; height:30px; border-radius: 50%; }
@@ -138,68 +130,61 @@ $accessToken = "";
         </style>
 	
 		<script>
-		 var loggedRole = "<?php echo $_SESSION['loggedRole']; ?>";
-		 var loggedUser = "<?php echo $_SESSION['loggedUsername']; ?>";
-         var admin = "<?php echo $_SESSION['loggedRole']; ?>";
-         
-         var organization = "<?php echo $_SESSION['organization']; ?>";
-                 var kbUrl = "<?php echo $_SESSION['kbUrl']; ?>";
-                 var gpsCentreLatLng = "<?php echo $_SESSION['gpsCentreLatLng']; ?>";
-                 var zoomLevel = "<?php echo $_SESSION['zoomLevel']; ?>";    
-            
-		 var titolo_default = "<?php echo $default_title; ?>";	
-		 var access_denied = "<?php echo $access_denied; ?>";
-		 var nascondi= "<?php echo $hide_menu; ?>";
-		 var sessionEndTime = "<?php echo $_SESSION['sessionEndTime']; ?>";
-         var sessionToken = "<?php  if (isset($_SESSION['refreshToken'])) echo $_SESSION['refreshToken']; else echo ""; ?>";		 
-		 var mypage = location.pathname.split("/").slice(-1)[0];
-         var functionality = [];
-	var currentDictionaryStaticAttribAdd=[];
-	var currentDictionaryStaticAttribEdit=[];
+			var loggedRole = "<?php echo $_SESSION['loggedRole']; ?>";
+			var loggedUser = "<?php echo $_SESSION['loggedUsername']; ?>";
+			var admin = "<?php echo $_SESSION['loggedRole']; ?>";
+			var organization = "<?php echo $_SESSION['organization']; ?>";
+			var kbUrl = "<?php echo $_SESSION['kbUrl']; ?>";
+			var gpsCentreLatLng = "<?php echo $_SESSION['gpsCentreLatLng']; ?>";
+			var zoomLevel = "<?php echo $_SESSION['zoomLevel']; ?>";    
+			var titolo_default = "<?php echo $default_title; ?>";	
+			var access_denied = "<?php echo $access_denied; ?>";
+			var nascondi= "<?php echo $hide_menu; ?>";
+			var sessionEndTime = "<?php echo $_SESSION['sessionEndTime']; ?>";
+			var sessionToken = "<?php  if (isset($_SESSION['refreshToken'])) echo $_SESSION['refreshToken']; else echo ""; ?>";		 
+			var mypage = location.pathname.split("/").slice(-1)[0];
+			var functionality = [];
+			var currentDictionaryStaticAttribAdd=[];
+			var currentDictionaryStaticAttribEdit=[];
 
-          $.ajax({url: "../api/functionality.php",
-			 data: {action: 'get_functionality', page : mypage, token:sessionToken},
-			 type: "GET",
-			 async: false,
-			 dataType: 'json',
-			 success: function (mydata)
-			 {
-			   // console.log(JSON.stringify(mydata));
-			   if (mydata["status"]=='ok')
-				 functionality = mydata["content"];
-			   else{
-				  console.log("Error from the DB" + mydata["msg"]);		   
-				alert("An error occured when reading the data. <br/> Get in touch with the Snap4City Administrator. <br/>"+ mydata["error_msg"]);
-			}
-			 },
-			 error: function (mydata)
-			 {
-			   console.log(JSON.stringify(mydata));
-			 }
-		 });
-		 
+			$.ajax({
+				url: "../api/functionality.php",
+				data: {
+					action: 'get_functionality', 
+					page : mypage, 
+					token: sessionToken
+				},
+				type: "GET",
+				async: false,
+				dataType: 'json',
+				success: function (mydata) {
+					if (mydata["status"]=='ok')
+						functionality = mydata["content"];
+					else {
+						console.log("Error from the DB" + mydata["msg"]);		   
+						alert("An error occured when reading the data. <br/> Get in touch with the Snap4City Administrator. <br/>"+ mydata["error_msg"]);
+					}
+				},
+				error: function (mydata) {
+		   			console.log(JSON.stringify(mydata));
+					alert("An error occured when reading the data. <br/> Get in touch with the Snap4City Administrator");
+				}
+			});
 		</script>
  
         <!-- Custom scripts -->
-	
 		<script  src="js/devices.js"></script>
 		<script  src="js/devicesManagement.js"></script>
 		<script  src="js/fieldsManagement.js"></script>
 		<script  src="js/devicesEditManagement.js"></script>
-	        <script  src="../js/dashboard_mng.js"></script>
+	    <script  src="../js/dashboard_mng.js"></script>
 		<script  src="js/common.js"></script>	
 		
 		<!-- leaflet scripts -->
-		
 		<script  src="../js/leaflet.js"></script>
 		<script  src="../js/leaflet.draw.js"></script>
 		<script  src="../js/jquery.fancytree-all.min.js"></script>
-		
-		
-		
-        
-        <!--<link href="https://fonts.googleapis.com/css?family=Cabin:400,500,600,700|Catamaran|Varela+Round" rel="stylesheet">
-        <link href="https://fonts.googleapis.com/css?family=Montserrat" rel="stylesheet">-->
+
 	</head>
     <body class="guiPageBody">
 		<div class="container-fluid">
@@ -229,108 +214,65 @@ $accessToken = "";
 					
                     <div class="row">
                         <div class="col-xs-12" id="mainContentCnt">
-						
-						
 				             <div id="synthesis" class="row hidden-xs hidden-sm mainContentRow">
-                             <!--   <div  class="col-xs-12 mainContentRowDesc"></div> -->
-                                <div id="dashboardTotNumberCnt" class="col-md-2 mainContentCellCnt">
+                                <div id="dashboardTotNumberCnt" class="col-md-3 mainContentCellCnt">
                                     <div class="col-md-12 centerWithFlex pageSingleDataCnt">
                                         <?php
                                             $query = "SELECT count(*) AS qt FROM devices";
                                             $result = mysqli_query($link, $query);
-                                            
-                                            if($result)
-                                            {
+                                            if($result) {
                                                $row = $result->fetch_assoc();
-												echo $row['qt'];
-                                            }
-                                            else
-                                            {
-												echo '-';
+												echo $row['qt'].' devices';
+                                            } else {
+												echo '-'.' devices';
                                             }
                                         ?>
                                     </div>
-                                    <div class="col-md-12 centerWithFlex pageSingleDataLabel">
-                                        devices
-                                    </div>
                                 </div>
-                                <div id="dashboardTotActiveCnt" class="col-md-2 mainContentCellCnt">
+                                <div id="dashboardTotActiveCnt" class="col-md-3 mainContentCellCnt">
                                     <div class="col-md-12 centerWithFlex pageSingleDataCnt">
                                         <?php //MM
                                             $query = "SELECT count(*) AS qt FROM devices WHERE  mandatoryproperties = true and mandatoryvalues = true ";
                                             $result = mysqli_query($link, $query);
-                                            
-                                            if($result)
-                                            {
+                                            if($result) {
                                                $row = $result->fetch_assoc();
-                                               echo $row['qt'];
-                                            }
-                                            else
-                                            {
-                                                echo '-';
+                                               echo $row['qt'].' active';
+                                            } else {
+                                                echo '-'.' active';
                                             }
                                         ?>
                                     </div>
-                                    <div class="col-md-12 centerWithFlex pageSingleDataLabel">
-                                        active
-                                    </div>
                                 </div>
-                                <div id="dashboardTotPermCnt" class="col-md-2 mainContentCellCnt">
+                                <div id="dashboardTotPermCnt" class="col-md-3 mainContentCellCnt">
                                     <div class="col-md-12 centerWithFlex pageSingleDataCnt">
                                         <?php //MM
                                             $query = "SELECT count(*) AS qt FROM devices where visibility='public'";
                                             $result = mysqli_query($link, $query);
-                                            
-                                            if($result)
-                                            {
+                                            if($result) {
                                                $row = $result->fetch_assoc();
-                                               echo $row['qt'];
+                                               echo $row['qt'].' public';
                                             }
-                                            else
-                                            {
-                                                echo '-';
+                                            else {
+                                                echo '-'. ' public';
                                             }
                                         ?>
                                     </div>
-                                    <div class="col-md-12 centerWithFlex pageSingleDataLabel">
-                                        public
-                                    </div>
                                 </div>
-								   <div id="dashboardTotPrivateCnt" class="col-md-2 mainContentCellCnt">
+								   <div id="dashboardTotPrivateCnt" class="col-md-3 mainContentCellCnt">
                                     <div class="col-md-12 centerWithFlex pageSingleDataCnt">
                                         <?php  
                                             $query = "SELECT count(*) AS qt FROM devices where visibility='private'";
                                             $result = mysqli_query($link, $query);
-                                            
-                                            if($result)
-                                            {
+                                            if($result) {
                                                $row = $result->fetch_assoc();
-                                               echo $row['qt'];
-                                            }
-                                            else
-                                            {
-                                                echo '-';
+                                               echo $row['qt'].' private';
+                                            } else {
+                                                echo '-'.' private';
                                             }
                                         ?>
                                     </div>
-                                    <div class="col-md-12 centerWithFlex pageSingleDataLabel">
-                                        private
-                                    </div>
                                 </div>
-
                             </div>
-							
-							
-										<!--div id="managerBoard" class="row mainContentRow">
-											<div class="col-xs-12 mainContentCellCnt">
-											
-											<button type="text" id="myDevice" name="myDevice"class="btn btn-primary">My Devices</button>
-											<button type="text" id="delegatedDevice" name="delegatedDevice" class="btn btn-primary">Delegated Devices</button>			
-											<button type="button" id="addMyNewDevice" class="btn btn-primary">Add New Device</button>
-											</div>
-										</div-->
-		
-							
 			
 							<div id="addMyNewDeviceRow" class="row mainContentRow">
                                 <div class="col-xs-12 mainContentRowDesc">Add My New Device</div>
@@ -447,7 +389,7 @@ $accessToken = "";
 									 <thead>
 									  <tr>
 										<th></th>	
-									    <th data-cellTitle="name">IOT Device</th>
+									    <th data-cellTitle="name">Device Identifier</th>
 										<th data-cellTitle="contextbroker">IOT Broker</th>
 										<th data-cellTitle="devicetype">Device Type</th>
 										<th data-cellTitle="model">Model</th>
@@ -508,70 +450,40 @@ $accessToken = "";
         </div>
 
           <!-- Adding a New device -->
-        <div class="modal fade" id="addDeviceModal" tabindex="-1" role="dialog" aria-hidden="true">
+		<div class="modal fade" id="addDeviceModal" tabindex="-1" role="dialog" aria-hidden="true">
             <div class="modal-dialog modal-lg" role="document">
               <div class="modal-content">
                 <div class="modalHeader centerWithFlex">
                   Add new device
                 </div>
-        
-		
 				
-					<div id="addDeviceModalBody" class="modal-body modalBody">
+				<div id="addDeviceModalBody" class="modal-body modalBody">
 				
-                
 					<ul id="addDeviceModalTabs" class="nav nav-tabs nav-justified">
-                        <li  class="active"><a data-toggle="tab" href="#addIOTBrokerTabDevice">IOT Broker</a></li>
+						<li  class="active"><a data-toggle="tab" href="#addIOTBrokerTabDevice">IOT Broker</a></li>
 						<li><a data-toggle="tab" href="#addInfoTabDevice">Info</a></li>
-                        <li><a data-toggle="tab" href="#addGeoPositionTabDevice">Position</a></li>
-			<li><a data-toggle="tab" href="#addStaticTabModel">Static Attributes</a></li>
-                        <li><a data-toggle="tab" href="#addSchemaTabDevice">Values</a></li>
-						
-                    </ul>
-                    
+						<li><a data-toggle="tab" href="#addGeoPositionTabDevice">Position</a></li>
+						<li><a data-toggle="tab" href="#addStaticTabModel">Static Attributes</a></li>
+						<li><a data-toggle="tab" href="#addSchemaTabDevice">Values</a></li>
+					</ul>
 					
                     <div class="tab-content">
                        
                         <!-- IOT Broker tab -->
                         <div id="addIOTBrokerTabDevice" class="tab-pane fade in active">
 						
-						
-						
                             <div class="row">
-							
 							
 							 <div class="col-xs-12 col-md-6 modalCell">
                                     <div class="modalFieldCnt">
                                         <select id="selectContextBroker" name="selectContextBroker" class="modalInputTxt">
 										<option></option>
-                                       <!--?php
-                                            $query = "SELECT name, protocol FROM contextbroker";
-                                            $result = mysqli_query($link, $query);
-
-                                            if($result)
-                                            {
-                                               while($row = $result->fetch_assoc())
-                                               { 
-                                                 $nameCB=$row["name"];
-												 $protocol=$row["protocol"];
-                                                 echo "<option my_data=\"$protocol\" value=\"$nameCB\">$nameCB</option>";
-                                               }
-
-                                            }
-                                            else
-                                            {
-                                               
-                                                $nameCB="ERROR";
-                                                echo "<option value=\"$nameCB\">$nameCB</option>";
-                                            }
-                                        ?-->
 										</select>
                                     </div>
                                     <div class="modalFieldLabelCnt">ContextBroker</div>
 								<div id="selectContextBrokerMsg" class="modalFieldMsgCnt">&nbsp;</div>
                                 </div>
                                 <div class="col-xs-12 col-md-6 modalCell">
-                                     
                                      <div class="modalFieldCnt">
                                         <select id="selectKindDevice" name="selectKindDevice" class="modalInputTxt">
 											<option value="sensor">sensor</option>
@@ -797,7 +709,6 @@ $accessToken = "";
                         
                         <!-- Geo-Position tab -->
                            <div id="addGeoPositionTabDevice" class="tab-pane fade">
-                            
 							 <div class="row">
 								<div class="col-xs-12 col-md-6 modalCell">
                                     <div class="modalFieldCnt">
@@ -813,15 +724,15 @@ $accessToken = "";
                                     <div class="modalFieldLabelCnt">Longitude</div>
 									<div id="inputLongitudeDeviceMsg" class="modalFieldMsgCnt">&nbsp;</div>
                                 </div>
-	
                             </div>
+							<h1>&nbsp;</h1>
 							<div class="form-row iot-directory-form-row">
 									<link rel="stylesheet" href="../css/leaflet.css" />
 									<link rel="stylesheet" href="../css/leaflet.draw.css" />
 									<div id="addLatLong" style="width: 100%; height: 400px" class="modal-body modalBody">
 								</div>
 							</div> 
-							
+							<div id="positionMsgHint" class="modalFieldMsgCnt" hidden="true"><h1>&nbsp;</h1><p class="text-danger font-weight-bold">WARNING: the indicated GPS Position has to be intended as the Initial Position of the Device. To see the Current Position of the Device, please proceed via Service Map</p></div>	
                         </div>
 						                        
                         <!-- Device Schema tab -->
@@ -835,30 +746,39 @@ $accessToken = "";
 
                         </div>
 						
-                       <!-- Static Attributes tab -->
-                       <div id="addStaticTabModel" class="tab-pane fade">
-                               <div class="row">
-                                       <div class="col-xs-12 col-md-8 modalCell">
-                                               <div class="modalFieldCnt">
-                                                       <select id="selectSubnature" name="selectSubnature" class="modalInputTxt">
-                                                               <option></option>
-                                                       </select>
-                                               </div>
-                                               <div class="modalFieldLabelCnt">Subnature</div>
-                                       </div>
-                               </div>
-				<div class="row">
-                                        <div id="addlistStaticAttributes"></div>
-                                </div>
-                                <div class="row">
-                                        <div class="pull-left"><button type="text" id="addNewStaticBtn" class="btn confirmBtn" style="display: none;">Add Attribute</button></div>
-                                </div>
-                       </div>
-						
+						<!-- Static Attributes tab -->
+						<div id="addStaticTabModel" class="tab-pane fade">
+							<div class="row">
+								<div class="col-xs-12 col-md-8 modalCell" >
+									<div class="custom-control custom-checkbox">
+										<input type="checkbox" class="custom-control-input" id="isMobileTick">
+										<label class="custom-control-label" for="isMobileTick">Device in Mobility</label>
+					               </div>
+								</div>
+							</div>
+							<div class="row">
+								<div class="col-xs-12 col-md-8 modalCell">
+									<div class="modalFieldCnt">
+										<div class="modalFieldLabelCnt">Subnature</div>
+										<select id="selectSubnature" name="selectSubnature" class="modalInputTxt">
+											<option></option>
+										</select>
+									</div>
+								</div>
+							</div>
+							<div class="row">
+								<div class="col-xs-12 col-md-12 modalCell">
+									<div id="addlistStaticAttributes"></div>
+								</div>
+							</div>
+							<div class="row">
+								<div class="col-xs-12 col-md-12 modalCell">
+									<div class="pull-left"><button type="text" id="addNewStaticBtn" class="btn confirmBtn" style="display: none;">Add Attribute</button></div>
+								</div>
+							</div>
+						</div>
 						
                     </div>
-					
-					   
                    
 				</div> 	
 		       
@@ -1015,7 +935,7 @@ $accessToken = "";
 						<li  class="active"><a data-toggle="tab" href="#editIOTBrokerTabDevice">IoT Broker</a></li>
                          <li><a data-toggle="tab" href="#editInfoTabDevice">Info</a></li>
                         <li><a data-toggle="tab" href="#editGeoPositionTabDevice">Position</a></li>
-			<li><a data-toggle="tab" href="#editStaticTabModel">Static Attributes</a></li>
+						<li><a data-toggle="tab" href="#editStaticTabModel">Static Attributes</a></li>
                         <li><a data-toggle="tab" href="#editSchemaTabDevice">Values</a></li>
 						<li><a data-toggle="tab" href="#editStatusTabDevice">Status</a></li>
 						
@@ -1285,11 +1205,9 @@ $accessToken = "";
 				
                         </div>
                         
-                        
-                        
-                        <!-- Geo-Position tab -->
-                        <div id="editGeoPositionTabDevice" class="tab-pane fade">
-                            <div class="row">
+						<!-- Geo-Position tab -->
+						<div id="editGeoPositionTabDevice" class="tab-pane fade">
+							<div class="row">
 								<div class="col-xs-12 col-md-6 modalCell">
                                     <div class="modalFieldCnt">
                                         <input type="text" class="modalInputTxt" name="inputLatitudeDeviceM" id="inputLatitudeDeviceM"> 
@@ -1305,15 +1223,13 @@ $accessToken = "";
 									<div id="inputLongitudeDeviceMMsg" class="modalFieldMsgCnt">&nbsp;</div>
                                 </div>
                             </div>
-							
-								<div class="form-row iot-directory-form-row">
-									<link rel="stylesheet" href="../css/leaflet.css" />
-									<link rel="stylesheet" href="../css/leaflet.draw.css" />
-									<div id="editLatLong" style="width: 100%; height: 400px" class="modal-body modalBody">
-								</div>
-							</div> 
-							
-							
+							<h1>&nbsp;</h1>
+							<div class="form-row iot-directory-form-row">
+								<link rel="stylesheet" href="../css/leaflet.css" />
+								<link rel="stylesheet" href="../css/leaflet.draw.css" />
+								<div id="editLatLong" style="width: 100%; height: 400px" class="modal-body modalBody"></div>
+							</div>
+							<div id="positionMsgHintM" class="modalFieldMsgCnt" hidden="true"><h1>&nbsp;</h1><p class="text-danger font-weight-bold">WARNING: the indicated GPS Position has to be intended as the Initial Position of the Device. To see the Current Position of the Device, please proceed via Service Map</p></div>
                         </div>
                         
                         <!-- Attribute tab -->
@@ -1326,25 +1242,37 @@ $accessToken = "";
 							<div id="editlistAttributesMsg" class="modalFieldMsgCnt">&nbsp;</div>
                         </div>
 
-                       <!-- Static Attributes tab -->
-                        <div id="editStaticTabModel" class="tab-pane fade">
-                                <div class="row">
-                                        <div class="col-xs-12 col-md-6 modalCell">
-                                                <div class="modalFieldCnt">
-                                                        <select id="selectSubnatureM" name="selectSubnatureM" class="modalInputTxt">
-                                                                <option></option>
-                                                        </select>
-                                                </div>
-                                                <div class="modalFieldLabelCnt">Subnature</div>
-                                        </div>
-                                </div>
-				<div class="row">
-                                        <div id="editlistStaticAttributes"></div>
-                                </div>
-                                <div class="row">
-                                        <div class="pull-left"><button type="text" id="addNewStaticBtnM" class="btn confirmBtn" style="display: none;">Add Attribute</button></div>
-                                </div>
-                        </div>
+						<!-- Static Attributes tab -->
+						<div id="editStaticTabModel" class="tab-pane fade">
+							<div class="row">
+								<div class="col-xs-12 col-md-8 modalCell" >
+									<div class="custom-control custom-checkbox">
+										<input type="checkbox" class="custom-control-input" id="isMobileTickM">
+										<label class="custom-control-label" for="isMobileTickM">Device in Mobility</label>
+									</div>
+								</div>
+							</div>	
+							<div class="row">
+								<div class="col-xs-12 col-md-6 modalCell">
+									<div class="modalFieldCnt">
+										<div class="modalFieldLabelCnt">Subnature</div>
+										<select id="selectSubnatureM" name="selectSubnatureM" class="modalInputTxt">
+											<option></option>
+										</select>
+									</div>
+								</div>
+							</div>
+							<div class="row">
+								<div class="col-xs-12 col-md-12 modalCell">
+									<div id="editlistStaticAttributes"></div>
+								</div>
+							</div>
+							<div class="row">
+								<div class="col-xs-12 col-md-12 modalCell">
+									<div class="pull-left"><button type="text" id="addNewStaticBtnM" class="btn confirmBtn" style="display: none;">Add Attribute</button></div>
+								</div>
+							</div>
+						</div>
 						
 						<!-- Semantic Labeling tab -->
                         <div id="editStatusTabDevice" class="tab-pane fade">

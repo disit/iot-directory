@@ -232,8 +232,8 @@ CREATE TABLE `event_values` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 CREATE TABLE `extractionRules` (
-  `id` varchar(30) NOT NULL,
-  `contextbroker` varchar(35) NOT NULL,
+  `id` varchar(40) NOT NULL,
+  `contextbroker` varchar(40) NOT NULL,
   `format` set('csv','json','xml','') NOT NULL DEFAULT 'json',
   `selector` text NOT NULL,
   `kind` set('value','property') DEFAULT NULL,

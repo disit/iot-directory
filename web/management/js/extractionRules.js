@@ -742,6 +742,11 @@ $("#editRuleConfirmBtn").click(function(){
 	$('#editDeviceLoadingMsg').show();
 	$('#editDeviceLoadingIcon').show();
 
+	if ($('#selectKindDeviceM').val() == "property") {
+		$('#inputDataTypeM').empty();
+		$('#inputValueTypeM').empty();
+		$('#valueUnitDeviceM').empty();
+	}
 
     //UPDATE FUNCTION
 	$.ajax({
@@ -925,6 +930,12 @@ $('#devicesTable thead').css("font-size", "1em");
 		$("#addDeviceKoIcon").hide();
 		$('#addDeviceLoadingMsg').show();
 		$('#addDeviceLoadingIcon').show();
+
+		if ($('#selectKindDevice').val() == "property") {
+			$('#deviceTypeInput').empty();
+			$('#valueTypeInput').empty();
+			$('#deviceValueUnit').empty();
+		}
 
 	$.ajax({
 		 url: "../api/extractionRules.php",

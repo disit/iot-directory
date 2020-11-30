@@ -1,29 +1,26 @@
-//values retrieved from snapIoTDirectory_cbRetrieval_c 
-var ORION_CB = process.argv[2]; 
-var ORION_ADDR = process.argv[3];
-var USER = process.argv[4]
+//console.log('entered discovery');
+
+var CB_NAME = process.argv[2];
+var CB_IP = process.argv[3];
+var CB_PORT = process.argv[4];
 var ACCESS_LINK = process.argv[5];
-var MODEL = process.argv[6];
-var EDGE_GATEWAY_TYPE = process.argv[7];
-var EDGE_GATEWAY_URI = process.argv[8];
-var ORGANIZATION=process.argv[9];
-var PATH = process.argv[10];
-var KINDBROKER = process.argv[11];
-var APIKEY = process.argv[12];
+var ACCESS_PORT = process.argv[6];
+var CB_PATH = process.argv[7];
+var ORGANIZATION = process.argv[8];
+var CB_LOGIN = process.argv[9];
+var CB_PASSWORD = process.argv[10];
+var SERVICE = process.argv[11];
+var SERVICE_PATH = process.argv[12];
+var APIKEY = process.argv[13];
+
 //Static values
-var ORION_PROTOCOL = "ngsi";
-var MAC = "3D:F2:C9:A6:B3:4F";
-var KIND = "sensor";
-var FREQUENCY = 10;
-var flagAntwerp = true;
 var regexTimeZone0 = /^(\d{4,})-(\d{2})-(\d{2})[T ](\d{2}):(\d{2})(?::(\d{2}(?:\.\d+)?))[Z]?$/;
 var regexTimeZone1 = /^(\d{4,})-(\d{2})-(\d{2})[T ](\d{2}):(\d{2})(?::(\d{2}(?:\.\d+)?))?$/;
-var _serviceIP = "../stubs";
 
 /* global variables */
 var registeredDevices = [];
 var orionDevices= [];
-var orionDevicesSchema;
+var orionDevicesSchema=[];
 var orionDevicesType = [];
 var modelsdata=[];
 var httpRequestOutput="";
@@ -45,6 +42,14 @@ var Promise = require('promise');
 const fs = require('fs');
 var FileSaver = require('file-saver');
 var Blob = require('blob');
+var Parser = require('./Parser/Classes/Parser');
+
+/* ORION setup */ 
+var http = require("http");
+
+var XMLHttpRequest = require("xmlhttprequest").XMLHttpRequest;
+
+
 const ini = require('ini');
 const config = ini.parse(fs.readFileSync('./snap4cityBroker/db_config.ini', 'utf-8'));
 const c_host = config.database.host;
@@ -53,14 +58,7 @@ const c_port = config.database.port;
 const c_password = config.database.password;
 const c_database = config.database.database;
 
-
-
-/* ORION setup */ 
-var http = require("http");
-var Parser = require('./Parser/Classes/Parser');
-
-var XMLHttpRequest = require("xmlhttprequest").XMLHttpRequest;
-
+/*
 var cid = mysql.createConnection({
     host: c_host,
     port: c_port,
@@ -72,105 +70,87 @@ var cid = mysql.createConnection({
 
 cid.connect(function(err){
       if(err){ 
-              console.log('Error connecting to Db');
+              console.log('Error connecting to DB');
               throw err;
              }
-     console.log('Connection established');
+    console.log('Connection to DB established');
 });
 
+ */
 
 var req = new XMLHttpRequest();
+
+//TODO this part is not working!!!
+
 var link = "../api/device.php";
 req.open("POST", link, true);
 
 req.onreadystatechange = function() {
 	if (this.readyState === XMLHttpRequest.DONE && this.status === 200) {
 		let resp= JSON.parse(this.responseText);
-		console.log(resp);
+		//console.log(resp);
 		gb_datatypes= resp["data_type"];
 		gb_value_units= resp["value_unit"];
 		gb_value_types= resp["value_type"];
 	}
 }
 req.send("organization="+ORGANIZATION+"&action=get_param_values");
- 
+
+
 /*  MAIN PROGRAM */
 
-var httpRequestOutput="";
-
-var link ="";
-var limit = 1000;
-var offset2 = 900;
-var offset = 0;
-var smallSearch=0;
-var deviceAttributes=["uri", "devicetype", "kind", "macaddress", "producer", "latitude", "longitude", "protocol", "format", "frequency","k1","k2"];
-
 if (!ACCESS_LINK.startsWith("http"))
-    ACCESS_LINK="http://"+ACCESS_LINK;
+	ACCESS_LINK="http://"+ACCESS_LINK;
 
-if(ACCESS_PORT !== undefined && ACCESS_PORT.localeCompare("null")!==0 && ACCESS_PORT.localeCompare("")!==0  )
-	ACCESS_LINK = ACCESS_LINK+":"+ACCESS_PORT;
+if(ACCESS_PORT !== undefined && ACCESS_PORT.localeCompare("null")!==0 && ACCESS_PORT.localeCompare("")!==0  ){
+        ACCESS_LINK = ACCESS_LINK+":"+ACCESS_PORT;
+}
 
-if(KINDBROKER.localeCompare("external")==0){
-	//console.log("localeCompare if external");
-	if(PATH.localeCompare("null")==0 || PATH.localeCompare("")==0  || PATH == undefined){
-		link = ACCESS_LINK;
-	}
-	else{
-		link = ACCESS_LINK+ PATH;	
-	}
-	//console.log("if link "+link);
+//console.log("localeCompare if external");
+if(CB_PATH == undefined || CB_PATH.localeCompare("null")==0 || CB_PATH.localeCompare("")==0  ){
+	link = ACCESS_LINK;
 }
 else{
-	if(PATH.localeCompare("null") ==0 || PATH == undefined || PATH == null || PATH.localeCompare(" ")==0){
-		link = 'http://'+ORION_ADDR;
-		//console.log("if link "+ link);
-
-	}
-	else{
-		link = 'http://'+ORION_ADDR+PATH;
-	//console.log("else link "+ link);
-
-	}
+	link = ACCESS_LINK+ CB_PATH;
 }
 
-	console.log(ORION_CB);
+//AS FIX
+//link += "/v2/entities";
 
+var xhttp = new XMLHttpRequest();
 
-	var xhttp = new XMLHttpRequest();  
+retrieveData(xhttp, link);
 
-function retrieveData(xtp, link, limit, offset){
-	
+function retrieveData(xhttp, link){
 	var promiseAcquisition = new Promise(function(resolve2, reject){	
-		xhttp = new XMLHttpRequest();  
-		var linkNoLimit = link.split("?limit");
-		
-		link = linkNoLimit[0];
+		xhttp = new XMLHttpRequest();
 
-		if(limit != undefined && offset != undefined){
-			link= link+"?limit="+limit+"&offset="+offset;
-		}
-		//console.log("Link split "+link);
-		console.log("Link split "+link);
-			
-		if(APIKEY !== null || APIKEY !== undefined){
+		//console.log("link: "+ link);
 
-			xhttp.open("GET", link, true);
+		xhttp.open("GET", link, true);
+		if(APIKEY !== null && APIKEY !== undefined && APIKEY.localeCompare("null")!==0)
 			xhttp.setRequestHeader("apikey",APIKEY);
-			xhttp.send(); 
-		}//end if APIKEY != NULL
-		else
-		{ //if apikey is not defined
-			xhttp.open("GET", link, true);
-			xhttp.send(); 
+		if(SERVICE !== null && SERVICE !== undefined && SERVICE.localeCompare("null")!==0 && SERVICE.localeCompare("")!==0)
+			xhttp.setRequestHeader("Fiware-Service", SERVICE);
+		if(SERVICE_PATH !== null && SERVICE_PATH !== undefined && SERVICE_PATH.localeCompare("null")!==0 && SERVICE_PATH.localeCompare("")!==0) {
+			xhttp.setRequestHeader("Fiware-ServicePath", SERVICE_PATH);
+		}else{
+			xhttp.setRequestHeader("Fiware-ServicePath", "/");
 		}
-	
+
+		xhttp.send();
 
 		xhttp.onreadystatechange = function() {
-			//console.log("readyState " + this.readyState + " status " + this.status + this.responseText );
-
-			if (this.readyState == 4 && this.status == 200) {
-								console.log("readyState " + this.readyState + " status " + this.status + this.responseText );
+			if (this.readyState == 4 && this.status == 0) {
+				console.error("not reacheable");
+			}
+			else if (this.readyState == 4 && this.status == 400) {
+				console.error("path malformed");
+			}
+			else if (this.readyState == 4 && this.status == 404) {
+				console.error("not found");
+			}
+			else if (this.readyState == 4 && this.status == 200) {
 				//function that manages the output in order to create the data
 			var responseText = this.responseText;
 			//variable initialization
@@ -180,19 +160,21 @@ function retrieveData(xtp, link, limit, offset){
 						 
 			var obj = JSON.parse(responseText);
 			httpRequestOutput="";
-			
+
+
 			if (obj instanceof Array)
 			{
 
 			//console.log("length obj "+obj.length);
+			//console.log("obj "+obj);
 				for (i=0; i < obj.length; i++) {
-					let index= obj[i].id;
+				//	console.log("obkid: " + obj[i].id);
+					let index= obj[i].id.toLowerCase();
+					//console.log("index "+ index);
 					
 					orionDevices.push(index);
-
-					//orionDevicesSchema[obj[i].id]= obj[i];
-					orionDevicesSchema[index]= obj[i];
-					orionDevicesType[index]= obj[i].type;
+					orionDevicesSchema[index.toLowerCase()]= obj[i];
+					orionDevicesType[index.toLowerCase()]= obj[i].type;
 
 				}
 			
@@ -200,356 +182,23 @@ function retrieveData(xtp, link, limit, offset){
 			else
 			{ 
 				orionDevices.push(obj.id);			
-				orionDevicesSchema[obj.id]= obj;
-				orionDevicesType[obj.id]= obj.type;
+				orionDevicesSchema[obj.id.toLowerCase()]= obj;
+				orionDevicesType[obj.id.toLowerCase()]= obj.type;
 			}
-					 
-			//if(typeof gb_value_units === undefined || gb_value_units.length <=0 )
-			//	getParam(cid);
-			if(typeof modelsdata === undefined || MODEL.localeCompare("custom")==0|| modelsdata.length <=0 )
-				getModels(cid);
-		/*	
-			var promiseValueType = new Promise(function(resolveValueType,rejectValueType){
-			var valueType  = "SELECT value_type FROM value_types ORDER BY value_type";
 
-				if(gb_value_types === undefined || gb_value_types.length <= 0){
-					cid.query(valueType, function (err, result, fields) {
-										
-						if (err) {console.log("sql "+valueType); throw err;}
 
-						for (i = 0; i < result.length; i++) {
-							gb_value_types.push(result[i].value_type);
-						}
-						resolveValueType();	  
-					}); //query
-				}
-				else{
-					resolveValueType();	  				
-				}
-			});//end promiseValueType
-			promiseValueType.then(function(resolveValueType){
-				
-				var promiseDataType = new Promise(function(resolveDataType, rejectDataType){
-					var dataType= "SELECT data_type FROM data_types order by data_type";
-						
-						if(gb_datatypes === undefined || gb_datatypes.length <= 0){
-							cid.query(dataType, function (err, result, fields) {
+			console.log(JSON.stringify(obj));
 
-								if (err) {console.log("sql "+dataType); throw err;}
-								
-								for (i = 0; i < result.length; i++) {
-									gb_datatypes.push(result[i].data_type);
-								}
-						
-								resolveDataType();
-							}); //query
-						}
-						else{
-								resolveDataType();
-						}
-				});//end promise data type
-				promiseDataType.then(function(resolveDataType){
-					var promiseUnit = new Promise(function(resolveUnit, rejectUnit){
-						var valueUnit= "SELECT DISTINCT value_unit_default FROM value_types ORDER BY value_unit_default";
-						
-						if(gb_value_units === undefined || gb_value_units.length <= 0){
-							cid.query(valueUnit, function (err, result, fields) {
+			//console.log("DEVICES FOUND: "+ orionDevices.length);
 
-								if (err) {console.log("sql "+valueUnit); throw err;}
-								for (i = 0; i < result.length; i++) {
-								  gb_value_units.push(result[i].value_unit_default);
-								}
-								resolveUnit();
-							}); //query
-						}
-						else{
-							resolveUnit();
-						}
-					});//end promiseUnit
-					promiseUnit.then(function(resolveDataType){					
-*/					
-					var sql = "(SELECT id FROM temporary_devices WHERE contextBroker = '" + ORION_CB + "') UNION (SELECT id FROM devices WHERE contextBroker = '" + ORION_CB + "')";
-
-					cid.query(sql, function (err, result, fields) {
-						if (err) {console.log("sql "+sql); throw err;}
-						for (i = 0; i < result.length; i++) {
-						  registeredDevices.push(result[i].id);
-						}
-						
-						//checking if the devices already exist in the platform
-						//console.log("registeredDevices " +registeredDevices.length + " orion length "+ orionDevices.length);
-						var newDevices=orionDevices.diff(registeredDevices);
-						console.log("There are " +newDevices.length +" new devices for the broker " + ORION_CB);
-
-						newDevices = removeDuplicates(newDevices);
-						//Checking duplicates into the same array
-						var extractionRulesAtt = new Object();
-						var extractionRulesDev=new Object();
-						var promiseExtractionRules = new Promise(function (resolveExtraction, rejectExtraction){
-							var query  = "SELECT * FROM extractionRules where contextbroker='"+ORION_CB+"';";
-							//console.log("rules");
-							cid.query(query, function (err, resultRules, fields) {
-													
-							if (err) {console.log("sql "+query); throw err;}
-							//console.log("extraction rules");
-								for(var x = 0; x < resultRules.length; x++){
-									if(resultRules[x]["kind"].localeCompare("property") == 0){
-										extractionRulesDev[resultRules[x]["id"]]=resultRules[x];
-									}
-									else{
-										//console.log("resultRules[x] "+ resultRules[x]["id"]);
-										extractionRulesAtt[resultRules[x]["id"]]=resultRules[x];
-									}
-
-								}
-							if(resultRules.length==0){
-								rejectExtraction();
-							}
-							else{
-								resolveExtraction();	
-							}
-							}); //query
-
-						});
-						
-						var se = [];
-						var sesc = [];
-						//console.log("nodup "+ newDevices.length);
-							//			console.log("oriondeviceschema2 "+ JSON.stringify(orionDevicesSchema));
-						var ruleJSON,parser;
-						promiseExtractionRules.then(function(resolveExtraction){
-							/*for (var key in orionDevicesSchema) {
-								console.log(key);			
-							}*/
-							//console.log("new devices "+ newDevices +  "registeredDevices "+ registeredDevices );
-
-							var type;
-							var sensor;
-							//var sensorApplied = new Object();
-							var rule;
-							var devAttr = new Object();
-							for (var i=0; i < newDevices.length; i++)
-							{
-								var attProperty=[];
-								var topic= newDevices[i];
-							//	console.log("topic");	
-								if(orionDevicesSchema[topic] == undefined){
-									//console.log("topic undefined " + topic);
-									continue;
-								}
-								//console.log("topic " + topic);
-								console.log("extract "+ JSON.stringify(extractionRulesAtt));
-								for(var j in extractionRulesAtt){
-
-									rule= extractionRulesAtt[j]["selector"];
-									var id = extractionRulesAtt[j]["id"];
-									rule = JSON.stringify(rule);
-									
-									rule = rule.replace(/\\/g, "");
-									
-									rule = rule.replace("PM2,5","PM2x5");
-									rule = rule.replace("PM2.5","PM2y5");
-									//console.log("rule "+ rule);
-									rule = rule.slice(1,rule.length-1);
-									let jsonRules = JSON.parse(rule);
-
-									parser = new Parser();
-									let typeData = (jsonRules.type).toUpperCase();
-								//	console.log("jsonRules parse "+ jsonRules.param.s);
-
-																		
-									parser.addObjRule(jsonRules,typeData);	
-									let v = orionDevicesSchema[topic];
-									v = JSON.stringify(v);
-									v = v.replace("PM2,5","PM2x5");
-									v = v.replace("PM2.5","PM2y5");
-									//console.log("v "+ v);
-									//console.log("rulePre apl "+ rule);
-									let parserApply = parser.applyRules(v);	
-								//	console.log("rule " + rule +" parserApply " + JSON.stringify(parserApply));
-									var attName, value_type, data_type;
-									//console.log("length" + parserApply.length);
-									for(var p = 0; p < parserApply.length; p++){
-									//	console.log("parserApply "+ JSON.stringify(parserApply)+ " pasr "+ parserApply[0].type);
-										if(extractionRulesAtt[j]["value_type"].startsWith("{")){
-											//console.log("startsWith");
-											let parserValue = new Parser();
-											let ruleValue = extractionRulesAtt[j]["value_type"];
-											ruleValue =JSON.stringify(ruleValue);
-										//	console.log("ruleValue "+ ruleValue);
-											ruleValue = ruleValue.replace(/\\/g, "");
-											ruleValue = ruleValue.slice(1,rule.length-1);
-											let jsonRuleValue = JSON.parse(ruleValue);
-											parserValue.addObjRule(jsonRuleValue,"JSON");	
-											let v2 = orionDevicesSchema[topic];
-											v2 = JSON.stringify(v2);
-											let parserApply2 = parserValue.applyRules(v2);	
-											value_type = parserApply2[0];
-										//	console.log("parserApply2" + value_type);
-
-											
-										}
-										else{
-											value_type = extractionRulesAtt[j]["value_type"];
-										}
-										
-										//------name extraction ----
-										if(extractionRulesAtt[j]["structure_flag"].localeCompare("yes")==0){
-											let toSplit = (jsonRules.param.s).split(".");
-											attName = toSplit[toSplit.length-1];
-										}
-										else{
-											if(parserApply[p].id !== undefined){
-												attName = parserApply[p].id;
-											}
-											else if(parserApply[p] !== undefined){
-												attName = parserApply[p];
-											}
-											else{
-												attName = id;
-											}
-											//console.log("attName "+ attName);
-										}
-										if(extractionRulesAtt[j]["data_type"] == null ||extractionRulesAtt[j]["data_type"].length == 0){
-											data_type = parserApply[p].type;
-										}
-										else{
-											data_type = extractionRulesAtt[j]["data_type"];
-										}
-										attName = attName.replace("PM2x5","PM2,5");
-										attName = attName.replace("PM2y5","PM2.5");
-			
-
-										let objProp = {"value_name": attName, "value_type": value_type, "data_type": data_type, "value_unit": extractionRulesAtt[j]["value_unit"], "editable": false, "healthiness_criteria" : "refresh_rate", "healthiness_value":300};
-										console.log("objProp "+ JSON.stringify(objProp));
-										attProperty.push(objProp);
-										sesc.push(storeAttribute(topic, objProp.value_name, objProp.data_type, objProp.value_type, objProp.value_unit, objProp.healthiness_criteria, objProp.healthiness_value, objProp.value_name));
-
-											//sensor = {"name": attName, "value_type":}
-									}//for p*/
-								}//end for j
-
-								for(var j in extractionRulesDev){
-
-									var nameDev = extractionRulesDev[j]["id"];
-									if(deviceAttributes.includes(nameDev)){
-										let ruleDev= extractionRulesDev[j]["selector"];
-										ruleDev = JSON.stringify(ruleDev);
-										
-										ruleDev = ruleDev.replace(/\\/g, "");
-										ruleDev = ruleDev.slice(1,ruleDev.length-1);
-									//	console.log("ruleDev "+ ruleDev);
-
-										let jsonRulesDev = JSON.parse(ruleDev);
-										parserDev = new Parser();
-
-										parserDev.addObjRule(jsonRulesDev,"JSON");	
-									//	console.log("addObjRule");
-										let vDev = orionDevicesSchema[topic];
-									//	console.log("vDev "+ JSON.stringify(vDev));
-										vDev= JSON.stringify(vDev);
-								//		console.log("before apply rules");
-										let parserApply = parserDev.applyRules(vDev);	
-										
-										devAttr[nameDev] = parserApply[0];
-										//console.log("devAttr"+ devAttr[nameDev] + " namedev "+ nameDev);
-									}
-
-								}//end for j dev
-							
-							var toVerify ={"name": topic,"username": USER,"contextBroker": ORION_CB, "id": topic, "model": MODEL, "devicetype":devAttr["devicetype"], "protocol":ORION_PROTOCOL, "format":devAttr["format"], "frequency": FREQUENCY, "kind":KIND,"latitude":devAttr["latitude"], "longitude":devAttr["longitude"],"macaddress":devAttr["mac"],"k1":devAttr["k1"], "k2": devAttr["k2"],"deviceValues":attProperty};
-
-							var verify = verifyDevice(toVerify);
-							var validity = "invalid";
-							if(verify.isvalid)
-							validity= "valid";
-							
-							se.push(storeDevice(USER,topic,MODEL,KIND,devAttr["devicetype"],
-							ORION_PROTOCOL,FREQUENCY, devAttr["format"], ORION_CB,devAttr["latitude"],
-							devAttr["longitude"],devAttr["mac"],validity,verify.message,"no",ORGANIZATION, EDGE_GATEWAY_TYPE,EDGE_GATEWAY_URI,devAttr["k1"],devAttr["k2"]));
-							//console.log("Se "+ JSON.stringify(se));							   
-							
-
-							}//end for i 
-
-							/*	for(var key in resApply){
-									console.log("key "+JSON.stringify(resApply[key]));
-								}*/
-						//   console.log("sesc"+ sesc.length + " json "+ JSON.stringify(sesc));
-					  //  process.exit;
-								if ( se.length!=0)
-								{
-							
-								//if there are devices to be inserted
-									var promise1 = new Promise(function(resolve, reject) {
-										insertDevices(cid, se,(res)=>{
-											//console.log("resolve 1");
-											resolve();
-										});
-									});
-								//	console.log("sesc "+ sesc);
-									promise1.then(function(resolve){
-										//console.log("SESC BEF "+ JSON.stringify(sesc)+ " SE "+ JSON.stringify(se));
-										insertValues(cid, sesc);
-										//console.log("vales");
-											resolve2();					
-									});
-								
-								}
-							});//end then extraction rules
-						}); //query
-/*	
-					});//promise unit then 
-				});//end then promise data type
-
-			});//end then value type 
-*/			
-				
 			}//end readystate == 4
 			if (this.readyState == 4 && this.status == 500) {
 				//console.log("reject");			
-
-				reject();
 			}
 		};//end onreadystatechange
 	});//end promiseAcquisition
-		
-	promiseAcquisition.then(function(resolve2) { 
-		//console.log("result " + limit + " off ty" + offset);
-		
-		if(!smallSearch){
-			offset2 = offset2+100;
+}	
 
-			//console.log("promise then ok3 " + offset2);
-			
-			xhttp = new XMLHttpRequest();  
-
-			retrieveData(xhttp, link, 100, offset2);
-			console.log("**UPDATE**");
-		}
-		else{
-			offset2 = offset2+1;
-			xhttp = new XMLHttpRequest();  
-
-			retrieveData(xhttp, link, 1, offset2);		
-		}
-	  },
-	  function(error) {
-			//console.log("promise then error");
-
-		if(!smallSearch){
-			smallSearch=1;
-			retrieveData(xhttp, link, 1, offset2);
-			//Do not remove this log
-		}	  
-	  });
-
-}//end retrieveData function
-
-var requestLoop = setInterval(function(){
-	retrieveData(xhttp, link, limit, offset);
-	registeredDevices = [];
-}, 20000);
 function extractType(value)
 {
   var first = value.charAt(0);
@@ -610,8 +259,9 @@ function getParam(cid)
 
 	var dataType= "SELECT data_type FROM data_types order by data_type";
 	cid.query(dataType, function (err, result, fields) {
-							//console.log("result length dataType "+result.length);
+							console.log("result length dataType "+result.length);
 
+		// console.log(sql);
 		if (err) {console.log("sql "+sql); throw err;}
 		for (i = 0; i < result.length; i++) {
 		  gb_datatypes.push(result[i].data_type);
@@ -619,8 +269,9 @@ function getParam(cid)
 	}); //query
 	var valueUnit= "SELECT DISTINCT value_unit_default FROM value_types ORDER BY value_unit_default";
 	cid.query(valueUnit, function (err, result, fields) {
-						//	console.log("result length valueunit "+result.length);
+							console.log("result length valueunit "+result.length);
 
+		// console.log(sql);
 		if (err) {console.log("sql "+sql); throw err;}
 		for (i = 0; i < result.length; i++) {
 		  gb_value_units.push(result[i].value_unit_default);
@@ -629,28 +280,6 @@ function getParam(cid)
 	
 }
 
-function insertDevices(cid, se, callback)
-{
-	//console.log("insertDevices");
-    var sqlse  = "INSERT INTO `temporary_devices`(`username`,`id`,`model`, `kind`,`devicetype`,`protocol`,`frequency`,`format`,`contextBroker`,`latitude`,`longitude`,macaddress,`status`,`validity_msg`,`should_be_registered`,`organization`,`edge_gateway_type`,`edge_gateway_uri`,`k1`,`k2`) VALUES ?";
-                          
-	cid.query(sqlse, [se], function(errSens) {
-				callback();
-
-        if (errSens) {console.log("devices insert error " ); throw errSens;}
-           // console.log("fatto");
-    });	
-}
-
-function insertValues(cid, sesc)
-{
-	//console.log("insertValues");
-	var sqlsesc  = "INSERT INTO `temporary_event_values`(`device`, `cb`,`value_name`, `data_type`,`value_type`,`value_unit`,`healthiness_criteria`,`value_refresh_rate`,`old_value_name`) VALUES ?";
-	//console.log("Sesc "+ JSON.stringify(sesc));
-	cid.query(sqlsesc, [sesc], function(errSSch) {
-        if (errSSch) {throw errSSch;}
-    });
-}
 
 /* store a device in the db*/
 function storeDevice(user,deviceID,model,kind,type, protocol,frequency, format, cb, latitude,longitude,macaddress,status,validity_msg,shouldberegistered,organization,edge_type,edge_uri,k1,k2){
@@ -659,11 +288,377 @@ function storeDevice(user,deviceID,model,kind,type, protocol,frequency, format, 
 function storeAttribute(topic, name, data_type, value_type, value_unit, healthiness_criteria, healthiness_value){
 	return [topic, ORION_CB, name, data_type, value_type, value_unit, healthiness_criteria, healthiness_value, name];
 }
+function getAttributes(topic, extractionRulesAtt, resApply){
+	var arr = [];
 
+	/*for(var key in resApply){
+		arr.push([topic,resApply[key]["contextbroker"],res])
+			 arr.push([deviceID,cb,att.id,data_type,value_type,value_unit,"refresh_rate",300,att.id]);		
+
+	}*/
+}
+/* extract the attributes from the device value and store them in the db*/
+function storeDeviceSchema(cb, attributes, deviceSchema,deviceID){
+	var arr =[];
+	var longitude="";
+	var latitude="";
+	var ob = deviceSchema[deviceID];
+	var value_type= ""; 
+	
+	console.log("storeDeviceSchema deviceSchema[deviceID] "+ JSON.stringify(ob));
+	
+//	console.log("gb_value_units length "+ gb_value_units.length);
+
+	if(cb == 'Antwerp' && flagAntwerp){	
+		for (i=0; i < ob.length; i++){
+		att= ob[i];
+		var split = (att.id).split(".");
+	
+	if(gb_value_units.indexOf(split[1])>=0){
+		value_type = split[1];
+	}
+	else{
+	 value_type = getValueType(att.id,att.type,att.value);
+	 }
+	 var data_type = getDataType(att.id,att.type,att.value);
+	 var value_unit = getValueUnit(value_type);
+	// console.log("push "+deviceID + att.id + "value_type "+ value_type);
+	 if(value_type === null || value_type === undefined || value_type == '' || value_type == ' '){
+		value_type = 'rain';
+	 }
+	 if(data_type === null || data_type === undefined){
+		data_type = 'float';
+	 }
+	 
+	 latitude = "51.219890";
+	 longitude = "4.4034600";
+	// console.log("Device id "+ deviceID + " cb "+ cb + " att.id " + att.id + " data type "+ data_type);
+	 arr.push([deviceID,cb,att.id,data_type,value_type,value_unit,"refresh_rate",300,att.id]);		
+	}
+  }
+  else{
+	  //console.log("storeDeviceSchema" + JSON.stringify(ob));
+	  for (i=0; i < attributes.length; i++)
+	  {	
+		//console.log("for "+JSON.stringify(attributes));
+		att= attributes[i];
+		//console.log("ATT" + JSON.stringify(att));
+		if (att.name=="latitude"){
+			latitude = deviceSchema[deviceID].latitude.value;
+		}
+		else if(att.name=="geolocalization_lat"){
+			latitude=deviceSchema[deviceID].geolocalization_lat.value;
+		}	
+		//	latitude=deviceSchema[deviceID].latitude.value;
+		else if (att.name=="longitude"){
+			longitude=deviceSchema[deviceID].longitude.value;
+		}
+		else if(att.name=="geolocalization_lon"){
+			longitude = deviceSchema[deviceID].geolocalization_lon.value;
+		}
+		//	longitude=deviceSchema[deviceID].longitude.value;
+		else if (att.name=="location" && flagAntwerp){
+			longitude = deviceSchema[deviceID].location.value.coordinates[0];
+			latitude = deviceSchema[deviceID].location.value.coordinates[1];
+		}
+		else if(att.name=="location"){
+			longitude = deviceSchema[deviceID].location.value.coordinates[1].toFixed(4);
+			latitude = deviceSchema[deviceID].location.value.coordinates[0].toFixed(4);		
+		}
+
+
+		// arr.push([deviceID,cb,att.name,att.type,att.value,att.position]);
+		 value_type = getValueType(att.name,att.type,att.value);
+		 var data_type = getDataType(att.name,att.type,att.value);
+		 var value_unit = getValueUnit(value_type);
+		 //	 console.log("Device id "+ deviceID + " cb "+ cb + " att.id " + att.id + " data type "+ data_type);
+
+		 arr.push([deviceID,cb,att.name,data_type,value_type,value_unit,"refresh_rate",300,att.name]);
+	  }
+	}
+  //console.log("latitude: "+latitude + " longitude: "+ longitude);
+  return {"arr": arr, "latitude": latitude, "longitude": longitude};
+}
 
 /* extract the device schema from the NGSI-9/10 representation adopted by Orion  
 */
 
+function extractSchema(value)
+{
+	console.log("Extract schema valueType "+ gb_value_types.length + " units " + gb_value_units.length + "data type " + gb_datatypes.length);
+
+	var attributes = [];
+	var f = ""; // identified format
+//	console.log("valore processato " + value);
+	
+	if(ORION_CB == 'Antwerp' && flagAntwerp ){
+	//console.log("extract antw");
+		attributes= parseAntwerpJSON(value);
+	}
+	else{
+	//console.log("extractorion");
+		attributes = parseOrionJSON(value);
+	}
+	// console.log("attributes "+JSON.stringify(attributes));
+	return {"format": "json", "attr": attributes};
+}
+
+function isTest(deviceSchema)
+{
+  if (deviceSchema.attr.length==1 && deviceSchema.attr[0].name=="test")
+  return true;
+  else return false;
+}
+function parseAntwerpJSON(obj)
+{
+	var attributes = [];
+  // {"id":"ARDUINO_ST_4201_1516802097","type":"Temperature","Temperature":{"type":"float","value":"20.0","metadata":{}},"geolocalization":{"type":"string","value":"45.453701,9.214914","metadata":{}},"measure_units":{"type":"string","value":"Celsius","metadata":{}},"timestamp":{"type":"integer","value":"1516802097","metadata":{}}}
+  var pos=1;
+  for (var prop in obj)
+  {
+          //console.log(obj[prop].type);
+         // console.log(obj[prop].value); 
+	if(obj[prop].type == null){
+		 attributes.push({"name": prop, "type": obj[prop].type, /* uncommented by sara 2711*/"value": obj[prop].value, 
+	 "position":pos});
+	}
+	else{
+	 attributes.push({"name": prop, "type": obj[prop].type.toLowerCase(), /* uncommented by sara 2711*/"value": obj[prop].value, 
+	 "position":pos});
+	 }
+	 pos++;
+	}
+  return attributes;
+}
+
+function parseOrionJSON(obj)
+{
+	console.log("ParseOrionJSON" + JSON.stringify(obj));
+  var attributes = [];
+  // {"id":"ARDUINO_ST_4201_1516802097","type":"Temperature","Temperature":{"type":"float","value":"20.0","metadata":{}},"geolocalization":{"type":"string","value":"45.453701,9.214914","metadata":{}},"measure_units":{"type":"string","value":"Celsius","metadata":{}},"timestamp":{"type":"integer","value":"1516802097","metadata":{}}}
+  var pos=1;
+  for (var prop in obj)
+  {
+
+    if (prop != "id" && prop != "type")
+	{
+		console.log("prop parseOrionJSON "+ prop);
+         // console.log(prop);
+         // console.log(obj[prop].type);
+         // console.logconsole.log(obj[prop].value);
+	//console.log("name:"+prop+"; type:"+obj[prop].type.toLowerCase()+"; value: "+obj[prop].value + ";position: "+pos);
+	 attributes.push({"name": prop, "type": obj[prop].type, "value": obj[prop].value, 
+	 "position":pos});
+	 
+	 pos++;
+	}
+  }
+  return attributes;
+}
+
+function getValueType(valuename,type,value){
+//deviceID, cb, att.name, att.type
+if(type != null && type != undefined){
+
+	type = returnString(type.toString());
+	type = type.toLowerCase();
+	
+	if(valuename === undefined || gb_value_units === undefined || gb_value_units.length <= 0)
+		return null;
+	
+	var name = returnString(valuename.toString());
+	name = name.toLowerCase();
+	
+		//console.log("NAME "+name);
+	//console.log("gb_value_units "+gb_value_units);
+	if(gb_value_units.indexOf(name)>=0){
+		//console.log("if name units");
+		return name;
+	}
+	if(regexTimeZone0.test(value) || regexTimeZone1.test(value) || name.localeCompare("dateobserved")==0)
+		return "timestamp";
+	if(name.localeCompare("lamax") ==0 || name.localeCompare("laeq")==0)
+		return "sound_lv";
+	
+	if(name.localeCompare("sonometerclass")==0)
+		return "audio";
+
+	if(name.localeCompare("location")==0 )
+		return "latitude_longitude";	
+		
+	if(name.localeCompare("geolocalization_lat")==0)
+		return "latitude";
+	
+	if(name.localeCompare("geolocalization_lon")==0)
+		return "longitude";
+	
+	if(name.localeCompare("description")==0 || name.localeCompare("refairqualityobservedmodel")==0 ||name.localeCompare("nome")==0 ||name.localeCompare("stazione")==0 )
+		return "entity_desc";
+		
+	if(type === undefined)
+		return null;
+	
+	if(type.localeCompare("binary")==0)
+		return "button";
+	
+	if(name.localeCompare("model")==0)
+		return "status";
+	
+	if(name.localeCompare("no")==0 || name.localeCompare("no2")==0)
+		return "NO2_concentration";
+
+	if(name.localeCompare("pm25")==0 || name.localeCompare("pm2.5")==0 )
+		return "PM2.5_concentration";		
+	
+	if(name.localeCompare("pm10")==0 )
+		return "PM10_concentration";		
+	
+	if(name.localeCompare("bc")==0)
+		return "benzene_concentration";
+	
+	if(name.localeCompare("temperature")==0 || name.localeCompare("temperatura")==0)
+		return "temperature";
+	
+	if(name.localeCompare("stato")==0 || name.localeCompare("quota")==0)
+		return "status";
+		
+	
+	if(type.localeCompare("structuredvalue")==0 && typeof(value) !== 'object' && name.localeCompare("refdevice")!=0){		
+		var splitVar = (value.toString()).split("|");
+		splitVar[0] = returnString(splitVar[0].toString());
+		
+		/*To remove blank spaces
+		for(var i = 0; i < splitVar.length; i++){
+			splitVar[i] = splitVar[i].split(' ').join('');
+			console.log("splitVar "+splitVar[i]);
+		}*/
+		if(splitVar[0].localeCompare("lamax") ==0 || splitVar[0].localeCompare("laeq")==0){
+			//console.log("sound_lv");
+			return "sound_lv";
+		}
+		/*else{
+			var vector = [];
+			//get the vector 
+			for(var i = 1; i < splitVar.length; i++){
+				vector.push(splitVar[i]);
+			}
+			var res;	
+			res = getValueType(splitVar[i],type, vector);
+			if(res != null)
+				return res;
+		}*/
+	}
+	if(typeof(value) === 'object')
+		return "latitude_longitude";
+	return null;
+	}// end if(type != null && type != undefined
+	return null;
+}
+
+function getDataType(valuename,type,value){
+//deviceID, cb, att.name, att.type
+if(type != null && type != undefined){
+
+	type = returnString(type.toString());
+	type = type.toLowerCase();
+
+	if(valuename === undefined || gb_datatypes === undefined || gb_datatypes.length <= 0)
+		return null;
+	
+	var name = returnString(valuename.toString());
+	name = name.toLowerCase();
+	
+	//If the data type is in the list
+	if(gb_datatypes.indexOf(type)>=0){
+		return type;
+	}
+	if(regexTimeZone0.test(value) || regexTimeZone1.test(value))
+		return "time";
+	
+	if(type.localeCompare("text")==0)
+		return "string";
+	
+	if(type.localeCompare("number")==0){
+			if(isInt(value))
+				return "integer";
+			if(isFloat(value))
+				return "float";
+		}
+	
+	if(type.localeCompare("structuredvalue")==0 && typeof(value)!== 'object'){		
+			console.log("value"+ value);
+		var splitVar = (value.toString()).split("|");
+		
+		splitVar[1] = returnString(splitVar[1].toString());
+		splitVar[1] = returnString(splitVar[1]);
+		//To remove blank spaces
+		/*for(var i = 0; i < splitVar.length; i++){
+			splitVar[i] = splitVar[i].split(' ').join('');
+			console.log("splitVar "+splitVar[i]);
+		}*/
+		if(isInt(splitVar[1]))
+			return "integer";
+		if(isFloat(splitVar[1]))
+			return "float";
+		
+		/*else{
+			var vector = [];
+			//get the vector 
+			for(var i = 1; i < splitVar.length; i++){
+				vector.push(splitVar[i]);
+			}
+			var res;	
+			res = getValueType(splitVar[i],type, vector);
+			if(res != null)
+				return res;
+		}*/
+	}
+	if(typeof(value) === 'object')
+		return "float";
+	return null;
+	}// end if(type != null && type != undefined
+	return null;
+}
+function getValueUnit(value){
+	//console.log("value switch "+value);
+	switch(value){
+		case "temperature": return "°C";
+		case "speed": return "km/h";
+		case "humidity": return "%";
+		case "power": return "W";
+		case "status": return "#";
+		case "pressure": return "hPa";
+		case "orientation": return "deg";
+		case "timestamp": return "s";
+		case "string": return "#";
+		case "integer":return "#";
+		case "float":return "#";
+		case "benzene_concentration": return "ppm";
+		case "NO_concentration": return "ppm";
+		case "NO2_concentration": return "ppm";
+		case "PM10_concentration": return "ppm";
+		case "PM2.5_concentration": return "ppm";
+		default: return "#";
+	}
+	
+	return null;
+}
+function returnString(str){
+	var str2 = "";
+	for(var i = 0; i < str.length; i++){
+		var c = str.charAt(i);
+		if(c.match(/^[a-zA-Z0-9_.-]*$/)){
+			str2 = str2+c;
+		}
+	}
+	return str2;
+}
+function isInt(n){
+    return Number(n) == n && n % 1 === 0;
+}
+function isFloat(n){
+    return Number(n) == n && n % 1 !== 0;
+}
 
 function verifyDevice(deviceToverify){
 	
@@ -768,19 +763,10 @@ function verifyDevice(deviceToverify){
                                     msg+="-The device attribute name "+ deviceToverify.deviceValues[j].value_name+ " do not comply with its model."     
                                 }
 
-                            }
-                        
-                
-                    
+                            }                  
                    
                    }
             
-            
-          /* console.log("modelsdata[i].edge_gateway_type");
-                console.log(modelsdata[i].edge_gateway_type);
-                console.log("deviceToverify.edge_gateway_type");
-                console.log(deviceToverify.edge_gateway_type);
-               */
                 var h3= (modelsdata[i].edge_gateway_type==deviceToverify.edge_gateway_type)||
                         (
                             (modelsdata[i].edge_gateway_type==undefined || modelsdata[i].edge_gateway_type=="" || modelsdata[i].edge_gateway_type== null)&&
@@ -911,26 +897,18 @@ function isLongitude(lng) {
 function removeDuplicates(arr){
     let unique_array = []
     for(let i = 0;i < arr.length; i++){
-        if(unique_array.indexOf(arr[i].replace("-","")) == -1){
-            unique_array.push(arr[i])
-        }
-    }
-    return unique_array
-}
-/*
-function removeDuplicates(arr){
-    let unique_array = []
-    for(let i = 0;i < arr.length; i++){
         if(unique_array.indexOf(arr[i].toLowerCase().replace("-","")) == -1){
             unique_array.push(arr[i].toLowerCase())
         }
     }
     return unique_array
-}*/
+}
 
+//this is needed???
 Array.prototype.removeDuplicatesSchema = function( arr ) {
 	//console.log ("diff");
   return this.filter( function( val ) {
     return arr.indexOf( val ) < 0;
   });
 };
+

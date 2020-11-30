@@ -581,34 +581,32 @@ function fetch_data(destroyOld, selected=null)
 			"orderable":false,
 			className: "center",
 			render: function(d) {
-			//defaultContent: '<button type="button" id="edit" class="editDashBtn data-id="'+ row.name +'"">Edit</button>'
-			return '<button type="button" class="editDashBtn" ' +
-			'data-id="'+d.name+'" ' +
-			'data-contextBroker="'+d.contextbroker+'" ' +
-			'data-kind="'+d.kind+'" ' +
-			'data-model="'+d.model+'" ' +
-			'data-devicetype="'+d.devicetype+'" ' +
-			'data-uri="'+d.uri+'" ' +
-			'data-visibility="'+d.visibility+'" ' +
-			'data-frequency="'+d.frequency+'" ' +
-			'data-format="'+d.format+'" ' +
-			'data-ownership="'+d.ownership+'" ' +
-			'data-protocol="'+d.protocol+'" ' +
-			'data-macaddress="'+d.macaddress+'" ' +
-			'data-producer="'+d.producer+'" ' +
-			'data-longitude="'+d.longitude+'" ' +
-			'data-latitude="'+d.latitude+'" ' +
-			'data-edge_gateway_type="'+d.edge_gateway_type+'" ' +
-			'data-edge_gateway_uri="'+d.edge_gateway_uri+'" ' +
-			'data-k1="'+d.k1+'" ' +
-			'data-k2="'+d.k2+'" ' +
-			'data-attributes="'+d.attributes+'" ' +
-                        'data-subnature="'+d.subnature+'" '+
-                        'data-static-attributes="'+btoa(d.static_attributes)+'" '+
-			'data-service="'+d.service+'" ' + 
-	                'data-servicePath="'+d.servicePath+'" ' +
-			'data-status="'+d.status+'">Edit</button>';
-			
+				return '<button type="button" class="editDashBtn" ' +
+				'data-id="'+d.name+'" ' +
+				'data-contextBroker="'+d.contextbroker+'" ' +
+				'data-kind="'+d.kind+'" ' +
+				'data-model="'+d.model+'" ' +
+				'data-devicetype="'+d.devicetype+'" ' +
+				'data-uri="'+d.uri+'" ' +
+				'data-visibility="'+d.visibility+'" ' +
+				'data-frequency="'+d.frequency+'" ' +
+				'data-format="'+d.format+'" ' +
+				'data-ownership="'+d.ownership+'" ' +
+				'data-protocol="'+d.protocol+'" ' +
+				'data-macaddress="'+d.macaddress+'" ' +
+				'data-producer="'+d.producer+'" ' +
+				'data-longitude="'+d.longitude+'" ' +
+				'data-latitude="'+d.latitude+'" ' +
+				'data-edge_gateway_type="'+d.edge_gateway_type+'" ' +
+				'data-edge_gateway_uri="'+d.edge_gateway_uri+'" ' +
+				'data-k1="'+d.k1+'" ' +
+				'data-k2="'+d.k2+'" ' +
+				'data-attributes="'+d.attributes+'" ' +
+				'data-subnature="'+d.subnature+'" '+
+				'data-static-attributes="'+btoa(d.static_attributes)+'" '+
+				'data-service="'+d.service+'" ' + 
+				'data-servicePath="'+d.servicePath+'" ' +
+				'data-status="'+d.status+'">Edit</button>';
 			}
 		},
 		{
@@ -1509,11 +1507,9 @@ $(document).ready(function ()
 	$('#devicesTable tbody').on('click', 'button.editDashBtn', function () {
 
 		document.getElementById('editlistAttributes').innerHTML = "";
-                document.getElementById('addlistAttributesM').innerHTML = "";
-                document.getElementById('deletedAttributes').innerHTML = "";
+		document.getElementById('addlistAttributesM').innerHTML = "";
+		document.getElementById('deletedAttributes').innerHTML = "";
 
-		//$("#editDeviceModal").modal('show');
-        
         $("#editDeviceModalLabel").html("Edit device - " + $(this).attr("data-id"));
         $("#editDeviceModalTabs").show();
 		$('#editDeviceModal div.modalCell').show();
@@ -1528,7 +1524,6 @@ $(document).ready(function ()
         $('#editDeviceKoMsg').hide();
         $('#editDeviceKoIcon').hide();
         $('#editDeviceOkBtn').hide();
-
 
 		var id = $(this).attr('data-id');
 		gb_old_id = id;
@@ -1552,7 +1547,7 @@ $(document).ready(function ()
 		var key1 = $(this).attr('data-k1');
 		var key2 = $(this).attr('data-k2');	 
 
-                var subnature= $(this).attr('data-subnature');
+		var subnature= $(this).attr('data-subnature');
 
 		if (model == "custom")
 			$("#editDeviceGenerateKeyBtn").show();
@@ -1580,18 +1575,20 @@ $(document).ready(function ()
 		$('#KeyOneDeviceUserM').val(key1);
 		$('#KeyTwoDeviceUserM').val(key2);
 
-                $('#selectSubnatureM').val(subnature);
-                $('#selectSubnatureM').trigger('change');
+		$('#selectSubnatureM').val(subnature);
+		$('#selectSubnatureM').trigger('change');
 		subnatureChanged(true, JSON.parse(atob($(this).attr("data-static-attributes"))));
+
+		if ($("#isMobileTickM").is(":checked"))
+			$("#positionMsgHintM").show();
+		else
+			$("#positionMsgHintM").hide();
 
 		fillMultiTenancyFormSection($(this).attr('data-service'), $(this).attr('data-servicePath'), contextbroker, 'contextbroker');
 
-
-		//UserEditKey();
 		checkEditDeviceConditions();
 		
-	
-						showEditDeviceModal();				
+		showEditDeviceModal();				
 
 		$.ajax({
 			url: "../api/bulkDeviceUpdate.php",
@@ -1792,7 +1789,7 @@ $(document).ready(function ()
 
 
             //UPDATE FUNCTION
-			var updatedDevice={"contextbroker":$('#selectContextBrokerM').val(),"name":$('#inputNameDeviceM').val(),"devicetype":$('#inputTypeDeviceM').val(),"model":$('#selectModelDeviceM').val(),"macaddress":$('#inputMacDeviceM').val(),"frequency":$('#inputFrequencyDeviceM').val(),"kind":$('#selectKindDeviceM').val(),"protocol":$('#selectProtocolDeviceM').val(),"format":$('#selectFormatDeviceM').val(),"latitude":$('#inputLatitudeDeviceM').val(),"longitude":$('#inputLongitudeDeviceM').val(),"visibility":$('#selectVisibilityDeviceM').val(),"k1":$('#KeyOneDeviceUserM').val(), "k2":$('#KeyTwoDeviceUserM').val(), "subnature":$('#selectSubnatureM').val(), "static_attributes":JSON.stringify(retrieveStaticAttributes("editlistStaticAttributes")),"service":service, "service_path":servicePath, "producer":$('#inputProducerDeviceM').val(),"edge_gateway_type":$('#selectEdgeGatewayTypeM').val(),"edge_gateway_uri": $('#inputEdgeGatewayUriM').val(), "deviceValues":arrayAttributes};
+			var updatedDevice={"contextbroker":$('#selectContextBrokerM').val(),"name":$('#inputNameDeviceM').val(),"devicetype":$('#inputTypeDeviceM').val(),"model":$('#selectModelDeviceM').val(),"macaddress":$('#inputMacDeviceM').val(),"frequency":$('#inputFrequencyDeviceM').val(),"kind":$('#selectKindDeviceM').val(),"protocol":$('#selectProtocolDeviceM').val(),"format":$('#selectFormatDeviceM').val(),"latitude":$('#inputLatitudeDeviceM').val(),"longitude":$('#inputLongitudeDeviceM').val(),"visibility":$('#selectVisibilityDeviceM').val(),"k1":$('#KeyOneDeviceUserM').val(), "k2":$('#KeyTwoDeviceUserM').val(), "subnature":$('#selectSubnatureM').val(), "static_attributes":JSON.stringify(retrieveStaticAttributes("editlistStaticAttributes", false, "isMobileTickM")),"service":service, "service_path":servicePath, "producer":$('#inputProducerDeviceM').val(),"edge_gateway_type":$('#selectEdgeGatewayTypeM').val(),"edge_gateway_uri": $('#inputEdgeGatewayUriM').val(), "deviceValues":arrayAttributes};
 			 
 			var device_status = 'invalid';
 			var verify = verifyDevice(updatedDevice);
@@ -2925,7 +2922,14 @@ $(document).on({
                 checkSubnatureChanged($('#selectSubnatureM'), e.params.args.data.id, "", e, true);
         });
 
-
+//START ISMOBILE PROPERTIES
+	$("#isMobileTickM").change(function(){
+		if(this.checked)
+			$("#positionMsgHintM").show();
+		else
+			$("#positionMsgHintM").hide();
+	});
+//END ISMOBILE PROPERTIES
 
 
 });  // end of ready-state
@@ -3108,8 +3112,8 @@ function verifyDevice(deviceToverify){
 	if(deviceToverify.format==undefined || deviceToverify.format==""){msg+="-format is mandatory.";}
 	if(deviceToverify.latitude==undefined || !isLatitude(deviceToverify.latitude)){msg+="-Latitude is mandatory, with the correct numeric format.";}
 	if(deviceToverify.longitude==undefined ||!isLongitude(deviceToverify.longitude)){msg+="-Longitude is mandatory, with the correct numeric format.";}
-	if(deviceToverify.k1==undefined || deviceToverify.k1==""){msg+="-k1 is mandatory.";}
-	if(deviceToverify.k2==undefined || deviceToverify.k2==""){msg+="-k2 is mandatory.";}
+//	if(deviceToverify.k1==undefined || deviceToverify.k1==""){msg+="-k1 is mandatory.";}
+//	if(deviceToverify.k2==undefined || deviceToverify.k2==""){msg+="-k2 is mandatory.";}
 
 	//verify consistency subnature and its attributes
 	if (deviceToverify.subnature!==""){
@@ -3178,26 +3182,11 @@ function verifyDevice(deviceToverify){
 
 							}
 				   }
-				
-				var h3= (modelsdata[i].edge_gateway_type==deviceToverify.edge_gateway_type)||
-						(
-							(modelsdata[i].edge_gateway_type==undefined || modelsdata[i].edge_gateway_type=="" || modelsdata[i].edge_gateway_type== null)&&
-							(deviceToverify.edge_gateway_type==undefined || deviceToverify.edge_gateway_type=="" || deviceToverify.edge_gateway_type== null)
-							
-						);
 					   
-				if(modelsdata[i].contextbroker!=deviceToverify.contextbroker){ 
-					answer.isvalid=false; 
-					msg+="-The device property: context broker does not comply with its model." ;
-				} 
-
-				if(modelsdata[i].devicetype!=deviceToverify.devicetype) {
-					answer.isvalid=false;
-					msg+="-The device property: type does not comply with its model." ;
-				}
-
-				if(!h3){ answer.isvalid=false; 
-						msg+="-The device property: edge gateway type does not comply with its model." ;}
+				if(modelsdata[i].contextbroker!=deviceToverify.contextbroker){answer.isvalid=false; 
+					msg+="-The device property: context broker does not comply with its model." ;} 
+				if(modelsdata[i].devicetype!=deviceToverify.devicetype) {answer.isvalid=false;
+					msg+="-The device property: type does not comply with its model." ;}
 				if(modelsdata[i].format!=deviceToverify.format){ answer.isvalid=false;
 																msg+="-The device property: format does not comply with its model." ;}
 				if(modelsdata[i].frequency!=deviceToverify.frequency){ answer.isvalid=false; 
@@ -3214,11 +3203,12 @@ function verifyDevice(deviceToverify){
 				//if(modelsdata[i].static_attributes!=deviceToverify.static_attributes){{ answer.isvalid=false;
                                 //                                                                                        msg+="-The device property: static_attributes does not comply with its model." ;}}
 
-				if ((modelsdata[i].service!==null)&&(modelsdata[i].service!=deviceToverify.service)){{ answer.isvalid=false;
-                                                                                                                        msg+="-The device property: service does not comply with its model." ;}}
-
-				if ((modelsdata[i].servicePath!==null)&&(modelsdata[i].servicePath!=deviceToverify.service_path)){{ answer.isvalid=false;
-                                                                                                                        msg+="-The device property: servicePath does not comply with its model." ;}}
+	            //the model doenot permit a null value for service and servicepath, so they are always configured... so cannot be used for validation
+	            //            //TODO we need model to set null to activate this functionalities
+				//if ((modelsdata[i].service!==null)&&(modelsdata[i].service!=deviceToverify.service)){{ answer.isvalid=false;
+				//	msg+="-The device property: service does not comply with its model." ;}}
+				//if ((modelsdata[i].servicePath!==null)&&(modelsdata[i].servicePath!=deviceToverify.service_path)){{ answer.isvalid=false;
+				//	msg+="-The device property: servicePath does not comply with its model." ;}}
 			}
 		}
 		else{
@@ -3229,9 +3219,9 @@ function verifyDevice(deviceToverify){
 			for (var i=0; i<deviceToverify.deviceValues.length; i++){
 				var v=deviceToverify.deviceValues[i];
 
-				if(v==undefined){
-					continue;
-				}
+				//if(v==undefined){
+				//	continue;
+				//}
 				var attr_status=true;
 				var attr_msg="";
 				var empty_name = false;

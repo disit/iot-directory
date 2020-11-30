@@ -1,6 +1,6 @@
 var tableFirstLoad = true;
 var dataTable ="";
-   
+ 
 //--------to get the datatypes items---------- 
 $.ajax({url: "../api/device.php",
 	data: {
@@ -59,130 +59,60 @@ function generateUUID() { // Public Domain/MIT
         d = Math.floor(d / 16);
         return (c === 'x' ? r : (r & 0x3 | 0x8)).toString(16);
 		});
-	}
-	
-function download(sourcename, devicename, contextbroker) {
-        $.ajax({url: "../api/device.php",
-                data: {
-                        token : sessionToken,
-                        action: 'download',
-						/*Sara711 - for logging*/
-						username: loggedUser,
-						organization : organization, 
-                        filename: sourcename,
-                        id:devicename,
-                        contextbroker: contextbroker
-                },
-                type: "POST",
-                async: true,
-                dataType: 'json',
-                success: function (mydata) {
-                        var element = document.createElement('a');
-                        element.setAttribute('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent(mydata.msg));
-                        element.setAttribute('download', sourcename.substr(sourcename.indexOf("/", 2)+1));
-                        element.style.display = 'none';
-                        document.body.appendChild(element);
-                        element.click();
-                        document.body.removeChild(element);
-                },
-                error: function (mydata)
-                {
-                        console.log("error:".mydata);
-                }
-        });
 }
- 
-	 
- if (loggedRole=='RootAdmin')
-        var filterDefaults = {
-                        myOwnPrivate: 'MyOwnPrivate',
-                        myOwnPublic: 'MyOwnPublic',
-                      public: 'public',
-                      private : 'private'
-         };
-   else
-         var filterDefaults = {
-			myOwnPrivate: 'MyOwnPrivate',
-			myOwnPublic: 'MyOwnPublic',
-            public: 'public',
-            delegated: 'delegated'
-        };	
-		
 	
 function format ( d ) {
-	
-	//console.log("formatttooooo");
-	//console.log(d);
-	
-	// `d` is the original data object for the row
 	var showKey="";
-    if (d.visibility =='MyOwnPublic' || d.visibility == 'MyOwnPrivate' || d.visibility=='delegated'){
+	if (d.visibility =='MyOwnPublic' || d.visibility == 'MyOwnPrivate' || d.visibility=='delegated'){
 		if(d.k1!="" && d.k2!="")
-          showKey =  '<div class="row">' +
-			'<div class="col-xs-6 col-sm-6" style="background-color:#E6E6FA;"><b>K1:</b>' + "  " + d.k1 + '</div>' +
-			'<div class="clearfix visible-xs"></div>' +
-			'<div class="col-xs-6 col-sm-6" style="background-color:#E6E6FA;"><b>K2:</b>' + "  " + d.k2  + '</div>' +	
-		'</div>' ;	  
-		}	
+			showKey =  
+			'<div class="row">' +
+				'<div class="col-xs-6 col-sm-6" style="background-color:#E6E6FA;"><b>K1:</b>' + "  " + d.k1 + '</div>' +
+				'<div class="clearfix visible-xs"></div>' +
+				'<div class="col-xs-6 col-sm-6" style="background-color:#E6E6FA;"><b>K2:</b>' + "  " + d.k2  + '</div>' +	
+			'</div>' ;	  
+	}	
 
 	var multitenancy = "";
 	if (d.service && d.servicePath){
-		multitenancy = '<div class="row">' + 
-			'<div id="service" class="col-xs-6 col-sm-6" style="background-color:#B3D9FF;"><b>Service/Tenant:</b>' + "  " + d.service + '</div>' +
-			'<div id="service" class="clearfix visible-xs"></div>' +
-			'<div class="col-xs-6 col-sm-6" style="background-color:#B3D9FF;"><b>ServicePath:</b>' + "  " + d.servicePath  + '</div>' +	
-		'</div>' ;
+		multitenancy = 
+			'<div class="row">' + 
+				'<div id="service" class="col-xs-6 col-sm-6" style="background-color:#B3D9FF;"><b>Service/Tenant:</b>' + "  " + d.service + '</div>' +
+				'<div id="service" class="clearfix visible-xs"></div>' +
+				'<div class="col-xs-6 col-sm-6" style="background-color:#B3D9FF;"><b>ServicePath:</b>' + "  " + d.servicePath  + '</div>' +	
+			'</div>' ;
 	}
-		
-	var txtCert="";
-	if (d.privatekey!="" && d.privatekey!= null && (d.visibility =='MyOwnPublic' || d.visibility == 'MyOwnPrivate'))
-		txtCert  = '<div class="row">' +
-						'<div class="col-xs-6 col-sm-6" style="background-color:#D6CADD;"><b>SHA1:</b>' + "  " + d.sha + '</div>' +
-						'<div class="clearfix visible-xs"></div>' +
-						'<div class="col-xs-6 col-sm-6" style="background-color:#D6CADD;"><b>Created on:</b>' + "  " + d.created + '</div>' +
-					'</div>'+ 
-					'<div class="row">' +
-						'<div class="col-xs-6 col-sm-6" style="background-color:#E6E6FA;"><button class="btn btn-warning" onclick="download(\'\/private\/'+d.privatekey+'\',\''+d.device+'\',\''+d.cb+'\');return true;"><b>private key</b></button></div>' +
-						'<div class="clearfix visible-xs"></div>' +
-						'<div class="col-xs-6 col-sm-6" style="background-color:#E6E6FA;"><button class="btn btn-warning" onclick="download(\'\/certsdb\/'+d.certificate+'\',\''+d.device+'\',\''+d.cb+'\');return true;"><b>certificate</b></button></div>' +
-					'</div>'
-		else
-			txtCert = '<div class="row">' +
-						'<div class="col-xs-6 col-sm-6" style="background-color:#D6CADD;"><b>Created on:</b>' + "  " + d.created + '</div>' +
-						'<div class="clearfix visible-xs"></div>' +
-					'</div>' 
-
+	
 	return	'<div class="container-fluid">' +
-				'<div class="row">' +
-                		        '<div class="col-xs-6 col-sm-6" style="background-color:#D6CADD;"><b>IoT Broker URI:</b>' + "  " + d.accesslink + '</div>' +
-		                        '<div class="clearfix visible-xs"></div>' +
-                		        '<div class="col-xs-6 col-sm-6" style="background-color:#D6CADD;"><b>IoT Broker Port:</b>' + "  " + d.accessport + '</div>' +
-		                '</div>' +
-				'<div class="row">' +
-                                        '<div class="col-xs-6 col-sm-6" style="background-color:#E6E6FA;"><b>Device Type:</b>' + "  " + d.devicetype + '</div>' +
-                                        '<div class="clearfix visible-xs"></div>' +
-										'<div class="col-xs-6 col-sm-6" style="background-color:#E6E6FA;"><b>Organization:</b>' + "  " + d.organization + '</div>' +
-                                '</div>' +
-				'<div class="row">' +
-					'<div class="col-xs-6 col-sm-6" style="background-color:#D6CADD;"><b>Data Type:</b>' + "  " + d.data_type + '</div>' +
-					'<div class="clearfix visible-xs"></div>' +
-					'<div class="col-xs-6 col-sm-6" style="background-color:#D6CADD;"><b>Editable:</b>' + "  " + d.editable + '</div>' +								
-				'</div>' +
-				'<div class="row">' +
-					'<div class="col-xs-6 col-sm-6" style="background-color:#E6E6FA;"><b>Healthiness criteria:</b>' + "  " + d.healthiness_criteria + '</div>' +
-					'<div class="clearfix visible-xs"></div>' +
-					'<div class="col-xs-6 col-sm-6" style="background-color:#E6E6FA;"><b>Healthiness value:</b>' + "  " + d.value_refresh_rate + '</div>' +
-				'</div>' + 
-				'<div class="row">' +
-					'<div class="col-xs-6 col-sm-6" style="background-color:#D6CADD;"><b>Kind:</b>' + "  " +  d.kind + '</div>' +
-					'<div class="clearfix visible-xs"></div>' +	
-				'</div>' + 	 showKey +
-
-				  txtCert + multitenancy +
+			'<div class="row">' +
+				'<div class="col-xs-6 col-sm-6" style="background-color:#D6CADD;"><b>Broker URI:</b>' + "  " + d.accesslink + '</div>' +
+				'<div class="clearfix visible-xs"></div>' +
+				'<div class="col-xs-6 col-sm-6" style="background-color:#D6CADD;"><b>Broker Port:</b>' + "  " + d.accessport + '</div>' +
+			'</div>' +
+			'<div class="row">' +
+				'<div class="col-xs-6 col-sm-6" style="background-color:#E6E6FA;"><b>Device Type:</b>' + "  " + d.devicetype + '</div>' +
+				'<div class="clearfix visible-xs"></div>' +
+				'<div class="col-xs-6 col-sm-6" style="background-color:#E6E6FA;"><b>Organization:</b>' + "  " + d.organization + '</div>' +
+			'</div>' +
+			'<div class="row">' +
+			'<div class="col-xs-6 col-sm-6" style="background-color:#D6CADD;"><b>Data Type:</b>' + "  " + d.data_type + '</div>' +
+				'<div class="clearfix visible-xs"></div>' +
+				'<div class="col-xs-6 col-sm-6" style="background-color:#D6CADD;"><b>Editable:</b>' + "  " + d.editable + '</div>' +								
+			'</div>' +
+			'<div class="row">' +
+				'<div class="col-xs-6 col-sm-6" style="background-color:#E6E6FA;"><b>Healthiness criteria:</b>' + "  " + d.healthiness_criteria + '</div>' +
+				'<div class="clearfix visible-xs"></div>' +
+				'<div class="col-xs-6 col-sm-6" style="background-color:#E6E6FA;"><b>Healthiness value:</b>' + "  " + d.value_refresh_rate + '</div>' +
+			'</div>' + 
+			'<div class="row">' +
+				'<div class="col-xs-6 col-sm-6" style="background-color:#D6CADD;"><b>Kind:</b>' + "  " +  d.kind + '</div>' +
+				'<div class="clearfix visible-xs"></div>' +	
+			'</div>' + 	 
+			showKey +
+			getInfoCert(d.privatekey, d.visibility, d.created, d.device, d.cb, d.certificate, d.sha) + 
+			multitenancy +
 			'</div>' ;
 }
-
-
 	
 //DataTable fetch_data function 		
 	function fetch_data(destroyOld, selected)
@@ -1915,7 +1845,7 @@ function drawMapAll(data, divName){
 
                  redIcon = new L.Icon({
 
-                                iconUrl: 'https://www.snap4city.org/iotdirectorytest/markerPrivate.png',
+                                iconUrl: '../img/markerPrivate.png',
                                 iconSize: new L.Point(32, 32),
                                 iconAnchor: new L.Point(16, 16),
                                 popupAnchor: new L.Point(0, -18)
@@ -1924,7 +1854,7 @@ function drawMapAll(data, divName){
 
                 blueIcon = new L.Icon({
 
-                                iconUrl: 'https://www.snap4city.org/iotdirectorytest/markerPublic.png',
+                                iconUrl: '../img/markerPublic.png',
                                 iconSize: new L.Point(32, 32),
                                 iconAnchor: new L.Point(16, 16),
                                 popupAnchor: new L.Point(0, -18)
@@ -1932,7 +1862,7 @@ function drawMapAll(data, divName){
                             });
                 greenIcon = new L.Icon({
 
-                                iconUrl: 'https://www.snap4city.org/iotdirectorytest/markerGreen.png',
+                                iconUrl: '../img/markerGreen.png',
                                 iconSize: new L.Point(32, 32),
                                 iconAnchor: new L.Point(16, 16),
                                 popupAnchor: new L.Point(0, -18)

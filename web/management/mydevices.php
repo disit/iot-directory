@@ -131,6 +131,10 @@ if (isset($_SESSION['refreshToken'])) {
        <!-- Font awesome icons -->
         <link rel="stylesheet" href="../js/fontAwesome/css/font-awesome.min.css">
 
+        <!-- select2 -->
+        <link href="https://cdn.jsdelivr.net/npm/select2@4.0.13/dist/css/select2.min.css" rel="stylesheet" />
+        <script src="https://cdn.jsdelivr.net/npm/select2@4.0.13/dist/js/select2.min.js"></script>
+
      <!--    <link href="https://fonts.googleapis.com/css?family=Cabin:400,500,600,700|Catamaran|Varela+Round" rel="stylesheet"> -->
         
         <!-- Custom CSS -->
@@ -328,21 +332,15 @@ if (isset($_SESSION['refreshToken'])) {
                                         private
                                     </div>
                                 </div>
-
-                            </div>
+							</div>
 							
-							
-										<div id="managerBoard" class="row mainContentRow">
-											<!-- <div class="col-xs-12 mainContentRowDesc">My Devices Menu </div>-->
-											<div class="col-xs-12 mainContentCellCnt">
-											
-											<button type="text" id="myDevice" name="myDevice"class="btn btn-primary">My Devices</button>
-											<button type="text" id="delegatedDevice" name="delegatedDevice" class="btn btn-primary">Delegated Devices</button>			
-											<button type="button" id="addMyNewDevice" class="btn btn-primary" >Add New Device</button>
-											</div>
-										</div>
-		
-							
+							<div id="managerBoard" class="row mainContentRow">
+								<div class="col-xs-12 mainContentCellCnt">
+									<button type="text" id="myDevice" name="myDevice"class="btn btn-primary">My Sensors<BR>and Actuators</button>
+									<button type="text" id="delegatedDevice" name="delegatedDevice" class="btn btn-primary">Delegated Sensors<BR>and Actuators</button>			
+									<button type="button" id="addMyNewDevice" class="btn btn-primary pull-right" >Add New Device</button>
+								</div>
+							</div>
 			
 							<div id="addMyNewDeviceRow" class="row mainContentRow">
                                 <div class="col-xs-12 mainContentRowDesc">Add My New Device</div>
@@ -468,9 +466,17 @@ if (isset($_SESSION['refreshToken'])) {
 								-->
 								<div id="addStaticTabModel" hidden="true">
 									<div class="row">
+										<div class="col-xs-12 col-md-8 modalCell" >
+											<div class="custom-control custom-checkbox">
+												<input type="checkbox" class="custom-control-input" id="isMobileTick">
+												<label class="custom-control-label" for="isMobileTick">Device in Mobility</label>
+											</div>
+										</div>
+									</div>
+									<div class="row">
 										<div class="col-xs-12 col-md-6 modalCell">
 											<div class="modalFieldCnt">
-												<select id="selectSubnature" name="selectSubnature" class="modalInputTxt" disabled>
+												<select id="selectSubnature" name="selectSubnature" class="modalInputTxt">
 													<option></option>
 												</select>
 											</div>
@@ -500,13 +506,10 @@ if (isset($_SESSION['refreshToken'])) {
 										<div class="form-row iot-directory-form-row">
 												<link rel="stylesheet" href="../css/leaflet.css" />
 												<link rel="stylesheet" href="../css/leaflet.draw.css" />
-												<div id="addDeviceMapModalBodyUser" style="width: 100%; height: 400px" class="modal-body modalBody">
-												</div>
+												<div id="addDeviceMapModalBodyUser" style="width: 100%; height: 400px" class="modal-body modalBody"></div>
 										</div> 
 									  </div>
-									 
                                 </div>
-		
 								
                             </div>
 							
@@ -525,7 +528,7 @@ if (isset($_SESSION['refreshToken'])) {
 										<thead>
 										  <tr>
 											<th></th>	
-											<th data-cellTitle="device">Device</th> 
+											<th data-cellTitle="device">Device Identifier</th> 
 											<th data-cellTitle="value_type">Value Type</th>
 									  	    <th data-cellTitle="devicetype">Device Type</th> 
 											<th data-cellTitle="ownership">Ownership</th>	

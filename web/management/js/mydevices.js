@@ -60,94 +60,35 @@ $.ajax({
 		alert("Network errors. <br/> Get in touch with the Snap4City Administrator<br/>"+ JSON.stringify(data));
 	}
 });
-
-function updateDeviceTimeout()
-	{
-		$("#editDeviceOkModal").modal('hide');
-		setTimeout(function(){
-		   location.reload();
-		}, 500);
-	}
-
-	function download(sourcename, devicename, contextbroker) {
-			$.ajax({url: "../api/device.php",
-					data: {
-							token : sessionToken,
-							action: 'download',
-							filename: sourcename,
-							organization : organization, 
-							id:devicename,
-                            contextbroker: contextbroker
-					},
-					type: "POST",
-					async: true,
-					dataType: 'json',
-					success: function (mydata) {
-							var element = document.createElement('a');
-							element.setAttribute('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent(mydata.msg));
-							element.setAttribute('download', sourcename.substr(sourcename.indexOf("/", 2)+1));
-							element.style.display = 'none';
-							document.body.appendChild(element);
-							element.click();
-							document.body.removeChild(element);
-					},
-					error: function (mydata)
-					{
-							console.log("error:".mydata);
-					}
-			});
-	}
-
 	
-  function format ( d ) {
-	    var showKey="";
-	  if (d.visibility =='MyOwnPublic' || d.visibility == 'MyOwnPrivate' || d.visibility == 'delegated' ){
+function format ( d ) {
+	var showKey="";
+	if (d.visibility =='MyOwnPublic' || d.visibility == 'MyOwnPrivate' || d.visibility == 'delegated' ){
 		if(d.k1!="" && d.k2!="")
-          showKey =  '<div class="row">' +
-			'<div class="col-xs-6 col-sm-6" style="background-color:#D6CADD;"><b>K1:</b>' + "  " + d.k1 + '</div>' +
-			'<div class="clearfix visible-xs"></div>' +
-			'<div class="col-xs-6 col-sm-6" style="background-color:#D6CADD;"><b>K2:</b>' + "  " + d.k2  + '</div>' +	
-		'</div>'; 	  
-		}
+			showKey =  
+				'<div class="row">' +
+					'<div class="col-xs-6 col-sm-6" style="background-color:#D6CADD;"><b>K1:</b>' + "  " + d.k1 + '</div>' +
+					'<div class="clearfix visible-xs"></div>' +
+					'<div class="col-xs-6 col-sm-6" style="background-color:#D6CADD;"><b>K2:</b>' + "  " + d.k2  + '</div>' +	
+				'</div>'; 	  
+	}
 	else showKey=""; 
 	
 	var multitenancy = "";
-	if (d.service && d.servicePath){
-		multitenancy = '<div class="row">' + 
-			'<div class="col-xs-6 col-sm-6" style="background-color:#B3D9FF;"><b>Service/Tenant:</b>' + "  " + d.service + '</div>' +
-			'<div class="clearfix visible-xs"></div>' +
-			'<div class="col-xs-6 col-sm-6" style="background-color:#B3D9FF;"><b>ServicePath:</b>' + "  " + d.servicePath  + '</div>' +	
-		'</div>' ;
+	if (d.service ||  d.servicePath){
+		multitenancy = 
+			'<div class="row">' + 
+				'<div class="col-xs-6 col-sm-6" style="background-color:#B3D9FF;"><b>Service/Tenant:</b>' + "  " + d.service + '</div>' +
+				'<div class="clearfix visible-xs"></div>' +
+				'<div class="col-xs-6 col-sm-6" style="background-color:#B3D9FF;"><b>ServicePath:</b>' + "  " + d.servicePath  + '</div>' +	
+			'</div>' ;
 	}
  
-	var txtCert="";
-		if (d.privatekey!="" && d.privatekey!= null&& (d.visibility =='MyOwnPublic' || d.visibility == 'MyOwnPrivate'))
-			txtCert  = '<div class="row">' +
-							'<div class="col-xs-6 col-sm-6" style="background-color:#E6E6FA;"><b>SHA1:</b>' + "  " + d.sha + '</div>' +
-							'<div class="clearfix visible-xs"></div>' +
-							'<div class="col-xs-6 col-sm-6" style="background-color:#E6E6FA;"><b>Created on:</b>' + "  " + d.created + '</div>' +
-						'</div>'+
-						'<div class="row">' +
-							'<div class="col-xs-6 col-sm-6" style="background-color:#D6CADD;"><button class="btn btn-warning" onclick="download(\'\/private\/'+d.privatekey+'\',\''+d.device+'\',\''+d.cb+'\');return true;"><b>Private Key</b></button></div>' +
-							'<div class="clearfix visible-xs"></div>' +
-							'<div class="col-xs-6 col-sm-6" style="background-color:#D6CADD;"><button class="btn btn-warning" onclick="download(\'\/certsdb\/'+d.certificate+'\',\''+d.device+'\',\''+d.cb+'\');return true;"><b>Certificate</b></button></div>' +
-						'</div>'+
-						'<div class="row">' +
-                                                        '<div class="col-xs-6 col-sm-6" style="background-color:#E6E6FA;"><a href="https://www.snap4city.org/ca/ca.pem" download><button class="btn btn-warning"><b>CA Certificate</b></button></a></div>' +
-                                                '</div>';
-		else
-			txtCert = '<div class="row">' +
-							'<div class="col-xs-6 col-sm-6" style="background-color:#E6E6FA;"><b>Created on:</b>' + "  " + d.created + '</div>' +
-							'<div class="clearfix visible-xs"></div>' +
-							
-					  '</div>';
-	
-	// `d` is the original data object for the row
   	var result= '<div class="container-fluid">' +
 		'<div class="row">' +
-			'<div class="col-xs-6 col-sm-6" style="background-color:#D6CADD;"><b>IoT Broker URI:</b>' + "  " + d.accesslink + '</div>' +
+			'<div class="col-xs-6 col-sm-6" style="background-color:#D6CADD;"><b>Broker URI:</b>' + "  " + d.accesslink + '</div>' +
 			'<div class="clearfix visible-xs"></div>' +
-			'<div class="col-xs-6 col-sm-6" style="background-color:#D6CADD;"><b>IoT Broker Port:</b>' + "  " + d.accessport + '</div>' +								
+			'<div class="col-xs-6 col-sm-6" style="background-color:#D6CADD;"><b>Broker Port:</b>' + "  " + d.accessport + '</div>' +								
 		'</div>' +
 		'<div class="row">' +
 			'<div class="col-xs-6 col-sm-6" style="background-color:#E6E6FA;"><b>Data Type:</b>' + "  " + d.data_type + '</div>' +
@@ -171,31 +112,31 @@ function updateDeviceTimeout()
 		'</div>' ; 
         	
       if (!gb_delegated) {   
-		result += '<div class="row">' +
-			'<div class="col-xs-6 col-sm-6" style="background-color:#E6E6FA;"><b>Gateway/Edge Type:</b>' + "  " + d.edgegateway_type + '</div>' +
-			'<div class="clearfix visible-xs"></div>' +
-			'<div class="col-xs-6 col-sm-6" style="background-color:#E6E6FA;"><b>Gateway/Edge Uri:</b>' + "  " + d.edgegateway_uri  + '</div>' +	
-		'</div>' +
-		'<div class="row">' +
-                        '<div class="col-xs-12 col-sm-12" style="background-color:#D6CADD;"><b>Device Uri:</b>' + "  <a href=\""+d.uri+"\">" + d.uri + '</a></div>' +
-                        '<div class="clearfix visible-xs"></div>' +
-                '</div>';
-      }
+		result += 
+			'<div class="row">' +
+				'<div class="col-xs-6 col-sm-6" style="background-color:#E6E6FA;"><b>Gateway/Edge Type:</b>' + "  " + d.edgegateway_type + '</div>' +
+				'<div class="clearfix visible-xs"></div>' +
+				'<div class="col-xs-6 col-sm-6" style="background-color:#E6E6FA;"><b>Gateway/Edge Uri:</b>' + "  " + d.edgegateway_uri  + '</div>' +	
+			'</div>' +
+			'<div class="row">' +
+				'<div class="col-xs-12 col-sm-12" style="background-color:#D6CADD;"><b>Device Uri:</b>' + "  <a href=\""+d.uri+"\">" + d.uri + '</a></div>' +
+				'<div class="clearfix visible-xs"></div>' +
+			'</div>';
+	}
       
-	result+=	'<div class="row">' +
+	result+=	
+		'<div class="row">' +
 			'<div class="col-xs-6 col-sm-6" style="background-color:#E6E6FA;"><b>Organization:</b>' + "  " + d.organization + '</div>' +
 			'<div class="clearfix visible-xs"></div>' +
-		'</div>'
-		+ showKey  + txtCert + multitenancy + 
+		'</div>'+
+		showKey  + 
+		getInfoCert(d.privatekey, d.visibility, d.created, d.id, d.cb, d.certificate, d.sha) +
+		multitenancy + 
 	'</div>' ;
-      return result;
-	
+	return result;
 }
-
-	
    
 //DataTable fetch_data function 
-   
 	function fetch_data(destroyOld, delegated=null, selected=null)
 	{
 		if(destroyOld)
@@ -810,7 +751,10 @@ function updateDeviceTimeout()
 		gb_longitude =  document.getElementById('inputLongitudeDeviceUser').value;
 		gb_k1 =  document.getElementById('KeyOneDeviceUser').value;
 		gb_k2 =  document.getElementById('KeyTwoDeviceUser').value;
-		 
+		gb_subnature=document.getElementById('selectSubnature').value; 
+		gb_staticAttributes=JSON.stringify(retrieveStaticAttributes("addlistStaticAttributes", false, "isMobileTick"));                //not use model, but use overriding	
+	
+ 
 		$.ajax({
 			url: "../api/model.php",
 			data: {
@@ -837,8 +781,6 @@ function updateDeviceTimeout()
 					var format = data.content.format;
 					var attrJSON = data.content.attributes;
 					var edgegateway_type=data.content.edgegateway_type;	
-					var subnature=data.content.subnature;
-					var staticAttributes=JSON.stringify(retrieveStaticAttributes("addlistStaticAttributes"));				//not use model, but use overriding
 					var service = data.content.service;
 					var servicePath = data.content.servicePath;
 
@@ -870,8 +812,8 @@ function updateDeviceTimeout()
 						  k1 :  gb_k1,
 						  k2 : gb_k2,
 						  edgegateway_type:edgegateway_type,
-						  subnature: subnature,
-						  static_attributes:staticAttributes,
+						  subnature: gb_subnature,
+						  static_attributes:gb_staticAttributes,
 						  service : service,
 			              servicePath : servicePath
 						},
@@ -1325,18 +1267,11 @@ function updateDeviceTimeout()
 			}
 
 			var subnature=nameOpt[selectednameOpt].getAttribute("data_subnature")
-			if (subnature && subnature!="null") {
-				 //add subnature + static info
-				$("#selectSubnature").val(subnature);
-				$('#selectSubnature').trigger('change');
-				subnatureChanged(false, JSON.parse(atob(nameOpt[selectednameOpt].getAttribute("data_static"))));	
-				$("#addStaticTabModel").show();	
-			}
-			else {
-				//remove subnature + static info
-			    $("#selectSubnature").val("");
-				$("#addStaticTabModel").hide();
-			}
+			//add subnature + static info
+			$("#selectSubnature").val(subnature);
+			$('#selectSubnature').trigger('change');
+			subnatureChanged(false, JSON.parse(atob(nameOpt[selectednameOpt].getAttribute("data_static"))));	
+			$("#addStaticTabModel").show();	
 		}
 	});
 
@@ -1344,9 +1279,18 @@ function updateDeviceTimeout()
 
         $("#addNewStaticBtn").off("click");
         $("#addNewStaticBtn").click(function(){
-	        createRowElem('', '', currentDictionaryStaticAttribAdd, "addlistStaticAttributes");
+                createRowElem('', '', currentDictionaryStaticAttribAdd, "addlistStaticAttributes");
         });
+
 //--------------------- static attribute ADD end
+
+		$('#selectSubnature').on('select2:selecting', function(e){
+                checkSubnatureChanged($('#selectSubnature'), e.target.value, e.params.args.data.id, e);
+        });
+
+        $('#selectSubnature').on('select2:clearing', function(e){
+                checkSubnatureChanged($('#selectSubnature'), e.params.args.data.id, "", e);
+        });
 
 
 
@@ -1833,7 +1777,7 @@ function drawMapAll(data, divName){
 
                  redIcon = new L.Icon({
 
-                                iconUrl: 'https://www.snap4city.org/iotdirectorytest/markerPrivate.png',
+                                iconUrl: '../img/markerPrivate.png',
                                 iconSize: new L.Point(32, 32),
                                 iconAnchor: new L.Point(16, 16),
                                 popupAnchor: new L.Point(0, -18)
@@ -1842,7 +1786,7 @@ function drawMapAll(data, divName){
 
                 blueIcon = new L.Icon({
 
-                                iconUrl: 'https://www.snap4city.org/iotdirectorytest/markerPublic.png',
+                                iconUrl: '../img/markerPublic.png',
                                 iconSize: new L.Point(32, 32),
                                 iconAnchor: new L.Point(16, 16),
                                 popupAnchor: new L.Point(0, -18)
@@ -1850,7 +1794,7 @@ function drawMapAll(data, divName){
                             });
                 greenIcon = new L.Icon({
 
-                                iconUrl: 'https://www.snap4city.org/iotdirectorytest/markerGreen.png',
+                                iconUrl: '../img/markerGreen.png',
                                 iconSize: new L.Point(32, 32),
                                 iconAnchor: new L.Point(16, 16),
                                 popupAnchor: new L.Point(0, -18)
@@ -2023,7 +1967,7 @@ function drawMapAll_delegated(data, divName){
 
                  redIcon = new L.Icon({
 
-                                iconUrl: 'https://www.snap4city.org/iotdirectorytest/markerPrivate.png',
+                                iconUrl: '../img/markerPrivate.png',
                                 iconSize: new L.Point(32, 32),
                                 iconAnchor: new L.Point(16, 16),
                                 popupAnchor: new L.Point(0, -18)
@@ -2032,7 +1976,7 @@ function drawMapAll_delegated(data, divName){
 
                 blueIcon = new L.Icon({
 
-                                iconUrl: 'https://www.snap4city.org/iotdirectorytest/markerPublic.png',
+                                iconUrl: '../img/markerPublic.png',
                                 iconSize: new L.Point(32, 32),
                                 iconAnchor: new L.Point(16, 16),
                                 popupAnchor: new L.Point(0, -18)
@@ -2040,7 +1984,7 @@ function drawMapAll_delegated(data, divName){
                             });
                 greenIcon = new L.Icon({
 
-                                iconUrl: 'https://www.snap4city.org/iotdirectorytest/markerGreen.png',
+                                iconUrl: '../img/markerGreen.png',
                                 iconSize: new L.Point(32, 32),
                                 iconAnchor: new L.Point(16, 16),
                                 popupAnchor: new L.Point(0, -18)

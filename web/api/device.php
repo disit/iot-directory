@@ -335,7 +335,7 @@ else if ($action=="update")
 				 {
 				  updateKB($link, $id, $devicetype, $contextbroker, $kind, $protocol, $format, $macaddress, $model, $producer, $latitude, $longitude,
 					$visibility, $frequency, $merge, $listdeleteAttributes, $uri, $dev_organization, $subnature, $staticAttributes, $result, 
-					$service, $servicePath, retrieveKbUrl($organizationApiURI, $dev_organization)); 
+					$service, $servicePath, retrieveKbUrl($organizationApiURI, $dev_organization), $accessToken); 
 
 				  if ($result["status"]=='ko')
 				  {
@@ -575,30 +575,54 @@ else if ($action=="delete")
 				}
 				else
 				{
-		     		deleteKB($link, $id, $cb, retrieveKbUrl($organizationApiURI, $dev_organization), $result, $service, $servicePath);	   
+		     		deleteKB($link, $id, $cb, retrieveKbUrl($organizationApiURI, $dev_organization), $result, $service, $servicePath, $accessToken);	   
 	
 					if ($result["status"]=='ko') return $result;
-			
-					$q1 = "UPDATE devices SET deleted = '". date("Y/m/d") . "' WHERE id = '$id' and contextBroker='$cb';";
-					$q2 = "INSERT INTO deleted_devices select * from devices WHERE id = '$id' and contextBroker='$cb'and deleted IS NOT NULL;";
-					$q3 = "INSERT INTO deleted_event_values (select cb,device,value_name,data_type,value_type,editable,value_unit,healthiness_criteria,
-						value_refresh_rate, different_values,value_bounds, event_values.order from event_values where  device = '$id' and cb='$cb' );";
-					$q4 = "DELETE FROM devices WHERE id = '$id' and contextBroker='$cb' and deleted IS NOT NULL;";
+		
+					//unique name for deleted devices
+					$milliseconds = round(microtime(true) * 1000);
+					$deleted_id=$id."_".$milliseconds;
+
+					$q0 = "UPDATE devices SET id= '$deleted_id' WHERE id = '$id' and contextBroker='$cb';";
+					$q1 = "UPDATE event_values SET device='$deleted_id' WHERE device = '$id' and cb='$cb';";
+
+					$id=$deleted_id;
+
+					$q2 = "UPDATE devices SET deleted = '". date("Y/m/d") . "' WHERE id = '$id' and contextBroker='$cb';";
+
+				    $q3 = "INSERT INTO deleted_devices select * from devices WHERE id = '$id' and contextBroker='$cb'and deleted IS NOT NULL;";	
+					$q4 = "INSERT INTO deleted_event_values (select cb,device,value_name,data_type,value_type,editable,value_unit,healthiness_criteria,
+						value_refresh_rate, different_values,value_bounds, event_values.order from event_values where device = '$id' and cb='$cb' );";
+					
+					$q5 = "DELETE FROM event_values WHERE device = '$id' and cb='$cb';";
+					$q6 = "DELETE FROM devices WHERE id = '$id' and contextBroker='$cb';";
      
-					$r1 = mysqli_query($link, $q1);
-					if ($r1)
+					$r0 = mysqli_query($link, $q0);
+					if ($r0)
 					{
-						$r2 = mysqli_query($link, $q2);
-						if($r2)
+						$r1 = mysqli_query($link, $q1);
+						if($r1)
 						{
-							$r3 = mysqli_query($link, $q3);
-							if($r3)
+							$r2 = mysqli_query($link, $q2);
+							if($r2)
 							{
-								$r4 = mysqli_query($link, $q4);
+								$r3 = mysqli_query($link, $q3);
+								if($r3)
+	                            {
+    	                            $r4 = mysqli_query($link, $q4);
+									if($r4)
+	                                {
+    	                                $r5 = mysqli_query($link, $q5);
+										if($r5)
+                	                    {
+                    	                    $r6 = mysqli_query($link, $q6);
+                        	            }
+        	                        }
+    			                }
            					}
                			}
        		    	}
-					if($r4)
+					if ((isset($r6))&&($r6))
 					{
 						logAction($link,$username,'device','delete',$id . " ".$cb,$organization,'','success');	
 						$result["status"]='ok';
@@ -609,7 +633,7 @@ else if ($action=="delete")
 				  		logAction($link,$username,'device','delete',$id . " ".$cb,$organization,'','faliure');	
 						$result["status"]='ko';
 						$result["msg"] .= "\n Problem in deleting the device $id: " . generateErrorMessage($link); 
-						$result["log"] .= "\n Problem in deleting the device $id: " . $query . " " . generateErrorMessage($link); 
+						$result["log"] .= "\n Problem in deleting the device $id: " . generateErrorMessage($link); 
 					}
 				}
 				}
@@ -684,7 +708,7 @@ else if ($action =='change_visibility')
 						logAction($link,$username,'device','change_visibility',$id . " ".$contextbroker,$organization,'new visibility '.$visibility,'success');			
 		
 						$result["status"]='ok'; 
-						$result["msg"] .= "\n Device Visibility correctly updated"; 
+						$result["msg"] = "\n Device Visibility correctly updated"; 
 						$result["log"] .= "\n Device $id: Visibility correctly updated"; 
 		
 						// information to be passed to the interface
@@ -1068,6 +1092,86 @@ else if ($action == 'get_available_static')
 	}
 	my_log($newresult);
 }
+else if($action == 'get_device_data')
+{
+	$result["log"] .= "\n invoked get_device_data from device.php";
+
+	$missingParams=missingParameters(array('id', 'type','contextbroker', 'version'));
+
+	if (!empty($missingParams))
+	{
+		$result["status"]="ko";
+		$result['msg'] = "Missing Parameters";
+		$result["error_msg"] = "Problem getting device data (Missing parameters: ".implode(", ",$missingParams)." )";
+		$result["log"] .= "\n action=get_device_data - error Missing Parameters: ".implode(", ",$missingParams)." \r\n";
+	}
+	else
+	{
+		$id = mysqli_real_escape_string($link, $_REQUEST['id']);
+		$type =mysqli_real_escape_string($link, $_REQUEST['type']);
+		$cb = mysqli_real_escape_string($link, $_REQUEST['contextbroker']);
+		$version= mysqli_real_escape_string($link, $_REQUEST['version']);
+		if (isset($_REQUEST['service'])) $service = mysqli_real_escape_string($link, $_REQUEST['service']);
+		else $service = "";
+		if (isset($_REQUEST['servicePath'])) $servicePath = mysqli_real_escape_string($link, $_REQUEST['servicePath']);
+		else $servicePath="";
+
+		$result["log"] .= "\n id:".$id." type:".$type." cb:".$cb." service:".$service." servicepath:".$servicePath;
+
+		$protocol = getProtocol($cb, $link);
+
+		if (empty($protocol))//it also ensure the contextbroker name is valid
+        {
+			$result["status"]="ko";
+       	    $result['msg'] = "Unrecognized contextbroker/protocol";
+            $result["error_msg"] = "Problem in get device data (Unrecognized contextbroker/protocol)";
+   	        $result["log"] .= "\n action=get_device_data - error Unrecognized contextbroker/protocol\r\n";
+		}
+		else
+		{
+			//id management: use snap_id, since in the get_device_data we need the original id
+			if($protocol == "ngsi w/MultiService")	$snap_id = $service . "." . $servicePath . "." . $id;
+			else $snap_id =$id;
+			get_device($username, $role, $snap_id, $cb,  $accessToken, $link, $result);
+			if (empty($result["content"]))
+			{
+				$result["status"]="ko";
+				$result['msg'] = "Unrecognized device";
+				$result["error_msg"] = "Problem in get device data (Unrecognized device)";
+				$result["log"] .= "\n action=get_device_data - error Unrecognized device\r\n";
+			}
+			else
+			{
+				$dev_organization=$result["content"]["organization"];
+				$eId=$dev_organization.":".$cb.":".$snap_id;
+
+				if (!enforcementRights($username, $accessToken, $role, $eId, 'IOTID','read', $result))
+				{	
+					$result["status"]="ko";
+					$result['msg'] = "Not ownership or enough right to update";
+					$result["error_msg"] = "Problem in get device data (Not ownership or enough right to update)";
+					$result["log"] .= "\n action=get_device_data - error Not ownership or enough right to update\r\n";
+				}
+				else
+				{
+					get_device_data($link, $id, $type, $cb, $service, $servicePath, $version, $result);
+				}
+			}
+    	}
+	}
+	
+	$result["log"] .= "\n returning ".json_encode($result). " from get_device_data from device.php";
+
+	simple_log($result);
+	mysqli_close($link);
+	
+	if ($result["status"]=="ok")
+		echo $result["content"];
+	else{
+		header('HTTP/1.1 500 Internal Server Error');
+		echo $result["error_msg"];
+	}
+}	
 //NEVER USED FROM FRONTEND... MAYBE SOME APIs ARE STILL USING?
 //LONG TIME NOT MANTAINED (NO DELEGATION INVOLVED)... COMMENTING OUT
 /*else if ($action == 'get_device'){
@@ -1239,7 +1343,7 @@ else if ($action == "get_all_device")
 			$q = "SELECT d.`contextBroker`, d.`id`, d.`uri`, d.`devicetype`, d.`kind`,
 				CASE WHEN mandatoryproperties AND mandatoryvalues THEN \"active\" ELSE \"idle\" END AS status1, 
 				d.`macaddress`, d.`model`, d.`producer`, d.`longitude`, d.`latitude`, d.`protocol`, d.`format`, d.`visibility`, 
-				d.`frequency`, d.`created`, d.`privatekey`, d.`certificate`,d.`organization`, cb.`accesslink`, cb.`accessport`, 
+				d.`frequency`, d.`created`, d.`privatekey`, d.`certificate`,d.`organization`, cb.`accesslink`, cb.`accessport`, cb.`version`,
 				cb.`sha`, d.`subnature`, d.`static_attributes`,d.`service`, d.`servicePath` FROM `devices` d JOIN `contextbroker` cb ON (d.contextBroker=cb.name)"; 
 
 			if (count($selection)!=0)
@@ -1315,6 +1419,7 @@ else if ($action == "get_all_device")
 							$rec["servicePath"] = $row["servicePath"];	
 					        $rec["accesslink"]= $row["accesslink"];
 							$rec["accessport"]= $row["accessport"];
+							$rec["version"]= $row["version"];
 							$rec["sha"]= $row["sha"];
 							$rec["privatekey"]= "";
 							$rec["certificate"]= "";
@@ -1813,7 +1918,7 @@ else if ($action == 'download')
 			{
 				//id management
 				if($protocol == "ngsi w/MultiService")  $id = $service . "." . $servicePath . "." . $id;
-				get_device($currentUser, $role, $id, $contextbroker,  $accessToken, $link, $result);
+				get_device($username, $role, $id, $contextbroker,  $accessToken, $link, $result);
 				if (empty($result["content"]))
                 {
                     $result["status"]="ko";
@@ -1849,7 +1954,7 @@ else if ($action == 'download')
 					{
 						if (strpos($filename, $id) === false)
 						{
-							logAction($link,$currentUser,'devices','download',$id . " ". $filename . " filename was tempered",$organization,'','faliure');
+							logAction($link,$username,'devices','download',$id . " ". $filename . " filename was tempered",$organization,'','faliure');
 											
 							$result["status"]='ko';
 							$result["msg"] .= "\n the filename was tempered";
@@ -1859,7 +1964,7 @@ else if ($action == 'download')
 						{
 							if (strpos($local_result, $id) === false)
 							{		
-								logAction($link,$currentUser,'devices','download',$id . " ". $filename. " you don't own the requested device",$organization,'',success);
+								logAction($link,$username,'devices','download',$id . " ". $filename. " you don't own the requested device",$organization,'',success);
 								$result["status"]='ko';
 								$result["msg"] .= "\n you don't own the requested device";
 								$result["log"] .= "\n you don't own the requested device";
@@ -1869,7 +1974,7 @@ else if ($action == 'download')
 								$result['status'] = 'ok';
 								$result['msg'] = file_get_contents($pathCertificate.$filename);
 								$result['log']='\r\n download success';
-								logAction($link,$currentUser,'devices','download',$id . " ". $filename,$organization,'','success');
+								logAction($link,$username,'devices','download',$id . " ". $filename,$organization,'','success');
       			        	}
 						}
 			        }	

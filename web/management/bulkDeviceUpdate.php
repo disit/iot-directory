@@ -14,43 +14,38 @@
    You should have received a copy of the GNU General Public License
    along with this program; if not, write to the Free Software
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA. */
-    include('../config.php');
+	
+	include('../config.php');
 
-	//include('process-form.php');
+	session_start();
 	
-    session_start();
-	
-	
-	 ///// SHOW FRAME PARAMETER /////
-if (isset($_REQUEST['showFrame'])){
-	if ($_REQUEST['showFrame'] == 'false'){
-		//echo ('true');
-		$hide_menu= "hide";
-	}else{
-		$hide_menu= "";
-	}	
-}else{$hide_menu= "";} 
-//// SHOW FRAME PARAMETER  ////
+	///// SHOW FRAME PARAMETER /////
+	if (isset($_REQUEST['showFrame'])) {
+		if ($_REQUEST['showFrame'] == 'false') {
+			$hide_menu= "hide";
+		} else {
+			$hide_menu= "";
+		}	
+	} else $hide_menu= ""; 
+	//// SHOW FRAME PARAMETER  ////
    
-if (!isset($_GET['pageTitle'])){
-	$default_title = "IoT Directory: List of Devices";
-}else{
-	$default_title = "";
-}
+	if (!isset($_GET['pageTitle'])) {
+		$default_title = "IoT Directory: List of Devices";
+	} else {
+		$default_title = "";
+	}
 
-if (isset($_REQUEST['redirect'])){
-	$access_denied = "denied";
-}else{
-	$access_denied = "";
-}	
+	if (isset($_REQUEST['redirect'])) {
+		$access_denied = "denied";
+	} else {
+		$access_denied = "";
+	}	
 
 	$link = mysqli_connect($host, $username, $password);
     mysqli_select_db($link, $dbname);
     
-  $accessToken = "";
+	$accessToken = "";
 ?>
-
-
 
 <!DOCTYPE html>
 <html>
@@ -94,21 +89,17 @@ if (isset($_REQUEST['redirect'])){
         <!-- select2 -->
         <link href="https://cdn.jsdelivr.net/npm/select2@4.0.13/dist/css/select2.min.css" rel="stylesheet" />
         <script src="https://cdn.jsdelivr.net/npm/select2@4.0.13/dist/js/select2.min.js"></script>
-
 	   
 	   	   <!-- DataTables -->
-	   
 	    <script type="text/javascript" charset="utf8" src="../js/DataTables/datatables.js"></script>
         <link rel="stylesheet" type="text/css" href="../js/DataTables/datatables.css">
         <script type="text/javascript" charset="utf8" src="../js/DataTables/dataTables.bootstrap.min.js"></script>
         <script type="text/javascript" charset="utf8" src="../js/DataTables/dataTables.responsive.min.js"></script>
         <script type="text/javascript" charset="utf8" src="../js/DataTables/responsive.bootstrap.min.js"></script>
 		
-		
         <link rel="stylesheet" type="text/css" href="../css/DataTables/dataTables.bootstrap.min.css">
         <link rel="stylesheet" type="text/css" href="../css/DataTables/responsive.bootstrap.min.css">
         <link rel="stylesheet" type="text/css" href="../css/DataTables/jquery.dataTables.min.css">
-
 
        <!-- Questa inclusione viene sempre DOPO bootstrap-table.js -->
        <script src="../boostrapTable/dist/locale/bootstrap-table-en-US.js"></script>
@@ -126,8 +117,6 @@ if (isset($_REQUEST['redirect'])){
        <!-- Font awesome icons -->
         <link rel="stylesheet" href="../js/fontAwesome/css/font-awesome.min.css">
 
-     <!--    <link href="https://fonts.googleapis.com/css?family=Cabin:400,500,600,700|Catamaran|Varela+Round" rel="stylesheet"> -->
-        
         <!-- Custom CSS -->
         <link href="../css/dashboard.css" rel="stylesheet">
 		<link href="../css/bulkDeviceLoad.css" rel="stylesheet">
@@ -136,12 +125,10 @@ if (isset($_REQUEST['redirect'])){
 		 var loggedRole = "<?php echo $_SESSION['loggedRole']; ?>";
 		 var loggedUser = "<?php echo $_SESSION['loggedUsername']; ?>";
          var admin = "<?php echo $_SESSION['loggedRole']; ?>";
-		 
          var organization = "<?php echo $_SESSION['organization']; ?>";
-                 var kbUrl = "<?php echo $_SESSION['kbUrl']; ?>";
-                 var gpsCentreLatLng = "<?php echo $_SESSION['gpsCentreLatLng']; ?>";
-                 var zoomLevel = "<?php echo $_SESSION['zoomLevel']; ?>";
-            
+         var kbUrl = "<?php echo $_SESSION['kbUrl']; ?>";
+         var gpsCentreLatLng = "<?php echo $_SESSION['gpsCentreLatLng']; ?>";
+         var zoomLevel = "<?php echo $_SESSION['zoomLevel']; ?>";
          var titolo_default = "<?php echo $default_title; ?>";	
 		 var access_denied = "<?php echo $access_denied; ?>";
 		 var nascondi= "<?php echo $hide_menu; ?>";
@@ -149,56 +136,30 @@ if (isset($_REQUEST['redirect'])){
          var sessionToken = "<?php  if (isset($_SESSION['refreshToken'])) echo $_SESSION['refreshToken']; else echo ""; ?>";		 
 		 var mypage = location.pathname.split("/").slice(-1)[0];
          var functionality = [];
-	 var currentDictionaryStaticAttribEdit=[];
-/*
-          $.ajax({url: "../api/functionality.php",
-			 data: {action: 'get_functionality', page : mypage},
-			 type: "GET",
-			 async: false,
-			 dataType: 'json',
-			 success: function (mydata)
-			 {
-			   // console.log(JSON.stringify(mydata));
-			   if (mydata["status"]=='ok')
-				 functionality = mydata["content"];
-			   else
-				  console.log("Error from the DB" + mydata["msg"]);		   
-			 },
-			 error: function (mydata)
-			 {
-			   console.log(JSON.stringify(mydata));
-			 }
-		 });
-		 */
+		 var currentDictionaryStaticAttribEdit=[];
 		</script>
  
         <!-- Custom scripts -->
 		<script  src="js/devicesManagement.js"></script>
 		<script  src="js/devicesEditManagement.js"></script>
-	        <script  src="../js/dashboard_mng.js"></script>
+	    <script  src="../js/dashboard_mng.js"></script>
 		<script  src="js/common.js"></script>	
 	
 		<!-- leaflet scripts -->
-		
 		<script  src="../js/leaflet.js"></script>
 		<script  src="../js/leaflet.draw.js"></script>
 		<script  src="../js/jquery.fancytree-all.min.js"></script>
 		
         <style>
-        
             .labelinput{
                 padding: 10px;
                 background: red; 
                 display: table;
                 color: #fff;
-                 }
-
-
-
+            }
             input[type="file"] {
                 display: none;
             }
-            
             /* The Modal (background) */
             .progress-modal {
                 display: none; /* Hidden by default */
@@ -213,7 +174,6 @@ if (isset($_REQUEST['redirect'])){
                 background-color: rgb(0,0,0); /* Fallback color */
                 background-color: rgba(0,0,0,0.4); /* Black w/ opacity */
             }
-
             /* Modal Content */
             .progress-modal-content {
                 position: relative;
@@ -228,18 +188,15 @@ if (isset($_REQUEST['redirect'])){
                 animation-name: animatetop;
                 animation-duration: 0.4s
             }
-
             /* Add Animation */
             @-webkit-keyframes animatetop {
                 from {top:-300px; opacity:0} 
                 to {top:0; opacity:1}
             }
-
             @keyframes animatetop {
                 from {top:-300px; opacity:0}
                 to {top:0; opacity:1}
             }
-
             /* The Close Button */
             .close {
                 color: white;
@@ -247,29 +204,23 @@ if (isset($_REQUEST['redirect'])){
                 font-size: 28px;
                 font-weight: bold;
             }
-
             .close:hover,
             .close:focus {
                 color: #000;
                 text-decoration: none;
                 cursor: pointer;
             }
-
             .progress-modal-header {
                 padding: 2px 10px;
                 background-color:#00A2D3;
                 color: white;
             }
-
             .progress-modal-body {padding: 2px 16px;}
-
             .progress-modal-footer {
                 padding: 2px 4px;
                 background-color: #00A2D3;
                 color: white;
             }
-            
-            
             .loader {
               border: 8px solid #f3f3f3;
               border-radius: 50%;
@@ -279,25 +230,16 @@ if (isset($_REQUEST['redirect'])){
               -webkit-animation: spin 2s linear infinite; /* Safari */
               animation: spin 2s linear infinite;
             }
-
             /* Safari */
             @-webkit-keyframes spin {
               0% { -webkit-transform: rotate(0deg); }
               100% { -webkit-transform: rotate(360deg); }
             }
-
             @keyframes spin {
               0% { transform: rotate(0deg); }
               100% { transform: rotate(360deg); }
             }
-            
-
         </style>
-		
-		
-        
-        <!--<link href="https://fonts.googleapis.com/css?family=Cabin:400,500,600,700|Catamaran|Varela+Round" rel="stylesheet">
-        <link href="https://fonts.googleapis.com/css?family=Montserrat" rel="stylesheet">-->
 	</head>
     <body class="guiPageBody">
 		<div class="container-fluid">
@@ -436,6 +378,7 @@ if (isset($_REQUEST['redirect'])){
                                     <div class="col-xs-12 col-md-6">
                                     <div class="modalFieldCnt">
                                         <select id="selectModelLD" name="selectModelLD" class="modalInputTxt">
+										<option data_key="normal" value="custom">custom</option> 
 										<!--?php
                                             $query = "SELECT name FROM model";
                                             $result = mysqli_query($link, $query);
@@ -541,7 +484,7 @@ if (isset($_REQUEST['redirect'])){
 									 <thead>
 									  <tr>
 										<th></th>	
-									    <th data-cellTitle="name">IOT Device</th>
+									    <th data-cellTitle="name">Device Identifier</th>
 										<th data-cellTitle="contextbroker">IOT Broker</th>
 										<th data-cellTitle="protocol">Protocol</th>
 										<th data-cellTitle="format">Format</th>
@@ -714,7 +657,7 @@ if (isset($_REQUEST['redirect'])){
 													<table id="devicePreviewTable" class="table" cellspacing="0" width="100%">
 														<thead>
 															<tr>
-																<th data-cellTitle="name">IOT Device</th>
+																<th data-cellTitle="name">Device Identifier</th>
 																<th data-cellTitle="contextbroker">IOT Broker</th>
 																<th data-cellTitle="protocol">Protocol</th>
 																<th data-cellTitle="format">Format</th>
@@ -817,7 +760,7 @@ if (isset($_REQUEST['redirect'])){
 													<table id="valuesPreviewTable" class="table" cellspacing="0" width="100%">
 														<thead>
 															<tr>
-																<th data-cellTitle="name">IOT Device</th>
+																<th data-cellTitle="name">Device Identifier</th>
 																<th data-cellTitle="contextbroker">IOT Broker</th>
 																<th data-cellTitle="value_name">Value Name</th>
 																<th data-cellTitle="data_type">Data Type</th>
@@ -910,15 +853,13 @@ if (isset($_REQUEST['redirect'])){
 						<li class="active"><a data-toggle="tab" href="#editIOTBrokerTabDevice">IoT Broker</a></li>
                         <li><a data-toggle="tab" href="#editInfoTabDevice">Info</a></li>
                         <li><a data-toggle="tab" href="#editGeoPositionTabDevice">Position</a></li>
-			<li><a data-toggle="tab" href="#editStaticTabModel">Static Attributes</a></li>
+						<li><a data-toggle="tab" href="#editStaticTabModel">Static Attributes</a></li>
                         <li><a data-toggle="tab" href="#editSchemaTabDevice">Values</a></li>
 						<!--<li><a data-toggle="tab" href="#editStatusTabDevice">Status</a></li>-->
 						
                     </ul>
                     
                     <div class="tab-content">
-                       
-                       
                         
                         <!-- Geo-Position tab -->
                         <div id="editGeoPositionTabDevice" class="tab-pane fade">
@@ -938,15 +879,13 @@ if (isset($_REQUEST['redirect'])){
 									<div id="inputLongitudeDeviceMMsg" class="modalFieldMsgCnt">&nbsp;</div>
                                 </div>
                             </div>
-							
-								<div class="form-row iot-directory-form-row">
-									<link rel="stylesheet" href="../css/leaflet.css" />
-									<link rel="stylesheet" href="../css/leaflet.draw.css" />
-									<div id="editLatLong" style="width: 100%; height: 400px" class="modal-body modalBody">
-								</div>
+							<h1>&nbsp;</h1>
+							<div class="form-row iot-directory-form-row">
+								<link rel="stylesheet" href="../css/leaflet.css" />
+								<link rel="stylesheet" href="../css/leaflet.draw.css" />
+								<div id="editLatLong" style="width: 100%; height: 400px" class="modal-body modalBody"></div>
 							</div> 
-							
-							
+							<div id="positionMsgHintM" class="modalFieldMsgCnt" hidden="true"><h1>&nbsp;</h1><p class="text-danger font-weight-bold">WARNING: the indicated GPS Position has to be intended as the Initial Position of the Device. To see the Current Position of the Device, please proceed via Service Map</p></div>		
                         </div>
                           <!-- Info tab -->
                           <div id="editInfoTabDevice" class="tab-pane fade">
@@ -1194,25 +1133,37 @@ if (isset($_REQUEST['redirect'])){
  
                     </div>
 
-                       <!-- Static Attributes tab -->
-                        <div id="editStaticTabModel" class="tab-pane fade">
-                                <div class="row">
-                                        <div class="col-xs-12 col-md-6 modalCell">
-                                                <div class="modalFieldCnt">
-                                                        <select id="selectSubnatureM" name="selectSubnatureM" class="modalInputTxt">
-                                                                <option></option>
-                                                        </select>
-                                                </div>
-                                                <div class="modalFieldLabelCnt">Subnature</div>
-                                        </div>
-                                </div>
-				<div class="row">
-                                        <div id="editlistStaticAttributes"></div>
-                                </div>
-                                <div class="row">
-                                        <div class="pull-left"><button type="text" id="addNewStaticBtnM" class="btn confirmBtn" style="display: none;">Add Attribute</button></div>
-                                </div>
-                        </div>
+                    <!-- Static Attributes tab -->
+					<div id="editStaticTabModel" class="tab-pane fade">
+						<div class="row">
+							<div class="col-xs-12 col-md-8 modalCell" >
+								<div class="custom-control custom-checkbox">
+									<input type="checkbox" class="custom-control-input" id="isMobileTickM">
+									<label class="custom-control-label" for="isMobileTickM">Device in Mobility</label>
+								</div>
+							</div>
+						</div>
+						<div class="row">
+							<div class="col-xs-12 col-md-6 modalCell">
+								<div class="modalFieldLabelCnt">Subnature</div>
+								<div class="modalFieldCnt">
+									<select id="selectSubnatureM" name="selectSubnatureM" class="modalInputTxt">
+										<option></option>
+									</select>
+								</div>
+							</div>
+						</div>
+						<div class="row">
+							<div class="col-xs-12 col-md-12 modalCell">
+								<div id="editlistStaticAttributes"></div>
+							</div>
+						</div>
+						<div class="row">
+							<div class="col-xs-12 col-md-12 modalCell">
+								<div class="pull-left"><button type="text" id="addNewStaticBtnM" class="btn confirmBtn" style="display: none;">Add Attribute</button></div>
+							</div>
+						</div>
+					</div>
 
 
 

@@ -14,43 +14,38 @@
    You should have received a copy of the GNU General Public License
    along with this program; if not, write to the Free Software
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA. */
-    include('../config.php');
 
-	//include('process-form.php');
-	
-    session_start();
-	
+	include('../config.php');
+
+	session_start();
 	
 	 ///// SHOW FRAME PARAMETER /////
-if (isset($_REQUEST['showFrame'])){
-	if ($_REQUEST['showFrame'] == 'false'){
-		//echo ('true');
-		$hide_menu= "hide";
-	}else{
-		$hide_menu= "";
-	}	
-}else{$hide_menu= "";} 
-//// SHOW FRAME PARAMETER  ////
+	if (isset($_REQUEST['showFrame'])) {
+		if ($_REQUEST['showFrame'] == 'false') {
+			$hide_menu= "hide";
+		} else {
+			$hide_menu= "";
+		}	
+	} else $hide_menu= ""; 
+	//// SHOW FRAME PARAMETER  ////
    
-if (!isset($_GET['pageTitle'])){
-	$default_title = "IoT Directory: Extraction Rules";
-}else{
-	$default_title = "";
-}
+	if (!isset($_GET['pageTitle'])) {
+		$default_title = "IoT Directory: Extraction Rules";
+	} else {
+		$default_title = "";
+	}
 
-if (isset($_REQUEST['redirect'])){
-	$access_denied = "denied";
-}else{
-	$access_denied = "";
-}	
+	if (isset($_REQUEST['redirect'])) {
+		$access_denied = "denied";
+	} else {
+		$access_denied = "";
+	}	
 
 	$link = mysqli_connect($host, $username, $password);
-    mysqli_select_db($link, $dbname);
+	mysqli_select_db($link, $dbname);
     
-  $accessToken = "";
+	$accessToken = "";
 ?>
-
-
 
 <!DOCTYPE html>
 <html>
@@ -91,19 +86,16 @@ if (isset($_REQUEST['redirect'])){
        <script src="../boostrapTable/dist/bootstrap-table.js"></script>
 	   <script src="../boostrapTable/dist/bootstrap-table-filter-control.js"></script>
 	   
-	   	   <!-- DataTables -->
-	   
+	   	<!-- DataTables -->
 	    <script type="text/javascript" charset="utf8" src="../js/DataTables/datatables.js"></script>
         <link rel="stylesheet" type="text/css" href="../js/DataTables/datatables.css">
         <script type="text/javascript" charset="utf8" src="../js/DataTables/dataTables.bootstrap.min.js"></script>
         <script type="text/javascript" charset="utf8" src="../js/DataTables/dataTables.responsive.min.js"></script>
         <script type="text/javascript" charset="utf8" src="../js/DataTables/responsive.bootstrap.min.js"></script>
 		
-		
         <link rel="stylesheet" type="text/css" href="../css/DataTables/dataTables.bootstrap.min.css">
         <link rel="stylesheet" type="text/css" href="../css/DataTables/responsive.bootstrap.min.css">
         <link rel="stylesheet" type="text/css" href="../css/DataTables/jquery.dataTables.min.css">
-
 
        <!-- Questa inclusione viene sempre DOPO bootstrap-table.js -->
        <script src="../boostrapTable/dist/locale/bootstrap-table-en-US.js"></script>
@@ -121,77 +113,72 @@ if (isset($_REQUEST['redirect'])){
        <!-- Font awesome icons -->
         <link rel="stylesheet" href="../js/fontAwesome/css/font-awesome.min.css">
 
-     <!--    <link href="https://fonts.googleapis.com/css?family=Cabin:400,500,600,700|Catamaran|Varela+Round" rel="stylesheet"> -->
-        
         <!-- Custom CSS -->
         <link href="../css/dashboard.css" rel="stylesheet">
 	
 		<script>
-		 var loggedRole = "<?php echo $_SESSION['loggedRole']; ?>";
-		 var loggedUser = "<?php echo $_SESSION['loggedUsername']; ?>";
-         var admin = "<?php echo $_SESSION['loggedRole']; ?>";
-         var organization = "<?php echo $_SESSION['organization']; ?>";
-                 var kbUrl = "<?php echo $_SESSION['kbUrl']; ?>";
-                 var gpsCentreLatLng = "<?php echo $_SESSION['gpsCentreLatLng']; ?>";
-                 var zoomLevel = "<?php echo $_SESSION['zoomLevel']; ?>";    
-		 var titolo_default = "<?php echo $default_title; ?>";	
-		 var access_denied = "<?php echo $access_denied; ?>";
-		 var nascondi= "<?php echo $hide_menu; ?>";
-		 var sessionEndTime = "<?php echo $_SESSION['sessionEndTime']; ?>";
-         var sessionToken = "<?php  if (isset($_SESSION['refreshToken'])) echo $_SESSION['refreshToken']; else echo ""; ?>";		 
-		 var mypage = location.pathname.split("/").slice(-1)[0];
-         var functionality = [];
+			var loggedRole = "<?php echo $_SESSION['loggedRole']; ?>";
+			var loggedUser = "<?php echo $_SESSION['loggedUsername']; ?>";
+			var admin = "<?php echo $_SESSION['loggedRole']; ?>";
+			var organization = "<?php echo $_SESSION['organization']; ?>";
+			var kbUrl = "<?php echo $_SESSION['kbUrl']; ?>";
+			var gpsCentreLatLng = "<?php echo $_SESSION['gpsCentreLatLng']; ?>";
+			var zoomLevel = "<?php echo $_SESSION['zoomLevel']; ?>";    
+			var titolo_default = "<?php echo $default_title; ?>";	
+			var access_denied = "<?php echo $access_denied; ?>";
+			var nascondi= "<?php echo $hide_menu; ?>";
+			var sessionEndTime = "<?php echo $_SESSION['sessionEndTime']; ?>";
+			var sessionToken = "<?php  if (isset($_SESSION['refreshToken'])) echo $_SESSION['refreshToken']; else echo ""; ?>";		 
+			var mypage = location.pathname.split("/").slice(-1)[0];
+			var functionality = [];
 
-          $.ajax({url: "../api/functionality.php",
-			 data: {action: 'get_functionality', page : mypage, token:sessionToken},
-			 type: "GET",
-			 async: false,
-			 dataType: 'json',
-			 success: function (mydata)
-			 {
-			   // console.log(JSON.stringify(mydata));
-			   if (mydata["status"]=='ok')
-				 functionality = mydata["content"];
-			   else
-				  console.log("Error from the DB" + mydata["msg"]);		   
-			 },
-			 error: function (mydata)
-			 {
-			   console.log(JSON.stringify(mydata));
-			 }
-		 });
+			$.ajax({
+				url: "../api/functionality.php",
+				data: {
+					action: 'get_functionality', 
+					page : mypage, 
+					token: sessionToken
+				},
+				type: "GET",
+				async: false,
+				dataType: 'json',
+				success: function (mydata) {
+					if (mydata["status"]=='ok')
+						functionality = mydata["content"];
+					else {
+						console.log("Error from the DB" + mydata["msg"]);		  
+						alert("An error occured when reading the data. <br/> Get in touch with the Snap4City Administrator. <br/>"+ mydata["error_msg"]);
+					} 
+				},
+				error: function (mydata) {
+					console.log(JSON.stringify(mydata));
+					alert("An error occured when reading the data. <br/> Get in touch with the Snap4City Administrator");
+				}
+			});
 		 
 		</script>
  
         <!-- Custom scripts -->
-		<!--
-		<script  src="js/devices.js"></script>	-->
 		<script  src="js/rulesManagement.js"></script>	
 		<script  src="js/rulesEditManagement.js"></script>
         <script  src="../js/dashboard_mng.js"></script>
 		<script  src="js/common.js"></script>
 		
 		<!-- leaflet scripts -->
-		
 		<script  src="../js/leaflet.js"></script>
 		<script  src="../js/leaflet.draw.js"></script>
 		<script  src="../js/jquery.fancytree-all.min.js"></script>
 		
         <style>
-        
             .labelinput{
                 padding: 10px;
                 background: red; 
                 display: table;
                 color: #fff;
-                 }
-
-
-
+            }
             input[type="file"] {
                 display: none;
             }
-            
             /* The Modal (background) */
             .progress-modal {
                 display: none; /* Hidden by default */
@@ -206,7 +193,6 @@ if (isset($_REQUEST['redirect'])){
                 background-color: rgb(0,0,0); /* Fallback color */
                 background-color: rgba(0,0,0,0.4); /* Black w/ opacity */
             }
-
             /* Modal Content */
             .progress-modal-content {
                 position: relative;
@@ -221,18 +207,15 @@ if (isset($_REQUEST['redirect'])){
                 animation-name: animatetop;
                 animation-duration: 0.4s
             }
-
             /* Add Animation */
             @-webkit-keyframes animatetop {
                 from {top:-300px; opacity:0} 
                 to {top:0; opacity:1}
             }
-
             @keyframes animatetop {
                 from {top:-300px; opacity:0}
                 to {top:0; opacity:1}
             }
-
             /* The Close Button */
             .close {
                 color: white;
@@ -240,29 +223,23 @@ if (isset($_REQUEST['redirect'])){
                 font-size: 28px;
                 font-weight: bold;
             }
-
             .close:hover,
             .close:focus {
                 color: #000;
                 text-decoration: none;
                 cursor: pointer;
             }
-
             .progress-modal-header {
                 padding: 2px 10px;
                 background-color:#00A2D3;
                 color: white;
             }
-
             .progress-modal-body {padding: 2px 16px;}
-
             .progress-modal-footer {
                 padding: 2px 4px;
                 background-color: #00A2D3;
                 color: white;
             }
-            
-            
             .loader {
               border: 8px solid #f3f3f3;
               border-radius: 50%;
@@ -272,25 +249,16 @@ if (isset($_REQUEST['redirect'])){
               -webkit-animation: spin 2s linear infinite; /* Safari */
               animation: spin 2s linear infinite;
             }
-
             /* Safari */
             @-webkit-keyframes spin {
               0% { -webkit-transform: rotate(0deg); }
               100% { -webkit-transform: rotate(360deg); }
             }
-
             @keyframes spin {
               0% { transform: rotate(0deg); }
               100% { transform: rotate(360deg); }
             }
-            
-
-        </style>
-		
-		
-        
-        <!--<link href="https://fonts.googleapis.com/css?family=Cabin:400,500,600,700|Catamaran|Varela+Round" rel="stylesheet">
-        <link href="https://fonts.googleapis.com/css?family=Montserrat" rel="stylesheet">-->
+		</style>
 	</head>
     <body class="guiPageBody">
 		<div class="container-fluid">
@@ -318,30 +286,21 @@ if (isset($_REQUEST['redirect'])){
                             
 				             <div id="synthesis" class="row hidden-xs hidden-sm mainContentRow">
                              <!--   <div  class="col-xs-12 mainContentRowDesc"></div> -->
-                                <div id="dashboardTotActiveCnt" class="col-md-2 mainContentCellCnt">
+                                <div id="dashboardTotActiveCnt" class="col-md-3 mainContentCellCnt">
                                     <div class="col-md-12 centerWithFlex pageSingleDataCnt">
                                         <?php
                                             $u= md5($_SESSION['loggedUsername']);
 											$query = "SELECT count(*) AS qt FROM extractionRules";
                                             $result = mysqli_query($link, $query);
-                                            
-                                            if($result)
-                                            {
+                                            if($result) {
                                                $row = $result->fetch_assoc();
-												//echo $_SESSION['loggedUsername'];
-												echo $row['qt'];
-                                            }
-                                            else
-                                            {
-												echo '-';
+												echo $row['qt']. ' total rules';
+                                            } else {
+												echo '-'. ' total rules';
                                             }
                                         ?>
                                     </div>
-                                    <div class="col-md-12 centerWithFlex pageSingleDataLabel">
-                                        <p>Total<br>rules</p> 
-                                    </div>
                                 </div>
-                               
                             </div>
 
 		         <!-- Adding a New device -->
