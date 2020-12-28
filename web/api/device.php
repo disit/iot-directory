@@ -677,7 +677,7 @@ else if ($action =='change_visibility')
 			{
 				//id management
 				if ($protocol == "ngsi w/MultiService")	$id = $service . "." . $servicePath . "." . $id;
-				get_device($username, $role, $id, $contextbroker,  $accessToken, $link, $result);
+				get_device($username, $role, $id, $contextbroker,  $accessToken, $link, $result, true);
 				if (empty($result["content"]))
                 {
                     $result["status"]="ko";
@@ -2087,7 +2087,7 @@ else if($action == "add_delegation")
 			{
 				//id management
 				if ($protocol == "ngsi w/MultiService")	$id = $service . "." . $servicePath . "." . $id;
-				get_device($username, $role, $id, $cb,  $accessToken, $link, $result);
+				get_device($username, $role, $id, $cb,  $accessToken, $link, $result,true);
 				if (empty($result["content"]))
                 {
                     $result["status"]="ko";

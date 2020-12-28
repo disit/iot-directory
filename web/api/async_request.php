@@ -1,7 +1,7 @@
 <?php
 include ('../config.php');
-$parts=parse_url($redirectUri.'/api/bulkDeviceLoad.php');
-$fp = fsockopen($parts['host'], isset($parts['port'])?$parts['port']:80, $errno, $errstr, 30);
+$parts=parse_url('http://localhost'.substr($_SERVER['REQUEST_URI'],0,strrpos($_SERVER['REQUEST_URI'],"/")).'/bulkDeviceLoad.php'); // $parts=parse_url($redirectUri.'/api/bulkDeviceLoad.php');
+$fp = fsockopen($parts['host'], isset($parts['port'])?$parts['port']:($parts['scheme']=='http'?80:443), $errno, $errstr, 30);
 $out = "POST ".$parts['path']." HTTP/1.1\r\n";
 $out.= "Host: ".$parts['host']."\r\n";
 $out.= "Content-Type: application/json\r\n";

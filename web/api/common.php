@@ -1130,14 +1130,15 @@ function getDelegatorObject($token, $user, &$result,$object, $delegationId) {
 	}
 }
 
-function getOwnerShipDevice($token, &$result) 
+function getOwnerShipDevice($token, &$result, $elementId = null) 
 {
 	$listCondDevice = "";
 	$local_result="";
 	$mykeys = array();
 	try
 	{
-		$url= $GLOBALS["ownershipURI"] . "ownership-api/v1/list/?type=IOTID&accessToken=" . $token;
+		if($elementId) $url= $GLOBALS["ownershipURI"] . "ownership-api/v1/list/?elementId=$elementId&type=IOTID&accessToken=" . $token;
+		else $url= $GLOBALS["ownershipURI"] . "ownership-api/v1/list/?type=IOTID&accessToken=" . $token;
 
 		$local_result = file_get_contents($url);
 		$result["log"] .= $local_result;
@@ -2847,12 +2848,9 @@ function get_all_models($username, $organization, $role, $accessToken, $link, &$
 	}
 }
 
-function get_device($username, $role, $id, $cb,  $accessToken, $link, &$result){
+function get_device($username, $role, $id, $cb,  $accessToken, $link, &$result, $onlyIfOwned = false){
 
-        getOwnerShipDevice($accessToken, $result);
-        getDelegatedDevice($accessToken, $username, $result);
-
-	unset($result['msg']);
+	
 
 	$q = "SELECT d.`uri`, d.`devicetype`, d.`kind`,
 		CASE WHEN mandatoryproperties AND mandatoryvalues THEN \"active\" ELSE \"idle\" END AS status1,
@@ -2869,6 +2867,11 @@ function get_device($username, $role, $id, $cb,  $accessToken, $link, &$result){
                 while($row = mysqli_fetch_assoc($r))//should be just one data
                 {
 			$eid=$row["organization"].":".$cb.":".$id;
+			
+			getOwnerShipDevice($accessToken, $result, $eid);
+			if(!$onlyIfOwned) getDelegatedDevice($accessToken, $username, $result);
+			unset($result['msg']);
+			
 			if (
 				($role=='RootAdmin')
 				||
