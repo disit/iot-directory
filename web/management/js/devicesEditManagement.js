@@ -103,9 +103,16 @@ function checkEditDeviceType()
         }
         else
         {
-            $("#inputTypeDeviceMMsg").css("color", "#337ab7");
-            message = 'Ok';
-            editDeviceConditionsArray['inputTypeDeviceM'] = true;
+            if($("#editInfoTabDevice #inputTypeDeviceM").val().indexOf(' ')>-1) {
+				$("#inputTypeDeviceMMsg").css("color", "red");
+				message = 'Device Type cannot contain blank spaces';
+				editDeviceConditionsArray['inputTypeDeviceM'] = false;
+			}
+			else {
+				$("#inputTypeDeviceMMsg").css("color", "#337ab7");
+				message = 'Ok';
+				editDeviceConditionsArray['inputTypeDeviceM'] = true;
+			}
         }
     }
     

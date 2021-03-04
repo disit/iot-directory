@@ -255,10 +255,16 @@ function checkModelDeviceTypeM()
     } */
     else
     {
-		
-		$("#inputTypeModelMMsg").css("color", "#337ab7");
-		message = 'Ok';
-		editModelConditionsArray['inputTypeModelM'] = true;
+		if($("#editInfoTabModel #inputTypeModelM").val().indexOf(' ')>-1) {
+			$("#inputTypeModelMMsg").css("color", "red");
+			message = 'Device Type cannot contain blank spaces';
+			editModelConditionsArray['inputTypeModelM'] = false;
+		}
+		else {
+			$("#inputTypeModelMMsg").css("color", "#337ab7");
+			message = 'Ok';
+			editModelConditionsArray['inputTypeModelM'] = true;
+		}
         
     }
     

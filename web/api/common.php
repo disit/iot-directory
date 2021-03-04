@@ -94,7 +94,38 @@ function insert_device($link, $id, $devicetype, $contextbroker, $kind, $protocol
         }
 
 
-
+	// Check static attributes	
+	try {		
+		if($staticAttributes && $staticAttributes != "[]") {
+			retrieveAvailableStaticAttribute($subnature,$result);
+			foreach(explode("],[",str_replace("]]","",str_replace("[[","",$staticAttributes))) as $staticAttribute) {
+				$isValid = false;
+				foreach(json_decode($result["content"],true) as $validStaticAttribute) {
+					if(explode("\\\",\\\"",trim($staticAttribute,"\\\""))[0] == $validStaticAttribute["uri"]) {
+						$isValid = true;
+					}
+				}
+				if(!$isValid) {
+					$result["status"]='ko';
+					$result["error_msg"] .= "The static attribute ".explode("\\\",\\\"",trim($staticAttribute,"\\\""))[0]." is not valid."; 
+					$result["msg"] .= "\n The static attribute ".explode("\\\",\\\"",trim($staticAttribute,"\\\""))[0]." is not valid."; 
+					$result["log"] .= "\r\n The static attribute ".explode("\\\",\\\"",trim($staticAttribute,"\\\""))[0]." is not valid.";
+				}
+				else {
+					$result["log"] .= "\r\n ".explode("\\\",\\\"",trim($staticAttribute,"\\\""))[0]." is valid.";
+				}
+			}	
+		}
+	}
+	catch(Exception $sace) {
+		$result["status"]=='ko';
+		$result["error_msg"] .= "An error occurred while validating the static attributes: ".($sace->getMessage());
+		$result["msg"] .= "\n An error occurred while validating the static attributes: ".($sace->getMessage());
+		$result["log"] .= "\r\n An error occurred while validating the static attributes: ".($sace->getMessage());		
+	}
+	if ($result["status"]=='ko' ) return $result;	
+	// End of the check of the static attributes
+	
 	if(!isset($shouldbeRegistered))
 	{
 		registerKB($link, $id, $devicetype, $contextbroker, $kind, $protocol,
@@ -1243,7 +1274,7 @@ function checkOwnershipObject($token, $elementId, $elementType, &$result)
 	$toreturn=false;
 	try
 	{
-		$url= $GLOBALS["ownershipURI"] . "ownership-api/v1/list/?type=".$elementType."&accessToken=" . $token;
+		$url= $GLOBALS["ownershipURI"] . "ownership-api/v1/list/?elementId=".urlencode($elementId)."&type=".urlencode($elementType)."&accessToken=" . urlencode($token);
 		$local_result = file_get_contents($url);
 		
 		if(strpos($http_response_header[0], '200') == true || strpos($http_response_header[0], '204') == true)
@@ -1363,7 +1394,9 @@ function retrieveFromDictionary($type,&$result){
 }
 
 function retrieveAvailableStaticAttribute($subnature, &$result){
-	$local_result="";
+	$local_result=""; 
+	if(!array_key_exists("msg",$result)) $result["msg"] = ""; 
+	if(!array_key_exists("log",$result)) $result["log"] = "";
         try
         {
 		$url= $GLOBALS["knowledgeBaseURI"] . "api/v1/iot/list-static-attr?subnature=".$subnature;
@@ -1389,7 +1422,7 @@ function retrieveAvailableStaticAttribute($subnature, &$result){
         catch (Exception $ex)
         {
                 $result["status"]='ko';
-                $result["error_msg"] .= ' Error in accessing the SM. ';
+                $result["error_msg"] = ' Error in accessing the SM. ';
                 $result["msg"] .= '\n error in accessing the SM ';
                 $result["log"] .= '\n error in accessing the SM ' . $ex;
         }

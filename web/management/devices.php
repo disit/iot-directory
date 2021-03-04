@@ -460,8 +460,8 @@
 				<div id="addDeviceModalBody" class="modal-body modalBody">
 				
 					<ul id="addDeviceModalTabs" class="nav nav-tabs nav-justified">
-						<li  class="active"><a data-toggle="tab" href="#addIOTBrokerTabDevice">IOT Broker</a></li>
-						<li><a data-toggle="tab" href="#addInfoTabDevice">Info</a></li>
+						<li  class="active"><a data-toggle="tab" href="#addInfoTabDevice">Info</a></li>
+						<li><a data-toggle="tab" href="#addIOTBrokerTabDevice">IOT Broker</a></li>
 						<li><a data-toggle="tab" href="#addGeoPositionTabDevice">Position</a></li>
 						<li><a data-toggle="tab" href="#addStaticTabModel">Static Attributes</a></li>
 						<li><a data-toggle="tab" href="#addSchemaTabDevice">Values</a></li>
@@ -470,7 +470,7 @@
                     <div class="tab-content">
                        
                         <!-- IOT Broker tab -->
-                        <div id="addIOTBrokerTabDevice" class="tab-pane fade in active">
+                        <div id="addIOTBrokerTabDevice" class="tab-pane fade">
 						
                             <div class="row">
 							
@@ -555,7 +555,7 @@
 
                         </div>
                         <!-- Info tab -->
-                        <div id="addInfoTabDevice" class="tab-pane fade">
+                        <div id="addInfoTabDevice" class="tab-pane fade in active">
                             <div class="row">
                                 <div class="col-xs-12 col-md-6 modalCell">
                                     <div class="modalFieldCnt">
@@ -932,8 +932,8 @@
                 <div id="editDeviceModalBody" class="modal-body modalBody">
                     
                      <ul id="editDeviceModalTabs" class="nav nav-tabs nav-justified">
-						<li  class="active"><a data-toggle="tab" href="#editIOTBrokerTabDevice">IoT Broker</a></li>
-                         <li><a data-toggle="tab" href="#editInfoTabDevice">Info</a></li>
+						<li  class="active"><a data-toggle="tab" href="#editInfoTabDevice">Info</a></li>
+                         <li><a data-toggle="tab" href="#editIOTBrokerTabDevice">IoT Broker</a></li>
                         <li><a data-toggle="tab" href="#editGeoPositionTabDevice">Position</a></li>
 						<li><a data-toggle="tab" href="#editStaticTabModel">Static Attributes</a></li>
                         <li><a data-toggle="tab" href="#editSchemaTabDevice">Values</a></li>
@@ -943,7 +943,7 @@
                     
                     <div class="tab-content">
                        <!-- IOT Broker tab -->
-                        <div id="editIOTBrokerTabDevice" class="tab-pane fade in active">
+                        <div id="editIOTBrokerTabDevice" class="tab-pane fade">
                      
 							<div class="row">
 							
@@ -1042,7 +1042,7 @@
 				<!-- End MultiService + ServicePath Section -->	 
                         </div>
                          <!-- Info tab -->
-                        <div id="editInfoTabDevice" class="tab-pane fade ">
+                        <div id="editInfoTabDevice" class="tab-pane fade in active">
 						
 						
                             <div class="row">

@@ -331,6 +331,7 @@ function retrieveStaticAttributes(source, all, isMobileTick){
 			var array = [];
 			array.push(staticArr[i].value);
 			array.push(staticArr2[i].value);
+			try { array.push($(staticArr[i]).find('option[value="'+staticArr[i].value+'"]').text()); } catch(lpe){}
 			staticValues.push(array);
 		}
 	}
@@ -1058,7 +1059,7 @@ function updateIsMobile(edit, staticAttributes) {
 }
 
 function checkIsMobile(staticAttributes) {
-	if (staticAttributes!==undefined)
+	if (staticAttributes)
 		for(let i = 0; i < staticAttributes.length; i++){
 			if ((staticAttributes[i][0]=="http://www.disit.org/km4city/schema#isMobile")&&
 				(staticAttributes[i][1]=="true"))

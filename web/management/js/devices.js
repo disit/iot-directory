@@ -282,7 +282,7 @@ function format ( d ) {
             '<div class="col-xs-6 col-sm-6" style="background-color:#E6E6FA;"><button class="btn btn-info my-small-button" onclick="datainspect(\''+
             d.id+'\',\''+d.devicetype+'\',\''+d.contextBroker+'\',\''+d.service+'\',\''+d.servicePath+'\',\'v1\');return true;"><b>PAYLOAD NGSI v1</b></button></div>' +
             '<div class="clearfix visible-xs"></div>';
-	if (d.version=='v2')
+	// if (d.version=='v2')
 		showPayload=showPayload+'<div class="col-xs-6 col-sm-6" style="background-color:#E6E6FA;"><button class="btn btn-info my-small-button" onclick="datainspect(\''+
                 d.id+'\',\''+d.devicetype+'\',\''+d.contextBroker+'\',\''+d.service+'\',\''+d.servicePath+'\',\'v2\');return true;"><b>PAYLOAD NGSI v2</b></button></div>';
 	showPayload=showPayload+'</div>';
@@ -545,7 +545,7 @@ function format ( d ) {
 	$("#selectModelDevice").prop('selectedIndex',1);	
 
 	$("#addDeviceModalTabs").show();
-	$('.nav-tabs a[href="#addIOTBrokerTabDevice"]').tab('show');  
+	$('.nav-tabs a[href="#addInfoTabDevice"]').tab('show');  
 	$("#addDeviceModalBody").show();
 	$('#addDeviceModal div.modalCell').show();
 	$("#addDeviceModalFooter").show();
@@ -636,7 +636,7 @@ function format ( d ) {
 		//Edit button in dataTable 
 	$('#devicesTable tbody').on('click', 'button.editDashBtn', function () {
 		$("#editDeviceModalTabs").show();
-		$('.nav-tabs a[href="#editIOTBrokerTabDevice"]').tab('show');
+		$('.nav-tabs a[href="#editInfoTabDevice"]').tab('show');
 		$('#editDeviceModal div.modalCell').show();
 		$("#editDeviceCancelBtn").show();
 		$("#editDeviceConfirmBtn").show();
