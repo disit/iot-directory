@@ -2525,6 +2525,7 @@ d.contextBroker='$contextbroker' and d.id='$device';";
 	$uri=$row["uri"];
 	$service=$row["service"];
 	$servicePath=$row["servicePath"];
+	$staticAttributes = $row["static_attributes"];
 
 	if (canBeModified($device, $type, $contextbroker, $kind, $protocol, $format, $macaddress, $model, $producer, $latitude, $longitude, 
 $visibility, $frequency, $listnewAttributes, $result))
@@ -2603,11 +2604,11 @@ $visibility, $frequency, $listnewAttributes, $result))
 			   {
 				case "ngsi":
 					$res = update_ngsi($device, $type, $contextbroker, $kind, $protocol, $format, $model, $latitude,
-$longitude, $visibility, $frequency, $listnewAttributes, array(), $ip, $port,$uri, $result);
+$longitude, $visibility, $frequency, $listnewAttributes, array(), $ip, $port,$uri, $staticAttributes, $result);
 					break;
 				case "ngsi w/MultiService":
 		                        $res = update_ngsi($device, $type, $contextbroker, $kind, $protocol, $format, $model, $latitude, 
-$longitude, $visibility, $frequency, $listnewAttributes, array(),$ip, $port,$uri, $result, $service, $servicePath);
+$longitude, $visibility, $frequency, $listnewAttributes, array(),$ip, $port,$uri, $staticAttributes, $result, $service, $servicePath);
                         break;
 				case "mqtt":
 					$res =update_mqtt($device, $type, $contextbroker, $kind, $protocol, $format, $latitude, $longitude, 
