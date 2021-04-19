@@ -42,9 +42,6 @@ var _serviceIP = "../stubs";
 
 var express = require('express');
 var request = require('request');
-var bodyParser = require('body-parser');
-const spawn = require('child_process').spawn;
-var registeredStub = [];
 
 /* MYSQL setup */
 var mysql = require('mysql');
@@ -54,8 +51,8 @@ var FileSaver = require('file-saver');
 var Blob = require('blob');
 var Parser = require('./Parser/Classes/Parser');
 
-const {isInt, isFloat} = require('./Functions/functions.js');
-const {manageExtractionRulesAtt, manageExtractionRulesDev,manageOtherParameters, verifyDevice, getLocation} = require('./Functions/manageData.js')
+const { isInt, isFloat } = require('./Functions/functions.js');
+const { manageExtractionRulesAtt, manageExtractionRulesDev, manageOtherParameters, verifyDevice, getLocation } = require('./Functions/manageData.js')
 
 /* ORION setup */
 var http = require("http");
@@ -93,17 +90,17 @@ cid.connect(function (err) {
 /*Retrieve types */
 var req = new XMLHttpRequest();
 var link = apiLink + "device.php";
-req.open("POST", link + "?action=get_param_values&token=" + TOKEN, false);
+req.open("POST", link + "?action=get_param_values", false);
 req.onreadystatechange = function () {
 	if (this.readyState == 4 && this.status == 200) {
-        let resp = JSON.parse(this.responseText);
-        gb_datatypes = resp["data_type"];
-        gb_value_units = resp["value_unit"];
-        gb_value_types = resp["value_type"];
-        //console.log("dictionary retrieved");
-    } else if (this.readyState == 4 && this.status != 200) {
-        console.log("dictionary error " + this.status);
-    }
+		let resp = JSON.parse(this.responseText);
+		gb_datatypes = resp["data_type"];
+		gb_value_units = resp["value_unit"];
+		gb_value_types = resp["value_type"];
+		//console.log("dictionary retrieved");
+	} else if (this.readyState == 4 && this.status != 200) {
+		console.log("dictionary error " + this.status);
+	}
 }
 req.send()
 
@@ -202,7 +199,12 @@ function retrieveData(xhttp, link) {
 				var extractionRulesAtt = new Object();
 				var extractionRulesDev = new Object();
 				var promiseExtractionRules = new Promise(function (resolveExtraction, rejectExtraction) {
-					var query = "SELECT * FROM extractionRules where contextbroker='" + ORION_CB + "';";
+					if((SERVICE == undefined || SERVICE == "")&&(SERVICE_PATH == undefined || SERVICE_PATH == "")){
+						var query = "SELECT * FROM extractionRules where contextbroker='" + ORION_CB + "';";
+					}else{
+						var query = "SELECT * FROM extractionRules where contextbroker='" + ORION_CB + "'AND service = '" + SERVICE + "' AND servicePath = '" + SERVICE_PATH + "';";
+					}
+					
 
 					cid.query(query, function (err, resultRules, fields) {
 
@@ -219,14 +221,15 @@ function retrieveData(xhttp, link) {
 							}
 
 						}
-						if (resultRules.length == 0) {
-							console.log("extraction rules are empty");
-							rejectExtraction();
-						}
-						else {
-							//console.log("extraction rules are NOT empty");
-							resolveExtraction();
-						}
+						// if (resultRules.length == 0) {
+						// 	console.log("extraction rules are empty");
+						// 	rejectExtraction();
+						// }
+						// else {
+						// 	//console.log("extraction rules are NOT empty");
+						// 	resolveExtraction();
+						// }
+						resolveExtraction();
 					}); //query
 
 				});
@@ -251,57 +254,61 @@ function retrieveData(xhttp, link) {
 						}
 
 						sesc, attProperty = manageExtractionRulesAtt(extractionRulesAtt, ORION_CB, topic, orionDevicesSchema[topic.toLowerCase()], sesc);
-						sesc, attProperty = manageOtherParameters(ORION_CB, topic, orionDevicesSchema[topic.toLowerCase()],sesc, attProperty)
+						sesc, attProperty = manageOtherParameters(ORION_CB, topic, orionDevicesSchema[topic.toLowerCase()], sesc, attProperty)
 						devAttr = manageExtractionRulesDev(extractionRulesDev, orionDevicesSchema[topic.toLowerCase()], devAttr)
 
 						if (devAttr["mac"] == undefined)
-								devAttr["mac"] = "";
-							if (devAttr["k1"] == undefined)
-								devAttr["k1"] = "";
-							if (devAttr["k2"] == undefined)
-								devAttr["k2"] = "";
-							if (devAttr["producer"] == undefined)
-								devAttr["producer"] = "";
-							if (devAttr["latitude"] == undefined && devAttr["longitude"] == undefined){
-								var location = getLocation(orionDevicesSchema[topic.toLowerCase()]);
-								devAttr["latitude"] = location[0]
-								devAttr["longitude"] = location[1]
-							}
-							if (devAttr["subnature"] == undefined)
-								devAttr["subnature"] = "";
-							if (devAttr["static_attributes"] == undefined)
-								devAttr["static_attributes"] = "[]";
-							if (devAttr["devicetype"] == undefined)
-                                devAttr["devicetype"] = orionDevicesType[topic];
-				
-						var toVerify = { 
-							"name": topic, 
-							"username": USER, 
-							"contextBroker": ORION_CB, 
-							"id": topic, 
-							"model": MODEL, 
+							devAttr["mac"] = "";
+						if (devAttr["k1"] == undefined)
+							devAttr["k1"] = "";
+						if (devAttr["k2"] == undefined)
+							devAttr["k2"] = "";
+						if (devAttr["producer"] == undefined)
+							devAttr["producer"] = "";
+						if (devAttr["latitude"] == undefined && devAttr["longitude"] == undefined) {
+							var location = getLocation(orionDevicesSchema[topic.toLowerCase()]);
+							devAttr["latitude"] = location[0]
+							devAttr["longitude"] = location[1]
+						}
+						if (devAttr["subnature"] == undefined)
+							devAttr["subnature"] = "";
+						if (devAttr["static_attributes"] == undefined)
+							devAttr["static_attributes"] = "[]";
+						if (devAttr["devicetype"] == undefined)
+							devAttr["devicetype"] = orionDevicesType[topic];
+
+						var toVerify = {
+							"name": topic,
+							"username": USER,
+							"contextBroker": ORION_CB,
+							"id": topic,
+							"model": MODEL,
 							"producer": devAttr["producer"],
-							"devicetype": devAttr["devicetype"], 
-							"protocol": ORION_PROTOCOL, 
-							"format": devAttr["format"], 
-							"frequency": FREQUENCY, 
-							"kind": KIND, 
-							"latitude": devAttr["latitude"], 
-							"longitude": devAttr["longitude"], 
-							"macaddress": devAttr["mac"], 
-							"k1": devAttr["k1"], 
-							"k2": devAttr["k2"], 
+							"devicetype": devAttr["devicetype"],
+							"protocol": ORION_PROTOCOL,
+							"format": devAttr["format"],
+							"frequency": FREQUENCY,
+							"kind": KIND,
+							"latitude": devAttr["latitude"],
+							"longitude": devAttr["longitude"],
+							"macaddress": devAttr["mac"],
+							"k1": devAttr["k1"],
+							"k2": devAttr["k2"],
 							"subnature": devAttr["subnature"],
 							"static_attributes": devAttr["static_attributes"],
-							"deviceValues": attProperty 
+							"deviceValues": attProperty
 						};
-						
+
 						var verify = verifyDevice(toVerify, modelsdata, gb_datatypes, gb_value_types, gb_value_units);
 						var validity = "invalid";
 						if (verify.isvalid)
 							validity = "valid";
-
-						console.log(JSON.stringify(toVerify));
+						if(attProperty.length != 0){
+							console.log(JSON.stringify(toVerify));
+						}else{
+							console.log("no parameters are found")
+						}
+						
 
 					}//end for i 
 

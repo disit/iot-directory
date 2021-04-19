@@ -1,14 +1,14 @@
 var Parser = require('../Parser/Classes/Parser')
-var { isLatitude, isLongitude, isTest, flatten, getIndexofValueType } = require('./functions.js')
-const { storeAttribute } = require('./db_functions.js')
+const { performance } = require('perf_hooks');
+const { isLatitude, isLongitude, isTest, flatten, getIndexofValueType } = require('./functions.js')
+const { insertValues } = require('./db_functions.js')
 var deviceAttributes = ["uri", "devicetype", "kind", "macaddress", "producer", "latitude", "longitude", "protocol", "format", "frequency", "k1", "k2", "subnature", "static_attributes"];
-
+var alreadyRetrived = ['id', 'type', 'latitude', 'longitude', 'location', 'model']
 
 function manageExtractionRulesAtt(extractionRulesAtt, orion_cb, device_id, schema, sesc) {
 	var attProperty = []
 
 	for (var j in extractionRulesAtt) {
-
 		rule = extractionRulesAtt[j]["selector"];
 		var id = extractionRulesAtt[j]["id"];
 		rule = JSON.stringify(rule);
@@ -17,7 +17,7 @@ function manageExtractionRulesAtt(extractionRulesAtt, orion_cb, device_id, schem
 
 		rule = rule.replace("PM2,5", "PM2x5");
 		rule = rule.replace("PM2.5", "PM2y5");
-		//console.log("rule "+ rule);
+
 		rule = rule.slice(1, rule.length - 1);
 		let jsonRules = JSON.parse(rule);
 
@@ -83,20 +83,20 @@ function manageExtractionRulesAtt(extractionRulesAtt, orion_cb, device_id, schem
 				"value_type": value_type,
 				"data_type": data_type,
 				"value_unit": extractionRulesAtt[j]["value_unit"],
-				"editable": false,
+				"editable": "0",
 				"healthiness_criteria": "refresh_rate",
 				"healthiness_value": 300
 			};
 			//console.log("objProp " + JSON.stringify(objProp));
 			attProperty.push(objProp);
-			sesc.push(storeAttribute(device_id, orion_cb, objProp.value_name, objProp.data_type, objProp.value_type, objProp.value_unit, objProp.healthiness_criteria, objProp.healthiness_value, objProp.value_name));
+			sesc.push([device_id, orion_cb, objProp.value_name, objProp.data_type, objProp.value_type, objProp.value_unit, objProp.editable, objProp.healthiness_criteria, objProp.healthiness_value, objProp.value_name]);
 		}
 	}//end for j
 	return sesc, attProperty;
 }
 
 function manageOtherParameters(orion_cb, device_id, schema, sesc, attProperty) {
-	var alreadyRetrived = ['id', 'type', 'latitude', 'longitude', 'location', 'model']
+
 	// console.log(JSON.stringify(attProperty))
 	for (var i = 0; i < attProperty.length; i++) {
 		alreadyRetrived.push(attProperty[i].value_name)
@@ -105,18 +105,20 @@ function manageOtherParameters(orion_cb, device_id, schema, sesc, attProperty) {
 		if (propName != undefined && deviceAttributes.indexOf(propName) < 0 && alreadyRetrived.indexOf(propName) < 0) {
 			// console.log(propName)
 			// console.log(schema[propName].type)
-			var data_type = (schema[propName].type != undefined) ? schema[propName].type : ""
-			let objProp = {
-				"value_name": propName,
-				"value_type": "",
-				"data_type": data_type.toLowerCase(),
-				"value_unit": "",
-				"editable": false,
-				"healthiness_criteria": "refresh_rate",
-				"healthiness_value": 300
-			};
-			attProperty.push(objProp);
-			sesc.push(storeAttribute(device_id, orion_cb, objProp.value_name, objProp.data_type, objProp.value_type, objProp.value_unit, objProp.healthiness_criteria, objProp.healthiness_value, objProp.value_name));
+			if (schema[propName] !== null && typeof schema[propName] === 'object' && schema[propName].value != undefined) {
+				var data_type = (schema[propName].type != undefined) ? schema[propName].type : ""
+				let objProp = {
+					"value_name": propName,
+					"value_type": "",
+					"data_type": data_type.toLowerCase(),
+					"value_unit": "",
+					"editable": false,
+					"healthiness_criteria": "refresh_rate",
+					"healthiness_value": 300
+				};
+				attProperty.push(objProp);
+				sesc.push([device_id, orion_cb, objProp.value_name, objProp.data_type, objProp.value_type, objProp.value_unit, objProp.editable, objProp.healthiness_criteria, objProp.healthiness_value, objProp.value_name]);
+			}
 		}
 	}
 	return sesc, attProperty
@@ -170,7 +172,7 @@ function verifyDevice(deviceToverify, modelsdata, gb_datatypes, gb_value_types, 
 
 	if (deviceToverify.name == undefined || deviceToverify.name.length < 5 || deviceToverify.name == null) { msg += "-name is mandatory, of 5 characters at least."; }
 	if (deviceToverify.devicetype == undefined || deviceToverify.devicetype == "" || deviceToverify.devicetype.indexOf(' ') >= 0 || deviceToverify.devicetype == null) { msg += "-devicetype is mandatory."; }
-	// if (deviceToverify.macaddress != undefined && !regexpMAC.test(deviceToverify.macaddress) || deviceToverify.macaddress == null) { msg += "-macaddress is mandatory and Mac format should be Letter (A-F) and number (eg. 3D:F2:C9:A6:B3:4F)."; }
+	if (deviceToverify.macaddress != undefined && deviceToverify.macaddress != null && deviceToverify.macaddress != "" && !regexpMAC.test(deviceToverify.macaddress)) { msg += "-macaddress format should be Letter (A-F) and number (eg. 3D:F2:C9:A6:B3:4F)."; }
 	if (deviceToverify.frequency == undefined || deviceToverify.frequency == "" || !isFinite(deviceToverify.frequency) || deviceToverify.frequency == null) { msg += "-frequency is mandatory, and should be numeric."; }
 	if (deviceToverify.kind == undefined || deviceToverify.kind == "" || deviceToverify.kind == null) { msg += "-kind is mandatory."; }
 	if (deviceToverify.protocol == undefined || deviceToverify.protocol == "" || deviceToverify.protocol == null) { msg += "-protocol is mandatory."; }
@@ -353,15 +355,14 @@ function verifyDevice(deviceToverify, modelsdata, gb_datatypes, gb_value_types, 
 
 				all_attr_status = false;
 				if (empty_name) {
-					all_attr_msg = "The attribute name cannot be empty";
+					all_attr_msg += "The attribute name cannot be empty";
 					if (attr_msg != "") {
-						all_attr_msg = all_attr_msg + ", other errors in: " + attr_msg;
+						all_attr_msg += all_attr_msg + ", other errors in: " + attr_msg;
 					}
 				}
 				else {
-					all_attr_msg = "For the attribute: " + v.value_name + ", error in: " + attr_msg;
+					all_attr_msg += "For the attribute: " + v.value_name + ", error in: " + attr_msg + '; ';
 				}
-
 			}
 
 		}
@@ -400,12 +401,19 @@ function getLocation(schema) {
 		"value": "63.382782"
 	}
 	 "attributes": [
-                {
-                    "name": "position",
-                    "type": "geo:point",
-                    "value": "40.418889, -3.691944"
-                }
-            ]
+				{
+					"name": "position",
+					"type": "geo:point",
+					"value": "40.418889, -3.691944"
+				}
+			]
+	"location": {
+		"type": "GeoProperty",
+		"value": {
+			 "type": "Point",
+			 "coordinates": [13.3986, 52.5547]
+		}
+	}
 	 */
 	var latitude = "";
 	var longitude = "";
@@ -420,10 +428,165 @@ function getLocation(schema) {
 	return [latitude, longitude]
 }
 
+function findNewValues(cid, orion_cb, orionDevices, orionDevicesSchema, registeredDevices, idTemporaryDevices, extractionRulesAtt) {
+	/**
+	 * orionDevices: 		id of devices of context broker
+	 * orionDevicesSchema: 	schema of device, with values
+	 * registeredDevices: 	id of devices registered and temporary devices
+	 * temporaryEventValue:	temporary parameters
+	 * eventValue: 			parameters of devices registered
+	 * 
+	 * for MTSP registered device id is: tenant1./path1.MT_SP_Test_device_01
+	 */
+
+	var sql = "(SELECT cb, device, value_name FROM temporary_event_values WHERE cb = '" + orion_cb + "')";
+	sql += " UNION (SELECT cb, device, value_name FROM event_values WHERE cb = '" + orion_cb + "')";
+	sql += "UNION  (SELECT cb, device, value_name FROM temporary_event_values_for_registered_devices WHERE cb = '" + orion_cb + "')";
+
+	var valuesTemporaryDevices = [];
+	var valuesRegisteredDevices = [];
+
+	cid.query(sql, function (err, result, fields) {
+		if (err) {
+			console.log("sql " + sql);
+			throw err;
+		}
+		//passare anche extractionRulesAtt?
+		var eventValue = result;
+		//var sesc = []
+		var idRegisteredDevices = [];
+
+		//registeredDevices= registeredDevices.concat(idTemporaryDevices);
+
+		for (var id of registeredDevices) {
+			idRegisteredDevices.push(id.split(".").slice(-1)[0])	//if path is present, remove it from id
+		}
+
+
+		for (var id of orionDevices) {
+			if (idRegisteredDevices.includes(id)) {
+				var index = idRegisteredDevices.indexOf(id)
+				var schema = orionDevicesSchema[id];
+				var params_name = Object.keys(schema);
+
+				for (var param of params_name) {
+					var isAlreadyAdded = false;
+					for (var i = 0; i < eventValue.length; i++) {
+						var registeredParam = eventValue[i];
+						if (registeredParam.cb == orion_cb && registeredParam.device == registeredDevices[index] && registeredParam.value_name == param) isAlreadyAdded = true;
+					}
+					if (!isAlreadyAdded && deviceAttributes.indexOf(param) < 0 && alreadyRetrived.indexOf(param) < 0) {
+
+						//chiamare manageExtractionRulesAtt() e ricevere sesc con objprop completo se c'è l'extraction rule,
+						//altrimenti lo inserisco come sotto.
+						var prop = { [param]: schema[param] }
+						//console.log(prop)
+						var _, attProperty = manageExtractionRulesAtt(extractionRulesAtt, orion_cb, registeredDevices[index], prop, [])
+						//console.log(attProperty[0])
+						var objProp = new Object()
+						if (attProperty[0] != undefined) {
+							objProp = attProperty[0];
+						} else {
+							if (schema[param] !== null && typeof schema[param] === 'object' && schema[param].value != undefined) {
+								var data_type = (schema[param].type != undefined) ? schema[param].type : ""
+								objProp = {
+									"value_name": param,
+									"value_type": "",
+									"data_type": data_type.toLowerCase(),
+									"value_unit": "",
+									"editable": "0",
+									"healthiness_criteria": "refresh_rate",
+									"healthiness_value": 300
+								};
+							}
+
+						}
+						if (objProp.value_name != undefined) {
+							valuesRegisteredDevices.push([registeredDevices[index], orion_cb, objProp.value_name, objProp.data_type, objProp.value_type, objProp.value_unit, objProp.editable, objProp.healthiness_criteria, objProp.healthiness_value, objProp.value_name]);
+
+						}
+					}
+				}
+
+			}
+			else if (idTemporaryDevices.includes(id)) {
+				//var index = idRegisteredDevices.indexOf(id)
+				var schema = orionDevicesSchema[id];
+				var params_name = Object.keys(schema);
+
+				for (var param of params_name) {
+					var isAlreadyAdded = false;
+					for (var i = 0; i < eventValue.length; i++) {
+						var registeredParam = eventValue[i];
+						if (registeredParam.cb == orion_cb && registeredParam.device == id && registeredParam.value_name == param) isAlreadyAdded = true;
+					}
+					if (!isAlreadyAdded && deviceAttributes.indexOf(param) < 0 && alreadyRetrived.indexOf(param) < 0) {
+
+						//chiamare manageExtractionRulesAtt() e ricevere sesc con objprop completo se c'è l'extraction rule,
+						//altrimenti lo inserisco come sotto.
+
+						var prop = { [param]: schema[param] }
+						//console.log(prop)
+						var _, attProperty = manageExtractionRulesAtt(extractionRulesAtt, orion_cb, registeredDevices[index], prop, [])
+						//console.log(attProperty[0])
+						var objProp = new Object()
+						if (attProperty[0] != undefined) {
+							objProp = attProperty[0];
+						} else {
+							if (schema[param] !== null && typeof schema[param] === 'object' && schema[param].value != undefined) {
+								var data_type = (schema[param].type != undefined) ? schema[param].type : ""
+								objProp = {
+									"value_name": param,
+									"value_type": "",
+									"data_type": data_type.toLowerCase(),
+									"value_unit": "",
+									"editable": "0",
+									"healthiness_criteria": "refresh_rate",
+									"healthiness_value": 300
+								};
+							}
+						}
+						if (objProp.value_name != undefined) {
+							valuesTemporaryDevices.push([id, orion_cb, objProp.value_name, objProp.data_type, objProp.value_type, objProp.value_unit, objProp.editable, objProp.healthiness_criteria, objProp.healthiness_value, objProp.value_name]);
+
+						}
+					}
+				}
+			}
+		}
+		// console.log('values temporary devices')
+		// console.log(valuesTemporaryDevices);
+		// console.log('values registered devices')
+		// console.log(valuesRegisteredDevices)
+		if (valuesTemporaryDevices.length > 0) {
+			insertValues(cid, valuesTemporaryDevices, "temporary_event_values")
+		}
+		if (valuesRegisteredDevices.length > 0) {
+			insertValues(cid, valuesRegisteredDevices, "temporary_event_values_for_registered_devices")
+		}
+	})
+}
+
+function uuidv4() {
+	var d = new Date().getTime();
+	if (typeof performance !== 'undefined' && typeof performance.now === 'function') {
+		d += performance.now(); //use high-precision timer if available
+	}
+	return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) {
+		var r = (d + Math.random() * 16) % 16 | 0;
+		d = Math.floor(d / 16);
+		return (c === 'x' ? r : (r & 0x3 | 0x8)).toString(16);
+	});
+}
+
+
+
 module.exports = {
 	manageExtractionRulesAtt,
 	manageExtractionRulesDev,
 	verifyDevice,
 	getLocation,
-	manageOtherParameters
+	manageOtherParameters,
+	findNewValues,
+	uuidv4
 }

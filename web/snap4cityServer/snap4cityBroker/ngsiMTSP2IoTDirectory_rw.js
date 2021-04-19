@@ -12,6 +12,9 @@ var PATH = process.argv[11];
 var KINDBROKER = process.argv[12];
 var APIKEY = process.argv[13];
 var TOKEN = process.argv[14];
+var FREQUENCY_SEARCH = process.argv[15];
+
+//console.log('frequenza: '+FREQUENCY_SEARCH);
 //Static values
 var ORION_PROTOCOL = "ngsi w/MultiService";
 var KIND = "sensor";
@@ -27,8 +30,7 @@ var schema;
 
 var express = require('express');
 var request = require('request');
-var bodyParser = require('body-parser');
-const spawn = require('child_process').spawn;
+
 var mysql = require('mysql');
 var Promise = require('promise');
 const fs = require('fs');
@@ -37,9 +39,9 @@ var Blob = require('blob');
 var http = require("http");
 var Parser = require('./Parser/Classes/Parser');
 
-const { removeDuplicates, flatten } = require('./Functions/functions.js');
+const { removeDuplicates } = require('./Functions/functions.js');
 const { insertDevices, insertValues, getModels } = require('./Functions/db_functions.js')
-const { manageExtractionRulesAtt, manageExtractionRulesDev,manageOtherParameters, verifyDevice, getLocation } = require('./Functions/manageData.js')
+const { manageExtractionRulesAtt, manageExtractionRulesDev, manageOtherParameters, verifyDevice, getLocation, findNewValues, uuidv4 } = require('./Functions/manageData.js')
 
 var XMLHttpRequest = require("xmlhttprequest").XMLHttpRequest;
 
@@ -60,7 +62,8 @@ var cid = mysql.createConnection({
     port: c_port,
     user: c_user,
     password: c_password,
-    database: c_database
+    database: c_database,
+    multipleStatements: true
 });
 
 cid.connect(function (err) {
@@ -74,9 +77,9 @@ cid.connect(function (err) {
 /*Retrieve types */
 var req = new XMLHttpRequest();
 var link = apiLink + "device.php";
-req.open("POST", link + "?action=get_param_values&token=" + TOKEN, false);
+req.open("POST", link + "?action=get_param_values", false);
 req.onreadystatechange = function () {
-	if (this.readyState == 4 && this.status == 200) {
+    if (this.readyState == 4 && this.status == 200) {
         let resp = JSON.parse(this.responseText);
         gb_datatypes = resp["data_type"];
         gb_value_units = resp["value_unit"];
@@ -172,10 +175,172 @@ function retrieveDataCaller(schema) {
     }
 }
 
+console.log(ORION_CB);
+
 function retrieveData(xhttp, link, service, servicePath) {
+    var orionDevices = [];
+    var orionDevicesType = [];
+    var orionDevicesSchema = {};
+    var registeredDevices = [];
+    var registeredDevicesWithPath = [];
+    var newDevices = [];
+    var extractionRulesAtt = new Object();
+    var extractionRulesDev = new Object();
+    var se = [];
+    var sesc = [];
 
-    var promiseAcquisition = new Promise(function (resolve2, reject) {
+    Promise.all([
+        makeRequestToCB(xhttp, link, service, servicePath),
+        getRegisteredDevices(service, servicePath),
+        getTemporaryDevices(service, servicePath),
+        getExtractionRules(service, servicePath)
+    ]).then(function ([result1, result2, result3, result4]) {
+        var obj = JSON.parse(result1);
 
+        if (obj instanceof Array) {
+            for (i = 0; i < obj.length; i++) {
+                let index = obj[i].id;
+                orionDevices.push(index);
+                orionDevicesSchema[index] = obj[i];
+                orionDevicesType[index] = obj[i].type;
+            }
+        } else {
+            orionDevices.push(obj.id);
+            orionDevicesSchema[obj.id] = obj;
+            orionDevicesType[obj.id] = obj.type;
+        }
+
+        if (typeof modelsdata === undefined || MODEL.localeCompare("custom") == 0 || modelsdata.length <= 0)
+            modelsdata = getModels(cid, modelsdata);
+
+        registeredDevices = result2.registeredDevices;
+        registeredDevicesWithPath = result2.registeredDevicesWithPath;
+        temporaryDevices = result3.temporaryDevices;
+        extractionRulesAtt = result4.extractionRulesAtt;
+        extractionRulesDev = result4.extractionRulesDev;
+
+        
+        findNewValues(cid, ORION_CB, orionDevices, orionDevicesSchema, registeredDevicesWithPath, temporaryDevices, extractionRulesAtt);
+
+        allDevices = registeredDevices.concat(temporaryDevices);
+        newDevices = orionDevices.diff(allDevices);
+        newDevices = removeDuplicates(newDevices);
+
+        console.log("There are " + newDevices.length + " new devices for the broker " + ORION_CB + "in tenant " + service + " in path " + servicePath + ".");
+
+
+        
+        var devAttr = new Object();
+
+        for (var i = 0; i < newDevices.length; i++) {
+            var attProperty = [];
+            var topic = newDevices[i];
+
+            if (orionDevicesSchema[topic] == undefined) {
+                //console.log("topic undefined " + topic);
+                continue;
+            }
+
+            sesc, attProperty = manageExtractionRulesAtt(extractionRulesAtt, ORION_CB, topic, orionDevicesSchema[topic], sesc);
+            sesc, attProperty = manageOtherParameters(ORION_CB, topic, orionDevicesSchema[topic], sesc, attProperty)
+            devAttr = manageExtractionRulesDev(extractionRulesDev, orionDevicesSchema[topic], devAttr)
+
+            if (devAttr["mac"] == undefined)
+                devAttr["mac"] = "";
+            if (devAttr["k1"] == undefined)
+                devAttr["k1"] = uuidv4();
+            if (devAttr["k2"] == undefined)
+                devAttr["k2"] = uuidv4();
+            if (devAttr["producer"] == undefined)
+                devAttr["producer"] = "";
+            if (devAttr["latitude"] == undefined && devAttr["longitude"] == undefined) {
+                var location = getLocation(orionDevicesSchema[topic]);
+                devAttr["latitude"] = location[0]
+                devAttr["longitude"] = location[1]
+            }
+
+            if (devAttr["subnature"] == undefined)
+                devAttr["subnature"] = "";
+            if (devAttr["static_attributes"] == undefined)
+                devAttr["static_attributes"] = "[]";
+            if (devAttr["devicetype"] == undefined)
+                devAttr["devicetype"] = orionDevicesType[topic];
+
+            var toVerify = {
+                "name": topic,
+                "username": USER,
+                "contextbroker": ORION_CB,
+                "id": topic,
+                "model": MODEL,
+                "producer": devAttr["producer"],
+                "devicetype": devAttr["devicetype"],
+                "protocol": ORION_PROTOCOL,
+                "format": FORMAT,
+                "frequency": FREQUENCY,
+                "kind": KIND,
+                "latitude": devAttr["latitude"],
+                "longitude": devAttr["longitude"],
+                "macaddress": devAttr["mac"],
+                "k1": devAttr["k1"],
+                "k2": devAttr["k2"],
+                "subnature": devAttr["subnature"],
+                "static_attributes": devAttr["static_attributes"],
+                "deviceValues": attProperty
+            };
+
+            var verify = verifyDevice(toVerify, modelsdata, gb_datatypes, gb_value_types, gb_value_units);
+            var validity = "invalid";
+            if (verify.isvalid)
+                validity = "valid";
+
+            se.push([
+                USER,
+                topic,
+                MODEL,
+                KIND,
+                devAttr["devicetype"],
+                ORION_PROTOCOL,
+                FREQUENCY,
+                FORMAT,
+                ORION_CB,
+                devAttr["latitude"],
+                devAttr["longitude"],
+                devAttr["mac"],
+                validity,
+                verify.message,
+                "no",
+                ORGANIZATION,
+                EDGE_GATEWAY_TYPE,
+                EDGE_GATEWAY_URI,
+                devAttr["k1"],
+                devAttr["k2"],
+                service,
+                servicePath,
+                devAttr["subnature"],
+                devAttr["static_attributes"],
+                devAttr["producer"]
+            ]);
+
+        }//end for i
+        if (se.length != 0) {
+            //if there are devices to be inserted
+            insertDevices(cid, se).then(function () {
+                if (sesc.length != 0) {
+                    //if there are attributes to be inserted
+                    insertValues(cid, sesc, "temporary_event_values");
+                }
+            });
+        }
+    }).catch(function (err) {
+        console.log(err)
+    })
+
+}//end retrieveData function
+
+
+
+function makeRequestToCB(xhttp, link, service, servicePath) {
+    return new Promise(function (resolve, reject) {
         xhttp = new XMLHttpRequest();
 
         xhttp.open("GET", link, true);
@@ -184,249 +349,104 @@ function retrieveData(xhttp, link, service, servicePath) {
         }
         xhttp.setRequestHeader("Fiware-Service", service);
         xhttp.setRequestHeader("Fiware-ServicePath", servicePath);
-        xhttp.send();
 
         xhttp.onreadystatechange = function () {
-
             if (this.readyState == 4 && this.status == 200) {
-                //console.log("readyState " + this.readyState + " status " + this.status + this.responseText);
-                //function that manages the output in order to create the data
-                var responseText = this.responseText;
-
-                //variable initialization
-                var orionDevices = [];
-                var orionDevicesType = [];
-                var orionDevicesSchema = {};
-                var registeredDevices = [];
-
-                var obj = JSON.parse(responseText);
-
-                if (obj instanceof Array) {
-
-                    //console.log("length obj "+obj.length);
-                    for (i = 0; i < obj.length; i++) {
-                        let index = obj[i].id;
-                        orionDevices.push(index);
-                        //orionDevicesSchema[obj[i].id]= obj[i];
-                        orionDevicesSchema[index] = obj[i];
-                        orionDevicesType[index] = obj[i].type;
-                    }
-
-                } else {
-                    orionDevices.push(obj.id);
-                    orionDevicesSchema[obj.id] = obj;
-                    orionDevicesType[obj.id] = obj.type;
-                }
-
-                if (typeof modelsdata === undefined || MODEL.localeCompare("custom") == 0 || modelsdata.length <= 0)
-                    modelsdata = getModels(cid, modelsdata);
-
-                var sql = "(SELECT id FROM temporary_devices WHERE contextBroker = '" + ORION_CB + "' AND service = '" + service + "' AND servicePath = '" + servicePath + "') UNION (SELECT id FROM devices WHERE contextBroker = '" + ORION_CB + "' AND service = '" + service + "' AND servicePath = '" + servicePath + "')";
-
-                cid.query(sql, function (err, result, fields) {
-                    if (err) {
-                        console.log("sql " + sql);
-                        throw err;
-                    }
-                    for (i = 0; i < result.length; i++) {
-                        registeredDevices.push(result[i].id.replace(service, "").replace(servicePath, "").replace("..", ""));
-                    }
-
-                    //checking if the devices already exist in the platform
-                    //console.log("registeredDevices " +registeredDevices.length + " orion length "+ orionDevices.length);
-                    var newDevices = orionDevices.diff(registeredDevices);
-                    console.log("There are " + newDevices.length + " new devices for the broker " + ORION_CB + "in tenant " + service + " in path " + servicePath + ".");
-
-                    newDevices = removeDuplicates(newDevices);
-                    //Checking duplicates into the same array
-                    var extractionRulesAtt = new Object();
-                    var extractionRulesDev = new Object();
-                    var promiseExtractionRules = new Promise(function (resolveExtraction, rejectExtraction) {
-                        var query = "SELECT * FROM extractionRules where contextbroker='" + ORION_CB + "';";
-                        //console.log("rules");
-                        cid.query(query, function (err, resultRules, fields) {
-
-                            if (err) {
-                                console.log("sql " + query);
-                                throw err;
-                            }
-                            //console.log("extraction rules");
-                            for (var x = 0; x < resultRules.length; x++) {
-                                if (resultRules[x]["kind"].localeCompare("property") == 0) {
-                                    //console.log("adding"+JSON.stringify(resultRules[x]));
-                                    extractionRulesDev[resultRules[x]["id"]] = resultRules[x];
-                                } else {
-                                    //console.log("resultRules[x] "+ resultRules[x]["id"]);
-                                    extractionRulesAtt[resultRules[x]["id"]] = resultRules[x];
-                                }
-
-                            }
-                            if (resultRules.length == 0) {
-                                rejectExtraction();
-                            } else {
-                                resolveExtraction();
-                            }
-                        }); //query
-
-                    });
-
-                    var se = [];
-                    var sesc = [];
-                    //console.log("nodup "+ newDevices.length);
-                    //			console.log("oriondeviceschema2 "+ JSON.stringify(orionDevicesSchema));
-                    var ruleJSON, parser;
-                    promiseExtractionRules.then(function (resolveExtraction) {
-
-                        //console.log("new devices "+ newDevices +  "registeredDevices "+ registeredDevices );
-
-                        var type;
-                        var sensor;
-                        //var sensorApplied = new Object();
-                        var rule;
-                        var devAttr = new Object();
-                        for (var i = 0; i < newDevices.length; i++) {
-                            var attProperty = [];
-                            var topic = newDevices[i];
-                            //console.log(topic);
-                            if (orionDevicesSchema[topic] == undefined) {
-                                //console.log("topic undefined " + topic);
-                                continue;
-                            }
-
-                            sesc, attProperty = manageExtractionRulesAtt(extractionRulesAtt, ORION_CB, topic, orionDevicesSchema[topic], sesc);
-                            sesc, attProperty = manageOtherParameters(ORION_CB, topic, orionDevicesSchema[topic],sesc, attProperty)
-                            devAttr = manageExtractionRulesDev(extractionRulesDev, orionDevicesSchema[topic], devAttr)
-
-                            //if no rules are defined for mac, k1, k2, set tthis field to empty
-                            if (devAttr["mac"] == undefined)
-                                devAttr["mac"] = "";
-                            if (devAttr["k1"] == undefined)
-                                devAttr["k1"] = "";
-                            if (devAttr["k2"] == undefined)
-                                devAttr["k2"] = "";
-                            if (devAttr["producer"] == undefined)
-                                devAttr["producer"] = "";
-                            if (devAttr["latitude"] == undefined && devAttr["longitude"] == undefined){
-                                var location = getLocation(orionDevicesSchema[topic]);
-                                devAttr["latitude"] = location[0]
-                                devAttr["longitude"] = location[1]
-                            }
-								
-                            if (devAttr["subnature"] == undefined)
-                                devAttr["subnature"] = "";
-                            if (devAttr["static_attributes"] == undefined)
-                                devAttr["static_attributes"] = "[]";
-                            if (devAttr["devicetype"] == undefined)
-                                devAttr["devicetype"] = orionDevicesType[topic];
-
-                            var toVerify = {
-                                "name": topic,
-                                "username": USER,
-                                "contextbroker": ORION_CB,
-                                "id": topic,
-                                "model": MODEL,
-                                "producer": devAttr["producer"],
-                                "devicetype": devAttr["devicetype"],
-                                "protocol": ORION_PROTOCOL,
-                                "format": FORMAT,
-                                "frequency": FREQUENCY,
-                                "kind": KIND,
-                                "latitude": devAttr["latitude"],
-                                "longitude": devAttr["longitude"],
-                                "macaddress": devAttr["mac"],
-                                "k1": devAttr["k1"],
-                                "k2": devAttr["k2"],
-                                "subnature": devAttr["subnature"],
-                                "static_attributes": devAttr["static_attributes"],
-                                "deviceValues": attProperty
-                            };
-
-                            var verify = verifyDevice(toVerify, modelsdata, gb_datatypes, gb_value_types, gb_value_units);
-                            var validity = "invalid";
-                            if (verify.isvalid)
-                                validity = "valid";
-                        
-
-                            se.push(
-                                storeDevice(
-                                    USER,
-                                    topic,
-                                    MODEL,
-                                    KIND,
-                                    devAttr["devicetype"],
-                                    ORION_PROTOCOL,
-                                    FREQUENCY,
-                                    FORMAT,
-                                    ORION_CB,
-									devAttr["latitude"],
-									devAttr["longitude"],
-                                    devAttr["mac"],
-                                    validity,
-                                    verify.message,
-                                    "no",
-                                    ORGANIZATION,
-                                    EDGE_GATEWAY_TYPE,
-                                    EDGE_GATEWAY_URI,
-                                    devAttr["k1"],
-                                    devAttr["k2"],
-                                    service,
-                                    servicePath,
-                                    devAttr["subnature"],
-                                    devAttr["static_attributes"],
-                                    devAttr["producer"]
-                                ));
-
-                        }//end for i
-
-                        if (se.length != 0) {
-
-                            //if there are devices to be inserted
-                            var promise1 = new Promise(function (resolve, reject) {
-                                insertDevices(cid, se, (res) => {
-                                    //console.log("resolve 1");
-                                    resolve();
-                                });
-                            });
-                            //	console.log("sesc "+ sesc);
-                            promise1.then(function (resolve) {
-                                //console.log("SESC BEF "+ JSON.stringify(sesc)+ " SE "+ JSON.stringify(se));
-                                if(sesc.length!=0){
-                                    insertValues(cid, sesc);
-                                }
-                                //console.log("vales");
-                                resolve2();
-                            });
-                        }
-
-                    });//end then extraction rules
-                }); //query
-
-                //promise unit then
-            }//end readystate == 4
-            else if (this.readyState == 4 && this.status == 500) {
-                //console.log("reject");
-
-                reject();
+                resolve(this.responseText)
+            } else if (this.readyState == 4 && this.status == 500) {
+                reject({
+                    status: this.status,
+                    statusText: this.statusText
+                });
             }
-        };//end onreadystatechange
-    });//end promiseAcquisition
-
-    promiseAcquisition.then(function (resolve2) {
-        //console.log(resolve2);
-    },
-        function (error) {
-            console.log("promise then error: " + error);
-        });
-
-}//end retrieveData function
-
-
-/* store a device in the db*/
-function storeDevice(user, deviceID, model, kind, type, protocol, frequency, format, cb, latitude, longitude, macaddress, status, validity_msg, shouldberegistered,
-    organization, edge_type, edge_uri, k1, k2, service, servicePath, subnature, staticAttributes, producer) {
-    return [user, deviceID, model, kind, type, protocol, frequency, format, cb, latitude, longitude, macaddress, status, validity_msg, shouldberegistered, organization, edge_type,
-        edge_uri, k1, k2, service, servicePath, subnature, staticAttributes, producer];
+        };
+        xhttp.onerror = function () {
+            reject({
+                status: this.status,
+                statusText: this.statusText
+            });
+        };
+        xhttp.send()
+    })
 }
+
+function getRegisteredDevices(service, servicePath) {
+    return new Promise(function (resolve, reject) {
+        var registeredDevices = [];
+        var registeredDevicesWithPath = [];
+        var sql = "SELECT id FROM devices WHERE contextBroker = '" + ORION_CB + "' AND service = '" + service + "' AND servicePath = '" + servicePath + "';";
+
+        cid.query(sql, function (error, result, fields) {
+            if (error) {
+                reject(error)
+            }
+
+            for (i = 0; i < result.length; i++) {
+                registeredDevices.push(result[i].id.replace(service, "").replace(servicePath, "").replace("..", ""));
+                registeredDevicesWithPath.push(result[i].id);
+            }
+
+            //checking if the devices already exist in the platform
+            //console.log("registeredDevices " +registeredDevices.length + " orion length "+ orionDevices.length);
+            resolve({
+                registeredDevices: registeredDevices,
+                registeredDevicesWithPath: registeredDevicesWithPath,
+            })
+        })
+    })
+}
+
+function getTemporaryDevices(service, servicePath) {
+    return new Promise(function (resolve, reject) {
+        var temporaryDevices = [];
+        //var registeredDevicesWithPath = [];
+        var sql = "SELECT id FROM temporary_devices WHERE contextBroker = '" + ORION_CB + "' AND service = '" + service + "' AND servicePath = '" + servicePath + "';"
+
+        cid.query(sql, function (error, result, fields) {
+            if (error) {
+                reject(error)
+            }
+
+            for (i = 0; i < result.length; i++) {
+                //registeredDevices.push(result[i].id.replace(service, "").replace(servicePath, "").replace("..", ""));
+                temporaryDevices.push(result[i].id);
+            }
+
+            resolve({
+                temporaryDevices: temporaryDevices
+            })
+        })
+
+
+    })
+}
+
+
+function getExtractionRules(service, servicePath) {
+    return new Promise(function (resolve, reject) {
+        var extractionRulesDev = new Object();
+        var extractionRulesAtt = new Object();
+        var query = "SELECT * FROM extractionRules where contextbroker='" + ORION_CB + "'AND service = '" + service + "' AND servicePath = '" + servicePath + "';";
+        cid.query(query, function (error, resultRules, fields) {
+            //console.log('result: '+JSON.stringify(resultRules))
+            if (error) {
+                reject(error);
+            }
+            for (var x = 0; x < resultRules.length; x++) {
+                if (resultRules[x]["kind"].localeCompare("property") == 0) {
+                    extractionRulesDev[resultRules[x]["id"]] = resultRules[x];
+                } else {
+                    extractionRulesAtt[resultRules[x]["id"]] = resultRules[x];
+                }
+            }
+            resolve({
+                extractionRulesDev: extractionRulesDev,
+                extractionRulesAtt: extractionRulesAtt
+            });
+        });
+    });
+}
+
 
 /*functions */
 Array.prototype.diff = function (arr) {
@@ -438,4 +458,4 @@ Array.prototype.diff = function (arr) {
 };
 var requestLoop = setInterval(function () {
     retrieveDataCaller(schema);
-}, 20000);
+}, FREQUENCY_SEARCH);

@@ -6,6 +6,7 @@ var express = require('express');
 // var bodyParser = require('body-parser');	//deprecated
 var Promise = require('promise');
 const spawn = require('child_process').spawn;
+const fs = require('fs');
 
 var registeredStub = new Map();
 
@@ -16,8 +17,6 @@ var router = express.Router();
 
 var port = process.env.API_PORT || 3001;
 //configurazione api
-// app.use(bodyParser.urlencoded({ extended: true }));	//deprecated
-// app.use(bodyParser.json());							//deprecated
 app.use(express.urlencoded({ extended: true }))
 app.use(express.json());
 
@@ -39,6 +38,14 @@ app.use('/api', router);
 //starts server
 app.listen(port, function () {
 	console.log('api running on port ' + port);
+	console.log('Starting Nodes...')
+	Promise.all([
+		startActiveNodes('./snap4cityBroker/conf/registeredStubMultiService.json'),
+		startActiveNodes('./snap4cityBroker/conf/registeredStub.json')
+	]).then(result =>{
+		console.log('Nodes started.')
+	})
+
 });
 
 router.route('/ngsi')
@@ -48,6 +55,120 @@ router.route('/ngsi')
 			if (req.body.ip == "kill") {
 				registeredStub.get(req.body.contextbroker).kill();
 				registeredStub.delete(req.body.contextbroker);
+
+				fs.readFile('./snap4cityBroker/conf/registeredStub.json', 'utf8', function readFileCallback(err, data){
+					if (err){
+						console.log(err);
+					} else {
+					var obj = JSON.parse(data);
+					for(var i=0; i<obj.registeredStub.length; i++){
+						if(obj.registeredStub[i][1] == req.body.contextbroker){
+							obj.registeredStub.splice(i,1);
+						}
+					}
+					var json = JSON.stringify(obj); 
+					
+					fs.writeFile('./snap4cityBroker/conf/registeredStub.json', json, 'utf8', (err) =>{
+						if (err) {
+							throw err;
+						}
+						console.log("JSON data is saved.");
+					}); 
+				}});
+
+				var brokerActive = 'killing ' + req.body.contextbroker;
+				if (registeredStub.size == 0) {
+					brokerActive += '. There are no active brokers left.';
+				}
+				else {
+					brokerActive += '. Broker still active: ';
+
+					for (var key of registeredStub.keys()) {
+						brokerActive += key + "; ";
+					}
+				}
+				console.log("Active Broker:" + brokerActive);
+
+			} else {
+				console.log("Broker " + req.body.contextbroker + " is already active.");
+				res.json({ message: 'stub already active for ORION context broker ' + req.body.contextbroker });
+			}
+		}
+		else {
+			console.log("Retrieval from " + req.body.contextbroker + " activated.");
+			args = ['./snap4cityBroker/ngsi2IoTDirectory_rw.js',
+				req.body.contextbroker,
+				req.body.ip,
+				req.body.user,
+				req.body.al,
+				req.body.model,
+				req.body.edge_gateway_type,
+				req.body.edge_gateway_uri,
+				req.body.organization,
+				req.body.path,
+				req.body.kind,
+				req.body.apikey,
+				req.body.ap,
+				req.body.token,
+				req.body.frequency
+			];
+
+			console.log("Passed parameters: " + args);
+
+			const child_ngsi = spawn('node', args, { stdio: 'inherit' });
+
+			registeredStub.set(req.body.contextbroker, child_ngsi);
+			fs.readFile('./snap4cityBroker/conf/registeredStub.json', 'utf8', function readFileCallback(err, data){
+				if (err){
+					console.log(err);
+				} else {
+				var obj = JSON.parse(data); 
+				obj.registeredStub.push(args);
+				var json = JSON.stringify(obj); 
+				fs.writeFile('./snap4cityBroker/conf/registeredStub.json', json, 'utf8', (err) =>{
+					if (err) {
+						throw err;
+					}
+					console.log("JSON data is saved.");
+				}); 
+			}});
+
+			var regBroker = "Broker registered: ";
+			for (var key of registeredStub.keys()) {
+				regBroker += key + "; ";
+			}
+			console.log("" + regBroker);
+		}
+	});
+
+router.route('/ngsi_w_MultiService')
+	.post(function (req, res) {
+		var args = [];
+
+		if (registeredStub.get(req.body.contextbroker) != undefined) {
+			if (req.body.ip == "kill") {
+				registeredStub.get(req.body.contextbroker).kill();
+				registeredStub.delete(req.body.contextbroker);
+
+				fs.readFile('./snap4cityBroker/conf/registeredStubMultiService.json', 'utf8', function readFileCallback(err, data){
+					if (err){
+						console.log(err);
+					} else {
+					var obj = JSON.parse(data);
+					for(var i=0; i<obj.registeredStub.length; i++){
+						if(obj.registeredStub[i][1] == req.body.contextbroker){
+							obj.registeredStub.splice(i,1);
+						}
+					}
+					var json = JSON.stringify(obj);
+			
+					fs.writeFile('./snap4cityBroker/conf/registeredStubMultiService.json', json, 'utf8', (err) =>{
+						if (err) {
+							throw err;
+						}
+						console.log("JSON data is saved.");
+					}); 
+				}});
 
 				var brokerActive = 'killing ' + req.body.contextbroker;
 				if (registeredStub.size == 0) {
@@ -70,65 +191,6 @@ router.route('/ngsi')
 		else {
 			console.log("Retrieval from " + req.body.contextbroker + " activated.");
 
-			args = ['./snap4cityBroker/ngsi2IoTDirectory_rw.js',
-				req.body.contextbroker,
-				req.body.ip,
-				req.body.user,
-				req.body.al,
-				req.body.model,
-				req.body.edge_gateway_type,
-				req.body.edge_gateway_uri,
-				req.body.organization,
-				req.body.path,
-				req.body.kind,
-				req.body.apikey,
-				req.body.ap,
-				req.body.token
-			];
-
-			console.log("Passed parameters: " + args);
-
-			const child_ngsi = spawn('node', args, { stdio: 'inherit' });
-
-			registeredStub.set(req.body.contextbroker, child_ngsi);
-
-			var regBroker = "Broker registered: ";
-			for (var key of registeredStub.keys()) {
-				regBroker += key + "; ";
-			}
-			console.log("" + regBroker);
-		}
-	});
-
-router.route('/ngsi_w_MultiService')
-	.post(function (req, res) {
-		var args = [];
-
-		if (registeredStub.get(req.body.contextbroker) != undefined) {
-			if (req.body.ip == "kill") {
-				registeredStub.get(req.body.contextbroker).kill();
-				registeredStub.delete(req.body.contextbroker);
-
-				var brokerActive = 'killing ' + req.body.contextbroker;
-				if (registeredStub.size == 0) {
-					brokerActive += '. There are no active brokers left.';
-				}
-				else {
-					brokerActive += '. Broker still active: ';
-
-					for (var key of registeredStub.keys()) {
-						brokerActive += key + "; ";
-					}
-				}
-				console.log(brokerActive);
-
-			} else {
-				console.log("Broker " + req.body.contextbroker + " is already active.");
-				res.json({ message: 'stub already active for ORION context broker ' + req.body.contextbroker });
-			}
-		}
-		else {
-			console.log("Retrieval from " + req.body.contextbroker + " activated.");
 			args = ['./snap4cityBroker/ngsiMTSP2IoTDirectory_rw.js',
 				req.body.contextbroker,
 				req.body.ip,
@@ -142,7 +204,8 @@ router.route('/ngsi_w_MultiService')
 				req.body.path,
 				req.body.kind,
 				req.body.apikey,
-				req.body.token
+				req.body.token,
+				req.body.frequency
 			];
 
 			console.log('Passed parameters: ' + args);
@@ -150,6 +213,22 @@ router.route('/ngsi_w_MultiService')
 			const child_ngsi = spawn('node', args, { stdio: 'inherit' });
 
 			registeredStub.set(req.body.contextbroker, child_ngsi);
+
+			fs.readFile('./snap4cityBroker/conf/registeredStubMultiService.json', 'utf8', function readFileCallback(err, data){
+				if (err){
+					console.log(err);
+				} else {
+				var obj = JSON.parse(data); 
+				obj.registeredStub.push(args); 
+				var json = JSON.stringify(obj);
+				fs.writeFile('./snap4cityBroker/conf/registeredStubMultiService.json', json, 'utf8', (err) =>{
+					if (err) {
+						throw err;
+					}
+					console.log("JSON data is saved.");
+				}); 
+			}});
+
 
 			var regBroker = "Broker registered: ";
 			for (var key of registeredStub.keys()) {
@@ -189,9 +268,6 @@ router.route('/extract')
 
 		const child_ngsi = spawn('node', args, { stdio: 'pipe' });
 
-		//serve?
-		//registeredStub.set(req.body.contextbroker, child_ngsi);
-
 		child_ngsi.stdout.on('data', (data) => {
 			let result = data.toString();
 			console.log(result);
@@ -209,35 +285,6 @@ router.route('/extract')
 			child_ngsi.kill();
 		})
 
-		//TODO how to uniform these two following Promise and function/then?
-		//correct returning
-		// var promiseRes_stdout = new Promise(function (resolve, reject) {
-		// 	child_ngsi.stdout.on('data', function (data) {
-		// 		console.log(data.toString())
-		// 		let result = data.toString();
-		// 		if (result.startsWith("{") || result.localeCompare("not found\n") == 0) {
-		// 			resolve(result);
-		// 		}
-		// 	});
-		// });
-		// promiseRes_stdout.then(function (msg) {
-		// 	console.log("returing stdout:" + msg);
-		// 	res.json({ message: msg });
-		// 	child_ngsi.kill();
-		// });
-
-		// //error mngt	
-		// var promiseRes_stderr = new Promise(function (resolve, reject) {
-		// 	child_ngsi.stderr.on('data', (data) => {
-		// 		console.log(`stderr: ${data}`);
-		// 		resolve(data.toString());
-		// 	});
-		// });
-		// promiseRes_stderr.then(function (msg) {
-		// 	console.log("returing stderr:" + msg);
-		// 	res.json({ message: msg });
-		// 	child_ngsi.kill();
-		// });
 	});
 
 router.route('/discover')
@@ -264,9 +311,6 @@ router.route('/discover')
 
 		const child_discover = spawn('node', args, { stdio: 'pipe' });
 
-		//serve?
-		//registeredStub.set(req.body.contextbroker, child_discover);
-
 		child_discover.stdout.on('data', (data) => {
 			console.log("returing stdout:" + data.toString());
 			let result = JSON.parse(data);
@@ -281,34 +325,10 @@ router.route('/discover')
 			child_discover.kill();
 		})
 
-		//TODO how to uniform these two following Promise and function/then?
-		//correct returning
-		// var promiseRes_stdout = new Promise(function (resolve, reject) {
-		// 	child_discover.stdout.on('data', function (data) {
-		// 		let result = JSON.parse(data);
-		// 		resolve(result);
-		// 	});
-		// });
-		// promiseRes_stdout.then(function (msg) {
-		// 	console.log("returing stdout:" + msg);
-		// 	res.json({ message: msg });
-		// 	child_discover.kill();
-		// });
 
-		//error mngt
-		// var promiseRes_stderr = new Promise(function (resolve, reject) {
-		// 	child_discover.stderr.on('data', (data) => {
-		// 		console.log("stderr: ${data}");
-		// 		resolve(data.toString());
-		// 	});
-		// });
-		// promiseRes_stderr.then(function (msg) {
-		// 	console.log("returing stderr:" + msg);
-		// 	res.json({ message: msg });
-		// 	child_discover.kill();
-		// });
 	});
 
+//not used
 router.route('/nodered-ngsi')
 	.post(function (req, res) {
 		//console.log("node red, contextbroker "+ req.body.contextbroker);
@@ -382,7 +402,7 @@ router.route('/rawdata')
 		});
 
 	});
-
+//not used
 router.route('/amqp')
 	.post(function (req, res) {
 
@@ -442,7 +462,7 @@ router.route('/amqp')
 
 		}
 	});
-
+//not used
 router.route('/mqtt')
 	.post(function (req, res) {
 
@@ -511,3 +531,20 @@ router.route('/status')
 		res.json({ message: JSON.stringify(brokers) });
 	});
 
+function startActiveNodes(file){
+	return new Promise((resolve, reject) => {
+		fs.readFile(file, 'utf8', function readFileCallback(err, data){
+			if (err){
+				console.log(err);
+				reject();
+			} else {
+			var obj = JSON.parse(data);
+			for(var i=0; i<obj.registeredStub.length; i++){
+				const child_ngsi = spawn('node', obj.registeredStub[i], { stdio: 'inherit' });
+				var contextbroker = obj.registeredStub[i][1];
+				registeredStub.set(contextbroker, child_ngsi);
+			}
+			resolve();
+		}});
+	})
+}

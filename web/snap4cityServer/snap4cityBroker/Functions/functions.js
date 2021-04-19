@@ -53,7 +53,8 @@ function flatten(arr) {
 
 function getIndexofValueType(array, value_type){
 	/* Example of element of array
-	{	gb_value_type
+	gb_value_type
+	{	
 		id: '659',
 		value: 'power',
 		label: 'Power',

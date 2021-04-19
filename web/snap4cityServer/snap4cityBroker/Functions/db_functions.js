@@ -1,25 +1,30 @@
-function insertDevices(cid, se, callback) {
-	console.log("insertDevices:" + se);
-	var protocol = se[0][5]
+var XMLHttpRequest = require("xmlhttprequest").XMLHttpRequest;
+var Promise = require('promise');
 
-	if (protocol == "ngsi") {
-		var sqlse = "INSERT INTO `temporary_devices`(`username`,`id`,`model`, `kind`,`devicetype`,`protocol`,`frequency`,`format`,`contextBroker`,`latitude`,`longitude`,macaddress,`status`,`validity_msg`,`should_be_registered`,`organization`,`edge_gateway_type`,`edge_gateway_uri`,`k1`,`k2`,`subnature`,`static_attributes`, `producer`) VALUES ?";
-	} else if (protocol == "ngsi w/MultiService") {
-		var sqlse = "INSERT INTO `temporary_devices`(`username`,`id`,`model`, `kind`,`devicetype`,`protocol`,`frequency`,`format`,`contextBroker`,`latitude`,`longitude`,macaddress,`status`,`validity_msg`,`should_be_registered`,`organization`,`edge_gateway_type`,`edge_gateway_uri`,`k1`,`k2`,`service`,`servicePath`,`subnature`,`static_attributes`, `producer`) VALUES ?";
-	}
+function insertDevices(cid, se) {
+	return new Promise(function (resolve, reject) {
+		console.log("insertDevices:" + se);
+		var protocol = se[0][5]
+
+		if (protocol == "ngsi") {
+			var sqlse = "INSERT INTO `temporary_devices`(`username`,`id`,`model`, `kind`,`devicetype`,`protocol`,`frequency`,`format`,`contextBroker`,`latitude`,`longitude`,macaddress,`status`,`validity_msg`,`should_be_registered`,`organization`,`edge_gateway_type`,`edge_gateway_uri`,`k1`,`k2`,`subnature`,`static_attributes`, `producer`) VALUES ?";
+		} else if (protocol == "ngsi w/MultiService") {
+			var sqlse = "INSERT INTO `temporary_devices`(`username`,`id`,`model`, `kind`,`devicetype`,`protocol`,`frequency`,`format`,`contextBroker`,`latitude`,`longitude`,macaddress,`status`,`validity_msg`,`should_be_registered`,`organization`,`edge_gateway_type`,`edge_gateway_uri`,`k1`,`k2`,`service`,`servicePath`,`subnature`,`static_attributes`, `producer`) VALUES ?";
+		}
 
 
-	cid.query(sqlse, [se], function (errSens) {
-		callback();
+		cid.query(sqlse, [se], function (errSens) {
+			if (errSens) { console.log("devices insert error "); reject(errSens) }
+			resolve();
+			// console.log("fatto");
+		});
+	})
 
-		if (errSens) { console.log("devices insert error "); throw errSens; }
-		// console.log("fatto");
-	});
 }
 
-function insertValues(cid, sesc) {
+function insertValues(cid, sesc, table) {
 	//console.log("insertValues");
-	var sqlsesc = "INSERT INTO `temporary_event_values`(`device`, `cb`,`value_name`, `data_type`,`value_type`,`value_unit`,`healthiness_criteria`,`value_refresh_rate`,`old_value_name`) VALUES ?";
+	var sqlsesc = "INSERT INTO `" + table + "`(`device`, `cb`,`value_name`, `data_type`,`value_type`,`value_unit`, `editable`, `healthiness_criteria`,`value_refresh_rate`,`old_value_name`) VALUES ?";
 	//console.log("Sesc "+ JSON.stringify(sesc));
 	cid.query(sqlsesc, [sesc], function (errSSch) {
 		if (errSSch) { throw errSSch; }
@@ -37,11 +42,6 @@ function getModels(cid, modelsdata) {
 	});
 	return modelsdata;
 }
-
-function storeAttribute(topic, orion_cb, name, data_type, value_type, value_unit, healthiness_criteria, healthiness_value) {
-	return [topic, orion_cb, name, data_type, value_type, value_unit, healthiness_criteria, healthiness_value, name];
-}
-
 
 //never used
 function getParam(cid) {
@@ -87,6 +87,5 @@ module.exports = {
 	insertDevices,
 	insertValues,
 	getModels,
-	storeAttribute,
 	getParam
 }
