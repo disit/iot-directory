@@ -65,7 +65,8 @@ else {
 	link = ACCESS_LINK + CB_PATH;
 }
 
-link += "/v2/entities";
+// link += "/v2/entities";
+if(!link.includes('/v2/entities')) link = link + '/v2/entities';
 
 var xhttp = new XMLHttpRequest();
 
@@ -101,36 +102,9 @@ function retrieveData(xhttp, link) {
 			else if (this.readyState == 4 && this.status == 200) {
 				//function that manages the output in order to create the data
 				var responseText = this.responseText;
-				//variable initialization
-				// orionDevices = [];
-				// orionDevicesType = [];
-				// orionDevicesSchema = new Object();
 
 				var obj = JSON.parse(responseText);
 				
-				//serve?
-				// if (obj instanceof Array) {
-
-				// 	//console.log("length obj "+obj.length);
-				// 	//console.log("obj "+obj);
-				// 	for (i = 0; i < obj.length; i++) {
-				// 		//	console.log("obkid: " + obj[i].id);
-				// 		let index = obj[i].id.toLowerCase();
-				// 		//console.log("index "+ index);
-
-				// 		orionDevices.push(index);
-				// 		orionDevicesSchema[index.toLowerCase()] = obj[i];
-				// 		orionDevicesType[index.toLowerCase()] = obj[i].type;
-
-				// 	}
-
-				// }
-				// else {
-				// 	orionDevices.push(obj.id);
-				// 	orionDevicesSchema[obj.id.toLowerCase()] = obj;
-				// 	orionDevicesType[obj.id.toLowerCase()] = obj.type;
-				// }
-
 				console.log(JSON.stringify(obj));
 
 			}//end readystate == 4

@@ -374,20 +374,21 @@
 							
 						
                             <div id="displayAllDeviceRow" class="row mainContentRow">
-                                <div class="col-xs-12 mainContentRowDesc"></div>
-                                <div class="col-xs-12 mainContentCellCnt">
+                                <div class="col-xs-12 mainContentRowDesc "></div>
+                                <div class="col-xs-12 mainContentCellCnt ">
 								<div class="row" style= "background-color: rgb(241, 245, 244);">
-									<div class="col-xs-12 col-md-6 modalCell" style= "background-color: rgb(241, 245, 244);">
+									<div class="col-xs-12 col-md-6 modalCell " style= "background-color: rgb(241, 245, 244);">
 									<div id="displayDevicesMap" class="pull-right"><button type="button" class="btn btn-primary btn-round"><span class="glyphicon glyphicon-globe" style="font-size:36px; color: #0000ff"></span></button></div>
 									</div>
 									<div class="col-xs-12 col-md-6 modalCell" style= "background-color: rgb(241, 245, 244);">
-									<div class="pull-right"><button id="addDeviceBtn"  class="btn btn-primary">New Device</button></div>
+									<div class="pull-right "><button id="addDeviceBtn"  class="btn btn-primary">Add new device</button></div>
+                                                                        
 									</div>
 								</div>
-								<div>
-								<table id="devicesTable" class="table table-bordered table-striped" cellspacing="0" width="100%">
+								<div >
+								<table id="devicesTable" class="table table-bordered table-striped nowrap" cellspacing="0"  width="100%">
 									 <thead>
-									  <tr>
+									  <tr style="background: rgb(0, 162, 211); color: rgb(255, 255, 255); font-size: 1em;">
 										<th></th>	
 									    <th data-cellTitle="name">Device Identifier</th>
 										<th data-cellTitle="contextbroker">IOT Broker</th>
@@ -397,7 +398,8 @@
 										<th data-cellTitle="status">Status</th>							
 										<th data-cellTitle="edit">Edit</th>
 										<th data-cellTitle="delete">Delete</th>		
-										<th data-cellTitle="location">Location</th>										
+										<th data-cellTitle="location">Location</th>
+                                                                                <th data-cellTitle="check">View</th>									
 									</tr>
 									 </thead>
 									</table>
@@ -410,7 +412,99 @@
             </div>
         </div>
         
-		
+        
+        
+           <!--MODALE TESTING -->
+    <div class="modal fade" id="testDeviceModal" tabindex="-1" role="dialog" aria-hidden="true">
+  <div class="modal-dialog  modal-lg" role="document">
+    <div class="modal-content">
+      <div id="DeviceModalTest" class="modalHeader centerWithFlex">
+        <h5 class="col-xs-12 centerWithFlex">Let's check the broke!</h5>
+           </div>
+      <div  class="modal-body">
+      <p id="TestDEVModalStatus"></p>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-primary" data-dismiss="modal">Close</button>
+      </div>
+    </div>
+  </div>
+</div>
+    <!-- MODALE TESTING END -->
+
+    
+     <!-- NEW VALUES INPUT MODAL -->
+    <div class="modal fade" id="NewValuesInputMODAL" tabindex="-1" role="dialog" aria-hidden="true">
+  <div class="modal-dialog  modal-lg" role="document">
+    <div class="modal-content">
+      <div id="NewValuesInputMODAL" class="modalHeader centerWithFlex">
+        <h5 class="col-xs-12 centerWithFlex">Insert new data on your device</h5>
+           </div>
+    
+          
+        <div   class="modal-body">  
+        
+            <ul id="InsertDeviceModalTabs" class="nav nav-tabs nav-justified">
+               
+                  <li class="active"><a id="Mtab" data-toggle="tab" href="#editGeoPositionTabDeviceNewValue">Insert new position</a></li>
+                   <li ><a id="Itab" data-toggle="tab" href="#editAttributeValueTabDevice">Insert new value</a></li>
+						
+                                  
+					
+						
+                    </ul>
+            <div class="tab-content">
+                <div class="tab-pane active" id="Itab" role="tabpanel" aria-labelledby="data-ex-tab1-tab">
+                     <div id="ValuesINPUT" class="tabcontent"></div>
+                    <p id="InsertModalStatus"></p> 
+                    <button type="button" id="GETimeStamp" style="display:none" class="btn confirmBtn">Get Time stamp</button>
+                    
+                        
+                        
+                        <div id="NOMob" class="row">
+                            <div class="tab" id="InsertDataDeviceLoadingIcon">
+                        
+                        <div class="col-xs-12 centerWithFlex"><i class="fa fa-circle-o-notch fa-spin" style="font-size:36px;"></i></div></div>
+								<div class="col-xs-12 col-md-6 modalCell">
+                                    <div class="modalFieldCnt">
+                                        <input type="text" class="modalInputTxt" name="inputLatitudeDeviceValue" id="inputLatitudeDeviceValue"> 
+                                    </div>
+                                    <div class="modalFieldLabelCnt">Latitude</div>
+									
+                                </div>
+                                <div class="col-xs-12 col-md-6 modalCell">
+                                    <div class="modalFieldCnt">
+                                        <input type="text" class="modalInputTxt" name="inputLongitudeDeviceValue" id="inputLongitudeDeviceValue"> 
+                                    </div>
+                                    <div class="modalFieldLabelCnt">Longitude</div>
+									
+                                </div>
+                            </div>
+                    <div class="tab-pane " id="Mtab" role="tabpanel" aria-labelledby="data-ex-tab1-tab">
+                        <p id="NoMobile"></p> 
+                        <div id="editLatLongValue" style="width: 100%; height: 400px" class="modal-body modalBody"></div>
+      </div> </div>
+                </div> </div> 
+      
+       
+      <div class="modal-footer">
+       
+            
+            
+          <button type="button" class="btn cancelBtn" data-dismiss="modal">Close</button>
+        <button type="button" id="NewValuesInputConfirmButton" class="btn confirmBtn">Confirm</button>
+      </div>
+    </div>
+  </div>
+</div>
+    <!-- NEW VALUES INPUT MODAL END -->
+    
+
+    <!-- NEW DEVICE MODAL MODAL END -->
+    
+    
+    
+    
 		<div class="modal fade" id="successRegisterUserDeviceModal" tabindex="-1" role="dialog" aria-labelledby="successRegisterUserDeviceModalLabel" aria-hidden="true">
             <div class="modal-dialog" role="document">
               <div class="modal-content">
@@ -454,7 +548,7 @@
             <div class="modal-dialog modal-lg" role="document">
               <div class="modal-content">
                 <div class="modalHeader centerWithFlex">
-                  Add new device
+                  Add a new device
                 </div>
 				
 				<div id="addDeviceModalBody" class="modal-body modalBody">
@@ -569,29 +663,7 @@
 										<select name="selectModelDevice" id="selectModelDevice" class="modalInputTxt">
 											<option></option>   
 										    <option data_key="normal" value="custom">custom</option>    
-											<!--?php
-                                            $query = "SELECT name, kgenerator FROM model";
-                                            $result = mysqli_query($link, $query);
-
-                                            if($result)
-                                            {
-                                               while($row = $result->fetch_assoc())
-                                               { 
-                                                 $name=$row["name"];
-												 $kgen = $row["kgenerator"];
-                                                 //echo "<option data_key=\"$kgen\" value=\"$name\">$name</option>";
-												 echo "<option data_key=\"$kgen\" value=\"$name\">$name</option>";
-                                               }
-
-                                            }
-                                            else
-                                            {
-                                               
-                                                $name="ERROR";
-                                                echo "<option value=\"$name\">$name</option>";
-                                            }
-                                        ?-->
-										</select>
+											</select>
                                     </div>
                                     <div class="modalFieldLabelCnt">Model</div>
 									<div id="inputModelDeviceMsg" class="modalFieldMsgCnt">&nbsp;</div>
@@ -782,10 +854,13 @@
                    
 				</div> 	
 		       
-			   
+                                            
+                                
 					<div class="row" id="addDeviceLoadingMsg">
                         <div class="col-xs-12 centerWithFlex">Adding device, please wait</div>
                     </div>
+                
+                  
                     <div class="row" id="addDeviceLoadingIcon">
                         <div class="col-xs-12 centerWithFlex"><i class="fa fa-circle-o-notch fa-spin" style="font-size:36px;"></i></div>
                     </div>
@@ -937,7 +1012,7 @@
                         <li><a data-toggle="tab" href="#editGeoPositionTabDevice">Position</a></li>
 						<li><a data-toggle="tab" href="#editStaticTabModel">Static Attributes</a></li>
                         <li><a data-toggle="tab" href="#editSchemaTabDevice">Values</a></li>
-						<li><a data-toggle="tab" href="#editStatusTabDevice">Status</a></li>
+						<li><a id="EStatus" data-toggle="tab" href="#editStatusTabDevice">Status</a></li>
 						
                     </ul>
                     
@@ -1796,7 +1871,7 @@
 			  </div>
 			</div>
 		</div> -->
-		
+                
     </body>
 </html>		
 

@@ -2337,7 +2337,17 @@ a.moduleLink:hover
     font-weight: bold;
     text-transform: uppercase;
 }
-
+.testDashBtn, .viewButDashBtn
+{
+ height: 20px;
+    background-color: rgb(69, 183, 175);/*#5cb85c;*/
+    border: none;
+    color: white;
+    font-family: 'Montserrat';
+    font-weight: bold;
+    text-transform: uppercase;  
+    margin-right: 4px;
+}
 .activeIoTBtn
 {
     height: 20px;

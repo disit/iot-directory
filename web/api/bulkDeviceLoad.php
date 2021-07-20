@@ -619,7 +619,8 @@ else if ($action=="update")
 					{
 						$att=$listdeleteAttributes[$a];
 						$a++;
-						$deletequery="DELETE FROM temporary_event_values WHERE cb='$contextbroker' AND device='$id' AND value_name='". $att->value_name . "';";
+						// $deletequery="DELETE FROM temporary_event_values WHERE cb='$contextbroker' AND device='$id' AND value_name='". $att->value_name . "';";
+						$deletequery="UPDATE temporary_event_values SET toDelete='yes' WHERE cb='$contextbroker' AND device='$id' AND value_name='". $att->value_name . "';";
 						$r1 = mysqli_query($link, $deletequery);
 						if ($r1) 
 						{
@@ -686,11 +687,15 @@ else if ($action=="bulkload")
 	else $should_be_registered="yes";
 	$usernameNotHashed = $username;
 	$username = md5($username);
+
+	$qdel = "DELETE FROM temporary_devices WHERE username = '$username'AND 
+		 organization= '$organization' AND should_be_registered='$should_be_registered' AND  toDelete = 'yes';";
+	$rdel = mysqli_query($link, $qdel);
     
 	//---find total number of valid divices to be inserted-------
 	$totalValid=0;
 	$qcount = "SELECT count(*) FROM temporary_devices WHERE username = '$username'AND 
-		status='valid' AND organization= '$organization' AND should_be_registered='$should_be_registered' AND  deleted IS null;";
+		status='valid' AND organization= '$organization' AND should_be_registered='$should_be_registered' AND  deleted IS null AND (toDelete IS NULL OR toDelete != 'yes');";
 	$rcount = mysqli_query($link, $qcount);
     
 	if($rcount)
@@ -710,7 +715,7 @@ else if ($action=="bulkload")
 		$q = "SELECT contextBroker, id, devicetype, model, status, macaddress,frequency,kind, 
 			protocol,format,latitude, longitude, visibility, k1, k2,producer, edge_gateway_type, edge_gateway_uri, 
 			validity_msg, subnature, static_attributes, service, servicePath FROM temporary_devices WHERE username = '$username' 
-			AND deleted IS null AND organization='$organization' AND  should_be_registered='$should_be_registered';";
+			AND deleted IS null AND organization='$organization' AND  should_be_registered='$should_be_registered' AND (toDelete IS NULL OR toDelete != 'yes');";
 		$r = mysqli_query($link, $q);	
 	
 		$resultInfo = array();
@@ -757,7 +762,7 @@ else if ($action=="bulkload")
 					if($numberValidProcessed>$totalValid)
 			                        break;
                     
-					$q1 = "SELECT * FROM temporary_event_values WHERE device = '".$row["id"]."' AND cb = '".$row["contextBroker"]."'";
+					$q1 = "SELECT * FROM temporary_event_values WHERE device = '".$row["id"]."' AND cb = '".$row["contextBroker"]."' AND (toDelete IS NULL OR toDelete != 'yes')";
 					$r1 = mysqli_query($link, $q1);
 					$deviceattributes = array();
 					if($r1)
@@ -955,7 +960,9 @@ else if ($action=="delete_temporary")
 		$url = mysqli_real_escape_string($link,$_REQUEST['uri']);
 		$should_be_registered	= mysqli_real_escape_string($link,$_REQUEST['should_be_registered']);
 	
-		$query = "DELETE FROM temporary_devices  WHERE id = '$id' and contextBroker='$cb' and should_be_registered='$should_be_registered'";
+		// $query = "DELETE FROM temporary_devices  WHERE id = '$id' and contextBroker='$cb' and should_be_registered='$should_be_registered'";
+		$query = "UPDATE temporary_devices SET  toDelete='yes'   WHERE id = '$id' and contextBroker='$cb' and should_be_registered='$should_be_registered'";
+		
 		$r = mysqli_query($link, $query);
 
 		if($r)

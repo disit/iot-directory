@@ -116,10 +116,11 @@ textarea {
     margin: 0;
     font: inherit;
     color: inherit;
+
 }
+
 button {
-    overflow: visible;
-}
+    overflow: visible;}
 button,
 select {
     text-transform: none;

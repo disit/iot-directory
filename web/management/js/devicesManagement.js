@@ -63,7 +63,26 @@ function showAddDeviceModal()
 	$("#addGeoPositionTabDevice #inputLongitudeDevice").on('input', checkDeviceLongitude);
 	$("#addGeoPositionTabDevice #inputLongitudeDevice").on('input', checkAddDeviceConditions);
 	
-	
+	 //////
+                                $('a[data-toggle="tab"]').off('shown.bs.tab').on('shown.bs.tab', function (e) {
+		var target = $(e.target).attr("href");
+		if ((target == '#addGeoPositionTabDevice')) {
+			//console.log("Elf: Add Device Map");
+			var latitude = $("#inputLatitudeDevice").val(); 
+            var longitude = $("#inputLongitudeDevice").val();
+            if(latitude=="" || longitude==""){
+                latitude = 43.78; 
+                longitude = 11.23;
+                var flag = 0;
+                drawMap1(latitude,longitude, flag);
+            }
+            else{
+                var flag = 2;
+                drawMap1(latitude,longitude, flag);                
+            }
+	}});
+        /////
+        
 	$("#addInfoTabDevice #inputTypeDevice").on('input', checkDeviceType);
 	$("#addInfoTabDevice #inputTypeDevice").on('input', checkAddDeviceConditions);
 	
@@ -153,7 +172,7 @@ function showAddMyDeviceModal()
 	$("#inputTypeDeviceUser").on('keyup change', function(){checkDeviceTypeUser(); checkAddMyDeviceConditions(); });
     
     //console.log("here");
-
+        
 }
 
 
@@ -755,8 +774,8 @@ function checkValue()
 function checkAddDeviceConditions()
 {
 	//check that any value has a correct name/syntax
-	var n = $('#addSchemaTabDevice #addlistAttributes .row input:even').filter(function(){return this.value.length>=2}).length;
-	var n1 =$('#addSchemaTabDevice #addlistAttributes .row input:even').length;
+	var n = $('#addSchemaTabDevice #addlistAttributes .row input.valueName').filter(function(){return this.value.length>=2}).length;
+	var n1 =$('#addSchemaTabDevice #addlistAttributes .row input.valueName').length;
 
 	//console.log("n: "+n+" n1:"+n1);	
 	if (n==n1)
@@ -770,7 +789,7 @@ function checkAddDeviceConditions()
 
  	//check that any value has a correct name/syntax. this enforce is done here since the list of values is dynamic
 	var regex=/[^a-z0-9:._-]/gi;
-        var o = $('#addSchemaTabDevice #addlistAttributes .row input:even').filter(function(){return !regex.test(this.value)}).length;
+        var o = $('#addSchemaTabDevice #addlistAttributes .row input.valueName').filter(function(){return !regex.test(this.value)}).length;
 
         //console.log("o: "+o+" n1:"+n1);
         if (o==n1)

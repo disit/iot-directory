@@ -180,9 +180,7 @@ function format ( d ) {
         dataTable = $('#devicesTable').DataTable({
 		"processing" : true,
 		"serverSide" : true,
-		"responsive": {
-        details: false
-		},
+                "scrollX": true,
 		"paging"   : true,
 		"ajax" : {
 		 url:"../api/value.php",

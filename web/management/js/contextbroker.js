@@ -88,15 +88,16 @@ function fetch_data(destroyOld, selected=null) {
 	}
 	   
 	if (selected==null) {
-		mydata = { action: "get_all_contextbroker",token : sessionToken, no_columns: ["position", "owner", "edit", "delete"] };
+		mydata = { action: "get_all_contextbroker",token : sessionToken, no_columns: ["position", "owner", "edit", "delete", "goto","check"] };
 	}
 	else {
-		mydata = { action: "get_all_contextbroker",token : sessionToken, select : selected, no_columns: ["position", "owner", "edit", "delete"] };
+		mydata = { action: "get_all_contextbroker",token : sessionToken, select : selected, no_columns: ["position", "owner", "edit", "delete","goto","check"] };
 	}
 		   
 	dataTable = $('#contextBrokerTable').DataTable({
 		"processing" : true,
 		"serverSide" : true,
+                scrollX:true,
 		"paging"   : true,
 		"ajax" : {
 			 url:"../api/contextbroker.php",
@@ -215,6 +216,77 @@ function fetch_data(destroyOld, selected=null) {
 						'data-name="'+d.name+'">Delete</button>';
 				}
 			}
+		},{
+			"name": "goto", 
+			"data": function ( row, type, val, meta ) {
+                            //&& (row.accesslink.substring(0,14)!= "http://192.168" && row.accesslink.substring(0,7)!= "192.168") 
+                            if( (row.protocol == 'ngsi' || row.protocol.substring(0,4) == 'ngsi')   ){
+                            if(row.accesslink.substring(0,4)=='http'){
+                                var goto=row.accesslink;
+                            }else if (row.kind=="internal"){
+                                var goto="https://"+row.accesslink;
+                            }else {
+                                var goto="http://"+row.accesslink;
+                            }
+                            
+                            if(row.accessport){
+                                goto+=":"+row.accessport;
+                            }
+                           
+                            
+			  return '<a href="'+goto+'" target = "_blank" >Go</a>';}
+                      
+			} 
+		},{
+			data: null,
+			"name": "check", 
+			render: function ( d ) {
+                            if( (d.protocol == 'ngsi' || d.protocol.substring(0,4) == 'ngsi') && (d.accesslink.substring(0,14)!= "http://192.168" && d.accesslink.substring(0,7)!= "192.168" )  ){
+				 return '<button id="testbuttonB" type="button"  class="testDashBtn" data-name="'+d.name+'" ' +'data-version="'+d.version+'" > Test </button><button type="button" class="viewButDashBtn" data-name="'+d.name+'" ' +
+						'data-organization="'+d.organization+'" ' +
+						'data-kind="'+d.kind+'" ' +
+						'data-ip="'+d.ip+'" ' +
+						'data-protocol="'+d.protocol+'" ' +
+						'data-version="'+d.version+'" ' +
+						'data-port="'+d.port+'" ' +
+						'data-uri="'+d.uri+'" ' +
+						'data-created="'+d.created+'" ' +
+						'data-visibility="'+d.visibility+'" ' +
+						'data-longitude="'+d.longitude+'" ' +
+						'data-latitude="'+d.latitude+'" ' +
+						'data-login="'+d.login+'" ' +
+						'data-password="'+d.password+'" ' +
+						'data-accesslink="'+d.accesslink+'" ' +
+						'data-accessport="'+d.accessport+'" ' +
+						'data-apikey="'+d.apikey+'" ' +
+						'data-path="'+d.path+'" ' +
+						'data-sha="'+d.sha+'" '+
+						'data-urlnificallback="'+d.urlnificallback+'" '+
+						'data-subscription_id="'+d.subscription_id+'" '+ 'data-services="'+d.services+'">View</button>';
+                                    }else{
+                                        return '<button type="button" class="viewButDashBtn" data-name="'+d.name+'" ' +
+						'data-organization="'+d.organization+'" ' +
+						'data-kind="'+d.kind+'" ' +
+						'data-ip="'+d.ip+'" ' +
+						'data-protocol="'+d.protocol+'" ' +
+						'data-version="'+d.version+'" ' +
+						'data-port="'+d.port+'" ' +
+						'data-uri="'+d.uri+'" ' +
+						'data-created="'+d.created+'" ' +
+						'data-visibility="'+d.visibility+'" ' +
+						'data-longitude="'+d.longitude+'" ' +
+						'data-latitude="'+d.latitude+'" ' +
+						'data-login="'+d.login+'" ' +
+						'data-password="'+d.password+'" ' +
+						'data-accesslink="'+d.accesslink+'" ' +
+						'data-accessport="'+d.accessport+'" ' +
+						'data-apikey="'+d.apikey+'" ' +
+						'data-path="'+d.path+'" ' +
+						'data-sha="'+d.sha+'" '+
+						'data-urlnificallback="'+d.urlnificallback+'" '+
+						'data-subscription_id="'+d.subscription_id+'" '+ 'data-services="'+d.services+'">View</button>';
+                                    }
+			} 
 		}],
     	"order" : [] 
 	});
@@ -491,7 +563,7 @@ function fetch_data(destroyOld, selected=null) {
 			$('#inputAccessLinkCB').val("");
 			$('#inputAccessPortCB').val("");
 			$('#inputSHACB').val("");
-                    	$('input[name="inputServiceCB"]').val("");              
+            $('input[name="inputServiceCB"]').val("");              
                     }
                 },
                 error: function(data)
@@ -627,6 +699,55 @@ function fetch_data(destroyOld, selected=null) {
             $("#deleteCBModalInnerDiv2").hide();
         });   
 			
+
+
+// TESTING CONTEXT BROKER
+$('#contextBrokerTable button.testDashBtn').off('hover');
+    $('#contextBrokerTable button.testDashBtn').hover(function(){
+		$(this).css('background', '#ffcc00');
+		$(this).parents('tr').find('td').eq(1).css('background', '#ffcc00');
+		},
+		function(){
+			$(this).css('background', 'rgba(0, 162, 211, 1)');
+			$(this).parents('tr').find('td').eq(1).css('background', $(this).parents('td').css('background'));
+		});
+
+
+$('#contextBrokerTable tbody').on('click', 'button.testDashBtn', function () {
+	$("#testContextBrokerModal").modal('show');
+        $("#TestModalStatus").html("Waiting for ..."+" <br>" );
+	$.ajax({
+	url: "../api/contextbroker.php",
+	data: {
+		action: 'is_broker_up',
+		token : sessionToken,
+		contextbroker : $(this).attr("data-name"),
+		version: $(this).attr("data-version")			
+	},
+	type: "POST",
+	async: true,
+	dataType: 'json',
+	success: function (rr) {
+		if (rr["status"] === 'ok') {
+			console.log('ok');
+			console.log($("#TestModalStatus"));
+			$("#TestModalStatus").html("The broker is up!");
+		}else if (rr["status"] === 'ko'){
+			console.log('ko');
+			console.log((rr));
+			$("#TestModalStatus").html("There is a problem:"+" <br>" + rr["log"]);
+			
+		}
+	},
+				
+		})
+		//nel succcess metti il risultato dell'API modulato per il pop up
+		
+});
+
+
+////////
+
 // EDIT CONTEXT BROKER  
 
 		//To be modified 
@@ -640,83 +761,97 @@ function fetch_data(destroyOld, selected=null) {
 		$(this).parents('tr').find('td').eq(1).css('background', $(this).parents('td').css('background'));
 	});
 
+	function startEditModal() {
+		$("#editContextBrokerModal").modal('show');
+		$('.nav-tabs a[href="#editInfoTabCB"]').tab('show');
+
+
+		$("#editContextBrokerModalUpdating").hide();
+		$("#editCBModalLoading").hide();
+		$("#editContextBrokerModalBody").show();
+		$("#editContextBrokerModalFooter").show();
+			$("#editContextBrokerCancelBtn").show();
+			$("#editContextBrokerConfirmBtn").show();
+		
+				$('#editContextBrokerLoadingMsg').hide();
+			$('#editContextBrokerLoadingIcon').hide();
+			$('#editContextBrokerOkMsg').hide();		
+			$('#editContextBrokerOkIcon').hide();
+			$('#editContextBrokerKoMsg').hide();
+			$('#editContextBrokerKoIcon').hide();
+			$('#editContextBrokerOkBtn').hide();
+		$("#inputUrlOrionCallbackM").show();
+				$("#urlOrionCallbackLabelM").show();
+				$("#selectUrlOrionCallbackMsgM").show();
+		$("#inputNameCBM").val($(this).attr("data-name"));
+		$("#inputOrganizationCBM").val($(this).attr("data-organization"));
+		$("#selectKindCBM").val($(this).attr("data-kind"));
+		$("#inputPathCBM").val($(this).attr("data-path"));
+		$("#inputVersionCBM").val($(this).attr("data-version"));
+		$("#selectVisibilityCBM").val($(this).attr("data-visibility"));
+		$("#inputIpCBM").val($(this).attr("data-ip"));
+		$("#inputPortCBM").val($(this).attr("data-port"));
+		$("#selectProtocolCBM").val($(this).attr("data-protocol"));
+		$("#inputUriCBM").val($(this).attr("data-uri"));
+		$("#createdDateCBM").val($(this).attr("data-created"));
+		$("#inputLatitudeCBM").val($(this).attr("data-latitude"));
+		$("#inputLongitudeCBM").val($(this).attr("data-longitude"));
+		$("#inputLoginCBM").val($(this).attr("data-login"));
+		$("#inputPasswordCBM").val($(this).attr("data-password"));
+		$("#inputAccessLinkCBM").val($(this).attr("data-accesslink"));
+		$("#inputAccessPortCBM").val($(this).attr("data-accessport"));
+		$("#inputApiKeyCBM").val($(this).attr("data-apikey"));
+		$("#inputSHACBM").val($(this).attr("data-sha"));
+		//subscription tab
+		if (($(this).attr("data-subscription_id")=="undefined")||($(this).attr("data-subscription_id")=="null"))
+		{
+			$("#substatusCBMMsg").text("The automatic subscription is disabled");
+			//disable the uri
+			$("#inputUrlOrionCallbackM").hide();
+			$("#urlOrionCallbackLabelM").hide();
+			$("#selectUrlOrionCallbackMsgM").hide();
+		}
+		else if ($(this).attr("data-subscription_id")=="FAILED")
+		{
+			$("#substatusCBMMsg").text("The automatic subscription failed");
+		}
+		else {
+			$("#substatusCBMMsg").text("Subscription id:\n"+$(this).attr("data-subscription_id").replace(/,/g,"\n"));
+		}
+		$("#inputUrlOrionCallbackM").val($(this).attr("data-urlnificallback"));
+		if ($(this).attr("data-protocol"))
+		{
+			$("#tab-editCB-4").show();
+		}
+		else 
+		{
+			$("#tab-editCB-4").hide();
+		}
+
+		if($(this).attr("data-kind") === "internal"){
+			$('#selectUrlOrionCallbackMsgHint').hide();
+		}
+
+		editCBSManagementButtonPressed($(this).attr("data-services"));
+		showEditCbModal();
+}	
+
 // Edit Context broker			
-	$('#contextBrokerTable tbody').on('click', 'button.editDashBtn', function () {
-			$("#editContextBrokerModal").modal('show');
-			$('.nav-tabs a[href="#editInfoTabCB"]').tab('show');
-
-
-			$("#editContextBrokerModalUpdating").hide();
-			$("#editCBModalLoading").hide();
-			$("#editContextBrokerModalBody").show();
-			$("#editContextBrokerModalFooter").show();
-		        $("#editContextBrokerCancelBtn").show();
-		        $("#editContextBrokerConfirmBtn").show();
-			$("#editCBModalLabel").html("Edit Context Broker - " + $(this).attr("data-name"));
-            		$('#editContextBrokerLoadingMsg').hide();
-		        $('#editContextBrokerLoadingIcon').hide();
-		        $('#editContextBrokerOkMsg').hide();		
-		        $('#editContextBrokerOkIcon').hide();
-		        $('#editContextBrokerKoMsg').hide();
-		        $('#editContextBrokerKoIcon').hide();
-		        $('#editContextBrokerOkBtn').hide();
-			$("#inputUrlOrionCallbackM").show();
-                	$("#urlOrionCallbackLabelM").show();
-	                $("#selectUrlOrionCallbackMsgM").show();
-
-			$("#inputNameCBM").val($(this).attr("data-name"));
-			$("#inputOrganizationCBM").val($(this).attr("data-organization"));
-			$("#selectKindCBM").val($(this).attr("data-kind"));
-			$("#inputPathCBM").val($(this).attr("data-path"));
-			$("#inputVersionCBM").val($(this).attr("data-version"));
-			$("#selectVisibilityCBM").val($(this).attr("data-visibility"));
-			$("#inputIpCBM").val($(this).attr("data-ip"));
-			$("#inputPortCBM").val($(this).attr("data-port"));
-			$("#selectProtocolCBM").val($(this).attr("data-protocol"));
-			$("#inputUriCBM").val($(this).attr("data-uri"));
-			$("#createdDateCBM").val($(this).attr("data-created"));
-			$("#inputLatitudeCBM").val($(this).attr("data-latitude"));
-			$("#inputLongitudeCBM").val($(this).attr("data-longitude"));
-			$("#inputLoginCBM").val($(this).attr("data-login"));
-			$("#inputPasswordCBM").val($(this).attr("data-password"));
-			$("#inputAccessLinkCBM").val($(this).attr("data-accesslink"));
-			$("#inputAccessPortCBM").val($(this).attr("data-accessport"));
-			$("#inputApiKeyCBM").val($(this).attr("data-apikey"));
-			$("#inputSHACBM").val($(this).attr("data-sha"));
-			//subscription tab
-			if (($(this).attr("data-subscription_id")=="undefined")||($(this).attr("data-subscription_id")=="null"))
-			{
-				$("#substatusCBMMsg").text("The automatic subscription is disabled");
-				//disable the uri
-				$("#inputUrlOrionCallbackM").hide();
-				$("#urlOrionCallbackLabelM").hide();
-				$("#selectUrlOrionCallbackMsgM").hide();
+	$('#contextBrokerTable tbody').on('click', 'button.editDashBtn',function () {
+		startEditModal.call(this);
+		$("#editCBModalLabel").html("Edit Context Broker - " + $(this).attr("data-name"));
+		$('a[data-toggle="tab"]').off('shown.bs.tab').on('shown.bs.tab', function (e) {
+			var target = $(e.target).attr("href");
+			if ((target == '#editGeoPositionTabCB')) {
+				var latitude = $("#inputLatitudeCBM").val(); 
+					var longitude = $("#inputLongitudeCBM").val();  								  
+				var flag =1;
+				drawMap1(latitude,longitude, flag);
+			
 			}
-			else if ($(this).attr("data-subscription_id")=="FAILED")
-			{
-				$("#substatusCBMMsg").text("The automatic subscription failed");
-			}
-			else {
-				$("#substatusCBMMsg").text("Subscription id:\n"+$(this).attr("data-subscription_id").replace(/,/g,"\n"));
-			}
-			$("#inputUrlOrionCallbackM").val($(this).attr("data-urlnificallback"));
-			if ($(this).attr("data-protocol"))
-			{
-				$("#tab-editCB-4").show();
-			}
-			else 
-			{
-				$("#tab-editCB-4").hide();
-			}
-
-			if($(this).attr("data-kind") === "internal"){
-				$('#selectUrlOrionCallbackMsgHint').hide();
-			}
-
-			editCBSManagementButtonPressed($(this).attr("data-services"));
-			showEditCbModal();
-	});
-
+	}
+		 );})
+	
 	
 	$('#contextBrokerTable button.viewDashBtn').off('hover');
 	$('#contextBrokerTable button.viewDashBtn').hover(function(){
@@ -727,6 +862,74 @@ function fetch_data(destroyOld, selected=null) {
 		$(this).css('background', 'rgba(0, 162, 211, 1)');
 		$(this).parents('tr').find('td').eq(1).css('background', $(this).parents('td').css('background'));
 	});
+
+// view dettails CONTEXT BROKER
+$('#contextBrokerTable button.viewButDashBtn').off('hover');
+    $('#contextBrokerTable button.viewButDashBtn').hover(function(){
+		$(this).css('background', '#ffcc00');
+		$(this).parents('tr').find('td').eq(1).css('background', '#ffcc00');
+		},
+		function(){
+			$(this).css('background', 'rgba(0, 162, 211, 1)');
+			$(this).parents('tr').find('td').eq(1).css('background', $(this).parents('td').css('background'));
+		});
+
+function fillCBTableLabel( mode){
+	$("#inputIpCBM").attr('readonly', mode);
+	$("#selectVisibilityCBM").prop('disabled', mode);
+	$("#inputNameCBM").attr('readonly', mode);
+	$("#inputOrganizationCBM").attr('readonly', mode);
+	$("#selectKindCBM").prop('disabled', mode);
+	$("#inputPathCBM").attr('readonly', mode);
+	$("#inputVersionCBM").attr('readonly', mode);
+	$("#selectVisibilityCBM").prop('disabled', mode);
+	$("#inputPortCBM").attr('readonly', mode);
+	$("#selectProtocolCBM").prop('disabled', mode);
+	$("#inputUriCBM").attr('readonly', mode);
+	$("#createdDateCBM").prop('disabled', mode);
+	$("#inputLatitudeCBM").attr('readonly', mode);
+	$("#inputLongitudeCBM").attr('readonly', mode);
+	$("#inputLoginCBM").attr('readonly', mode);
+	$("#inputPasswordCBM").attr('readonly', mode);
+	$("#inputAccessLinkCBM").attr('readonly', mode);
+	$("#inputAccessPortCBM").attr('readonly', mode);
+	$("#inputApiKeyCBM").attr('readonly', mode);
+	$("#inputSHACBM").attr('readonly', mode);
+	$("#inputUrlOrionCallbackM").attr('readonly', mode);
+	$("#inputUrlOrionCallbackM").attr('readonly', mode);
+	$("#selectUrlOrionCallbackMsgM").prop('disabled', mode);
+
+}
+
+
+$('#contextBrokerTable tbody').on('click', 'button.viewButDashBtn', function () {
+	startEditModal.call(this);
+	$("#editCBModalLabel").html("View Context Broker - " + $(this).attr("data-name"));
+	fillCBTableLabel(true);
+	$("#editContextBrokerConfirmBtn").hide();
+	var latitude =  $(this).attr("data-latitude"); 
+			var longitude = $(this).attr("data-longitude");   
+	$('a[data-toggle="tab"]').off('shown.bs.tab').on('shown.bs.tab', function (e) {
+		var target = $(e.target).attr("href");
+		if ((target == '#editGeoPositionTabCB')) {
+			                                  
+			var flag =2;
+			drawMap1(latitude,longitude, flag);
+		
+		}
+	});
+					
+			
+			
+			
+ });
+
+
+// make input editable
+$("#editContextBrokerModal").on("hidden.bs.modal", function () {
+		fillCBTableLabel(false);
+		$('#addLatLongEdit').show();
+		  });
 
 	
 	$('#contextBrokerTable tbody').on('click', 'button.viewDashBtn', function () {
@@ -866,9 +1069,7 @@ function fetch_data(destroyOld, selected=null) {
 					var longitude = 11.2300;
 					var flag = 0;
 					drawMap1(latitude,longitude, flag);
-				} else {
-				//nothing
-			}
+				}
 		});
 		
 		$('a[data-toggle="tab"]').on('shown.bs.tab', function (e) {
@@ -878,9 +1079,7 @@ function fetch_data(destroyOld, selected=null) {
 					var longitude = $("#inputLongitudeCBM").val();                                        
 					var flag =1;
 					drawMap1(latitude,longitude, flag);
-				} else {
-				//nothing
-			}
+				} 
 		});
 
 	$('#addContextBrokerBtn').off('click');
@@ -2133,7 +2332,7 @@ function updateGroupList(ouname){
             if (typeof map !== 'undefined') {
                 map.remove();
             }
-			if (flag ==0){
+			if (flag ==0){ /*add position when create the device */
 				    var centerMapArr= gpsCentreLatLng.split(",",2);
                     var centerLat= parseFloat(centerMapArr[0].trim());
                     var centerLng= parseFloat(centerMapArr[1].trim());
@@ -2174,7 +2373,7 @@ function updateGroupList(ouname){
 			});
 			
 			
-			} else if (flag ==1) {
+			} else if (flag ==1) { /*edit position when edit the device */
 				map = L.map('addLatLongEdit').setView([latitude,longitude], 10);
 					 L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
 					 attribution: '&copy; <a href="https://openstreetmap.org/copyright">OpenStreetMap</a> contributors'
@@ -2185,7 +2384,6 @@ function updateGroupList(ouname){
 			
 			marker = new L.marker([latitude,longitude]).addTo(map).bindPopup(longitude, longitude);
 			map.on("click", function (e) {
-				
 				var lat = e.latlng.lat;
 				var lng = e.latlng.lng;
 				lat = lat.toFixed(5);
@@ -2202,11 +2400,25 @@ function updateGroupList(ouname){
 					 map.removeLayer(marker);
 				 }
 				 marker = new L.marker([lat,lng]).addTo(map).bindPopup(lat + ',' + lng);
-			
+				 
 			});
 			
 			
-			}
+			} else if (flag ==2) {
+				map = L.map('addLatLongEdit').setView([latitude,longitude], 10);
+					 L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+					 attribution: '&copy; <a href="https://openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+				}).addTo(map);
+				//window.node_input_map = map;
+			//L.marker([latitude,longitude]).addTo(map).bindPopup("Hi DEVICE");
+			setTimeout(function(){ map.invalidateSize()}, 400);	
+			marker = L.marker([latitude,longitude]).addTo(map).bindPopup(latitude + ',' + longitude);
+
+			map.off("click");
+			}			
+
+
+		
             
 	
 		}

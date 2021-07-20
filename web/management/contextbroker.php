@@ -132,7 +132,7 @@
 		}
         </style>
         
-<!-- Custom scripts -->
+<!-- Custom scripts     -->
 <script>
 	var loggedRole = "<?php echo $_SESSION['loggedRole']; ?>";
 	var loggedUser = "<?php echo $_SESSION['loggedUsername']; ?>";
@@ -253,7 +253,7 @@
 								<div>
 								<table id="contextBrokerTable" class="table table-bordered table-striped" cellspacing="0" width="100%">
 									 <thead>
-									  <tr>
+									  <tr style="background: rgb(0, 162, 211); color: rgb(255, 255, 255); font-size: 1em;">
 										<th></th>	
 									   	<th data-cellTitle="name">IOT Broker</th>
 										<th data-cellTitle="accesslink">Access Link</th>
@@ -266,6 +266,8 @@
 										<th data-cellTitle="created">Created</th>
 										<th data-cellTitle="edit">Edit</th>
 										<th data-cellTitle="delete">Delete</th>
+                                        <th data-cellTitle="goto">Go to</th>
+                                        <th data-cellTitle="check">Utility</th>
 									</tr>
 									 </thead>
 									</table>
@@ -496,8 +498,10 @@
 									<link rel="stylesheet" href="../css/leaflet.css" />
 									<link rel="stylesheet" href="../css/leaflet.draw.css" />
 									<div id="addLatLong" style="width: 100%; height: 400px" class="modal-body modalBody">
+                                    
 								</div>
 							</div> 
+                            
 							
                         </div>
 						
@@ -589,7 +593,24 @@
             
         </div>
 	</div>
-	
+
+    <!-- PROVA MODALE TESTING -->
+    <div class="modal fade" id="testContextBrokerModal" tabindex="-1" role="dialog" aria-hidden="true">
+  <div class="modal-dialog  modal-lg" role="document">
+    <div class="modal-content">
+      <div id="editCBModalTest" class="modalHeader centerWithFlex">
+        <h5 class="col-xs-12 centerWithFlex">Let's check the broke!</h5>
+           </div>
+      <div  class="modal-body">
+      <p id="TestModalStatus"></p>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-primary" data-dismiss="modal">Close</button>
+      </div>
+    </div>
+  </div>
+</div>
+    <!-- PROVA MODALE TESTING END -->
 
         <div class="modal fade" id="editContextBrokerModal" tabindex="-1" role="dialog" aria-hidden="true">
             <div class="modal-dialog" role="document">

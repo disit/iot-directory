@@ -3,7 +3,7 @@ var Promise = require('promise');
 
 function insertDevices(cid, se) {
 	return new Promise(function (resolve, reject) {
-		console.log("insertDevices:" + se);
+		//console.log("insertDevices:" + se);
 		var protocol = se[0][5]
 
 		if (protocol == "ngsi") {
@@ -14,7 +14,11 @@ function insertDevices(cid, se) {
 
 
 		cid.query(sqlse, [se], function (errSens) {
-			if (errSens) { console.log("devices insert error "); reject(errSens) }
+			if (errSens) {
+				console.log("devices insert error ");
+				//console.log(errSens);
+				reject(errSens)
+			}
 			resolve();
 			// console.log("fatto");
 		});
@@ -23,11 +27,17 @@ function insertDevices(cid, se) {
 }
 
 function insertValues(cid, sesc, table) {
-	//console.log("insertValues");
-	var sqlsesc = "INSERT INTO `" + table + "`(`device`, `cb`,`value_name`, `data_type`,`value_type`,`value_unit`, `editable`, `healthiness_criteria`,`value_refresh_rate`,`old_value_name`) VALUES ?";
-	//console.log("Sesc "+ JSON.stringify(sesc));
-	cid.query(sqlsesc, [sesc], function (errSSch) {
-		if (errSSch) { throw errSSch; }
+	return new Promise(function (resolve, reject) {
+		//console.log("insertValues");
+		var sqlsesc = "INSERT INTO `" + table + "`(`device`, `cb`,`value_name`, `data_type`,`value_type`,`value_unit`, `editable`, `healthiness_criteria`,`value_refresh_rate`,`old_value_name`) VALUES ?";
+		//console.log("Sesc "+ JSON.stringify(sesc));
+		cid.query(sqlsesc, [sesc], function (errSSch) {
+			if (errSSch) {
+				console.log("values insert error ");
+				reject(errSens);
+			}
+			resolve();
+		});
 	});
 }
 

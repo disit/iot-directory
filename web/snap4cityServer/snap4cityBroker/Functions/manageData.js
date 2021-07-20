@@ -56,27 +56,36 @@ function manageExtractionRulesAtt(extractionRulesAtt, orion_cb, device_id, schem
 			}
 
 			//------name extraction ----
-			if (extractionRulesAtt[j]["structure_flag"].localeCompare("yes") == 0) {
+			if (typeData == 'JSON') {
 				let toSplit = (jsonRules.param.s).split(".");
 				attName = toSplit[toSplit.length - 1];
 			} else {
-				if (parserApply[p].id !== undefined) {
-					attName = parserApply[p].id;
-				} else if (parserApply[p] !== undefined) {
-					attName = parserApply[p];
+				if (extractionRulesAtt[j]["structure_flag"].localeCompare("yes") == 0) {
+					let toSplit = (jsonRules.param.s).split(".");
+					attName = toSplit[toSplit.length - 1];
 				} else {
-					attName = id;
+					console.log('parseapply: ' + JSON.stringify(parserApply))
+					if (parserApply[p].id !== undefined) {
+						attName = parserApply[p].id;
+					} else if (parserApply[p] !== undefined) {
+						attName = parserApply[p];
+					} else {
+						attName = id;
+					}
 				}
-				//console.log("attName "+ attName);
 			}
+
+
 			if (extractionRulesAtt[j]["data_type"] == null || extractionRulesAtt[j]["data_type"].length == 0) {
 				data_type = parserApply[p].type;
 			} else {
 				data_type = extractionRulesAtt[j]["data_type"];
 			}
+			//JSON.stringify(attName) perchè attName = id = extractionRulesAtt[j]["id"];
+			// attName = JSON.stringify(attName).replace("PM2x5", "PM2,5");
+
 			attName = attName.replace("PM2x5", "PM2,5");
 			attName = attName.replace("PM2y5", "PM2.5");
-
 
 			let objProp = {
 				"value_name": attName,
@@ -392,6 +401,14 @@ function getLocation(schema) {
 		}
 	}
 	or
+	"location": {
+		"type": "GeoProperty",
+		"value": {
+			 "type": "Point",
+			 "coordinates": [13.3986, 52.5547]
+		}
+	}
+	or
 	"latitude":{
 		"type":"float",
 		"value": "63.382782"
@@ -400,20 +417,7 @@ function getLocation(schema) {
 		"type":"float",
 		"value": "63.382782"
 	}
-	 "attributes": [
-				{
-					"name": "position",
-					"type": "geo:point",
-					"value": "40.418889, -3.691944"
-				}
-			]
-	"location": {
-		"type": "GeoProperty",
-		"value": {
-			 "type": "Point",
-			 "coordinates": [13.3986, 52.5547]
-		}
-	}
+	
 	 */
 	var latitude = "";
 	var longitude = "";
@@ -421,8 +425,16 @@ function getLocation(schema) {
 		latitude = schema.latitude.value;
 		longitude = schema.longitude.value;
 	} else if (schema.location != undefined) {
-		latitude = schema.location.value.coordinates[0]
-		longitude = schema.location.value.coordinates[1]
+		if (schema.location.type != undefined && (schema.location.type == "geo:json" || schema.location.type == "GeoProperty")) {
+			if (schema.location.value != undefined) {
+				if (schema.location.value.type != undefined && schema.location.value.type == "Point") {
+					if (schema.location.value.coordinates instanceof Array && schema.location.value.coordinates.length == 2) {
+						longitude = schema.location.value.coordinates[0]
+						latitude = schema.location.value.coordinates[1]
+					}
+				}
+			}
+		}
 	}
 
 	return [latitude, longitude]

@@ -126,7 +126,8 @@ if (PATH == undefined || PATH.localeCompare("null") == 0 || PATH.localeCompare("
 else {
 	link = ACCESS_LINK + PATH;
 }
-link = link + '/v2/entities'
+// link = link + '/v2/entities'
+if(!link.includes('/v2/entities')) link = link + '/v2/entities';
 
 if (!link.includes(DEVICE_NAME)) {
 	let link_provv = link.split("?");

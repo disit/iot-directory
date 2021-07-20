@@ -99,6 +99,10 @@ var offset2 = 900;
 var offset = 0;
 var smallSearch = 0;
 
+if(FREQUENCY_SEARCH.localeCompare("null") == 0 || FREQUENCY_SEARCH == undefined || FREQUENCY_SEARCH == null){
+	FREQUENCY_SEARCH = 20000;
+}
+
 
 if (!ACCESS_LINK.startsWith("http"))
 	ACCESS_LINK = "http://" + ACCESS_LINK;
@@ -129,7 +133,7 @@ var xhttp = new XMLHttpRequest();
 
 function retrieveData(xhttp, link, limit, offset) {
 	var orionDevices = [];
-	var orionDevicesType = [];
+	var orionDevicesType = {};
 	var orionDevicesSchema = {};
 	var registeredDevices = [];
 	var temporaryDevices = [];
@@ -177,10 +181,11 @@ function retrieveData(xhttp, link, limit, offset) {
 		console.log("There are " + newDevices.length + " new devices for the broker " + ORION_CB);
 
 		
-		var devAttr = new Object();
+		
 		for (var i = 0; i < newDevices.length; i++) {
 			var attProperty = [];
 			var topic = newDevices[i];
+			var devAttr = new Object();
 
 			if (orionDevicesSchema[topic] == undefined) {
 				//console.log("topic undefined " + topic);
@@ -303,7 +308,8 @@ function makeRequestToCB(xhttp, link, limit, offset) {
 	return new Promise(function (resolve, reject) {
 		xhttp = new XMLHttpRequest();
 		var linkNoLimit = link.split("?limit");
-		link = linkNoLimit[0] + '/v2/entities';
+		if(!linkNoLimit[0].includes('/v2/entities')) link = linkNoLimit[0] + '/v2/entities';
+		
 
 		if (limit != undefined && offset != undefined) {
 			link = link + "?limit=" + limit + "&offset=" + offset;

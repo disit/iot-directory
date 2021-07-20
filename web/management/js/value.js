@@ -147,10 +147,7 @@ function format ( d ) {
 	  dataTable = $('#valuesTable').DataTable({
 		"processing" : true,
 		"serverSide" : true,
-		//"responsive" : true,
-		"responsive": {
-        details: false
-		},
+		"scrollX": true,
 		"paging"   : true,
 		"ajax" : {
 		 url:"../api/value.php",

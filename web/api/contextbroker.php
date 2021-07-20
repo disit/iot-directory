@@ -107,10 +107,61 @@ if ($result["status"]!="ok")
 	$result["log"]= "action=insert - error Cannot retrieve user information\r\n";
 	my_log($result);
 	mysqli_close($link);
-	exit();
+	echo json_encode($result);
+		exit();
 }
 
-if ($action=="insert")
+if($action=='is_broker_up')
+{ 
+	$result["log"] .= "\n invoked is_broker_up from device.php";
+
+	$missingParams=missingParameters(array('contextbroker', 'version'));
+	
+	if (!empty($missingParams))
+	{
+		$result["status"]="ko";
+		$result['msg'] = "Missing Parameters";
+		$result["error_msg"] = "Problem getting device data (Missing parameters: ".implode(", ",$missingParams)." )";
+		$result["log"] .= "\n action=is_broker_up - error Missing Parameters: ".implode(", ",$missingParams)." \r\n";
+		my_log($result);
+		echo $missingParams;
+	}
+	else
+	{ 
+		$cb = mysqli_real_escape_string($link, $_REQUEST['contextbroker']);
+		$version= mysqli_real_escape_string($link, $_REQUEST['version']);
+		if (isset($_REQUEST['services'])) $service = mysqli_real_escape_string($link, $_REQUEST['services']);
+		else $service = "";
+		if (isset($_REQUEST['path'])) $servicePath = mysqli_real_escape_string($link, $_REQUEST['path']);
+		else $servicePath="";
+
+		$result["log"] .= "\n cb:".$cb." services:".$service." path:".$servicePath;
+
+		$protocol = getProtocol($cb, $link);
+
+		if (empty($protocol))//it also ensure the contextbroker name is valid
+        {
+			$result["status"]="ko";
+       	    $result['msg'] = "Unrecognized contextbroker/protocol";
+            $result["error_msg"] = "Problem in get device data (Unrecognized contextbroker/protocol)";
+   	        $result["log"] .= "\n action=is_broker_up - error Unrecognized contextbroker/protocol\r\n";
+		}
+		else
+		{
+			is_broker_up($link, $cb, $service, $servicePath, $version, $result);
+				
+		}
+		
+    	
+	}
+	
+	$result["log"] .= "\n returning ".json_encode($result). " from is_broker_up from device.php";
+
+	simple_log($result);
+	mysqli_close($link);
+	
+
+}else if ($action=="insert")
 {   
 	$missingParams=missingParameters(array('name','kind','ip','port','protocol','latitude','longitude'));
 

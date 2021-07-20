@@ -526,7 +526,7 @@ if (isset($_SESSION['refreshToken'])) {
                                     <!-- <table id="devicesTable" class="table"></table> -->
 									<table id="devicesTable" class="table table-bordered table-striped" cellspacing="0" width="100%">
 										<thead>
-										  <tr>
+										  <tr style="background: rgb(0, 162, 211); color: rgb(255, 255, 255); font-size: 1em;">
 											<th></th>	
 											<th data-cellTitle="device">Device Identifier</th> 
 											<th data-cellTitle="value_type">Value Type</th>
