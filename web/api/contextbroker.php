@@ -588,9 +588,9 @@ if ($action == 'is_broker_up') {
                                     $result["log"] .= '\n\r action: update ok. ' . $q;
                                     logAction($link, $username, 'contextbroker', 'update', $name, $obj_organization, '', 'success');
                                     //update subscription if different urlnificallback
-                                    if (($old_urlnificallback !== $urlnificallback || $old_ip !== $ip || $old_port != $port) && ($urlnificallback !== 'null')) {
+                                    if (($old_urlnificallback !== $urlnificallback || $old_ip !== $ip || $old_port != $port || $old_subscription_id == 'register') && ($urlnificallback !== 'null')) {
                                         $result["log"] .= '\n\r urlnificallback is changed to: ' . $urlnificallback . ' from ' . $old_urlnificallback;
-                                        if ($old_subscription_id !== 'undefined' && $old_subscription_id !== '' && $old_subscription_id !== 'FAILED') {
+                                        if ($old_subscription_id !== 'undefined' && $old_subscription_id !== '' && $old_subscription_id !== 'FAILED' && $old_subscription_id !== 'register') {
                                             nificallback_delete($old_ip, $old_port, $old_subscription_id, $name, $protocol, $services, $result);
                                         }
                                         nificallback_create($ip, $port, $name, $urlnificallback, $protocol, $services, $result); //TODO uniform with above (insert scenario), same code is there
