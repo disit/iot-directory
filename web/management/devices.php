@@ -445,26 +445,32 @@
         <div   class="modal-body">  
         
             <ul id="InsertDeviceModalTabs" class="nav nav-tabs nav-justified">
+              
                
                   <li class="active"><a id="Mtab" data-toggle="tab" href="#editGeoPositionTabDeviceNewValue">Insert new position</a></li>
                    <li ><a id="Itab" data-toggle="tab" href="#editAttributeValueTabDevice">Insert new value</a></li>
-						
+                   
+                    		<div class="tab" id="InsertDataDeviceLoadingIcon">
+                        
+                        <div class="col-xs-12 centerWithFlex"><i id="LoadingGif" class="fa fa-circle-o-notch fa-spin" style="font-size:36px;"></i></div></div>
                                   
 					
 						
                     </ul>
             <div class="tab-content">
                 <div class="tab-pane active" id="Itab" role="tabpanel" aria-labelledby="data-ex-tab1-tab">
-                     <div id="ValuesINPUT" class="tabcontent"></div>
-                    <p id="InsertModalStatus"></p> 
-                    <button type="button" id="GETimeStamp" style="display:none" class="btn confirmBtn">Get Time stamp</button>
+                     <div id="ValuesINPUT" class="tabcontent">
+                     
+                      
+                        
+                   
+                   <div> </div></div>
                     
-                        
-                        
+                         <p id="InsertModalStatus"></p> 
+                        <button type="button" id="GETimeStamp" style="display:none" class="btn confirmBtn">Get Time stamp</button>
                         <div id="NOMob" class="row">
-                            <div class="tab" id="InsertDataDeviceLoadingIcon">
+                            
                         
-                        <div class="col-xs-12 centerWithFlex"><i class="fa fa-circle-o-notch fa-spin" style="font-size:36px;"></i></div></div>
 								<div class="col-xs-12 col-md-6 modalCell">
                                     <div class="modalFieldCnt">
                                         <input type="text" class="modalInputTxt" name="inputLatitudeDeviceValue" id="inputLatitudeDeviceValue"> 

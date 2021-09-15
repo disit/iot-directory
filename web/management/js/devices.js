@@ -196,7 +196,7 @@ function drawAttributeMenu(attrName, data_type, value_type, editable, value_unit
             mydatatypes += "<option value=\"" + gb_datatypes[n] + "\">" + gb_datatypes[n] + "</option>";
     }
     return "<div class=\"row\" style=\"border:2px solid blue;\" id=\"value" + indice + "\">" +
-            "<div class=\"col-xs-6 col-md-3 modalCell\">" +
+                   "<div class=\"col-xs-6 col-md-3 modalCell\">" +                      
             "<div  class=\"modalFieldCnt \" title=\"Insert a name for the sensor/actuator\"><input type=\"text\" class=\"modalInputTxt Input_onlyread  valueName\"" +
             "name=\"" + attrName + "\"  value=\"" + attrName + "\" onkeyup=\"checkStrangeCharacters(this)\">" +
             "</div><div class=\"modalFieldLabelCnt\">Value Name</div>" + msg + "</div>" +
@@ -227,13 +227,14 @@ function drawAttributeMenu(attrName, data_type, value_type, editable, value_unit
             "<option value=\"refresh_rate\">Refresh rate</option>" +
             "<option value=\"different_values\">Different Values</option>" +
             "<option value=\"within_bounds\">Within bounds</option>" +
-            "</select></div><div  class=\"modalFieldLabelCnt Hidden_insert\">Healthiness Criteria</div></div>" +
+            "</select></div><div  class=\"modalFieldLabelCnt Hidden_insert\">Healthiness Criteria</div><label class=\"switch\"> <input type=\"checkbox\" onclick=\"disableInput(id)\" id=\"Checkbox_" + attrName + "\" checked> <span  id=\"SpanCheckbox_" + attrName + "\" class=\" slider round\">Send value</span></label></div>" +
             "<div class=\"col-xs-6 col-md-3 modalCell\"><div class=\"modalFieldCnt\" title=\"Insert the limit value(s) to consider the sensor/actuator as healthy, according to the selected criterion \">" +
             "<input type=\"text\"  class=\"modalInputTxt Input_onlyread Hidden_insert\" name=\"" + value_refresh_rate +
             "\" value=\"" + value_refresh_rate + "\"></div><div   class=\"modalFieldLabelCnt Hidden_insert\">Healthiness_Value</div></div>" +
+              
             "<div class=\"col-xs-6 col-md-3 modalCell\">" + "<div style=\"display:none\"  class=\"modalFieldCnt INSERTValues\" title=\"Insert data in the sensor/actuator\"><input type=\"text\" class=\"modalInputTxt InputValue\"" +
             "id=\"Value" + attrName + "\" \"name=\"Value" + attrName + "\" onkeyup=\"checkStrangeCharacters(this)\">" +
-            "</div><div  style=\"display:none\"  class=\"modalFieldLabelCnt INSERTValues\">Insert data</div> <span id=\"access-code-error" + attrName + "\" class=\"rsvp\" style=\"display:none\"> Unvalid input</span></div>" +
+            "</div><div  style=\"display:none\"  class=\"modalFieldLabelCnt INSERTValues\">Insert data</div> <span id=\"access-code-error" + attrName + "\" class=\"rsvp\" style=\"display:none; color:red;\"> Unvalid input</span></div>" +
             "<div class=\"col-xs-6 col-md-3 modalCell\"><div class=\"modalFieldCnt\">" +
             "<select class=\"modalInputTxt\" style=\"display:none\" name=\"" + old_value_name +
             "\" \>" +
@@ -278,7 +279,7 @@ function format(d) {
             d.id + '\',\'' + d.devicetype + '\',\'' + d.contextBroker + '\',\'' + d.service + '\',\'' + d.servicePath + '\',\'v2\');return true;"><b>PAYLOAD NGSI v2</b></button></div>';
     showPayload = showPayload + '</div>';
     //console.log(d);
-    var a = '<div class="container-fluid">' +
+    var a = '<div  class="container-fluid">' +
             '<div class="row">' +
             '<div class="col-xs-6 col-sm-6" style="background-color:#E6E6FA;"><b>Broker URI:</b>' + "  " + d.accesslink + '</div>' +
             '<div class="clearfix visible-xs"></div>' +
@@ -321,7 +322,7 @@ function format(d) {
             'data-servicePath="' + d.servicePath + '" ' +
             'data-devicetype="' + d.devicetype + '" ' +
             'data-latitude="' + d.latitude + '" ' +
-            'data-longitude="' + d.longitude + '" id="NewValuesInput" onclick="NewValuesOnDevice();"><b>NEW DATA IN</b> ' + d.id + '</button>';
+            'data-longitude="' + d.longitude + '"  id="' + d.id + '_NewValuesInput" onclick="NewValuesOnDevice(id);"><b>NEW DATA IN</b> ' + d.id + '</button>';
     var c = '</div>' + '</div>' +
             '<div class="clearfix visible-xs"></div>' +
             '</div>' +
@@ -546,25 +547,32 @@ function fetch_data(destroyOld, selected = null)
 
 
 
-function NewValuesOnDevice() {
+function NewValuesOnDevice(strID) {
     document.getElementById('editLatLongValue').innerHTML = "";
     document.getElementById('ValuesINPUT').innerHTML = "";
     $("#NewValuesInputMODAL").modal('show');
+    $('#InsertDataDeviceLoadingIcon').show();
     $('.nav-tabs a[href="#editAttributeValueTabDevice"]').tab('show');
-
+//    $('#Mtab').show();
+//    $('#Itab').show();
+ $('#NOMob').hide();
+    $('#editLatLongValue').hide();
+    document.getElementById('NewValuesInputConfirmButton').style.display = 'left';
     $("#InsertModalStatus").hide();
 
     $('#NewValuesInputConfirmButton').show();
     $("#InsertDeviceModalTabs").show();
-    $('#InsertDataDeviceLoadingIcon').show();
+    $("#GETimeStamp").show();
+    var strID = "#" + strID;
 
-    var Nid = $('#NewValuesInput').attr('data-id');
-    var Ntype = $('#NewValuesInput').attr('data-devicetype');
-    var Ncb = $('#NewValuesInput').attr('data-contextbroker');
-    var Nserv = $('#NewValuesInput').attr('data-service');
-    var NservPath = $('#NewValuesInput').attr('data-servicePath');
 
- 
+    var Nid = $(strID).attr('data-id');
+    var Ntype = $(strID).attr('data-devicetype');
+    var Ncb = $(strID).attr('data-contextbroker');
+    var Nserv = $(strID).attr('data-service');
+    var NservPath = $(strID).attr('data-servicePath');
+
+
     $.ajax({
         url: "../api/device.php",
         data: {
@@ -582,16 +590,19 @@ function NewValuesOnDevice() {
         dataType: 'json',
         success: function (mydata)
         {
-            
+
             var old_value = mydata['content'];
 
-            $('#InsertDataDeviceLoadingIcon').show();
+
             $('a[data-toggle="tab"]').off('shown.bs.tab').on('shown.bs.tab', function (e) {
+                //   $('#InsertDataDeviceLoadingIcon').show();
+                $('#InsertDataDeviceLoadingIcon').hide();
 
 
                 var target = $(e.target).attr("href");
 
                 if ((target === '#editGeoPositionTabDeviceNewValue')) {
+                    $('#InsertDataDeviceLoadingIcon').hide();
                     document.getElementById('editLatLongValue').innerHTML = "";
                     document.getElementById('ValuesINPUT').innerHTML = "";
                     $("#GETimeStamp").hide();
@@ -599,17 +610,17 @@ function NewValuesOnDevice() {
                     $("#NOMob").hide();
                     $("#ValuesINPUT").hide();
                     $('#NewValuesInputConfirmButton').show();
-                    $('#InsertDataDeviceLoadingIcon').hide();
+
                     $("#InsertModalStatus").hide();
                     $("#NoMobile").hide();
 
-                    if (mydata['isMobile']=="false") {
+                    if (mydata['isMobile'] == "false") {
                         $('#editLatLongValue').hide();
                         $("#NOMob").hide();
                         $("#NoMobile").show();
                         $('#InsertDataDeviceLoadingIcon').hide();
                         $("#InsertModalStatus").hide();
-                        $("#NoMobile").html('<br><br>'+Nid + " is not mobile!  ");
+                        $("#NoMobile").html('<br><br>' + Nid + " is not mobile!  ");
                     } else {
                         $("#InsertModalStatus").hide();
                         $('#InsertDataDeviceLoadingIcon').hide();
@@ -621,12 +632,15 @@ function NewValuesOnDevice() {
                         drawMap1(old_value['latitude'], old_value['longitude'], 4);
 
                     }
+                    $('#InsertDataDeviceLoadingIcon').hide();
 
 
                 } else if ((target === '#editAttributeValueTabDevice')) {
+                    $('#InsertDataDeviceLoadingIcon').show();
                     // NewValuesInput management
-                    $('#InsertDataDeviceLoadingIcon').hide();
+
                     $('#editLatLongValue').hide();
+                    $("#GETimeStamp").show();
 
                     $("#NoMobile").hide();
                     $("#NOMob").hide();
@@ -634,25 +648,28 @@ function NewValuesOnDevice() {
                     $('#NewValuesInputConfirmButton').show();
                     document.getElementById('ValuesINPUT').innerHTML = "";
 
-                    
-                    delete old_value['id'];
-                    delete old_value['type'];
-                    delete old_value['model'];
+                    if (old_value) {
+                        delete old_value['id'];
+                        delete old_value['type'];
+                        delete old_value['model'];
+                    }
                     //console.log(old_value);
                     console.log("Values loading");
-                     var DT={};
+                    var DT = {};
+                     var NameAttrUp = new Array();
+                     var strTIME;
 
                     $.ajax({
                         url: "../api/device.php",
                         data: {
                             action: "get_device_attributes",
-                            id: $('#NewValuesInput').attr('data-id'),
+                            id: $(strID).attr('data-id'),
 
-                            contextbroker: $('#NewValuesInput').attr('data-contextbroker'),
+                            contextbroker: $(strID).attr('data-contextbroker'),
                             //document.getElementById('selectContextBrokerM').value,
                             token: sessionToken,
-                            service: $('#NewValuesInput').attr('data-service'),
-                            servicePath: $('#NewValuesInput').attr('data-servicePath')
+                            service: $(strID).attr('data-service'),
+                            servicePath: $(strID).attr('data-servicePath')
                         },
                         type: "POST",
                         async: true,
@@ -661,11 +678,13 @@ function NewValuesOnDevice() {
                         {
                             $('#InsertDataDeviceLoadingIcon').hide();
                             $("#NewValuesInputMODAL").modal('show');
+                            $("#GETimeStamp").hide();
 
 
                             var row = null;
+                            var strTIMEtemp;
                             $("#editUserPoolsTable tbody").empty();
-                            
+
                             myattributes = mydata['content'];
                             content = "";
                             k = 0;
@@ -677,6 +696,8 @@ function NewValuesOnDevice() {
 
 
                                 str = "#Value" + myattributes[k].value_name;
+                                  str_checkBox = "Checkbox_" + myattributes[k].value_name;
+                                 NameAttrUp.push("" + str_checkBox + "");
 
 
                                 indexValues = indexValues + 1;
@@ -685,39 +706,58 @@ function NewValuesOnDevice() {
 
                                 $('#ValuesINPUT').append(content);
                                 $(".INSERTValues").show();
+                                 
                                 j = k - 1;
 
                                 $(str).val(old_value[myattributes[j].value_name]);
-                                if($(str).val()==""){
+                                if ($(str).val() == "") {
                                     document.getElementById('NewValuesInputConfirmButton').disabled = true;
+                                } else {
+                                    document.getElementById('NewValuesInputConfirmButton').disabled = false;
                                 }
 
                                 const input = document.querySelector(str);
-                               var temp={};
-                                 temp['' + myattributes[j].value_name  + ''] = { type: myattributes[j].data_type};
-                                 $.extend(DT, temp);
-                                 console.log(DT);
-                                 $("#GETimeStamp").hide();
-                                               
+                              
+                                var temp = {};
+                                temp['' + myattributes[j].value_name + ''] = {type: myattributes[j].data_type, value: old_value['' + myattributes[j].value_name + '' ]};
+
+                                $.extend(DT, temp);
+                               // console.log(DT);
+                              
+                                //$("#GETimeStamp").hide();
+                                strTIMEtemp = "#Value" + myattributes[j].value_name;
+                                if (myattributes[j].value_type == 'timestamp' || !strTIMEtemp) {
+                                    
+                                    strTIME = "#Value" + myattributes[j].value_name;
+                                    var checkTime;
+                                checkTime=$(strTIME).val(old_value[myattributes[j].value_name]);
+
+                                    $("#GETimeStamp").show();
+                                        $("#"+str_checkBox).hide();
+                                        $("#Span"+str_checkBox).hide();
+
+
+                                }
 
 
                                 input.addEventListener('keyup', function (e) {
-                                   
+
                                     var a = (e.target.value);
                                     const okButton = document.getElementById('NewValuesInputConfirmButton');
                                     t = e.currentTarget.id.substring(5, e.currentTarget.id.length);
                                     str1 = "#access-code-error" + t;
-                                    str2= "#InputDataType"+t;
-                                   
+                                    str2 = "#InputDataType" + t;
+
 
                                     switch (DT[t].type) {
 
                                         case ("float" || "integer") :
 
-                                            {   $("#GETimeStamp").hide();
-                                                if (/\s/.test(a)|| a==""|| isNaN(a) || /[!@#$%^&*()_+\-=\[\]{};':"\\|<>\/?]+/.test(a) ) {
+                                            {   
+                                                if (/\s/.test(a) || a == "" || isNaN(a) || /[!@#$%^&*()_+\-=\[\]{};':"\\|<>\/?]+/.test(a)  ) {
                                                     $(str1).show();
                                                     okButton.disabled = true;
+
                                                 } else {
                                                     a = parseFloat(a);
                                                     $(str1).hide();
@@ -728,21 +768,20 @@ function NewValuesOnDevice() {
                                             break;
                                         case "binary":
 
-                                            {   $("#GETimeStamp").hide();
-                                                if (/\s/.test(a) || a=="" || isNaN(a) || /[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]+/.test(a)) {
+                                            { 
+                                                if (/\s/.test(a) || a == "" || isNaN(a) || /[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]+/.test(a)) {
                                                     $(str1).show();
                                                     okButton.disabled = true;
                                                 } else {
-                                                    a = a.charCodeAt(0).toString(2);
+                                                    a = a.toString(2);
                                                     $(str1).hide();
                                                     okButton.disabled = false;
                                                 }
                                             }
                                             break;
                                         case "boolean" || "switch" || "button":
-                                            {   $("#GETimeStamp").hide();
-                                                
-                                                if (/\s/.test(a) || a=="" || a !== false || a !== true || /[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]+/.test(a)) {
+                                            { 
+                                                if (/\s/.test(a) || a == "" || a !== false || a !== true || /[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]+/.test(a)) {
                                                     $(str1).show();
                                                     okButton.disabled = true;
                                                 } else {
@@ -753,41 +792,42 @@ function NewValuesOnDevice() {
                                             }
                                             break;
                                         case "date" || "datatime" || "time" || "timestamp":
-                                            {   $("#GETimeStamp").show();
-                                                
-                                                if (/\s/.test(a) || a=="" || /[!@#$%^&*()_+\-=\[\]{};'"\\|,.<>\/?]+/.test(a) || e.key==" ") {
+                                            { 
+                                                if (/\s/.test(a) || a == "" || /[!@#$%^&*()_+\-=\[\]{};'"\\|,.<>\/?]+/.test(a) || e.key == " ") {
                                                     $(str1).show();
                                                     okButton.disabled = true;
                                                 } else {
+
                                                     $(str1).hide();
                                                     a = toISOString(a);
-                                                    okButton.disabled = false;
+                                                    if (a != DT[t].value) {
+                                                        okButton.disabled = false;
+                                                    }
+
                                                 }
                                             }
 
                                             break;
                                         case "json" || "collection" || "set" || "vector" || "shape" || "wkt" :
-                                            {   $("#GETimeStamp").hide();
-                                               
-                                                if (/\s/.test(a) || a=="" || /[!@#$%^&*()_+\-=;'"\\|,.<>\/?]+/.test(a)) {
+                                            {  
+                                                if (/\s/.test(a) || a == "" || /[!@#$%^&*()_+\-=;'"\\|,.<>\/?]+/.test(a)) {
                                                     $(str1).show();
                                                     okButton.disabled = true;
                                                 } else {
                                                     $(str1).hide();
-                                                     a = JSON.parse(a);
+                                                    a = JSON.parse(a);
                                                     okButton.disabled = false;
                                                 }
                                             }
                                             break;
                                         case "xlm":
-                                            {   $("#GETimeStamp").hide();
-                                               
-                                                if (/\s/.test(a) || a=="" || /[!@#$%^&*/?]+/.test(a) ) {
+                                            {
+                                                if (/\s/.test(a) || a == "" || /[!@#$%^&*/?]+/.test(a)) {
                                                     $(str1).show();
                                                     okButton.disabled = true;
                                                 } else {
                                                     $(str1).hide();
-                                                     a = parseFromString(a, "text/xml");
+                                                    a = parseFromString(a, "text/xml");
                                                     okButton.disabled = false;
                                                 }
                                             }
@@ -795,14 +835,18 @@ function NewValuesOnDevice() {
                                     }
                                 });
 
-
-
-
-
-
                             }
                             $("#editSchemaTabDevice #ValuesINPUT .row input:even").each(function () {
                                 checkEditValueName($(this));
+                            });
+                            
+                            $("#GETimeStamp").click(function () {
+                                
+                                $(strTIME).val(old_value[myattributes[j].value_name]);
+                                const currentTime = new Date().toISOString();
+                                $(strTIME).val(currentTime.toString());
+                              
+
                             });
                             checkEditDeviceConditions();
                             $(".RemoveAttrEdit").hide();
@@ -810,35 +854,30 @@ function NewValuesOnDevice() {
                             $('.Select_onlyread').prop('disabled', true);
 
                             $('.Input_onlyread').attr('readonly', true);
-                             if (myattributes[j].value_type == 'timestamp'){
-                           // if (myattributes[j].data_type == 'timestamp') {
-                                $("#GETimeStamp").show();
-                                $("#GETimeStamp").off("click").click(function () {
-                                    $(str).val(old_value[myattributes[j].value_name].toString());
-                                    const currentTime = new Date().toISOString();
-                                    $(str).val(currentTime.toString());
 
-                                });
-
-
-
-                            } else {
-                                $("#GETimeStamp").hide();
-                            }
-
-
-
-                            $('#NewValuesInputConfirmButton').off("click");
+                        
 
                             $('#NewValuesInputConfirmButton').click(function () {
-
-
-
-                                var pay_new_data = CreateJsonNewValue(mydata['content'], $(".INSERTValues").val());
+                                 if(strTIME!=null && (old_value[strTIME.substr(6, strTIME.length)]==$(strTIME).val())){
+                                    // if(old_value[strTIME.substr(6, strTIME.length)]==$(strTIME).val()){
+                                     $('#ValuesINPUT').hide();
+                                       $("#GETimeStamp").hide();
+                                        $("#InsertModalStatus").show();
+                                     // $("#InsertModalStatus").html("You must insert a valid time!");
+                                       $("#InsertModalStatus").html('<br><br>' + "You must insert a valid time!");
+                                        $('#NewValuesInputConfirmButton').hide();
+                                  //  }
+                                }else{
+                                
+                               
+                                
+                                var pay_new_data = CreateJsonNewValue(mydata['content'], NameAttrUp, old_value);
 
                                 $("#NoMobile").hide();
                                 $('#ValuesINPUT').hide();
                                 $("#InsertDataDeviceLoadingIcon").show();
+
+
 
                                 $.ajax({
                                     url: "../api/device.php",
@@ -865,9 +904,10 @@ function NewValuesOnDevice() {
                                         console.log("Values update");
 
 
-                                        $("#InsertModalStatus").html(Nid + "'s value updates! ");
+                                        $("#InsertModalStatus").html('<br><br>' + Nid + "'s value updates! ");
                                         $("#NOMob").hide();
                                         $("#editLatLongValue").hide();
+                                        $("#GETimeStamp").hide();
 
                                         $("#InsertModalStatus").show();
                                         $('#NewValuesInputConfirmButton').hide();
@@ -888,7 +928,7 @@ function NewValuesOnDevice() {
                                     }
 
 
-                                });
+                                });}
                             });
 
 
@@ -897,6 +937,9 @@ function NewValuesOnDevice() {
                         error: function (data)
                         {
                             $('#InsertDataDeviceLoadingIcon').hide();
+                            $('#ValuesINPUT').hide();
+                            $("#InsertModalStatus").html(data.responseText);
+                            $("#InsertModalStatus").show();
                             console.log("Get values pool KO");
                             console.log(JSON.stringify(data));
                             alert("Error in reading data from the database<br/> Please get in touch with the Snap4city Administrator");
@@ -912,12 +955,28 @@ function NewValuesOnDevice() {
                 }
             });
             $('a[href=#editGeoPositionTabDeviceNewValue]').click();
+            $('#InsertDataDeviceLoadingIcon').hide();
+
+            // $('#InsertDataDeviceLoadingIcon').show();
         },
         error: function (data)
         {
 
+            $('#InsertDataDeviceLoadingIcon').hide();
             console.log("Insert values pool KO");
             console.log((data));
+            $('#ValuesINPUT').hide();
+            $("#InsertModalStatus").html("<br/><br/>" + data.responseText);
+            $("#InsertModalStatus").show();
+            $('#LoadingGif').hide();
+            $('#GETimeStamp').hide();
+            $('#inputLatitudeDeviceValue').hide();
+            $('#InsertDataDeviceLoadingIcon').hide();
+            $('#NOMob').hide();
+            $('#editLatLongValue').hide();
+            $('#Mtab').hide();
+            $('#Itab').hide();
+            document.getElementById('NewValuesInputConfirmButton').style.display = 'none';
 
 
         }
@@ -934,23 +993,43 @@ function NewValuesOnDevice() {
 //end of fetch function 
 
 
+function disableInput(id) {
+   InputToDisable="Value"+id.substring(9, id.length);
+   Check_okbutton="#access-code-error"+ id.substring(9, id.length);
+         if (document.getElementById(id).checked == false){
+          document.getElementById(InputToDisable).readOnly = true;
+          if($(Check_okbutton).is(":visible")){
+            document.getElementById('NewValuesInputConfirmButton').disabled = false;
+        }
+        }else if (document.getElementById(id).checked == true){
+            document.getElementById(InputToDisable).readOnly = false;
+            if($(Check_okbutton).is(":visible")){
+            document.getElementById('NewValuesInputConfirmButton').disabled = true;
+        }
+        }
+    
+}
 
 
-
-function CreateJsonNewValue(someData, value) {
+function CreateJsonNewValue(someData, NameAttrUp, old) {
     //console.log(new_co);
     var attr = {};
     var a = "";
 
     for (var i in someData) {
-        a = document.getElementsByClassName("InputValue")[i].value;
+        
+         if (document.getElementById(NameAttrUp[i]).checked == true) {
+            a= document.getElementById('Value' + NameAttrUp[i].substring(9, NameAttrUp[i].length)).value;
+        } else {
+              a = old[NameAttrUp[i].substring(9, NameAttrUp[i].length)];
+        }
         switch (someData[i].data_type) {
 
             case "float" || "integer" :
                 a = parseFloat(a);
                 break;
             case "binary":
-                a = a.charCodeAt(0).toString(2);
+                a = parseInt(a).toString(2);
                 break;
             case "boolean" || "switch" || "button":
                 a = Boolean(a);
@@ -965,7 +1044,9 @@ function CreateJsonNewValue(someData, value) {
                 a = parseFromString(a, "text/xml");
                 break;
         }
-        attr['' + someData[i].value_name + ''] = {"value": a, "type": someData[i].data_type};
+       
+            attr['' + someData[i].value_name + ''] = {"value": a, "type": someData[i].data_type};
+        
 
 
     }
@@ -1012,6 +1093,7 @@ $(document).ready(function ()
         } else {
             // Open this row
             row.child(format(row.data())).show();
+
 
             tr.addClass('shown');
             tdi.first().removeClass('fa-plus-square');

@@ -246,7 +246,9 @@
 									</div>
 									<div class="col-xs-12 col-md-6 modalCell" style= "background-color: rgb(241, 245, 244);">
 									<?php if ($_SESSION['loggedRole']=='RootAdmin'  || $_SESSION['loggedRole']=='ToolAdmin') { ?>
-									<div class="pull-right"><button id="addContextBrokerBtn"  class="btn btn-primary">New IOT Broker</button></div>
+                                                                            <div class="pull-right "><button id="RegisterCBBtn"  class="btn btn-primary">Add IOT Broker</button></div>
+									<div class="pull-right"><button id="addContextBrokerBtn"  class="btn btn-primary">Set up IOT Broker</button></div>
+                                                                        
 									<?php } ?>
 									</div>
 								</div>
@@ -300,13 +302,61 @@
               </div>
             </div>
         </div>
-		
+	
+        
+            <!-- NEW DEVICE MODAL START -->
+     <div class="modal fade" id="RegisterCBeModal" tabindex="-1" role="dialog" aria-hidden="true">
+  <div class="modal-dialog  modal-lg" role="document">
+    <div class="modal-content">
+      <div id="RegisterCBModal" class="modalHeader centerWithFlex">
+        <h5 class="col-xs-12 centerWithFlex">Add a new  device</h5>
+           </div>
+      <div  class="modal-body">
+      <p id="RegisterCBStatus"></p>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-primary" data-dismiss="modal">Close</button>
+         <button type="button" id="RegisterCBConfirmButton" class="btn confirmBtn">Confirm</button>
+      </div>
+    </div>
+  </div>
+</div> 
+         <!-- NEW DEVICE MODAL END -->
+         
+         
+         
+    <!-- ADD DEVICE MODAL NULL START -->
+     <!-- Modal -->
+  <div class="modal fade" id="addContextBrokerModalNULL" role="dialog">
+    <div class="modal-dialog">
+    
+      <!-- Modal content-->
+      <div class="modal-content">
+        <div  class="modalHeader centerWithFlex">
+         
+          <h5 class="col-xs-12 centerWithFlex">Oops, something went wrong</h5>
+        </div>
+        <div class="modal-body">
+          <p>Plese contact the admistrator for add a new Context broker</p>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn cancelBtn" data-dismiss="modal">Close</button>
+        </div>
+      </div>
+      
+    </div>
+  </div>
+    
+    
+    <!-- ADD DEVICE MODAL NULL  END -->
+        
+        
         <!-- Create Context Broker -->
         <div class="modal fade" id="addContextBrokerModal" tabindex="-1" role="dialog" aria-hidden="true">
             <div class="modal-dialog" role="document">
               <div class="modal-content">
-                <div class="modalHeader centerWithFlex">
-                  Add new context broker 
+                <div id= "addContextBrokerModalLabel" class="modalHeader centerWithFlex">
+                  
                 </div>
 
                 <div id="addContextBrokerModalBody" class="modal-body modalBody">
@@ -315,7 +365,7 @@
 			<li id="multiServiceTabSelector" class="hidden"><a data-toggle="tab" href="#serviceTenantTabCB">Multitenancy</a></li>
                         <li id='tab-addCB-2'><a data-toggle="tab" href="#geoPositionTabCB">Geo-Position</a></li>
                         <li id='tab-addCB-3'><a data-toggle="tab" href="#securityTabCB">Security</a></li>
-			<li id='tab-addCB-4'><a data-toggle="tab" href="#subscriptionTabCB">Subscription</a></li>
+			<li id='tab-addCB-4'><a data-toggle="tab"  href="#subscriptionTabCB">Subscription</a></li>
                     </ul>
                     
                     <div class="tab-content">

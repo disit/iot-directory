@@ -474,7 +474,7 @@ use Jumbojett\OpenIDConnectClient;
 									<div>
 									<table id="devicesTable" class="table table-bordered table-striped" cellspacing="0" width="100%">
 										<thead>
-										  <tr>
+										  <tr style="background: rgb(0, 162, 211); color: rgb(255, 255, 255); font-size: 1em;">
 											<th></th>	
 											<th data-cellTitle="name">Device Identifier</th> 
 											<th data-cellTitle="contextbroker">IOT Broker</th>
@@ -498,6 +498,85 @@ use Jumbojett\OpenIDConnectClient;
                 </div>
             </div>
         </div>
+        
+        
+        
+        
+     <!-- NEW VALUES INPUT MODAL -->
+    <div class="modal fade" id="NewValuesInputMODAL" tabindex="-1" role="dialog" aria-hidden="true">
+  <div class="modal-dialog  modal-lg" role="document">
+    <div class="modal-content">
+      <div id="NewValuesInputMODAL" class="modalHeader centerWithFlex">
+        <h5 class="col-xs-12 centerWithFlex">Insert new data on your device</h5>
+           </div>
+    
+          
+        <div   class="modal-body">  
+          
+            <ul id="InsertDeviceModalTabs" class="nav nav-tabs nav-justified">
+              
+               
+                  <li class="active"><a id="Mtab" data-toggle="tab" href="#editGeoPositionTabDeviceNewValue">Insert new position</a></li>
+                   <li ><a id="Itab" data-toggle="tab" href="#editAttributeValueTabDevice">Insert new value</a></li>
+                   
+                    		<div class="tab" id="InsertDataDeviceLoadingIcon">
+                        
+                        <div class="col-xs-12 centerWithFlex"><i id="LoadingGif" class="fa fa-circle-o-notch fa-spin" style="font-size:36px;"></i></div></div>
+                                  
+					
+						
+                    </ul>
+            <div class="tab-content">
+                <div class="tab-pane active" id="Itab" role="tabpanel" aria-labelledby="data-ex-tab1-tab">
+                     <div id="ValuesINPUT" class="tabcontent">
+                     
+                      <div class="tab">
+                        
+                    
+                    </div></div>
+                    <p id="InsertModalStatus"></p> 
+                    <button type="button" id="GETimeStamp" style="display:none" class="btn confirmBtn">Get Time stamp</button>
+                    
+                        
+                        
+                        <div id="NOMob" class="row">
+                            
+                        
+								<div class="col-xs-12 col-md-6 modalCell">
+                                    <div class="modalFieldCnt">
+                                        <input type="text" class="modalInputTxt" name="inputLatitudeDeviceValue" id="inputLatitudeDeviceValue"> 
+                                    </div>
+                                    <div class="modalFieldLabelCnt">Latitude</div>
+									
+                                </div>
+                                <div class="col-xs-12 col-md-6 modalCell">
+                                    <div class="modalFieldCnt">
+                                        <input type="text" class="modalInputTxt" name="inputLongitudeDeviceValue" id="inputLongitudeDeviceValue"> 
+                                    </div>
+                                    <div class="modalFieldLabelCnt">Longitude</div>
+									
+                                </div>
+                            </div>
+                    <div class="tab-pane " id="Mtab" role="tabpanel" aria-labelledby="data-ex-tab1-tab">
+                        <p id="NoMobile"></p> 
+                        <div id="editLatLongValue" style="width: 100%; height: 400px" class="modal-body modalBody"></div>
+      </div> </div>
+                </div> </div> 
+      
+       
+      <div class="modal-footer">
+       
+            
+            
+          <button type="button" class="btn cancelBtn" data-dismiss="modal">Close</button>
+        <button type="button" id="NewValuesInputConfirmButton" class="btn confirmBtn">Confirm</button>
+      </div>
+    </div>
+  </div>
+</div>
+    <!-- NEW VALUES INPUT MODAL END -->
+    
+
         
 		
 		<div class="modal fade" id="successRegisterUserDeviceModal" tabindex="-1" role="dialog" aria-labelledby="successRegisterUserDeviceModalLabel" aria-hidden="true">

@@ -1163,7 +1163,9 @@ else if ($action == 'change_visibility') {
         header('HTTP/1.1 500 Internal Server Error');
         echo $result["error_msg"];
     }
-} else if ($action == 'Insert_Value') {
+}
+
+else if ($action == 'Insert_Value'){
 
     $result["log"] .= "\n  ;invoked Insert_Value from device.php";
 

@@ -1655,7 +1655,6 @@ function registerKB($link, $name, $type, $contextbroker, $kind, $protocol, $form
 }
 
 // end of function registerKB
-
 // ****FUNCTIONS FOR THE MODIFICATION OF THE REGISTRATION OF A DEVICE IN THE KNOWLEDGE BASE AND IN THE CONTEXT BROKER ****************** 
 
 function update_ngsi($name, $type, $contextbroker, $kind, $protocol, $format, $model, $latitude, $longitude, $visibility, $frequency,
@@ -2403,20 +2402,20 @@ function get_organization_info($organizationApiURI, $ou_tmp) {
 
 function get_LDgraph_link($logUriLD, $organizationApiURI, $org, $uri) {
     $kurl = retrieveKbUrl($organizationApiURI, $org);
-    $url = $logUriLD . '?sparql=' . substr($kurl, 0,4) .  substr($kurl, 5, -8) .  '/sparql&uri=' . $uri;
+    $url = $logUriLD . '?sparql=' . substr($kurl, 0, 4) . substr($kurl, 5, -8) . '/sparql&uri=' . $uri;
     return $url;
 }
 
-
 function get_ServiceMap_link($uri, $organizationApiURI, $org) {
     $kurl = retrieveKbUrl($organizationApiURI, $org);
-    $m_url =$kurl. '?serviceUri=' . $uri.'&format=html';
+    $m_url = $kurl . '?serviceUri=' . $uri . '&format=html';
     return $m_url;
 }
 
 //return subscription_id. can be FAILED
 //returning ok also if subscribe failed (beside try and catch)
 function nificallback_create($ip, $port, $name, $urlnificallback, $protocol, $services, &$result) {
+    $result["retry"] = false;
     $result["status"] = 'ok';
     $result["content"] = 'FAILED';
     $result["log"] .= "\n Received request of nificallback_create for ip:$ip port:$port cbname:$name";
@@ -2462,9 +2461,11 @@ function nificallback_create($ip, $port, $name, $urlnificallback, $protocol, $se
 
             if (isset($http_response_header) && is_array($http_response_header) && strpos($http_response_header[0], '201') !== false) {
                 $sub_id = extract_subscription_id($http_response_header);
+
                 array_push($subscriptions, $sub_id);
                 $result["log"] .= "\n Response subscription_id is:" . $sub_id;
             } else {
+                $result["retry"] = true;
                 $result["log"] .= "\n Error returned or not reachable";
             }
             //return status==ok even if the subscription failed
@@ -2618,7 +2619,7 @@ function get_all_models($username, $organization, $role, $accessToken, $link, &$
     }
 }
 
-function is_broker_up($link, $cb, $service, $servicePath, $version, &$result) {
+function is_broker_up($link, $cb, $service, $servicePath, $version, $organization, &$result) {
 
     $query = "SELECT * from contextbroker WHERE name = '$cb'";
     $r = mysqli_query($link, $query);
@@ -2670,6 +2671,27 @@ function is_broker_up($link, $cb, $service, $servicePath, $version, &$result) {
             $result["error_msg"] = "Error in the connection with the ngsi context broker. ";
             $result["msg"] = "Error in the connection with the ngsi context broker";
             $result["log"] .= "\n Error in the connection with the ngsi context broker";
+
+            $query = "SELECT status from iotdb.orionbrokers where name='$cb'";
+
+            $r = mysqli_query($link, $query);
+            $DefaultCB = mysqli_fetch_assoc($r);
+            if (!$r) { //existence of cb is guaranteed from previously enforcement
+                $result["status"] = 'ko';
+                $result["error_msg"] = "Error in reading data from orionbrokers table.";
+                $result["msg"] = ' error in reading data from orionbrokers table' . mysqli_error($link);
+                $result["log"] .= '\n error in reading data from orionbrokers table ' . mysqli_error($link) . $query;
+                return 1;
+            }
+
+
+            if ($r) {
+
+                $result["status"] = '{"status": "Ok - get status of CB "}';
+                $result["content"] = json_encode($DefaultCB);
+                $result["msg"] = 'response from the query in the  orionbrokers ';
+                $result["log"] .= '\n response from the query  query in the  orionbrokers' . $DefaultCB;
+            }
         } else {
 
             $result["status"] = 'ok';
@@ -2749,6 +2771,39 @@ function get_device($username, $role, $id, $cb, $accessToken, $link, &$result, $
     unset($result["delegation"]);
 }
 
+function change_Status($link, $name, $organization) {
+
+
+    // echo $id_CB;
+    $query = "UPDATE iotdb.orionbrokers SET status='deploy' WHERE name='$name' and organization='$organization'";
+    //  $checkQuery = " SELECT * FROM iotdb.orionbrokers WHERE `name`='$name'";
+
+
+    $r = mysqli_query($link, $query);
+    //  $r = mysqli_query($link, $checkQuery);
+
+    $rupdate = mysqli_fetch_assoc($r);
+
+    if (!$r) { //existence of cb is guaranteed from previously enforcement
+        $result["status"] = 'ko';
+        $result["error_msg"] = "Error in reading data from orionbrokers table.";
+        $result["msg"] = ' error in reading data from orionbrokers table' . mysqli_error($link);
+        $result["log"] .= '\n error in reading data from orionbrokers table ' . mysqli_error($link) . $query;
+        return 1;
+    }
+
+
+    if ($r) {
+
+        $result["status"] = '{"status": "Ok - get CB "}';
+        $result["content"] = json_encode($rupdate);
+
+        $result["msg"] = 'response from the query in the  orionbrokers ';
+        $result["log"] .= '\n response from the query  query in the  orionbrokers' . $rupdate;
+        // echo json_encode( json_encode($rupdate) );
+    }
+}
+
 function get_all_contextbrokers($username, $organization, $loggedrole, $accessToken, $link, $length, $start, $draw, $request, $selection, &$result) {
 
     getOwnerShipObject($accessToken, "BrokerID", $result);
@@ -2782,6 +2837,21 @@ function get_all_contextbrokers($username, $organization, $loggedrole, $accessTo
         $data = array();
         while ($row = mysqli_fetch_assoc($r)) {
             $idTocheck = $row["organization"] . ":" . $row["name"];
+
+            $row["dynamic"] = "";
+
+            $p = "SELECT status FROM orionbrokers where name= '" . $row["name"] . "' AND organization = '" . $row["organization"] . "';";
+
+            $rq = mysqli_query($link, $p);
+
+            $Prov = (mysqli_fetch_assoc($rq));
+
+            if ($Prov) {
+                $row["dynamic"] = true;
+            } else {
+                $row["dynamic"] = false;
+            }
+
             if (
                     ($loggedrole == 'RootAdmin') ||
                     ($loggedrole == 'ToolAdmin') ||
@@ -2839,6 +2909,8 @@ function get_all_contextbrokers($username, $organization, $loggedrole, $accessTo
                             logAction($link, $username, 'contextbroker', 'get_all_contextbroker', '', $organization, 'Error: errors in reading data about IOT Broker.', 'faliure');
                         }
                     }
+
+
                     array_push($data, $row);
                 }
             }
@@ -2976,22 +3048,20 @@ function enforcementRights($username, $token, $role, $elementId, $elementType, $
     return $toreturn;
 }
 
-function retrieveKbUrl($organizationApiURI, $org)
-{
-	//retrieve the kburl -> this is needed since this api can be called from OUTSIDE of the IoT directory
-	$kburl="";
-	//if (!isset($_SESSION['kbUrl']))
-	//{
-		$infokburl=get_organization_info($organizationApiURI, $org);
-		if(!is_null($infokburl))
-		{
-			$kburl=$infokburl["kbUrl"];
-		}
-	/*}
-	else 
-	{
-		$kburl=$_SESSION['kbUrl'];
-	}i*/
+function retrieveKbUrl($organizationApiURI, $org) {
+    //retrieve the kburl -> this is needed since this api can be called from OUTSIDE of the IoT directory
+    $kburl = "";
+    //if (!isset($_SESSION['kbUrl']))
+    //{
+    $infokburl = get_organization_info($organizationApiURI, $org);
+    if (!is_null($infokburl)) {
+        $kburl = $infokburl["kbUrl"];
+    }
+    /* }
+      else
+      {
+      $kburl=$_SESSION['kbUrl'];
+      }i */
     return $kburl;
 }
 
@@ -3087,15 +3157,16 @@ function get_device_data($link, $id, $type, $cb, $service, $servicePath, $versio
         $result["log"] .= '\n error in connecting with the ngsi context broker ' . $ex;
     }
 }
+
 /// Loading value 
 
-function Loading_value($link, $id, $type, $cb, $service, $servicePath, $version,   &$result){
-    
+function Loading_value($link, $id, $type, $cb, $service, $servicePath, $version, &$result) {
+
     //retrieve cb information
     $query = "SELECT * from contextbroker WHERE name = '$cb'";
-    $queryMobile= "select * from iotdb.devices where static_attributes like '%[\"http://www.disit.org/km4city/schema#isMobile\",\"true\"]%' and id='$id' ";
+    $queryMobile = "select * from iotdb.devices where static_attributes like '%[\"http://www.disit.org/km4city/schema#isMobile\",\"true\"]%' and id='$id' ";
     $r = mysqli_query($link, $query);
-    
+
     if (!$r) { //existence of cb is guaranteed from previously enforcement
         $result["status"] = 'ko';
         $result["error_msg"] = "Error in reading data from context broker.";
@@ -3106,72 +3177,67 @@ function Loading_value($link, $id, $type, $cb, $service, $servicePath, $version,
     $rowCB = mysqli_fetch_assoc($r);
     $ip = $rowCB["ip"];
     $port = $rowCB["port"];
-    $r=mysqli_query($link, $queryMobile);
-    
-    if(!$r ){
+    $r = mysqli_query($link, $queryMobile);
+
+    if (!$r) {
         $result["status"] = 'ko';
         $result["error_msg"] = "Error in reading data from devices." . mysqli_error($link);
         $result["msg"] = ' error in reading data from device ' . mysqli_error($link);
         $result["log"] .= '\n error in reading data from device ' . mysqli_error($link) . $query;
         return 1;
     }
-    $isMobile=(mysqli_fetch_assoc($r));
+    $isMobile = (mysqli_fetch_assoc($r));
 
     if ($version == "v2")
         $url_orion = "http://$ip:$port/v2/entities/$id?options=keyValues";
-            //"?options=keyValues";
-    
+    //"?options=keyValues";
 //    else
 //        $url_orion = "http://$ip:$port/v1/queryContext";
 
     try {
-       
-           $ch= curl_init();
+
+        $ch = curl_init();
         $httpheader = array();
         if ($service != "")
             array_push($httpheader, 'Fiware-Service: ' . $service);
         if ($servicePath != "")
             array_push($httpheader, 'Fiware-ServicePath: ' . $servicePath);
-        
+
         array_push($httpheader, 'Content-Type:application/json');
-         
-        if ($version == "v2"){
-      
-          
-       curl_setopt($ch, CURLOPT_URL, $url_orion);
-      // curl_setopt($ch, CURLOPT_HTTPHEADER, array('Content-Type: application/json','Content-Length: '));
-       curl_setopt($ch, CURLOPT_CUSTOMREQUEST, 'GET');
-      // curl_setopt($ch, CURLOPT_POSTFIELDS,$payload);
-       curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-       
-       
-        
-        }
-        else {
-           
-                curl_setopt_array($ch, array(
+
+        if ($version == "v2") {
+
+
+            curl_setopt($ch, CURLOPT_URL, $url_orion);
+            // curl_setopt($ch, CURLOPT_HTTPHEADER, array('Content-Type: application/json','Content-Length: '));
+            curl_setopt($ch, CURLOPT_CUSTOMREQUEST, 'GET');
+            // curl_setopt($ch, CURLOPT_POSTFIELDS,$payload);
+            curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        } else {
+
+            curl_setopt_array($ch, array(
                 CURLOPT_POST => TRUE,
                 CURLOPT_RETURNTRANSFER => TRUE,
                 CURLOPT_HTTPHEADER => $httpheader
-              //,  CURLOPT_POSTFIELDS => $payload
+                    //,  CURLOPT_POSTFIELDS => $payload
             ));
         }
 
-        $response_orion = curl_exec($ch);       
-         
+        $response_orion = curl_exec($ch);
+
         if ($response_orion === FALSE) {
-           
+
             $result["status"] = "ko";
             $result["error_msg"] = "Error in the connection with the ngsi context broker. ";
             $result["msg"] = "Error in the connection with the ngsi context broker";
             $result["log"] .= "\n Error in the connection with the ngsi context broker";
         } else {
-           
+
             $result["status"] = 'ok';
-            $result["content"]= json_decode($response_orion);
-            $result["isMobile"]=$isMobile?"true":"false";
-                    //'{"status": "Ok - Keeping data"}';
-            
+            $result["content"] = json_decode($response_orion);
+            $result["isMobile"] = $isMobile ? "true" : "false";
+            //'{"status": "Ok - Keeping data"}';
+
             $result["msg"] = 'response from the ngsi context broker ';
             $result["log"] .= '\n response from the ngsi context broker ' . $response_orion;
         }
@@ -3183,9 +3249,41 @@ function Loading_value($link, $id, $type, $cb, $service, $servicePath, $version,
     }
 }
 
+/// Get CB saved
+/// Given id_sub get CB
+
+function get_specific_contextbroker($link, $accessToken, $sub_ID, $resourceLink, &$result) {
+
+    $query = "SELECT * FROM contextbroker where subscription_id='$sub_ID'";
+
+    $r = mysqli_query($link, $query);
+    $infoCB = mysqli_fetch_assoc($r);
+    if (!$r) { //existence of cb is guaranteed from previously enforcement
+        $result["status"] = 'ko';
+        $result["error_msg"] = "Error in reading data from context broker table.";
+        $result["msg"] = ' error in reading data from context broker table' . mysqli_error($link);
+        $result["log"] .= '\n error in reading data from context broker table ' . mysqli_error($link) . $query;
+        return 1;
+    }
+
+
+
+    $infoCB["serviceUriPrefix"] = $resourceLink . $infoCB["name"] . '/' . $infoCB["organization"];
+
+    if ($r) {
+
+
+        $result["status"] = '{"status": "Ok - get info CB "}';
+        $result["content"] = ($infoCB);
+
+        $result["msg"] = 'response from the query about context broker, given id_sub ';
+        $result["log"] .= '\n response from the query about context broker, given id_sub' . $infoCB;
+    }
+}
+
 ///INSERT  value
-function Insert_Value($link, $id, $type, $cb, $service, $servicePath, $version, $payload,  &$result) {
-   
+function Insert_Value($link, $id, $type, $cb, $service, $servicePath, $version, $payload, &$result) {
+
     //retrieve cb information
     $query = "SELECT * from contextbroker WHERE name = '$cb'";
     $r = mysqli_query($link, $query);
@@ -3202,36 +3300,32 @@ function Insert_Value($link, $id, $type, $cb, $service, $servicePath, $version, 
 
     if ($version == "v2")
         $url_orion = "http://$ip:$port/v2/entities/$id/attrs";
-    
+
 //    else
 //        $url_orion = "http://$ip:$port/v1/queryContext";
 
     try {
-       
-           $ch= curl_init();
+
+        $ch = curl_init();
         $httpheader = array();
         if ($service != "")
             array_push($httpheader, 'Fiware-Service: ' . $service);
         if ($servicePath != "")
             array_push($httpheader, 'Fiware-ServicePath: ' . $servicePath);
-        
+
         array_push($httpheader, 'Content-Type:application/json');
-         
-        if ($version == "v2"){
-      
-          
-       curl_setopt($ch, CURLOPT_URL, $url_orion);
-       curl_setopt($ch, CURLOPT_HTTPHEADER, array('Content-Type: application/json','Content-Length: ' . strlen($payload)));
-       curl_setopt($ch, CURLOPT_CUSTOMREQUEST, 'PATCH');
-       curl_setopt($ch, CURLOPT_POSTFIELDS,$payload);
-       curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-       
-       
-        
-        }
-        else {
-           
-                curl_setopt_array($ch, array(
+
+        if ($version == "v2") {
+
+
+            curl_setopt($ch, CURLOPT_URL, $url_orion);
+            curl_setopt($ch, CURLOPT_HTTPHEADER, array('Content-Type: application/json', 'Content-Length: ' . strlen($payload)));
+            curl_setopt($ch, CURLOPT_CUSTOMREQUEST, 'PATCH');
+            curl_setopt($ch, CURLOPT_POSTFIELDS, $payload);
+            curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        } else {
+
+            curl_setopt_array($ch, array(
                 CURLOPT_POST => TRUE,
                 CURLOPT_RETURNTRANSFER => TRUE,
                 CURLOPT_HTTPHEADER => $httpheader,
@@ -3239,19 +3333,19 @@ function Insert_Value($link, $id, $type, $cb, $service, $servicePath, $version, 
             ));
         }
 
-        $response_orion = curl_exec($ch);       
-         
+        $response_orion = curl_exec($ch);
+
         if ($response_orion === FALSE) {
-           
+
             $result["status"] = "ko";
             $result["error_msg"] = "Error in the connection with the ngsi context broker. ";
             $result["msg"] = "Error in the connection with the ngsi context broker";
             $result["log"] .= "\n Error in the connection with the ngsi context broker";
         } else {
-           
+
             $result["status"] = 'ok';
-            $result["content"]= '{"status": "Ok - insert data"}';
-            
+            $result["content"] = '{"status": "Ok - insert data"}';
+
             $result["msg"] = 'response from the ngsi context broker ';
             $result["log"] .= '\n response from the ngsi context broker ' . $response_orion;
         }
@@ -3262,11 +3356,6 @@ function Insert_Value($link, $id, $type, $cb, $service, $servicePath, $version, 
         $result["log"] .= '\n error in connecting with the ngsi context broker ' . $ex;
     }
 }
-
-
-
-
-
 
 function isMobile($staticAttributes) {
     $index1 = strpos($staticAttributes, "http://www.disit.org/km4city/schema#isMobile");
