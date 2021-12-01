@@ -68,10 +68,10 @@ var cid = mysql.createConnection({
 
 cid.connect(function (err) {
     if (err) {
-        console.log('Error connecting to Db');
+        console.log('Error connecting to Db '+c_host+' '+c_port+' '+c_user+' '+c_password+' '+c_database);
         throw err;
     }
-    console.log('Connection established');
+    console.log('Connection established to Db');
 });
 
 var limit = 1000;
@@ -107,7 +107,7 @@ req.onreadystatechange = function () {
     if (this.readyState == 4 && this.status == 200) {
         schema = JSON.parse(this.responseText)["content"];
         if (schema.length > 0) {
-            console.log("tenants/paths structure retrieved");
+            console.log("tenants/paths structure retrieved "+JSON.stringify(schema));
             inferImplicitPaths(schema);
         } else {
             console.log("tenants/paths structure empty response!");
@@ -140,7 +140,7 @@ function inferImplicitPaths(schema) {
             }
         }
     }
-    //console.log(content);
+    console.log(JSON.stringify(schema));
     retrieveDevices(schema)
 }
 
@@ -470,7 +470,7 @@ function getRegisteredDevices(service, servicePath) {
             //console.log("registeredDevices " +registeredDevices.length + " orion length "+ orionDevices.length);
             resolve({
                 registeredDevices: registeredDevices,
-                registeredDevicesWithPath: registeredDevicesWithPath,
+                registeredDevicesWithPGath: registeredDevicesWithPath,
             })
         })
     })
@@ -508,9 +508,10 @@ function getExtractionRules(service, servicePath) {
         var extractionRulesAtt = new Object();
         var query = "SELECT * FROM extractionRules where contextbroker='" + ORION_CB + "'AND service = '" + service + "' AND servicePath = '" + servicePath + "';";
         cid.query(query, function (error, resultRules, fields) {
-            //console.log('result: '+JSON.stringify(resultRules))
+            console.log('result: '+JSON.stringify(resultRules)+JSON.stringify(error))
             if (error) {
                 reject(error);
+                return;
             }
             for (var x = 0; x < resultRules.length; x++) {
                 if (resultRules[x]["kind"].localeCompare("property") == 0) {

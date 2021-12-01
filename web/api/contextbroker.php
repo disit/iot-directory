@@ -34,7 +34,7 @@ include ('common.php');
 $link = mysqli_connect($host, $username, $password) or die("failed to connect to server !!");
 mysqli_select_db($link, $dbname);
 
-error_reporting(E_ERROR | E_NOTICE);
+error_reporting(E_ERROR);
 
 if (!$link->set_charset("utf8")) {
     exit();
@@ -155,7 +155,7 @@ if ($action == 'is_broker_up') {
     }
 
 
-    $query = "SELECT * FROM iotdb.orionbrokers where ( status='free' or  status='taken') and organization= '$organization'";
+    $query = "SELECT * FROM orionbrokers where ( status='free' or  status='taken') and organization= '$organization'";
 
     $r = mysqli_query($link, $query);
     $DefaultCB = mysqli_fetch_assoc($r);
@@ -165,52 +165,123 @@ if ($action == 'is_broker_up') {
         $result["msg"] = ' error in reading data from orionbrokers table' . mysqli_error($link);
         $result["log"] .= '\n error in reading data from orionbrokers table ' . mysqli_error($link) . $query;
         return 1;
-    }
-
-
-    if ($r) {
+    } else {
 
         $result["status"] = '{"status": "Ok - get CB "}';
         $result["content"] = json_encode($DefaultCB);
 
         $result["msg"] = 'response from the query in the  orionbrokers ';
-        $result["log"] .= '\n response from the query  query in the  orionbrokers' . $DefaultCB;
+        $result["log"] .= '\n response from the query  query in the  orionbrokers' . json_encode($DefaultCB);
 
         $name = $DefaultCB["name"];
-        $query2 = "UPDATE iotdb.orionbrokers SET status='taken' WHERE name='$name' and organization='$organization'";
-        //echo $query2;
+
+        $query2 = "UPDATE orionbrokers SET status='taken', status_timestamp=NOW() WHERE name='$name' and organization='$organization'";
         $r2 = mysqli_query($link, $query2);
         $DefaultCB2 = mysqli_fetch_assoc($r2);
         $result["msg2"] = json_encode($DefaultCB2);
-//    if (!$r2) { //existence of cb is guaranteed from previously enforcement
-//        $result["status"] = 'ko';
-//        $result["error_msg"] = "Error in reading data from orionbrokers table.";
-//        $result["msg"] = ' error in reading data from orionbrokers table' . mysqli_error($link);
-//        $result["log"] .= '\n error in reading data from orionbrokers table ' . mysqli_error($link) . $query2;
-//        return 1;
-//    }
-//      
-//
-//    if ($r) {
-//        
-//        $result["status"] ='{"status": "Ok - CB taken"}';
-//        $result["content"] = json_encode($DefaultCB2);
-//
-//        $result["msg"] = 'response from the query in the  orionbrokers ';
-//        $result["log"] .= '\n response from the query  query in the  orionbrokers' . $DefaultCB2;
-//        echo json_encode($result);
-//    }
 
         echo json_encode($result);
     }
+} else if ($action == "update_orion") {
+
+    $name = mysqli_real_escape_string($link, $_REQUEST['name']);
+    $org = mysqli_real_escape_string($link, $_REQUEST['org']);
+
+    $q = "UPDATE `orionbrokers` SET `status`='upgrade', status_timestamp=NOW() where name= '$name' and organization='$org'";
+
+    $r = mysqli_query($link, $q);
+
+    $rupdate = mysqli_fetch_assoc($r);
+
+    if (!$r) {
+        $result["status"] = "ko";
+        $result["error_msg"] = "Error in the connection with the orion context broker. ";
+        $result["msg"] = "Error in the connection with the orion context broker";
+        $result["log"] .= "\n Error in the connection with the orion context broker";
+    } else {
+        $result["status"] = "ok";
+        $result["error_msg"] = "Connection with the orion context broker. ";
+        $result["msg"] = "Succefull connection with the orion context broker";
+        $result["log"] .= "\n Succefull connection with the orion context broker";
+        $result["data"] = json_encode($rupdate);
+    }
+    echo json_encode($result);
+} else if ($action == "orion_version") {
+
+
+
+    $name = mysqli_real_escape_string($link, $_REQUEST['name']);
+    $org = mysqli_real_escape_string($link, $_REQUEST['org']);
+
+    $query_IP = "select ipaddr from  orionbrokers where name= '$name' and organization='$org'";
+    $query_Port = "select external_port from  orionbrokers where name= '$name' and organization='$org'";
+    $query_status = "select status, status_timestamp from  orionbrokers where name= '$name' and organization='$org'";
+
+    $r_IP = mysqli_query($link, $query_IP);
+    $r_Port = mysqli_query($link, $query_Port);
+    $r_status = mysqli_query($link, $query_status);
+    $rupdate_ip = mysqli_fetch_assoc($r_IP);
+    $rupdate_Port = mysqli_fetch_assoc($r_Port);
+    $rupdate_status = mysqli_fetch_assoc($r_status);
+
+    $ip = json_encode($rupdate_ip, true);
+    $ip = substr($ip, 11, -2);
+
+    $port = json_encode($rupdate_Port);
+    $port = substr($port, 18, -2);
+    // echo $port;
+
+    $url_orion = $ip . ':' . $port . '/version';
+    if (substr($url_orion, 0, 4) != 'http') {
+        $url_orion = "http://" . $url_orion;
+    }
+
+
+    //
+    $result["Upstatus"] = null;
+    $result["data"] = null;
+    $result["Upstatus"] = ($rupdate_status);
+    //  echo $result["Upstatus"];
+    // echo $url_orion;
+    try {
+
+        $ch = curl_init($url_orion);
+        $httpheader = array();
+        if ($service != "")
+            array_push($httpheader, 'Fiware-Service: ' . $service);
+        if ($servicePath != "")
+            array_push($httpheader, 'Fiware-ServicePath: ' . $servicePath);
+
+
+        curl_setopt_array($ch, array(
+            CURLOPT_HTTPGET => TRUE,
+            CURLOPT_RETURNTRANSFER => TRUE,
+            CURLOPT_HTTPHEADER => $httpheader,
+        ));
+
+        $response_orion = curl_exec($ch);
+
+        if ($response_orion === FALSE) {
+            $result["status"] = "ko";
+            $result["error_msg"] = "Error in the connection with the ngsi context broker. ";
+            $result["msg"] = "Error in the connection with the ngsi context broker";
+            $result["log"] .= "\n Error in the connection with the ngsi context broker";
+        } else {
+            $result["status"] = "ok";
+            $result["error_msg"] = "Connection with the ngsi context broker. ";
+            $result["msg"] = "Succefull connection with the ngsi context broker";
+            $result["log"] .= "\n Succefull connection with the ngsi context broker";
+            $result["data"] = json_decode($response_orion);
+        }
+    } catch (Exception $ex) {
+        $result["status"] = 'ko';
+        $result["error_msg"] = 'Error in connecting with the ngsi context broker. ';
+        $result["msg"] = 'error in connecting with the ngsi context broker ';
+        $result["log"] .= '\n error in connecting with the ngsi context broker ' . $ex;
+        $result["Upstatus"] = json_decode($rupdate_status);
+    }
+    echo json_encode($result);
 } else if ($action == "insert") {
-
-
-
-
-
-
-
     $missingParams = missingParameters(array('name', 'kind', 'ip', 'port', 'protocol', 'latitude', 'longitude'));
 
     if (!empty($missingParams)) {
@@ -220,6 +291,7 @@ if ($action == 'is_broker_up') {
         $result["log"] = "action=insert - error Missing Parameters: " . implode(", ", $missingParams) . " \r\n";
     } else {
         $name = mysqli_real_escape_string($link, $_REQUEST['name']);
+
         $kind = mysqli_real_escape_string($link, $_REQUEST['kind']);
         $ip = mysqli_real_escape_string($link, $_REQUEST['ip']);
         $port = mysqli_real_escape_string($link, $_REQUEST['port']);
@@ -269,15 +341,12 @@ if ($action == 'is_broker_up') {
         for ($i = 0; $i < count($services); $i++) {
             $services[$i] = mysqli_real_escape_string($link, $services[$i]);
         }
-
-
         ////
         //     
         // change_Status($link, $name, $organization);
-        $query = "UPDATE iotdb.orionbrokers SET status='deploy' WHERE name='$name' and organization='$organization'";
-        $r = mysqli_query($link, $query);
-        $rupdate = mysqli_fetch_assoc($r);
-        echo $rupdate;
+        $enable_direct_access = mysqli_real_escape_string($link, $_REQUEST['input_log']);
+        $id = mysqli_real_escape_string($link, $_REQUEST['id']);
+        $flag_reg = mysqli_real_escape_string($link, $_REQUEST['flag_CB']);
 
         ///
         //id management
@@ -290,7 +359,7 @@ if ($action == 'is_broker_up') {
             $success = TRUE;
             // queries execution
             $q = "INSERT INTO contextbroker(name, ip, kind, protocol, version, port, latitude, longitude, login, password, accesslink, accessport, 
-					path, visibility, sha, organization, urlnificallback)
+					path, visibility, sha, organization, urlnificallback )
 					VALUES('$name', '$ip', '$kind', '$protocol', '$version', '$port', '$latitude', '$longitude', '$login', '$password', '$accesslink','$accessport', 
 					'$path', '$visibility', '$sha', '$organization', '$urlnificallback')";
             if (!mysqli_query($link, $q))
@@ -322,6 +391,27 @@ if ($action == 'is_broker_up') {
                 $ownmsg["elementUrl"] = $accesslink;
                 $ownmsg["elementType"] = "BrokerID";
                 registerOwnerShipObject($ownmsg, $accessToken, 'BrokerID', $result);
+
+                if ($flag_reg == true) {
+                    if ($name != $default_name) {
+                        $query = "UPDATE orionbrokers SET name='$name' WHERE id_orionbroker='$id' ";
+                        $r = mysqli_query($link, $query);
+                        $rupdate = mysqli_fetch_assoc($r);
+                    }
+                    if ($protocol == "ngsi w/MultiService") {
+                        $query = "UPDATE orionbrokers SET multitenacy='true' WHERE id_orionbroker='$id' ";
+                        $r = mysqli_query($link, $query);
+                        $rupdate = mysqli_fetch_assoc($r);
+                    }
+                    if ($enable_direct_access == 'false') {
+			$query = "UPDATE orionbrokers SET status='deploy', enable_direct_access=0 WHERE id_orionbroker='$id' and organization='$organization'";
+                    } else {
+                        $query = "UPDATE orionbrokers SET status='deploy', enable_direct_access=1 WHERE id_orionbroker='$id' and organization='$organization'  ";
+                    }
+                    $r = mysqli_query($link, $query);
+                    $rupdate = mysqli_fetch_assoc($r);
+                    mysqli_commit($link);
+                }
                 if ($result["status"] == 'ok') {
                     logAction($link, $username, 'contextbroker', 'insert', $name, $organization, 'Registering the ownership of CB', 'success');
 
@@ -395,6 +485,7 @@ if ($action == 'is_broker_up') {
         $protocol = mysqli_real_escape_string($link, $_REQUEST['protocol']);
         $latitude = mysqli_real_escape_string($link, $_REQUEST['latitude']);
         $longitude = mysqli_real_escape_string($link, $_REQUEST['longitude']);
+        $direct_access_enable = mysqli_real_escape_string($link, $_REQUEST['log_orion']);
         if (isset($_REQUEST['version']))
             $version = mysqli_real_escape_string($link, $_REQUEST['version']);
         else
@@ -440,9 +531,12 @@ if ($action == 'is_broker_up') {
         }
 
         //get the old urlnificallback info to eventually update. get also organization
-        $q = "SELECT ip, port, urlnificallback, subscription_id, organization FROM iotdb.contextbroker where name='$name'";
+        $q = "SELECT ip, port,urlnificallback, subscription_id,organization FROM iotdb.contextbroker  where name='$name'";
         $r = mysqli_query($link, $q);
+        //$r = mysqli_fetch_assoc($r); 
+
         if ($r) {
+
             while ($row = mysqli_fetch_assoc($r)) {
                 $old_ip = $row["ip"];
                 $old_port = $row["port"];
@@ -469,7 +563,7 @@ if ($action == 'is_broker_up') {
                     // we then check if we have one or more devices with a removed service
                     // if there are such devices, then throw error and abort
                     ////also we handle nifi subscriptions
-                    $q = "SELECT name FROM iotdb.services where broker_name='$name'";
+                    $q = "SELECT name FROM  services where broker_name='$name'";
                     $r = mysqli_query($link, $q);
                     if ($r) {
                         $old_services = [];
@@ -527,7 +621,7 @@ if ($action == 'is_broker_up') {
                                     $result["msg"] = "Error: One or more devices are associated with a deleted Service. Cannot continue. <br/>";
                         } else {
 
-                            if (count($removed_services) > 0 || count($added_services) > 0) {
+                            if (count($removed_services) > 0 || count($added_services) > 0 || $old_subscription_id == "") {
                                 nificallback_delete($old_ip, $old_port, $old_subscription_id, $name, $protocol, $old_services, $result);
                                 nificallback_create($ip, $port, $name, $urlnificallback, $protocol, $services, $result);
 
@@ -556,9 +650,12 @@ if ($action == 'is_broker_up') {
                             $q = "UPDATE contextbroker SET name = '$name', kind = '$kind', ip = '$ip', port = '$port', protocol = '$protocol', 
 									version = '$version', latitude = '$latitude', longitude = '$longitude', login = '$login', password = '$password', 
 									accesslink = '$accesslink', accessport = '$accessport', path = '$path', visibility = '$visibility', sha = '$sha', 
-									organization='$obj_organization', urlnificallback='$urlnificallback'  WHERE name = '$name' and organization='$obj_organization';";
-                            if (!mysqli_query($link, $q))
+									organization='$obj_organization', urlnificallback='$urlnificallback' WHERE name = '$name' and organization='$obj_organization';";
+
+                            if (!mysqli_query($link, $q)) {
                                 $success = FALSE;
+                            }
+
                             // delete old services
                             $qrs = "DELETE FROM services WHERE broker_name = '$name'";
                             if (!mysqli_query($link, $qrs))
@@ -577,6 +674,14 @@ if ($action == 'is_broker_up') {
                                         $success = FALSE;
                                 }
                             }
+                            if ($direct_access_enable=='0' || $direct_access_enable=='1') {
+                                $r = "UPDATE orionbrokers SET enable_direct_access='$direct_access_enable' WHERE name = '$name' and organization='$obj_organization';";
+                                $a = mysqli_query($link, $r);
+                                if (!$a) {
+                                    $success = FALSE;
+                                }
+                            }
+
                             if ($success) {
                                 $ownmsg = array();
                                 $ownmsg["elementId"] = $eId;
@@ -709,6 +814,24 @@ if ($action == 'is_broker_up') {
                         if ($r) {
                             $result["status"] = 'ok';
                             removeOwnerShipObject($elementId, $accessToken, "BrokerID", $result);
+                            $query2 = "UPDATE iotdb.orionbrokers SET status='delete', status_timestamp=NOW() WHERE name='$name'";
+                            $r2 = mysqli_query($link, $query2);
+                            $DefaultCB2 = mysqli_fetch_assoc($r2);
+                            if (!$r2) { //existence of cb is guaranteed from previously enforcement
+                                $result["status"] = 'ko';
+                                $result["error_msg"] = "Error in reading data from orionbrokers table.";
+                                $result["msg"] = ' error in reading data from orionbrokers table' . mysqli_error($link);
+                                $result["log"] .= '\n error in reading data from orionbrokers table ' . mysqli_error($link) . $query2;
+                                return 1;
+                            } else {
+
+                                $result["status"] = 'ok';
+                                $result["content"] = json_encode($DefaultCB2);
+
+                                $result["msg"] = 'response from the query in the  orionbrokers ';
+                                $result["log"] .= '\n response from the query  query in the  orionbrokers' . $DefaultCB2;
+                                //   echo json_encode($result);
+                            }
                             if ($result["status"] == 'ok') {
                                 $result["log"] .= '\n\r action: delete ok. ' . $q;
                                 logAction($link, $username, 'contextbroker', 'delete', $name, $organization, '', 'success');
@@ -740,27 +863,7 @@ if ($action == 'is_broker_up') {
         }
     }
 
-    $query2 = "UPDATE iotdb.orionbrokers SET status='free' WHERE name='$name'";
-    $r2 = mysqli_query($link, $query2);
-    $DefaultCB2 = mysqli_fetch_assoc($r2);
-    if (!$r2) { //existence of cb is guaranteed from previously enforcement
-        $result["status"] = 'ko';
-        $result["error_msg"] = "Error in reading data from orionbrokers table.";
-        $result["msg"] = ' error in reading data from orionbrokers table' . mysqli_error($link);
-        $result["log"] .= '\n error in reading data from orionbrokers table ' . mysqli_error($link) . $query2;
-        return 1;
-    }
 
-
-    if ($r) {
-
-        $result["status"] = 'ok';
-        $result["content"] = json_encode($DefaultCB2);
-
-        $result["msg"] = 'response from the query in the  orionbrokers ';
-        $result["log"] .= '\n response from the query  query in the  orionbrokers' . $DefaultCB2;
-        //   echo json_encode($result);
-    }
 
     my_log($result);
     mysqli_close($link);

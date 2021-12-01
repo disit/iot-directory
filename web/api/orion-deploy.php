@@ -43,7 +43,7 @@ if (isset($_REQUEST['action']) && $_REQUEST['action'] == 'deploy' && isset($_REQ
       $multitenacy = $row['multitenacy'];
       $status = $row['status'];
       $new_status = ($status == 'deploy' ? 'deploying' : ($status == 'upgrade' ? 'upgrading' : 'deleting'));
-      mysqli_query($link, "UPDATE orionbrokers SET status='$new_status' WHERE id_orionbroker=$id") or die(mysqli_error($link));
+      mysqli_query($link, "UPDATE orionbrokers SET status='$new_status', status_timestamp=NOW() WHERE id_orionbroker=$id") or die(mysqli_error($link));
       switch ($status) {
         case 'deploy':
           echo <<<EOT
@@ -66,18 +66,36 @@ EOF
 cd \$NAME
 docker-compose up -d
 
-while ! nc -z $ipaddr $access_port; do   
-  echo wait port $ipaddr:$access_port
+MAX=120
+CNT=0
+while ! nc -z $ipaddr $access_port ; do   
+  if [ \$CNT -ge \$MAX ]; then
+    echo "FAILED $ipaddr:$access_port check"
+    echo "$redirectUri/api/orion-deploy.php?action=set_status&status=failed-orion-check&id=$id"
+    curl -Ss "$redirectUri/api/orion-deploy.php?action=set_status&status=failed-orion-check&id=$id"
+    exit;
+  fi
+  echo wait \$CNT/\$MAX port $ipaddr:$access_port
   sleep 1
+  ((CNT++))
 done
 
+CNT=0
 while ! nc -z $ipaddr $ext_port; do   
-  echo wait port $ipaddr:$ext_port
+  if [ \$CNT -ge \$MAX ]; then
+    echo "FAILED $ipaddr:$ext_port check"
+    echo "$redirectUri/api/orion-deploy.php?action=set_status&status=failed-filter-check&id=$id"
+    curl -Ss "$redirectUri/api/orion-deploy.php?action=set_status&status=failed-filter-check&id=$id"
+    exit;
+  fi
+
+  echo wait \$CNT/\$MAX port $ipaddr:$ext_port
   sleep 1
+  ((CNT++))
 done
 
 echo "$redirectUri/api/orion-deploy.php?action=set_status&status=deployed&id=$id"
-curl "$redirectUri/api/orion-deploy.php?action=set_status&status=deployed&id=$id"
+curl -Ss "$redirectUri/api/orion-deploy.php?action=set_status&status=deployed&id=$id"
 
 EOT;
           break;
@@ -92,18 +110,36 @@ cd \$NAME
 docker pull $orion_image
 docker-compose up -d
 
+MAX=120
+CNT=0
 while ! nc -z $ipaddr $access_port; do
-  echo wait port $ipaddr:$access_port
+  if [ \$CNT -ge \$MAX ]; then
+    echo "FAILED $ipaddr:$access_port check"
+    echo "$redirectUri/api/orion-deploy.php?action=set_status&status=failed-orion-check&id=$id"
+    curl -Ss "$redirectUri/api/orion-deploy.php?action=set_status&status=failed-orion-check&id=$id"
+    exit;
+  fi
+
+  echo wait \$CNT/\$MAX port $ipaddr:$access_port
   sleep 1
+  ((CNT++))
 done
 
+CNT=0
 while ! nc -z $ipaddr $ext_port; do
-  echo wait port $ipaddr:$ext_port
+  if [ \$CNT -ge \$MAX ]; then
+    echo "FAILED $ipaddr:$ext_port check"
+    echo "$redirectUri/api/orion-deploy.php?action=set_status&status=failed-filter-check&id=$id"
+    curl -Ss "$redirectUri/api/orion-deploy.php?action=set_status&status=failed-filter-check&id=$id"
+    exit;
+  fi
+
+  echo wait \$CNT/\$MAX port $ipaddr:$ext_port
   sleep 1
 done
 
 echo "$redirectUri/api/orion-deploy.php?action=set_status&status=upgraded&id=$id"
-curl "$redirectUri/api/orion-deploy.php?action=set_status&status=upgraded&id=$id"
+curl -Ss "$redirectUri/api/orion-deploy.php?action=set_status&status=upgraded&id=$id"
 
 EOT;
 
@@ -115,7 +151,7 @@ cd \$NAME
 docker-compose down 
 
 echo "$redirectUri/api/orion-deploy.php?action=set_status&status=deleted&id=$id"
-curl "$redirectUri/api/orion-deploy.php?action=set_status&status=deleted&id=$id"
+curl -Ss "$redirectUri/api/orion-deploy.php?action=set_status&status=deleted&id=$id"
 
 EOT;
 
@@ -126,8 +162,8 @@ EOT;
 } else if ($_REQUEST['action'] == 'set_status' && isset($_REQUEST['id']) && isset($_REQUEST['status'])) {
   $id = mysqli_real_escape_string($link, $_REQUEST['id']);
   $newstatus = mysqli_real_escape_string($link, $_REQUEST['status']);
-  if(in_array($newstatus, array('deployed','upgraded','deleted'))) {
-    mysqli_query($link, "UPDATE orionbrokers SET status='$newstatus' WHERE id_orionbroker='$id'") or die(mysqli_error($link));
+  if(in_array($newstatus, array('deployed','upgraded','deleted','failed-orion-check','failed-filter-check'))) {
+    mysqli_query($link, "UPDATE orionbrokers SET status='$newstatus', status_timestamp=NOW() WHERE id_orionbroker='$id'") or die(mysqli_error($link));
   }
 } else if ($_REQUEST['action'] == 'nginx_proxy') {
   $query = "SELECT * FROM orionbrokers where status in ('deployed','upgraded')";
@@ -152,6 +188,18 @@ location  /orionfilter/$name/v2 {
   proxy_read_timeout 60;
   send_timeout 60;
   proxy_pass "https://$ipaddr:$access_port/orionbrokerfilter/v2";
+}
+location  /orionfilter/$name/v1 {
+  proxy_set_header Host \$http_host;
+  proxy_set_header X-Real-IP \$remote_addr;
+  proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
+  proxy_set_header X-Forwarded-Proto \$scheme;
+  proxy_http_version 1.1;
+  proxy_connect_timeout 60;
+  proxy_send_timeout 60;
+  proxy_read_timeout 60;
+  send_timeout 60;
+  proxy_pass "https://$ipaddr:$access_port/orionbrokerfilter/v1";
 }
 
 EOT;

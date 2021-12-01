@@ -744,12 +744,65 @@ function removeDelegationValue($token, $user, $delegationId, &$result) {
     }
 }
 
+function getUserDelegatedDevice($token, $user, $type, &$result) {
+    $local_result = "";
+    $mykeys = (isset($result['delegation']) ? $result['delegation'] : array());
+    try {
+        $url = $GLOBALS["delegationURI"] . "datamanager/api/v2/username/" . urlencode($user) . "/delegated?accessToken=" . $token .
+                "&sourceRequest=iotdirectory&elementType=" . $type;
+        $local_result = file_get_contents($url);
+    } catch (Exception $ex) {
+        $result["status"] = 'ko';
+        $result["error_msg"] .= 'Error in accessing the delegation. ';
+        $result["msg"] .= '\n error in accessing the delegation ';
+        $result["log"] .= '\n error in accessing the delegation ' . $ex;
+    }
+    if (strpos($http_response_header[0], '200') == true || strpos($http_response_header[0], '204') == true) {
+        $lists = json_decode($local_result);
+        for ($i = 0; $i < count($lists); $i++) {
+            if (isset($lists[$i]->elementType) && ($lists[$i]->elementType == "ServiceURI" || $lists[$i]->elementType == "IOTID")) {
+                $a = $lists[$i]->elementId;
+                if (isset($lists[$i]->delegationDetails)) {
+                    $delegationDetails = json_decode($lists[$i]->delegationDetails);
+                    $mykeys[$a] = array("usernameDelegator" => $lists[$i]->usernameDelegator, "delegationId" => $lists[$i]->id, "kind" => 'specific', "k1" => $delegationDetails->k1, "k2" => $delegationDetails->k2);
+                } else {
+                    $mykeys[$a] = array("usernameDelegator" => $lists[$i]->usernameDelegator, "delegationId" => $lists[$i]->id, "kind" => 'specific', "k1" => "", "k2" => "");
+                }
+            }
+        }
+        $result["status"] = 'ok';
+        $result["delegation"] = $mykeys;
+ 
+    } else {
+        $result["status"] = 'ko';
+        $result["error_msg"] .= 'Errors in reading delegations personal. ';
+        $result["msg"] .= '\n errors in reading delegations personal ' . $local_result . $url . "------" . $http_response_header[0];
+        $result["log"] .= '\n errors in reading delegations personal' . $local_result . $url . "------" . $http_response_header[0];
+    }
+}
+
+function getDelegatedDevice($token, $user, &$result) {
+    getUserDelegatedDevice($token, $user, "IOTID", $result);
+    if($result['status']=='ko')
+        return;
+
+    getUserDelegatedDevice($token, "ANONYMOUS", "IOTID", $result);
+    if($result['status']=='ko')
+        return;
+
+    getUserDelegatedDevice($token, $user, "ServiceURI", $result);
+    if($result['status']=='ko')
+        return;
+
+    getUserDelegatedDevice($token, "ANONYMOUS", "ServiceURI", $result);
+}
+/*
 function getDelegatedDevice($token, $user, &$result) {
     $local_result = "";
     $mykeys = array();
     try {
         $url = $GLOBALS["delegationURI"] . "datamanager/api/v2/username/" . urlencode($user) . "/delegated?accessToken=" . $token .
-                "&sourceRequest=iotdirectory";
+                "&sourceRequest=iotdirectory"; //&elementType=IOTID";
         $local_result = file_get_contents($url);
     } catch (Exception $ex) {
         $result["status"] = 'ko';
@@ -771,10 +824,9 @@ function getDelegatedDevice($token, $user, &$result) {
                 }
             }
         }
-
         try {
             $url = $GLOBALS["delegationURI"] . "datamanager/api/v1/username/ANONYMOUS/delegated?accessToken=" . $token .
-                    "&sourceRequest=iotdirectory";
+                    "&sourceRequest=iotdirectory"; //&elementType=IOTID";
             $local_result = file_get_contents($url);
 
             if (strpos($http_response_header[0], '200') == true || strpos($http_response_header[0], '204') == true) {
@@ -811,12 +863,12 @@ function getDelegatedDevice($token, $user, &$result) {
         $result["log"] .= '\n errors in reading delegations personal' . $local_result . $url . "------" . $http_response_header[0];
     }
 }
-
+*/
 function getDelegatedObject($token, $user, $object, &$result) {
     $local_result = "";
     $mykeys = array();
     try {
-        $url = $GLOBALS["delegationURI"] . "datamanager/api/v2/username/" . urlencode($user) . "/delegated?accessToken=" . $token . "&sourceRequest=iotdirectory";
+        $url = $GLOBALS["delegationURI"] . "datamanager/api/v2/username/" . urlencode($user) . "/delegated?accessToken=" . $token . "&sourceRequest=iotdirectory&elementType=" . $object;
         $local_result = file_get_contents($url);
     } catch (Exception $ex) {
         $result["status"] = 'ko';
@@ -833,7 +885,7 @@ function getDelegatedObject($token, $user, $object, &$result) {
             }
         }
         try {
-            $url = $GLOBALS["delegationURI"] . "datamanager/api/v1/username/ANONYMOUS/delegated?accessToken=" . $token . "&sourceRequest=iotdirectory";
+            $url = $GLOBALS["delegationURI"] . "datamanager/api/v1/username/ANONYMOUS/delegated?accessToken=" . $token . "&sourceRequest=iotdirectory&elementType=" . $object;
             $local_result = file_get_contents($url);
             if (strpos($http_response_header[0], '200') == true || strpos($http_response_header[0], '204') == true) {
                 $lists = json_decode($local_result);
@@ -2467,6 +2519,7 @@ function nificallback_create($ip, $port, $name, $urlnificallback, $protocol, $se
             } else {
                 $result["retry"] = true;
                 $result["log"] .= "\n Error returned or not reachable";
+                break;
             }
             //return status==ok even if the subscription failed
         }
@@ -2639,6 +2692,7 @@ function is_broker_up($link, $cb, $service, $servicePath, $version, $organizatio
     else
         $url_orion = "http://$ip:$port/v1/queryContext";
 
+
     try {
 
         $ch = curl_init($url_orion);
@@ -2648,13 +2702,14 @@ function is_broker_up($link, $cb, $service, $servicePath, $version, $organizatio
         if ($servicePath != "")
             array_push($httpheader, 'Fiware-ServicePath: ' . $servicePath);
 
-        if ($version == "v2")
+        if ($version == "v2") {
             curl_setopt_array($ch, array(
                 CURLOPT_HTTPGET => TRUE,
                 CURLOPT_RETURNTRANSFER => TRUE,
-                CURLOPT_HTTPHEADER => $httpheader,
+                CURLOPT_HTTPHEADER => $httpheader
             ));
-        else {
+            curl_setopt($ch, CURLOPT_TIMEOUT, 30);
+        } else {
             array_push($httpheader, 'Content-Type:application/json');
             $payload = "{\"entities\":[{\"isPattern\": \"true\",  \"id\": \".*\"}]}";
             curl_setopt_array($ch, array(
@@ -2663,6 +2718,7 @@ function is_broker_up($link, $cb, $service, $servicePath, $version, $organizatio
                 CURLOPT_HTTPHEADER => $httpheader,
                 CURLOPT_POSTFIELDS => $payload
             ));
+            curl_setopt($ch, CURLOPT_TIMEOUT, 30);
         }
         $response_orion = curl_exec($ch);
 
@@ -2671,32 +2727,12 @@ function is_broker_up($link, $cb, $service, $servicePath, $version, $organizatio
             $result["error_msg"] = "Error in the connection with the ngsi context broker. ";
             $result["msg"] = "Error in the connection with the ngsi context broker";
             $result["log"] .= "\n Error in the connection with the ngsi context broker";
-
-            $query = "SELECT status from iotdb.orionbrokers where name='$cb'";
-
-            $r = mysqli_query($link, $query);
-            $DefaultCB = mysqli_fetch_assoc($r);
-            if (!$r) { //existence of cb is guaranteed from previously enforcement
-                $result["status"] = 'ko';
-                $result["error_msg"] = "Error in reading data from orionbrokers table.";
-                $result["msg"] = ' error in reading data from orionbrokers table' . mysqli_error($link);
-                $result["log"] .= '\n error in reading data from orionbrokers table ' . mysqli_error($link) . $query;
-                return 1;
-            }
-
-
-            if ($r) {
-
-                $result["status"] = '{"status": "Ok - get status of CB "}';
-                $result["content"] = json_encode($DefaultCB);
-                $result["msg"] = 'response from the query in the  orionbrokers ';
-                $result["log"] .= '\n response from the query  query in the  orionbrokers' . $DefaultCB;
-            }
         } else {
 
             $result["status"] = 'ok';
             $result["msg"] = 'response from the ngsi context broker ';
             $result["log"] .= '\n response from the ngsi context broker ' . $response_orion;
+            $result["content"] = $url_orion;
         }
     } catch (Exception $ex) {
         $result["status"] = 'ko';
@@ -2805,7 +2841,6 @@ function change_Status($link, $name, $organization) {
 }
 
 function get_all_contextbrokers($username, $organization, $loggedrole, $accessToken, $link, $length, $start, $draw, $request, $selection, &$result) {
-
     getOwnerShipObject($accessToken, "BrokerID", $result);
     getDelegatedObject($accessToken, $username, "BrokerID", $result);
 
@@ -2838,7 +2873,8 @@ function get_all_contextbrokers($username, $organization, $loggedrole, $accessTo
         while ($row = mysqli_fetch_assoc($r)) {
             $idTocheck = $row["organization"] . ":" . $row["name"];
 
-            $row["dynamic"] = "";
+            $row["dynamic"] = false;
+            $row["enable_direct_access"] = false;
 
             $p = "SELECT status FROM orionbrokers where name= '" . $row["name"] . "' AND organization = '" . $row["organization"] . "';";
 
@@ -2850,6 +2886,17 @@ function get_all_contextbrokers($username, $organization, $loggedrole, $accessTo
                 $row["dynamic"] = true;
             } else {
                 $row["dynamic"] = false;
+            }
+            $p = "SELECT  enable_direct_access FROM orionbrokers where name= '" . $row["name"] . "' AND organization = '" . $row["organization"] . "';";
+
+            $rq = mysqli_query($link, $p);
+
+            $Prov = (mysqli_fetch_assoc($rq));
+
+            if ($Prov['enable_direct_access']==1) {
+                $row["enable_direct_access"] = true;
+            } else {
+                $row["enable_direct_access"] = false;
             }
 
             if (
@@ -3203,23 +3250,18 @@ function Loading_value($link, $id, $type, $cb, $service, $servicePath, $version,
         if ($servicePath != "")
             array_push($httpheader, 'Fiware-ServicePath: ' . $servicePath);
 
-        array_push($httpheader, 'Content-Type:application/json');
-
         if ($version == "v2") {
-
-
             curl_setopt($ch, CURLOPT_URL, $url_orion);
-            // curl_setopt($ch, CURLOPT_HTTPHEADER, array('Content-Type: application/json','Content-Length: '));
+            curl_setopt($ch, CURLOPT_HTTPHEADER, $httpheader);
             curl_setopt($ch, CURLOPT_CUSTOMREQUEST, 'GET');
-            // curl_setopt($ch, CURLOPT_POSTFIELDS,$payload);
             curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
         } else {
+            array_push($httpheader, 'Content-Type:application/json');
 
             curl_setopt_array($ch, array(
                 CURLOPT_POST => TRUE,
                 CURLOPT_RETURNTRANSFER => TRUE,
                 CURLOPT_HTTPHEADER => $httpheader
-                    //,  CURLOPT_POSTFIELDS => $payload
             ));
         }
 
@@ -3254,7 +3296,7 @@ function Loading_value($link, $id, $type, $cb, $service, $servicePath, $version,
 
 function get_specific_contextbroker($link, $accessToken, $sub_ID, $resourceLink, &$result) {
 
-    $query = "SELECT * FROM contextbroker where subscription_id='$sub_ID'";
+    $query = "SELECT * FROM contextbroker where subscription_id like '%$sub_ID%'";
 
     $r = mysqli_query($link, $query);
     $infoCB = mysqli_fetch_assoc($r);
@@ -3265,7 +3307,6 @@ function get_specific_contextbroker($link, $accessToken, $sub_ID, $resourceLink,
         $result["log"] .= '\n error in reading data from context broker table ' . mysqli_error($link) . $query;
         return 1;
     }
-
 
 
     $infoCB["serviceUriPrefix"] = $resourceLink . $infoCB["name"] . '/' . $infoCB["organization"];
@@ -3314,12 +3355,13 @@ function Insert_Value($link, $id, $type, $cb, $service, $servicePath, $version, 
             array_push($httpheader, 'Fiware-ServicePath: ' . $servicePath);
 
         array_push($httpheader, 'Content-Type:application/json');
+        array_push($httpheader, 'Content-Length: ' . strlen($payload));
 
         if ($version == "v2") {
 
 
             curl_setopt($ch, CURLOPT_URL, $url_orion);
-            curl_setopt($ch, CURLOPT_HTTPHEADER, array('Content-Type: application/json', 'Content-Length: ' . strlen($payload)));
+            curl_setopt($ch, CURLOPT_HTTPHEADER, $httpheader);
             curl_setopt($ch, CURLOPT_CUSTOMREQUEST, 'PATCH');
             curl_setopt($ch, CURLOPT_POSTFIELDS, $payload);
             curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
@@ -3375,12 +3417,12 @@ function guidv4() {
 function logAction($link, $accessed_by, $target_entity_type, $access_type, $entity_name, $organization, $notes, $result) {
     $query = "INSERT INTO access_log(accessed_by,target_entity_type,access_type,entity_name,organization,notes,result) " .
             "VALUES('$accessed_by','$target_entity_type','$access_type','$entity_name','$organization','" . substr($notes, 0, 65000) . "','$result')";
-    $res = mysqli_query($link, $query) or die(mysqli_error($link));
+    $res = mysqli_query($link, $query);
     if ($res) {
         $result["msg"] = "correctly logged\n" . $accessed_by . " " . $target_entity_type . " " . $access_type . " " . $entity_name .
                 " " . $notes;
     } else {
-        $result["msg"] = "error in inserting log\n";
+	$result["log"] .= " --- error in inserting log ".$query."\n";
     }
     return $result["msg"];
 }

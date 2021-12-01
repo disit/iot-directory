@@ -8,9 +8,11 @@ function valueTypeChanged(indice) {
 
     //remove old value units
     valueUnitNew = $("#value_unit" + indice).find("option").remove().end();
+    DataTypeNew = $("#data_type" + indice).find("mydatatypes").remove().end();
 
     //retrieve valid value units basing on new value type selected (selected value unit is discarged)
     validValueUnit = getValidValueUnit(valueTypeNew, "");
+    validDataType =  getValidDataType(valueTypeNew, "");
 
     //if there are any valid value units, present to the users
     if (validValueUnit !== "") {
@@ -23,11 +25,27 @@ function valueTypeChanged(indice) {
         valueUnitNew.append(validValueUnit);
     }
 
+if (validDataType !== "") {
+        if (!validDataType.includes('selected')) {
+            DataTypeNew.append("<option hidden disabled selected value=\"NOT VALID OPTION\"> -- select an option -- </option>");
+            //update msg_value_unit
+            $("#data_type" + indice).parent().siblings().last().css("color", "red");
+            $("#data_type" + indice).parent().siblings().last().html("Data type is mandatory");
+        }
+        DataTypeNew.append(validDataType);
+    }
     //update msg_value_type
     $("#value_type" + indice).parent().siblings().last().css("color", "#337ab7");
     $("#value_type" + indice).parent().siblings().last().html("Ok");
+//    $("#data_type" + indice).parent().siblings().last().css("color", "#337ab7");
+//    $("#data_type" + indice).parent().siblings().last().html("Ok");
 }
+//function DataTypeChanged(indice) {
 
+    //update msg_value_unit
+//    $("#data_type" + indice).parent().siblings().last().css("color", "#337ab7");
+//    $("#data_type" + indice).parent().siblings().last().html("Ok");
+//}
 function valueUnitChanged(indice) {
 
     //update msg_value_unit
@@ -40,12 +58,16 @@ function valueTypeChangedM(indice) {
 
     //get new value type that has been selected
     valueTypeNew = $("#Mvalue_type" + indice).val();
+    
 
     //remove old value units
     valueUnitNew = $("#Mvalue_unit" + indice).find("option").remove().end();
+    
+   // validDataType=  $("#Mdata_type" + indice).find("mydatatype").remove().end();
 
     //retrieve valid value units basing on new value type selected (selected value unit is discarged)
     validValueUnit = getValidValueUnit(valueTypeNew, "");
+   // validDataType =  getValidDataType(valueTypeNew, "");
 
     //if there are any valid value units, present to the users
     if (validValueUnit !== "") {
@@ -57,6 +79,17 @@ function valueTypeChangedM(indice) {
         }
         valueUnitNew.append(validValueUnit);
     }
+
+// if (validDataType !== "") {
+//        if (!validDataType.includes('selected')) {
+//            DataTypeNew.append("<option hidden disabled selected value=\"NOT VALID OPTION\"> -- select an option -- </option>");
+//            //update msg_value_unit
+//            $("#Mvalue_unit" + indice).parent().siblings().last().css("color", "red");
+//            $("#Mvalue_unit" + indice).parent().siblings().last().html("Value unit is mandatory");
+//        }
+//        DataTypeNew.append(validDataType);
+//    }
+
 
     //update msg_value_type
     $("#Mvalue_type" + indice).parent().siblings().last().css("color", "#337ab7");
@@ -71,7 +104,44 @@ function valueUnitChangedM(indice) {
 }
 
 
+function getValidDataType(valueType, data_type) {
 
+    valueTypeObj = "";
+    toReturn = "";
+
+    //get value type STRUCTURE for passed valueType
+    for (var n = 0; n < gb_value_types.length; n++)
+         if (gb_value_types[n].value === valueType)
+            valueTypeObj = gb_value_types[n];
+
+    //console.log("Get validValueUnit for "+valueType);
+    //console.log("Accepte valueUnit are"+JSON.stringify(valueTypeObj));
+
+    //add new value unit OPTIONS according to new value type STRUCTURE
+    if (valueTypeObj !== "")
+    {
+        if (valueTypeObj.data_type_value.length === 0)
+        {
+            toReturn += "<option selected value=\"-\">-</option>";//by default insert -
+        } else
+            for (var n = 0; n < valueTypeObj.data_type_value.length; n++)
+            {
+//                for (var j = 0; j < valueTypeObj.children_value.length; j++)
+              //  {
+                   // if (valueTypeObj.data_type_value[j] === gb_datatypes[n])
+                   // {
+                        //if (( gb_value_types[n].data_type_value === data_type) )
+                            toReturn += "<option selected value=\"" + valueTypeObj.data_type_value[n] + "\">" +  valueTypeObj.data_type_value[n] + " </option>";
+//                        else
+//                            toReturn += "<option value=\"" +  gb_value_types[n].data_type_value + "\">" +  gb_value_types[n].data_type_value + "</option>";
+                   // }
+                }
+          //  }
+    }
+
+    return toReturn;
+}
+;
 
 function getValidValueUnit(valueType, selectedValueUnit) {
 

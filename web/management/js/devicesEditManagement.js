@@ -15,7 +15,7 @@ function showEditDeviceModal()
 	//editDeviceConditionsArray['KeyTwoDeviceUserM'] = false;
 	
 	
-	$("#editDeviceConfirmBtn").attr("disabled", true);
+	//$("#editDeviceConfirmBtn").attr("disabled", false);
 	
     $("#editInfoTabDevice #inputTypeDeviceM").on('input', function(){checkEditDeviceType();checkEditDeviceConditions();}); 
 	
@@ -51,7 +51,22 @@ function showEditDeviceModal()
 	
 }
 
+function theSameNameAgain(myAttributes, mynewAttributes){
+    AllAtt=myAttributes.concat(mynewAttributes);
+    NameAllAtt=[];
+   for(var i=0; i< AllAtt.length;i++ ){
+       if(!NameAllAtt.includes(AllAtt[i].value_name)){
+         NameAllAtt[i]=AllAtt[i].value_name;
+     }else{
+         NameAllAtt[i]='';
+     }
+     
+   }
+   if(NameAllAtt.includes(''))
+       return false;
 
+    return true;
+}
 function checkEditDeviceName()
 {
     var message = null;
@@ -274,7 +289,7 @@ function checkEditDeviceConditions()
 	}
 
 	//check that any value has a correct name/syntax. this enforce is done here since the list of values is dynamic
-	var regex=/[^a-z0-9:._-]/gi;
+	var regex=/([^a-z0-9:._-])/gi  ;
 	var o = $('#editSchemaTabDevice #editlistAttributes .row input.valueName').filter(function(){return !regex.test(this.value)}).length;
 	var ox = $('#editSchemaTabDevice #addlistAttributesM .row input.valueName').filter(function(){return !regex.test(this.value)}).length;
 
@@ -287,6 +302,7 @@ function checkEditDeviceConditions()
 	{
 		editDeviceConditionsArray['specialChars'] = false;
 	}
+      
 
 	//check that any value has a value type selected
 	var p = $('#editSchemaTabDevice #editlistAttributes select[id*="value_type"]').filter(function(){return this.value!=="NOT VALID OPTION"}).length;
@@ -347,11 +363,17 @@ function checkEditValueName(current)
 
     var message = null;
     var regex=/[^a-z0-9:._-]/gi;
+      var regex2=/\bid\b/;
+     var regex3= /\btype\b/;
 
     if  (!value || value.length === 0)
     {
         element.css("color", "red");
         message = 'Value name is mandatory';
+    }else if(regex2.test(value) || regex3.test(value) )
+    {
+        element.css("color", "red");
+        message = 'No valid Value name: you can not use <b>id</b> or  <b>type</b>';
     }
     else if(value.length < 2)
     {

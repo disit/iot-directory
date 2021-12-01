@@ -307,7 +307,9 @@ function checkValueName(current)
 
     var message = null;
     var regex=/[^a-z0-9:._-]/gi;
-	
+    var regex2=/\bid\b/;
+     var regex3= /\btype\b/;
+     
     if 	(!value || value.length === 0)
     {
         element.css("color", "red");
@@ -317,6 +319,10 @@ function checkValueName(current)
     {
         element.css("color", "red");
         message = 'Value name (at least 2 chars long)';
+    }else if(regex2.test(value) || regex3.test(value) )
+    {
+        element.css("color", "red");
+        message = 'No valid Value name: you can not use <b>id</b> or  <b>type</b>';
     }
     else if(regex.test(value))
     {

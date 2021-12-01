@@ -1101,11 +1101,11 @@ else if ($action == 'change_visibility') {
         $version = mysqli_real_escape_string($link, $_REQUEST['version']);
 
         // $payload =  $_REQUEST['payload'];
-        if (isset($_REQUEST['service']))
+        if (isset($_REQUEST['service']) && $_REQUEST['service']!="null")
             $service = mysqli_real_escape_string($link, $_REQUEST['service']);
         else
             $service = "";
-        if (isset($_REQUEST['servicePath']))
+        if (isset($_REQUEST['servicePath']) && $_REQUEST['servicePath']!="null")
             $servicePath = mysqli_real_escape_string($link, $_REQUEST['servicePath']);
         else
             $servicePath = "";
@@ -1182,11 +1182,11 @@ else if ($action == 'Insert_Value'){
         $cb = mysqli_real_escape_string($link, $_REQUEST['contextbroker']);
         $version = mysqli_real_escape_string($link, $_REQUEST['version']);
         $payload = $_REQUEST['payload'];
-        if (isset($_REQUEST['service']))
+        if (isset($_REQUEST['service']) && $_REQUEST['service']!="null")
             $service = mysqli_real_escape_string($link, $_REQUEST['service']);
         else
             $service = "";
-        if (isset($_REQUEST['servicePath']))
+        if (isset($_REQUEST['servicePath']) && $_REQUEST['servicePath']!="null")
             $servicePath = mysqli_real_escape_string($link, $_REQUEST['servicePath']);
         else
             $servicePath = "";

@@ -119,7 +119,7 @@ function format ( d ) {
 				'<div class="col-xs-6 col-sm-6" style="background-color:#E6E6FA;"><b>Gateway/Edge Uri:</b>' + "  " + d.edgegateway_uri  + '</div>' +	
 			'</div>' +
 			'<div class="row">' +
-				'<div class="col-xs-12 col-sm-12" style="background-color:#D6CADD;"><b>Device Uri:</b>' + "  <a href=\""+d.uri+"\">" + d.uri + '</a></div>' +
+				'<div class="col-xs-12 col-sm-12" style="background-color:#D6CADD;"><b>Device Uri:</b> <a href="'+d.uri+'">' + d.uri + '</a></div>' +
 				'<div class="clearfix visible-xs"></div>' +
 			'</div>';
 	}

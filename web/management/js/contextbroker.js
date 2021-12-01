@@ -63,35 +63,140 @@ function aggiornaStub()
 }
 
 function format(d) {
+//     return '<div class="container-fluid">' +
+//            '<div class="row">' +
+//            '<div class="col-xs-6 col-sm-6" style="background-color:#E6E6FA;"><b>Broker URI:</b>' + "  " + d.accesslink + '</div>' +
+//            '<div class="clearfix visible-xs"></div>' +
+//            '<div class="col-xs-6 col-sm-6" style="background-color:#E6E6FA;"><b>Broker Port:</b>' + "  " + d.accessport + '</div>' +
+//            '</div>' +
+//            '<div class="row">' +
+//            '<div class="col-xs-6 col-sm-6" style="background-color:#D6CADD;"><b>Latitude:</b>' + "  " + d.latitude + '</div>' +
+//            '<div class="clearfix visible-xs"></div>' +
+//            '<div class="col-xs-6 col-sm-6" style="background-color:#D6CADD;"><b>Longitude:</b>' + "  " + d.longitude + '</div>' +
+//            '</div>' +
+//            '<div class="row">' +
+//            '<div class="col-xs-6 col-sm-6" style="background-color:#E6E6FA;"><b>Login:</b>' + "  " + d.login + '</div>' +
+//            '<div class="clearfix visible-xs"></div>' +
+//            '<div class="col-xs-6 col-sm-6" style="background-color:#E6E6FA;"><b>Password:</b>' + "  " + d.password + '</div>' +
+//            '</div>' +            
+//            '<div class="row">' +
+//            '<div class="col-xs-6 col-sm-6" style="background-color:#D6CADD;"><b>SHA:</b>' + "  " + d.sha + '</div>' +
+//            '<div class="clearfix visible-xs"></div>' +
+//            '<div class="col-xs-6 col-sm-6" style="background-color:#D6CADD;"><b>Version:</b>' + "  " + d.version + '</div>' +     
+//             '</div>' +            
+//              
+//            
+//            '<div class="row">' +
+//            '<div class="col-xs-6 col-sm-6" style="background-color:#E6E6FA;"><b>Orion version:</b>' + "  " + '<span id=\"Version_api\" class=\"rsvp\" ></span>' +  '</div>' +
+//            '<div class="col-xs-6 col-sm-6" style="background-color:#E6E6FA;"><b>Orion status:</b>' + "  " + '<span id=\"Version_status\" class=\"rsvp\" ></span>' + 
+//            '<button id="Update_version_CB" class="btn btn-info my-small-button pull-right" type="button" data-org="' + d.organization + '"  data-name="' + d.name + '" onclick="UpDateOrion()">TRY UPDATE</button></div>' +
+//            '</div>' +  
+//            '</div>' +
+//            '</div>' +
+//            '</div>' +
+//            '</div>';
+
+    if (d.dynamic == true) {
+        return '<div class="container-fluid">' +
+                '<div class="row">' +
+                '<div class="col-xs-6 col-sm-6" style="background-color:#E6E6FA;"><b>Broker URI:</b>' + "  " + d.accesslink + '</div>' +
+                '<div class="clearfix visible-xs"></div>' +
+                '<div class="col-xs-6 col-sm-6" style="background-color:#E6E6FA;"><b>Broker Port:</b>' + "  " + d.accessport + '</div>' +
+                '</div>' +
+                '<div class="row">' +
+                '<div class="col-xs-6 col-sm-6" style="background-color:#D6CADD;"><b>Latitude:</b>' + "  " + d.latitude + '</div>' +
+                '<div class="clearfix visible-xs"></div>' +
+                '<div class="col-xs-6 col-sm-6" style="background-color:#D6CADD;"><b>Longitude:</b>' + "  " + d.longitude + '</div>' +
+                '</div>' +
+                '<div class="row">' +
+                '<div class="col-xs-6 col-sm-6" style="background-color:#E6E6FA;"><b>Login:</b>' + "  " + d.login + '</div>' +
+                '<div class="clearfix visible-xs"></div>' +
+                '<div class="col-xs-6 col-sm-6" style="background-color:#E6E6FA;"><b>Password:</b>' + "  " + d.password + '</div>' +
+                '</div>' +
+                '<div class="row">' +
+                '<div class="col-xs-6 col-sm-6" style="background-color:#D6CADD;"><b>SHA:</b>' + "  " + d.sha + '</div>' +
+                '<div class="clearfix visible-xs"></div>' +
+                '<div class="col-xs-6 col-sm-6" style="background-color:#D6CADD;"><b>Version:</b>' + "  " + d.version + '</div>' +
+                '<div class="row">' +
+                '<div class="col-xs-6 col-sm-6" style="background-color:#E6E6FA;"><b>Orion version:</b>' + "  " + '<span id=\"Version_api\" class=\"rsvp\" ></span>' + '</div>' +
+                '<div class="col-xs-6 col-sm-6" style="background-color:#E6E6FA;"><b>Orion status:</b>' + "  " + '<span id=\"Version_status\" class=\"rsvp\" ></span>' +
+                '<button id="Update_version_CB" class="btn btn-info my-small-button pull-right" type="button" data-org="' + d.organization + '"  data-name="' + d.name + '" onclick="UpDateOrion()">UPDATE</button></div>' +
+                '</div>' +
+                '</div>' +
+                '</div>' +
+                '</div>' +
+                '</div>' +
+                '</div>';
+    } else if (d.dynamic == false) {
+        return '<div class="container-fluid">' +
+                '<div class="row">' +
+                '<div class="col-xs-6 col-sm-6" style="background-color:#E6E6FA;"><b>Broker URI:</b>' + "  " + d.accesslink + '</div>' +
+                '<div class="clearfix visible-xs"></div>' +
+                '<div class="col-xs-6 col-sm-6" style="background-color:#E6E6FA;"><b>Broker Port:</b>' + "  " + d.accessport + '</div>' +
+                '</div>' +
+                '<div class="row">' +
+                '<div class="col-xs-6 col-sm-6" style="background-color:#D6CADD;"><b>Latitude:</b>' + "  " + d.latitude + '</div>' +
+                '<div class="clearfix visible-xs"></div>' +
+                '<div class="col-xs-6 col-sm-6" style="background-color:#D6CADD;"><b>Longitude:</b>' + "  " + d.longitude + '</div>' +
+                '</div>' +
+                '<div class="row">' +
+                '<div class="col-xs-6 col-sm-6" style="background-color:#E6E6FA;"><b>Login:</b>' + "  " + d.login + '</div>' +
+                '<div class="clearfix visible-xs"></div>' +
+                '<div class="col-xs-6 col-sm-6" style="background-color:#E6E6FA;"><b>Password:</b>' + "  " + d.password + '</div>' +
+                '</div>' +
+                '<div class="row">' +
+                '<div class="col-xs-6 col-sm-6" style="background-color:#D6CADD;"><b>SHA:</b>' + "  " + d.sha + '</div>' +
+                '<div class="clearfix visible-xs"></div>' +
+                '<div class="col-xs-6 col-sm-6" style="background-color:#D6CADD;"><b>Version:</b>' + "  " + d.version + '</div>' +
+                '<div class="row">' +
+                '</div>' +
+                '</div>' +
+                '</div>';
+    }
+
     // `d` is the original data object for the row
-    return '<div class="container-fluid">' +
-            '<div class="row">' +
-            '<div class="col-xs-6 col-sm-6" style="background-color:#E6E6FA;"><b>Broker URI:</b>' + "  " + d.accesslink + '</div>' +
-            '<div class="clearfix visible-xs"></div>' +
-            '<div class="col-xs-6 col-sm-6" style="background-color:#E6E6FA;"><b>Broker Port:</b>' + "  " + d.accessport + '</div>' +
-            '</div>' +
-            '<div class="row">' +
-            '<div class="col-xs-6 col-sm-6" style="background-color:#D6CADD;"><b>Latitude:</b>' + "  " + d.latitude + '</div>' +
-            '<div class="clearfix visible-xs"></div>' +
-            '<div class="col-xs-6 col-sm-6" style="background-color:#D6CADD;"><b>Longitude:</b>' + "  " + d.longitude + '</div>' +
-            '</div>' +
-            '<div class="row">' +
-            '<div class="col-xs-6 col-sm-6" style="background-color:#E6E6FA;"><b>Login:</b>' + "  " + d.login + '</div>' +
-            '<div class="clearfix visible-xs"></div>' +
-            '<div class="col-xs-6 col-sm-6" style="background-color:#E6E6FA;"><b>Password:</b>' + "  " + d.password + '</div>' +
-            '</div>' +
-            '<div class="row">' +
-            '<div class="col-xs-6 col-sm-6" style="background-color:#D6CADD;"><b>SHA:</b>' + "  " + d.sha + '</div>' +
-            '<div class="clearfix visible-xs"></div>' +
-            '<div class="col-xs-6 col-sm-6" style="background-color:#D6CADD;"><b>Version:</b>' + "  " + d.version + '</div>'+
-            '<div class="row">' +
-            '<div class="col-xs-6 col-sm-12" style="background-color:#E6E6FA;"><button id="Update_version_CB" class="btn btn-info my-small-button" type="button" style="display:none;">TRY UPDATE</button></div>' +
-            '</div>' +
-    '</div>' +
-            '</div>';
+
+}
+
+function UpDateOrion() {
+    var name = $('#Update_version_CB').attr('data-name');
+    var org = $('#Update_version_CB').attr('data-org');
+
+    $("#UpdatingContextBrokerModal").modal('show');
+
+
+    $.ajax({
+        url: "../api/contextbroker.php",
+        data: {
+            action: "update_orion",
+            token: sessionToken,
+            name: name,
+            org: org
+        },
+        type: "POST",
+        async: true,
+        success: function (result)
+        {//console.log(result);
+            //  $('#Version_status').val(result["Upstatus"]["status"]);
+            if (result["status"] === 'ko')
+            {
+
+                console.log("Error in the connection with the orion context broker.");
+
+            } else {
+
+                console.log("Change status for the orion context broker.");
+
+            }
+        }
+    });
+
+    console.log(name + org);
 }
 
 function fetch_data(destroyOld, selected = null) {
+
+
     if (destroyOld) {
         $('#contextBrokerTable').DataTable().clear().destroy();
         tableFirstLoad = true;
@@ -104,6 +209,7 @@ function fetch_data(destroyOld, selected = null) {
     }
 
     dataTable = $('#contextBrokerTable').DataTable({
+
         "processing": true,
         "serverSide": true,
         scrollX: true,
@@ -207,6 +313,8 @@ function fetch_data(destroyOld, selected = null) {
                                 'data-apikey="' + d.apikey + '" ' +
                                 'data-path="' + d.path + '" ' +
                                 'data-sha="' + d.sha + '" ' +
+                                'data-dynam="' + d.dynamic + '" ' +
+                                'data-enable_direct_access="' + d.enable_direct_access + '" ' +
                                 'data-urlnificallback="' + d.urlnificallback + '" ' +
                                 'data-subscription_id="' + d.subscription_id + '" ' + 'data-services="' + d.services + '">Edit</button>';
                     }
@@ -224,36 +332,42 @@ function fetch_data(destroyOld, selected = null) {
                 }
             }, {
                 "name": "goto",
+                 "orderable": false,
                 "data": function (row, type, val, meta) {
                     //&& (row.accesslink.substring(0,14)!= "http://192.168" && row.accesslink.substring(0,7)!= "192.168") 
                     if ((row.protocol == 'ngsi' || row.protocol.substring(0, 4) == 'ngsi')) {
-                        if (row.accesslink.substring(0, 4) == 'http') {
+                        if (row.accesslink.substring(0, 4) == 'http' ) {
+                            
                             var goto = row.accesslink;
-                        } else if (row.kind == "internal") {
-                            var goto = "https://" + row.accesslink;
-                        } else {
-                            var goto = "http://" + row.accesslink;
+                        } else if (row.kind == "internal" && row.accessport ) {
+                            var goto = "https://" + row.accesslink+":" + row.accessport;
+                        } else if(row.accessport ){
+                            var goto = "http://" + row.accesslink+":" + row.accessport;
+                        }else {
+                             var goto = "https://" + row.accesslink;
                         }
 
-                        if (row.accessport) {
-                            goto += ":" + row.accessport;
+                        if ((row.version != null ||row.version != 'null' )&& row.accesslink.substring(-2) != 'v2' || row.accesslink.substring(-2) != 'v1' || row.accesslink.substring(-3) != 'v2/' || row.accesslink.substring(-3) != 'v1/') {
+                            goto += "/" + row.version;
                         }
-                        
-                       if(row.dynamic==true){
-                           return '<a href="' + goto + ' " target = "_blank" ><p id="GoNoDyn' + row.name + '">GoDyn</p></a>';
-                       }else if(row.dynamic==false){
-                           return '<a href="' + goto + ' " target = "_blank" ><p id="GoNoDyn' + row.name + '">Go</p></a>';
-                       }
-                       
- 
+
+                        if (row.dynamic == true) {
+                            return '<a href="' + goto + ' " target = "_blank" ><p id="GoNoDyn' + row.name + '">GoDyn</p></a>';
+                        } else if (row.dynamic == false) {
+                            return '<a href="' + goto + ' " target = "_blank" ><p id="GoNoDyn' + row.name + '">Go</p></a>';
+                        }
+
+
                     }
 
                 }
             }, {
                 data: null,
                 "name": "check",
+                 "orderable": false,
                 render: function (d) {
-                    if ((d.protocol == 'ngsi' || d.protocol.substring(0, 4) == 'ngsi') && (d.accesslink.substring(0, 14) != "http://192.168" && d.accesslink.substring(0, 7) != "192.168")) {
+                    if ((d.protocol == 'ngsi' || d.protocol.substring(0, 4) == 'ngsi')) {
+                        //&& (d.accesslink.substring(0, 14) != "http://192.168" && d.accesslink.substring(0, 7) != "192.168")
                         return '<button id="testbuttonB" type="button"  class="testDashBtn" data-name="' + d.name + '" ' + 'data-version="' + d.version + '" ' + 'data-organization="' + d.organization + '" > Test </button><button type="button" class="viewButDashBtn" data-name="' + d.name + '" ' +
                                 'data-organization="' + d.organization + '" ' +
                                 'data-kind="' + d.kind + '" ' +
@@ -273,6 +387,8 @@ function fetch_data(destroyOld, selected = null) {
                                 'data-apikey="' + d.apikey + '" ' +
                                 'data-path="' + d.path + '" ' +
                                 'data-sha="' + d.sha + '" ' +
+                                'data-enable_direct_access="' + d.enable_direct_access + '" ' +
+                                'data-dynam="' + d.dynamic + '" ' +
                                 'data-urlnificallback="' + d.urlnificallback + '" ' +
                                 'data-subscription_id="' + d.subscription_id + '" ' + 'data-services="' + d.services + '">View</button>';
                     } else {
@@ -295,6 +411,7 @@ function fetch_data(destroyOld, selected = null) {
                                 'data-apikey="' + d.apikey + '" ' +
                                 'data-path="' + d.path + '" ' +
                                 'data-sha="' + d.sha + '" ' +
+                                'data-dynam="' + d.dynamic + '" ' +
                                 'data-urlnificallback="' + d.urlnificallback + '" ' +
                                 'data-subscription_id="' + d.subscription_id + '" ' + 'data-services="' + d.services + '">View</button>';
                     }
@@ -303,6 +420,7 @@ function fetch_data(destroyOld, selected = null) {
         "order": []
     });
 
+    $('#contextBrokerTable').DataTable().columns.adjust().draw();
     if (loggedRole != 'RootAdmin' && loggedRole != 'ToolAdmin') {
         dataTable.columns([8, 10, 11]).visible(false);	//hide Owner, Edit, Delete
     }
@@ -318,16 +436,22 @@ $(document).ready(function ()
 {
 
 
+
 //fetch_data function will load the contextbroker table 	
     fetch_data(false);
     //aggiornaStub();
 //detail control for contextbroker dataTable
     var detailRows = [];
 
+
+
+
+
     $('#contextBrokerTable tbody').on('click', 'td.details-control', function () {
         var tr = $(this).closest('tr');
         var tdi = tr.find("i.fa");
         var row = dataTable.row(tr);
+
 
         if (row.child.isShown()) {
             // This row is already open - close it
@@ -338,12 +462,62 @@ $(document).ready(function ()
         } else {
             // Open this row
             row.child(format(row.data())).show();
-
+            if (row.data()["dynamic"] == true) {
+                keep_version(row.data());
+            }
             tr.addClass('shown');
             tdi.first().removeClass('fa-plus-square');
             tdi.first().addClass('fa-minus-square');
         }
     });
+
+    function keep_version(data) {
+
+        var status = "";
+        var time_status = "";
+        $.ajax({
+            url: "../api/contextbroker.php",
+            data: {
+                action: "orion_version",
+                token: sessionToken,
+                name: data["name"],
+                org: data["organization"]
+            },
+            type: "POST",
+            async: true,
+            success: function (result)
+            {//console.log(result);
+                console.log(result);
+                status = result["Upstatus"]["status"];
+                time_status = result["Upstatus"]["status_timestamp"];
+
+                if (result["status"] === 'ko')
+                {
+                    status = result["Upstatus"]["status"];
+                    time_status = result["Upstatus"]["status_timestamp"];
+
+                    console.log("Error in the connection with the ngsi context broker.");
+
+                } else {
+                    status = result["Upstatus"]["status"];
+                    time_status = result["Upstatus"]["status_timestamp"];
+                    document.getElementById('Version_api').innerHTML = result["data"]["orion"]["version"];
+                    if (time_status != null) {
+                        document.getElementById('Version_status').innerHTML = status + " </b> " + time_status;
+                    } else {
+                        document.getElementById('Version_status').innerHTML = status;
+                    }
+
+                }
+            }, error: function (result) {
+                console.log(result);
+
+            }
+        });
+
+
+
+    }
 
 //end of detail control for contextbroker dataTable 
 
@@ -492,6 +666,20 @@ $(document).ready(function ()
                 serviceValues.push(servicesArr[i].value.trim());
         }
 
+        var placehold_accesslink;
+        var placehold_accesslink_port;
+        if (flag_CB && deployOrionFilterAccess != "") {
+            placehold_accesslink = deployOrionFilterAccess + $('#inputNameCB').val();
+            if (deployOrionFilterAccess.substr(0, 5) == "https") {
+                placehold_accesslink_port = '443';
+            } else {
+                placehold_accesslink_port = '80';
+            }
+        } else {
+            placehold_accesslink = accesslink;
+            placehold_accesslink_port = $('#inputAccessPortCB').val();
+        }
+
         $.ajax({
             url: "../api/contextbroker.php",
             data: {
@@ -509,23 +697,23 @@ $(document).ready(function ()
                 password: $('#inputPasswordCB').val(),
                 latitude: $('#inputLatitudeCB').val(),
                 longitude: $('#inputLongitudeCB').val(),
-                accesslink: accesslink,
-                accessport: $('#inputAccessPortCB').val(),
+                accesslink: placehold_accesslink,
+                accessport: placehold_accesslink_port,
                 sha: $('#inputSHACB').val(),
                 urlnificallback: $('#inputUrlOrionCallback').val(),
-                services: JSON.stringify(serviceValues), 
+                services: JSON.stringify(serviceValues),
+                input_log: flag_log,
+                id: ID_ORION_CB,
                 flag_CB: flag_CB
-//                ,
-//                id_CB : id_CB
             },
             type: "POST",
             async: true,
             success: function (data)
             {
-             //   console.log(id_CB);
+                //   console.log(id_CB);
                 if (data["status"] === 'ko')
                 {
-                    
+
                     $('#addContextBrokerModalTabs').hide();
                     $('#addContextBrokerModalBody').hide();
                     $('#addContextBrokerModal div.modalCell').hide();
@@ -542,8 +730,8 @@ $(document).ready(function ()
 
                 } else if (data["status"] === 'ok')
                 {
-                //    var NN='#GoDynamic'+ $('#inputNameCB');
-                //    document.getElementById("GoDynamic"+$('#inputNameCB').val() ).innerHTML = "GoDyn";
+                    //    var NN='#GoDynamic'+ $('#inputNameCB');
+                    //    document.getElementById("GoDynamic"+$('#inputNameCB').val() ).innerHTML = "GoDyn";
                     $('#addCBLoadingMsg').hide();
                     $('#addCBLoadingIcon').hide();
                     $('#addCBKoMsg').hide();
@@ -560,13 +748,10 @@ $(document).ready(function ()
                     $('#dashboardTotNumberCnt .pageSingleDataCnt').html(parseInt($('#dashboardTotNumberCnt .pageSingleDataCnt').html()) + 1);
                     $('#dashboardTotActiveCnt .pageSingleDataCnt').html(parseInt($('#dashboardTotActiveCnt .pageSingleDataCnt').html()) + 1);
                     $('#contextBrokerTable').DataTable().destroy();
-                     
-                  //   $('.GoDynamic').style.display = "inline"; 
-                        fetch_data(true);
-                      
-                         
-                                                        
-                        
+
+                    //   $('.GoDynamic').style.display = "inline"; 
+                    fetch_data(true);
+
                     $('#inputNameCB').val("");
                     $('#selectKindCB').val("");
                     $('#inputPathCB').val("");
@@ -584,13 +769,13 @@ $(document).ready(function ()
                     $('#inputAccessLinkCB').val("");
                     $('#inputAccessPortCB').val("");
                     $('#inputSHACB').val("");
-                    
+
                     $('input[name="inputServiceCB"]').val("");
                     window.location.reload();
-                    
-                     // $(NN).innerText = "GoDyn";
 
-                    
+                    // $(NN).innerText = "GoDyn";
+
+
                 }
             },
             error: function (data)
@@ -753,37 +938,33 @@ $(document).ready(function ()
             async: true,
             dataType: 'json',
             success: function (rr) {
-            
-                
+
+
                 if (rr["status"] === 'ok') {
                     //console.log('ok');
                     //console.log($("#TestModalStatus"));
-                    $("#TestModalStatus").html("The broker is up!");
+                    $("#TestModalStatus").html("The broker answers at the link: " + " <br>" + rr["content"]);
                 } else if (rr["status"] === 'ko') {
                     //console.log('ko');
                     //console.log((rr));
-                    $("#TestModalStatus").html("There is a problem:" + " <br>" + rr["log"]);
+                    $("#TestModalStatus").html("There is a problem:" + " <br>" + rr["error_msg"]);
 
-                } else if(rr["status"] ==="{\"status\": \"Ok - get status of CB \"}"){
-                    str= JSON.parse(rr["content"]);
-                    
-                    $("#TestModalStatus").html("<br> The Context broker is in "  + str["status"]+ " status. ");
                 }
             }, error: function (data)
-        {
+            {
 
-                 
-            console.log("Error in link test");
-            console.log((data));
-            
-          
-             $("#TestModalStatus").html("There is a problem:" + " <br>" + data.error_msg);
-           
 
-        }
+                console.log("Error in link test");
+                console.log((data));
+
+
+                $("#TestModalStatus").html("There is a problem:" + " <br>" + data.error_msg);
+
+
+            }
 
         });
-         });
+    });
 
 
 ////////
@@ -800,11 +981,30 @@ $(document).ready(function ()
                 $(this).css('background', 'rgb(69, 183, 175)');
                 $(this).parents('tr').find('td').eq(1).css('background', $(this).parents('td').css('background'));
             });
-
+    var flag_CB = false;
+    var flag_log = false;
     function startEditModal() {
         $("#editContextBrokerModal").modal('show');
         $('.nav-tabs a[href="#editInfoTabCB"]').tab('show');
+        if ($(this).attr("data-dynam") == 'true') {
+            var items = ["ngsi", "ngsi w/MultiService"];
+            var IDitems = ["ngsi", "ngsi_w/MultiService"];
+            var str = ""
+            for (var i = 0; i < items.length; i++) {
 
+                str += "<option  id= " + IDitems[i] + ">" + items[i] + "</option>"
+            }
+            document.getElementById("selectProtocolCBM").innerHTML = str;
+        } else {
+            items = ["amqp", "coap", "mqtt", "ngsi", "ngsi w/MultiService", "sigfox"];
+            var IDitems = ["amqp", "coap", "mqtt", "ngsi", "ngsi_w/MultiService", "sigfox"];
+            var str = ""
+            for (var i = 0; i < items.length; i++) {
+                str += "<option  id= " + IDitems[i] + ">" + items[i] + "</option>"
+            }
+
+            document.getElementById("selectProtocolCBM").innerHTML = str;
+        }
 
         $("#editContextBrokerModalUpdating").hide();
         $("#editCBModalLoading").hide();
@@ -842,6 +1042,24 @@ $(document).ready(function ()
         $("#inputAccessPortCBM").val($(this).attr("data-accessport"));
         $("#inputApiKeyCBM").val($(this).attr("data-apikey"));
         $("#inputSHACBM").val($(this).attr("data-sha"));
+        if ($(this).attr("data-dynam") == 'true') {
+            $(".ShowIfDyn").show();
+            $(".NotShowIfDyn").hide();
+
+            if ($(this).attr("data-enable_direct_access") == 'true') {
+                document.getElementById("Login_CB_view").checked = true;
+                var a = document.getElementById('Login_CB_view_ref');
+                a.href = deployOrionDirectAccess+$(this).attr("data-name")+"/v2";
+                $("#Login_CB_view_url").text(a.href);
+            } else {
+                document.getElementById("Login_CB_view").checked = false;
+                $("#Login_CB_view_url").text("");
+            }
+        } else {
+            $(".ShowIfDyn").hide();
+            $(".NotShowIfDyn").show();
+        }
+
         //subscription tab
         if (($(this).attr("data-subscription_id") == "undefined") || ($(this).attr("data-subscription_id") == "null"))
         {
@@ -877,7 +1095,37 @@ $(document).ready(function ()
     $('#contextBrokerTable tbody').on('click', 'button.editDashBtn', function () {
         startEditModal.call(this);
         $("#editCBModalLabel").html("Edit Context Broker - " + $(this).attr("data-name"));
+
+
+
+//        if ($(this).attr("data-dynam") == 'true') {
+//            document.getElementById("editInfoTabCB").style.display = "none";
+//           // document.getElementById("#editSubscriptionTabCB").style.display = "none";
+//            $('#tab-editCB-1').removeClass('active');
+//             $('#tab-editCB-1').addClass('hidden');
+//            $('#tab-editCB-4').addClass('hidden');
+//            $('#tab-editCB-2').addClass('active');
+//            $('#editGeoPositionTabCB').addClass('active in ');
+//            var latitude = $("#inputLatitudeCBM").val();
+//            var longitude = $("#inputLongitudeCBM").val();
+//            var flag = 1;
+//            drawMap1(latitude, longitude, flag);
+//        } else {
+//            
+//            document.getElementById("editInfoTabCB").style.display ;
+//            document.getElementById("tab-editCB-1").style.display;
+//            $('#tab-editCB-1').removeClass('hidden');
+//            $('#tab-editCB-1').addClass('active');
+//            $('#tab-editCB-4').removeClass('hidden');
+//            // $('#tab-editCB-1').removeClass('hidden');
+//            $('#tab-editCB-2').removeClass('active');
+//             $('#editInfoTabCB').addClass('active in ');
+//            $('#editGeoPositionTabCB').removeClass('active in ');
+        //        }
+
+        ///dynimc
         $('a[data-toggle="tab"]').off('shown.bs.tab').on('shown.bs.tab', function (e) {
+
             var target = $(e.target).attr("href");
             if ((target == '#editGeoPositionTabCB')) {
                 var latitude = $("#inputLatitudeCBM").val();
@@ -888,6 +1136,7 @@ $(document).ready(function ()
             }
         }
         );
+
     })
 
 
@@ -933,9 +1182,15 @@ $(document).ready(function ()
         $("#inputAccessPortCBM").attr('readonly', mode);
         $("#inputApiKeyCBM").attr('readonly', mode);
         $("#inputSHACBM").attr('readonly', mode);
+        $(".editInputServiceCB").attr('readonly', mode);
         $("#inputUrlOrionCallbackM").attr('readonly', mode);
-        $("#inputUrlOrionCallbackM").attr('readonly', mode);
+        //$("#inputUrlOrionCallbackM").attr('readonly', mode);
         $("#selectUrlOrionCallbackMsgM").prop('disabled', mode);
+        document.getElementById("Login_CB_view").disabled = mode;
+        document.getElementById("editAddNewCBServiceBtn").disabled = mode;
+
+
+
 
     }
 
@@ -943,7 +1198,10 @@ $(document).ready(function ()
     $('#contextBrokerTable tbody').on('click', 'button.viewButDashBtn', function () {
         startEditModal.call(this);
         $("#editCBModalLabel").html("View Context Broker - " + $(this).attr("data-name"));
+
         fillCBTableLabel(true);
+
+
         $("#editContextBrokerConfirmBtn").hide();
         var latitude = $(this).attr("data-latitude");
         var longitude = $(this).attr("data-longitude");
@@ -1000,6 +1258,12 @@ $(document).ready(function ()
             if (servicesArr[i].value && !(serviceValues.includes(servicesArr[i].value)))
                 serviceValues.push(servicesArr[i].value.trim());
         }
+        var flag_directAcess = null;
+        if (document.getElementById("Login_CB_view").checked == true) {
+            flag_directAcess = 1;
+        } else {
+            flag_directAcess = 0;
+        }
 
         $.ajax({
             url: "../api/contextbroker.php",
@@ -1025,7 +1289,8 @@ $(document).ready(function ()
                 apikey: $('#inputApiKeyCBM').val(),
                 sha: $('#inputSHACBM').val(),
                 urlnificallback: $('#inputUrlOrionCallbackM').val(),
-                services: JSON.stringify(serviceValues)
+                services: JSON.stringify(serviceValues),
+                log_orion: flag_directAcess
             },
             type: "POST",
             async: true,
@@ -1095,6 +1360,7 @@ $(document).ready(function ()
                 $('#editContextBrokerOkBtn').show();
             }
         });
+        window.local.reload();
     });
 
 
@@ -1122,7 +1388,7 @@ $(document).ready(function ()
 
 
     function fattoring_add(mode) {
-        
+
         $("#tab-addCB-4").hide();
         $('#addContextBrokerModalTabs').show();
         $('.nav-tabs a[href="#infoTabCB"]').tab('show');
@@ -1147,6 +1413,7 @@ $(document).ready(function ()
         $('#inputIpCB').attr('readonly', mode);
         $('#inputPortCB').attr('readonly', mode);
         $('#inputAccessPortCB').attr('readonly', mode);
+        $('#inputAccessLinkCB').attr('readonly', mode);
         $('#selectKindCB').prop('disabled', mode);
         $('#selectProtocolCB').prop('disabled', mode);
         $('#inputVersionCB').attr('readonly', mode);
@@ -1168,33 +1435,32 @@ $(document).ready(function ()
         $("#addContextBrokerModal").modal('hide');
 
         if (mode == false) {
-             $('#selectKindCB option[value=""]').attr("selected", "selected");
-                    $('#selectProtocolCB option[value=""]').attr("selected", "selected");
-            
+            $('#selectKindCB option[value=""]').attr("selected", "selected");
+            $('#selectProtocolCB option[value=""]').attr("selected", "selected");
+
             showAddCbModal();
         } else {
-             $('#selectProtocolCB option[value="ngsi"]').attr("selected", "selected");
-               $('#selectKindCB option[value="internal"]').attr("selected", "selected");
-                    $('#selectProtocolCB option[value="ngsi"]').attr("selected", "selected");
-                    $('#inputVersionCB').val("v2");   
-                  
-           
+            $('#selectProtocolCB option[value="ngsi"]').attr("selected", "selected");
+            $('#selectKindCB option[value="internal"]').attr("selected", "selected");
+            $('#selectProtocolCB option[value="ngsi"]').attr("selected", "selected");
+            $('#inputVersionCB').val("v2");
+
+
         }
 
 
     }
 //Start Related to Register new Device 
-var flag_CB;
+
+    var ID_ORION_CB = "";
 //var id_CB;
     $("#RegisterCBeBtn").off("click");
     $("#RegisterCBBtn").click(function () {
 
-         flag_CB=true;
+        flag_CB = true;
+        flag_log = false;
         fattoring_add(true);
-        // $('.nav-tabs a[href="subscriptionTabCB"]').tab('show');
 
-
-        //$("#subscriptionTabCB #inputUrlOrionCallback").show();
 
 
         $.ajax({
@@ -1209,29 +1475,56 @@ var flag_CB;
             async: true,
             success: function (data)
             {
-                if (data["content"]!="null") {
+                if (data["content"] != "null") {
                     var source = jQuery.parseJSON(data["content"]);
+                    ID_ORION_CB = source['id_orionbroker'];
+
+
 
                     $('#inputNameCB').val(source['name']);
                     $('#inputIpCB').val(source['ipaddr']);
                     $('#inputAccessLinkCB').val(source['ipaddr']);
                     $('#inputPortCB').val(source['external_port']);
-                    $('#inputAccessPortCB').val(source['access_port']);                  
+                    $('#inputAccessPortCB').val(source['access_port']);
                     $('#inputUrlOrionCallback').val(source['urlnificallback']);
-                   // id_CB=source['id_orionbroker'];
-                    
-                   
-                   showAddCbModal();
-              $('#tab-addCB-4').show();
-            
+                    // id_CB=source['id_orionbroker'];
 
-            $("#addContextBrokerModalLabel").html("Add new context broker");
-                    
+
+                    showAddCbModal();
+                    $('#tab-addCB-4').show();
+                    $('#selectProtocolCB').prop('disabled', false);
+                    var items = ["ngsi", "ngsi w/MultiService"];
+                    var IDitems = ["ngsi", "ngsi_w/MultiService"];
+                    var str = ""
+                    for (var i = 0; i < items.length; i++) {
+                        str += "<option  id= " + IDitems[i] + ">" + items[i] + "</option>"
+                    }
+                    document.getElementById("selectProtocolCB").innerHTML = str;
+                    $("#addContextBrokerModalLabel").html("Deploy new orion broker");
+                    $('#inputNameCB').attr('readonly', false);
+
+                    $('#inputSHACB').hide();
+                    $('#inputSHACB_lab').hide();
+                    $('#Login_CB').show();
+                    $('#Login_CB_lab').show();
+
+                    $('#Login_CB').on('change', function show_USername_PWD() {
+                        var checkBox = document.getElementById("Login_CB");
+                        if (checkBox.checked == true) {
+
+                            flag_log = true;
+                        } else {
+
+                            flag_log = false;
+                        }
+                    });
 
                 } else {
                     $("#addContextBrokerModal").modal('hide');
                     $("#addContextBrokerModalNULL").modal('show');
                 }
+
+
 
             },
             error: function (data)
@@ -1246,10 +1539,23 @@ var flag_CB;
 
     $('#addContextBrokerBtn').off('click');
     $('#addContextBrokerBtn').click(function () {
-           flag_CB=false;
+        flag_CB = false;
         fattoring_add(false);
-        $("#addContextBrokerModalLabel").html("Set up the context broker");
+        var items = ["amqp", "coap", "mqtt", "ngsi", "ngsi w/MultiService", "sigfox"];
+        var IDitems = ["amqp", "coap", "mqtt", "ngsi", "ngsi_w/MultiService", "sigfox"];
+        var str = ""
+        for (var i = 0; i < items.length; i++) {
+            str += "<option  id= " + IDitems[i] + ">" + items[i] + "</option>"
+        }
+
+        document.getElementById("selectProtocolCB").innerHTML = str;
+        $("#addContextBrokerModalLabel").html("Register new IOT Broker");
         // document.getElementById('selectProtocolCB').innerHTML = "";
+        $('#inputSHACB').show();
+        $('#inputSHACB_lab').show();
+        $('#Login_CB').hide();
+        $('#Login_CB_lab').hide();
+
 
 
 
