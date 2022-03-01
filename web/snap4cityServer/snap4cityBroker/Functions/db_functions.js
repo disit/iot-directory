@@ -18,6 +18,7 @@ function insertDevices(cid, se) {
 				console.log("devices insert error ");
 				//console.log(errSens);
 				reject(errSens)
+				return;
 			}
 			resolve();
 			// console.log("fatto");
@@ -35,6 +36,7 @@ function insertValues(cid, sesc, table) {
 			if (errSSch) {
 				console.log("values insert error ");
 				reject(errSens);
+				return;
 			}
 			resolve();
 		});

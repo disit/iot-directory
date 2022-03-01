@@ -40,8 +40,8 @@ var http = require("http");
 var Parser = require('./Parser/Classes/Parser');
 
 const { removeDuplicates } = require('./Functions/functions.js');
-const { insertDevices, insertValues, getModels } = require('./Functions/db_functions.js')
-const { manageExtractionRulesAtt, manageExtractionRulesDev, manageOtherParameters, verifyDevice, getLocation, findNewValues, uuidv4 } = require('./Functions/manageData.js')
+const { insertDevices, insertValues, getModels } = require('./Functions/db_functions.js');
+const { manageExtractionRulesAtt, manageExtractionRulesDev, manageOtherParameters, verifyDevice, getLocation, findNewValues, uuidv4 } = require('./Functions/manageData.js');
 
 var XMLHttpRequest = require("xmlhttprequest").XMLHttpRequest;
 
@@ -239,6 +239,7 @@ function retrieveData(xhttp, link, service, servicePath, limit, offset) {
         temporaryDevices = result3.temporaryDevices;
         extractionRulesAtt = result4.extractionRulesAtt;
         extractionRulesDev = result4.extractionRulesDev;
+		
 
 
         findNewValues(cid, ORION_CB, orionDevices, orionDevicesSchema, registeredDevicesWithPath, temporaryDevices, extractionRulesAtt);
@@ -459,6 +460,7 @@ function getRegisteredDevices(service, servicePath) {
         cid.query(sql, function (error, result, fields) {
             if (error) {
                 reject(error)
+				return;
             }
 
             for (i = 0; i < result.length; i++) {
@@ -470,7 +472,7 @@ function getRegisteredDevices(service, servicePath) {
             //console.log("registeredDevices " +registeredDevices.length + " orion length "+ orionDevices.length);
             resolve({
                 registeredDevices: registeredDevices,
-                registeredDevicesWithPGath: registeredDevicesWithPath,
+                registeredDevicesWithPath: registeredDevicesWithPath,
             })
         })
     })
@@ -485,6 +487,7 @@ function getTemporaryDevices(service, servicePath) {
         cid.query(sql, function (error, result, fields) {
             if (error) {
                 reject(error)
+				return;
             }
 
             for (i = 0; i < result.length; i++) {
@@ -501,6 +504,20 @@ function getTemporaryDevices(service, servicePath) {
     })
 }
 
+function writeFreqAndTimestampStatus(){
+	return new Promise(function (resolve, reject){
+	var query= "UPDATE `iotdb`.`contextbroker` SET `req_frequency`='"+ FREQUENCY_SEARCH +"', timestampstatus=NOW() WHERE `name`='" + ORION_CB + "';"; // query update rows with freq and Timestamp  Status
+	cid.query(query, function(error, result){
+		 console.log('result: '+JSON.stringify(result)+JSON.stringify(error))
+            if (error) {
+                reject(error);
+                return;
+            }
+		resolve(result);
+	});
+	
+	});
+}
 
 function getExtractionRules(service, servicePath) {
     return new Promise(function (resolve, reject) {
@@ -539,4 +556,5 @@ Array.prototype.diff = function (arr) {
 };
 var requestLoop = setInterval(function () {
     retrieveDataCaller(schema);
+	writeFreqAndTimestampStatus().then(value=>{console.log(value+" Update db with freq and timestamp")});
 }, FREQUENCY_SEARCH);

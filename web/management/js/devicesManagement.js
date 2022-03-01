@@ -392,6 +392,14 @@ function checkDeviceType()
         message = 'Device Type is mandatory';
         addDeviceConditionsArray['inputTypeDevice'] = false;
     }
+    
+ var regex=/[^a-z0-9_-]/gi;
+    if ( regex.test($("#addInfoTabDevice #inputTypeDevice").val()) )
+    {
+        $("#inputTypeDeviceMsg").css("color", "red");
+        message = 'No special characters are allowed';
+        editDeviceConditionsArray['inputTypeDeviceM'] = false;
+    }
 
     else
     {

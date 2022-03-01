@@ -402,6 +402,31 @@ CREATE TABLE `users` (
   PRIMARY KEY (`IdUser`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
+
+/* Table for ingestion
+*/
+CREATE TABLE `iotdb`.`EXT_values_rules` (
+  `Name` VARCHAR(45) NOT NULL,
+  `If_statement` TEXT NULL,
+  `Then_statement`TEXT NULL,
+  `Organization` VARCHAR(45) NULL,
+  `Timestamp` TIMESTAMP NULL,
+  `mode` VARCHAR(8) NULL,
+  PRIMARY KEY (`Name`))
+COMMENT = 'Rules to ingestion of external broker';
+
+/* update getfield() in rulkes 
+*/
+UPDATE `iotdb`.`fieldType` SET `query`='select distinct contextBroker FROM temporary_devices' WHERE `fieldName`='contextbroker';
+
+/* update contextbroker table*/
+ALTER TABLE `iotdb`.`contextbroker` 
+ADD COLUMN `contextbrokercol` VARCHAR(45) NULL AFTER `timestampstatus`;
+
+
+
+
+
 /*
 -- Query: SELECT * FROM iotdb.defaultpolicy
 -- Date: 2019-10-28 18:45
@@ -522,3 +547,7 @@ INSERT INTO `data_types` (`data_type`) VALUES ('xml');
 */
 INSERT INTO `defaultcontestbrokerpolicy` (`policyname`,`active`,`contextbroker`,`protocol`,`format`) VALUES ('advances',0,'mqttUNIFI','mqtt','csv');
 INSERT INTO `defaultcontestbrokerpolicy` (`policyname`,`active`,`contextbroker`,`protocol`,`format`) VALUES ('basic',1,'orionUNIFI','ngsi','json');
+
+
+
+

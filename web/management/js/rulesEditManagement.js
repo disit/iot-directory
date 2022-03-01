@@ -189,9 +189,12 @@ function checkEditDeviceConditions()
     if(enableButton)
     {
         $("#editRuleConfirmBtn").attr("disabled", false);
+      
+        
     }
     else
     {
         $("#editRuleConfirmBtn").attr("disabled", true);
     }
+   
 }

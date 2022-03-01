@@ -679,7 +679,7 @@
 								<div class="row">
                                 <div class="col-xs-12 col-md-6 modalCell">
                                     <div class="modalFieldCnt">
-                                        <input type="text" class="modalInputTxt" name="inputTypeDevice" id="inputTypeDevice"> 
+                                        <input type="text" class="modalInputTxt" onkeyup="checkStrangeCharacters(this)" name="inputTypeDevice" id="inputTypeDevice"> 
                                     </div>
                                     <div class="modalFieldLabelCnt">Device Type</div>
 									<div id="inputTypeDeviceMsg" class="modalFieldMsgCnt">&nbsp;</div>
@@ -1158,7 +1158,7 @@
 						
 								<div class="col-xs-12 col-md-6 modalCell">
                                     <div class="modalFieldCnt">
-                                        <input type="text" class="modalInputTxt" name="inputTypeDeviceM" id="inputTypeDeviceM"> 
+                                        <input type="text" class="modalInputTxt" onkeyup="checkStrangeCharacters(this)" name="inputTypeDeviceM" id="inputTypeDeviceM"> 
                                     </div>
                                     <div class="modalFieldLabelCnt">Device Type</div>
 									<div id="inputTypeDeviceMMsg" class="modalFieldMsgCnt">&nbsp;</div>

@@ -260,7 +260,7 @@ if (isset($_SESSION['refreshToken'])) {
                                         <div class="col-xs-12 col-md-6 modalCell" style= "background-color: rgb(241, 245, 244);">
                                             <?php if ($_SESSION['loggedRole'] == 'RootAdmin' || $_SESSION['loggedRole'] == 'ToolAdmin') { ?>
 
-                                                <?php if ($deployOrion == true) { ?>
+                                                <?php if ($deployOrion == "true") { ?>
                                                     <div class="pull-right "><button id="RegisterCBBtn"  class="btn btn-primary" style="margin:5px;">Deploy new orion broker</button></div>
                                                 <?php } ?>                                                
                                                 <div class="pull-right"><button id="addContextBrokerBtn"  class="btn btn-primary"  style="margin:5px;">Register new IOT Broker</button></div>

@@ -1,3 +1,214 @@
+//------------------------------------------------------------------------------------------------------------------- Rules Load
+//Function to create rules -///
+
+    function getIfRules2(num1) {
+        var attributesIfValues = [];
+        for (var m = 0; m < num1; m++) {
+            //var attribute= document.getElementById('ifBlockTable').rows[m].cells[1].selectedIndex;
+
+            var fieldIf = document.getElementById('ifBlockTable').tBodies[0].rows.item(m).cells.item(1).childNodes[0].value;
+            var operatorIf = document.getElementById('ifBlockTable').tBodies[0].rows.item(m).cells.item(2).childNodes[0].value;
+            var valueIf = document.getElementById('ifBlockTable').tBodies[0].childNodes[m].childNodes[3].childNodes[0].value;
+
+            if (valueIf.localeCompare("Empty") == 0) {
+                valueIf = "";
+            }
+
+            var newIf = {"field": fieldIf, "operator": operatorIf, "value": valueIf};
+            attributesIfValues.push(newIf);
+        }
+        return attributesIfValues;
+    }
+
+    function getThenRules2(num2) {
+        var attributesThenValues = [];
+
+        for (var m = 0; m < num2; m++) {
+            var fieldsThen = document.getElementById('decisionBlockTable').tBodies[0].rows.item(m).cells.item(1).childNodes[0].value;
+
+            if (fieldsThen != "empty") {
+                
+                var valueThen = document.getElementById('decisionBlockTable').tBodies[0].rows.item(m).cells.item(2).childNodes[0].value;
+                        
+
+                if (valueThen.localeCompare("Empty") == 0) {
+                    valueThen = "";
+                }
+                var newThen = {"field": fieldsThen, "valueThen": valueThen};
+                attributesThenValues.push(newThen);
+            }
+        }
+        return attributesThenValues;
+    }
+
+
+
+
+function getFields2(fieldIf, pos, id, value, left_value) {
+        $.ajax({
+            url: "../api/bulkDeviceUpdate.php",
+            data: {
+                action: "get_fields",
+                fieldIf: fieldIf,
+                token: sessionToken
+            },
+            dataType: 'json',
+            type: "POST",
+            async: true,
+            success: function (myData) {
+                let myDataP = myData['content'];
+                //console.log(JSON.stringify(myDataP));
+                //console.log("INDICE "+ pos + " field if "+ fieldIf);
+
+                if (fieldIf.localeCompare("healthiness_value") == 0 && healthinessValueIsPresent(id) == 0) {
+                    var num1 = document.getElementById(id).tBodies[0].childElementCount;
+                    var idToPut = document.getElementById(id).tBodies[0].rows.item(pos).id;
+
+                    if (id.localeCompare("decisionBlockTableValue") == 0) {
+                        var row = $('<tr id="' + idToPut + 'criteria"><td><h3><span class="label label-success">Then</span></h3></td><td class="fieldTdThenValue"><select><option value="healthiness_criteria">Healthiness Criteria</option></select></td></td><td class="fieldNameValue"><input type="text" class="fieldNameIfValue" value="Empty"><td></td></tr>');
+                        devicenamesArray['then'] = devicenamesArray['then'] + 1;
+
+                    } else {
+                        var row = $('<tr id="' + idToPut + 'criteria"><td><h3><span class="label label-danger">AND</span></h3></td><td class="fieldTdValue"><select><option value="healthiness_criteria">Healthiness Criteria</option></select></td><td class="fieldEqualValue"><select class="fieldSelectEqualValue"><option value="IsEqual">Is Equal</option><option value="IsNotEqual">Is Not Equal</option><option value="IsNull">Is NULL</option></select></td><td class="fieldNameIfValue"></td><td></td></tr>');
+                        devicenamesArray['if'] = devicenamesArray['if'] + 1;
+                    }
+
+                    var idTemp = "#" + id + " tbody ";
+                    //$(idTemp).eq(pos+1).append(row);
+                    $(idTemp).append(row);
+
+
+                    $('#authorizedPagesJson').val(JSON.stringify(ifPages));
+
+                    //getFields("healthiness_criteria", num1, id, value);
+
+                    if (id.localeCompare("decisionBlockTable") == 0 || id.localeCompare("decisionBlockTableValue") == 0) {
+                        document.getElementById(id).tBodies[0].rows.item(pos).cells.item(2).innerHTML = myDataP[0].fieldsHtml;
+                    } else {
+                        //TO change
+                        document.getElementById(id).tBodies[0].childNodes[pos].childNodes[3].innerHTML = myDataP[0].fieldsHtml;
+                    }
+                } else {
+
+                    if (id.localeCompare("decisionBlockTable") == 0 || id.localeCompare("decisionBlockTableValue") == 0) {
+                        document.getElementById(id).tBodies[0].rows.item(pos).cells.item(2).innerHTML = myDataP[0].fieldsHtml;
+                    } else if(myDataP[0].fieldsHtml.includes("select")) {
+                        //TO change                       
+                        document.getElementById(id).tBodies[0].childNodes[pos].childNodes[3].innerHTML = myDataP[0].fieldsHtml;
+                        
+                    }else {
+                             document.getElementById(id).tBodies[0].childNodes[pos].childNodes[3].innerHTML = myDataP[0].fieldsHtml.replace("Empty",left_value );
+                        }
+
+
+                      
+                    
+                }
+
+
+            },
+            error: function (myData) {
+                console.log("error" + JSON.stringify(myData));
+                if (id.localeCompare("decisionBlockTable") == 0) {
+                    document.getElementById(id).tBodies[0].rows.item(pos).cells.item(2).innerHTML = "<input type=\"text\" class=\"fieldNameThen\" value=\"Empty\">";
+                } else {
+                    document.getElementById(id).tBodies[0].childNodes[pos].childNodes[3].innerHTML = "<input type=\"text\" class=\"fieldNameIf\" value=\"Empty\">";
+                }
+
+            }
+        });//end of ajax get_affected
+    }
+    
+function RulesLoad(name, if_st, then_st, mode, modalif, modalthen) {
+
+    let If_st = JSON.parse(if_st.replaceAll('/"', ''));
+    let Then_st = JSON.parse(then_st.replaceAll('/"', ''));
+
+    //clear the form
+    $('.ifrow').remove();
+    $('.Thenrow').remove();
+
+    //setting index
+    valueNamesArray['if'] = 0;
+    valueNamesArray['then'] = 0;
+    var idCounterThen = 0;
+    var idCounterIf = 0;
+
+    // create a number of row equal a number of If_st    
+    for (let i = 0; i < Object.keys((If_st)).length; i++) {
+         let str = '#IfHV' + i;
+        if(i==0){
+            
+            var row = $('<tr id="IfHV' + idCounterIf + '"  class="ifrow"><td><h3><span class="label label-danger">If</span></h3></td><td class="fieldTd"><select class="fieldIf"><option value="empty">--Select an option--</option><option value="contextBroker" selected>Contextbroker</option><option value="id">Device name</option><option value="deviceType">Device Type</option><option value="model">Model</option><option value="producer">Producer</option><option value="frequency">Frequency</option><option value="kind">Kind</option><option value="protocol">Protocol</option><option value="format">Format</option><option value="latitude">Latitude</option><option value="longitude">Longitude</option><option value="macaddress">Mac address</option><option value="k1">Key1</option><option value="k2">Key2</option></select></td><td class="fieldEqual"><select class="fieldSelectEqual"><option value="IsEqual">Is Equal</option><option value="IsNotEqual">Is Not Equal</option><option value="IsNull">Is NULL</option><option value="Contains">Contains</option></select></td><td class="fieldName"> </td><td class="minusDevice"><i class="fa fa-minus"></i></td></tr>');
+
+        $('#'+modalif+' tbody').append(row);
+        
+        devicenamesArray['if'] = devicenamesArray['if'] + 1;
+        var rowIndex = row.index();
+        var fieldIf = document.getElementById(''+modalif+'').tBodies[0].rows.item(rowIndex).cells.item(1).childNodes[0].value;
+
+        idCounterIf++;
+
+      getFields2(If_st[i].field, i, modalif, 0, If_st[i].value);
+     
+       $(str + '> td.fieldTd > select').val(If_st[i].field);
+
+        $(str + '> td.fieldEqual > select').val(If_st[i].operator);
+        
+        }else{
+            
+            var row2 = $('<tr class="ifrow"><td><h3><span class="label label-danger">AND</span></h3></td><td class="fieldTd"><select class="fieldIf"><option value="empty">--Select an option--</option><option value="contextBroker">Contextbroker</option><option value="id" >Device name</option><option value="deviceType" selected>Device Type</option><option value="model">Model</option><option value="producer">Producer</option><option value="frequency">Frequency</option><option value="kind">Kind</option><option value="protocol">Protocol</option><option value="format">Format</option><option value="latitude">Latitude</option><option value="longitude">Longitude</option><option value="macaddress">Mac address</option><option value="k1">Key1</option><option value="k2">Key2</option></select></td><td class="fieldEqual"><select class="fieldSelectEqual"><option value="IsEqual">Is Equal</option><option value="IsNotEqual">Is Not Equal</option><option value="IsNull">Is NULL</option><option value="Contains">Contains</option></select></td><td class="fieldName"> </td><td class="minusDevice"><i class="fa fa-minus"></i></td></tr>');
+        $('#'+modalif+' tbody').append(row2);
+        devicenamesArray['if'] = devicenamesArray['if'] + 1;
+        var rowIndex = row2.index();
+        var fieldIf = document.getElementById(modalif).tBodies[0].rows.item(rowIndex).cells.item(1).childNodes[0].value;
+        getFields2(fieldIf, rowIndex, modalif, 0 , If_st[i].value);
+        
+        
+
+        
+        }
+        
+                
+    }
+
+
+    // create a number of row equal a number of Then_st    
+    for (let i = 0; i < Object.keys((Then_st)).length; i++) {
+        
+        var row = $('<tr id="thenHV' + idCounterThen + '" class="Thenrow" ><td><h3><span class="label label-success">Then</span></h3></td><td class="fieldTdThenValue"><select class="fieldThenValue"><option value="empty">--Select an option--</option><option value="data_type">Data type</option><option value="value_type">Value type</option><option value="value_unit">Value unit</option><option value="editable">Editable</option><option value="producer">Producer</option>	<option value="healthiness_criteria">Healthiness criteria</option><option value="healthiness_value">Healthiness value</option></select></td></td><td class="fieldNameValue"><input type="text" class="fieldNameIfValue" value="Empty"><td><i class="fa fa-minus"></i></td></tr>');
+        $('#'+modalthen+'  tbody').append(row);
+        idCounterThen++;
+        valueNamesArray['then'] = valueNamesArray['then'] + 1;
+
+
+    }
+
+   
+    
+    //Select Then statement
+     for (let i = 0; i < Object.keys((Then_st)).length; i++) {
+
+        let str = '#thenHV' + i;
+
+        $(str + '> td.fieldTdThenValue > select').val(Then_st[i].field);
+        $(str + '> td.fieldNameValue > input').val(Then_st[i].valueThen);  
+        
+        
+         $('#IfHV' + i+ '> td.fieldName > input').val(If_st[i].value);
+
+    }
+    
+    //Select mode
+    $('#Update_mode').val(parseInt(mode));
+    
+    
+
+}
+
+
+ 
+
 //---------------------------------------------------------------------------------------------------------------------------------------------managing valuetype-valueunit
 
 //TODO uniform with below
@@ -8,11 +219,11 @@ function valueTypeChanged(indice) {
 
     //remove old value units
     valueUnitNew = $("#value_unit" + indice).find("option").remove().end();
-    DataTypeNew = $("#data_type" + indice).find("mydatatypes").remove().end();
+    DataTypeNew = $("#data_type" + indice).find("option").remove().end();
 
     //retrieve valid value units basing on new value type selected (selected value unit is discarged)
     validValueUnit = getValidValueUnit(valueTypeNew, "");
-    validDataType =  getValidDataType(valueTypeNew, "");
+    validDataType = getValidDataType(valueTypeNew, "");
 
     //if there are any valid value units, present to the users
     if (validValueUnit !== "") {
@@ -25,7 +236,7 @@ function valueTypeChanged(indice) {
         valueUnitNew.append(validValueUnit);
     }
 
-if (validDataType !== "") {
+    if (validDataType !== "") {
         if (!validDataType.includes('selected')) {
             DataTypeNew.append("<option hidden disabled selected value=\"NOT VALID OPTION\"> -- select an option -- </option>");
             //update msg_value_unit
@@ -42,7 +253,7 @@ if (validDataType !== "") {
 }
 //function DataTypeChanged(indice) {
 
-    //update msg_value_unit
+//update msg_value_unit
 //    $("#data_type" + indice).parent().siblings().last().css("color", "#337ab7");
 //    $("#data_type" + indice).parent().siblings().last().html("Ok");
 //}
@@ -53,21 +264,28 @@ function valueUnitChanged(indice) {
     $("#value_unit" + indice).parent().siblings().last().html("Ok");
 }
 
+function dataTypeChanged(indice) {
+
+    //update msg_value_unit
+    $("#data_type" + indice).parent().siblings().last().css("color", "#337ab7");
+    $("#data_type" + indice).parent().siblings().last().html("Ok");
+}
+
 //TODO unifrom with above, used in extract
 function valueTypeChangedM(indice) {
 
     //get new value type that has been selected
     valueTypeNew = $("#Mvalue_type" + indice).val();
-    
+
 
     //remove old value units
     valueUnitNew = $("#Mvalue_unit" + indice).find("option").remove().end();
-    
-   // validDataType=  $("#Mdata_type" + indice).find("mydatatype").remove().end();
+
+    // validDataType=  $("#Mdata_type" + indice).find("mydatatype").remove().end();
 
     //retrieve valid value units basing on new value type selected (selected value unit is discarged)
     validValueUnit = getValidValueUnit(valueTypeNew, "");
-   // validDataType =  getValidDataType(valueTypeNew, "");
+    // validDataType =  getValidDataType(valueTypeNew, "");
 
     //if there are any valid value units, present to the users
     if (validValueUnit !== "") {
@@ -111,7 +329,7 @@ function getValidDataType(valueType, data_type) {
 
     //get value type STRUCTURE for passed valueType
     for (var n = 0; n < gb_value_types.length; n++)
-         if (gb_value_types[n].value === valueType)
+        if (gb_value_types[n].value === valueType)
             valueTypeObj = gb_value_types[n];
 
     //console.log("Get validValueUnit for "+valueType);
@@ -127,21 +345,24 @@ function getValidDataType(valueType, data_type) {
             for (var n = 0; n < valueTypeObj.data_type_value.length; n++)
             {
 //                for (var j = 0; j < valueTypeObj.children_value.length; j++)
-              //  {
-                   // if (valueTypeObj.data_type_value[j] === gb_datatypes[n])
-                   // {
-                        //if (( gb_value_types[n].data_type_value === data_type) )
-                            toReturn += "<option selected value=\"" + valueTypeObj.data_type_value[n] + "\">" +  valueTypeObj.data_type_value[n] + " </option>";
-//                        else
-//                            toReturn += "<option value=\"" +  gb_value_types[n].data_type_value + "\">" +  gb_value_types[n].data_type_value + "</option>";
-                   // }
-                }
-          //  }
+//                {
+//                    if (valueTypeObj.data_type_value[j] === gb_datatypes[n])
+//                    {
+                //if (( gb_value_types[n].data_type_value === data_type) )
+                if ((valueTypeObj.data_type_value[n] === data_type))
+                    toReturn += "<option selected value=\"" + valueTypeObj.data_type_value[n] + "\">" + valueTypeObj.data_type_value[n] + " </option>";
+                else
+                    toReturn += "<option value=\"" + valueTypeObj.data_type_value[n] + "\">" + valueTypeObj.data_type_value[n] + "</option>";
+//                   }
+//                }
+            }
     }
 
     return toReturn;
 }
 ;
+
+
 
 function getValidValueUnit(valueType, selectedValueUnit) {
 

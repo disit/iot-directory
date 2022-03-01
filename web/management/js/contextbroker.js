@@ -1,4 +1,4 @@
-var dataTable = "";
+//var dataTable = "";
 var _serviceIP = "..";
 
 function ajaxRequest() {
@@ -211,6 +211,7 @@ function fetch_data(destroyOld, selected = null) {
     dataTable = $('#contextBrokerTable').DataTable({
 
         "processing": true,
+        
         "serverSide": true,
         scrollX: true,
         "paging": true,
@@ -270,6 +271,8 @@ function fetch_data(destroyOld, selected = null) {
                     {
                         return "<div class=\"delegatedBtn\">" + row.visibility + "</div>";
                     }
+               
+             return '';
                 }
             }, {
                 "name": "organization",
@@ -317,7 +320,8 @@ function fetch_data(destroyOld, selected = null) {
                                 'data-enable_direct_access="' + d.enable_direct_access + '" ' +
                                 'data-urlnificallback="' + d.urlnificallback + '" ' +
                                 'data-subscription_id="' + d.subscription_id + '" ' + 'data-services="' + d.services + '">Edit</button>';
-                    }
+                    }else 
+                        return '';
                 }
             }, {
                 data: null,
@@ -328,12 +332,14 @@ function fetch_data(destroyOld, selected = null) {
                     if (loggedRole == 'RootAdmin' || d.visibility == 'MyOwnPrivate' || d.visibility == 'MyOwnPublic') {
                         return '<button type="button" class="delDashBtn" ' +
                                 'data-name="' + d.name + '">Delete</button>';
-                    }
+                    }else 
+                        return '';
                 }
             }, {
                 "name": "goto",
                  "orderable": false,
                 "data": function (row, type, val, meta) {
+                    var goto="";
                     //&& (row.accesslink.substring(0,14)!= "http://192.168" && row.accesslink.substring(0,7)!= "192.168") 
                     if ((row.protocol == 'ngsi' || row.protocol.substring(0, 4) == 'ngsi')) {
                         if (row.accesslink.substring(0, 4) == 'http' ) {
@@ -356,9 +362,11 @@ function fetch_data(destroyOld, selected = null) {
                         } else if (row.dynamic == false) {
                             return '<a href="' + goto + ' " target = "_blank" ><p id="GoNoDyn' + row.name + '">Go</p></a>';
                         }
+                        return ' ';
 
 
                     }
+                    return goto;
 
                 }
             }, {
@@ -415,6 +423,7 @@ function fetch_data(destroyOld, selected = null) {
                                 'data-urlnificallback="' + d.urlnificallback + '" ' +
                                 'data-subscription_id="' + d.subscription_id + '" ' + 'data-services="' + d.services + '">View</button>';
                     }
+                    return '';
                 }
             }],
         "order": []
@@ -747,7 +756,7 @@ $(document).ready(function ()
                     $('#addContextBrokerOkBtn').show();
                     $('#dashboardTotNumberCnt .pageSingleDataCnt').html(parseInt($('#dashboardTotNumberCnt .pageSingleDataCnt').html()) + 1);
                     $('#dashboardTotActiveCnt .pageSingleDataCnt').html(parseInt($('#dashboardTotActiveCnt .pageSingleDataCnt').html()) + 1);
-                    $('#contextBrokerTable').DataTable().destroy();
+                    $('#contextBrokerTable').DataTable().clear().destroy();
 
                     //   $('.GoDynamic').style.display = "inline"; 
                     fetch_data(true);
@@ -1345,7 +1354,7 @@ $(document).ready(function ()
                     $('#editContextBrokerKoIcon').hide();
                     $('#editContextBrokerOkBtn').show();
 
-                    $('#contextBrokerTable').DataTable().destroy();
+                    $('#contextBrokerTable').DataTable().clear().destroy();
                     fetch_data(true);
                 }
             },

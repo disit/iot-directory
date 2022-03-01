@@ -698,7 +698,7 @@ if ($action == "insert") {
                     deleteKB($link, $id, $cb, retrieveKbUrl($organizationApiURI, $dev_organization), $result, $service, $servicePath, $accessToken);
 
                     if ($result["status"] == 'ko')
-                        return $result;
+                    $result["error_msg"]=$result["error_msg"];
 
                     //unique name for deleted devices
                     $milliseconds = round(microtime(true) * 1000);

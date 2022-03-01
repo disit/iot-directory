@@ -387,7 +387,20 @@ function getTemporaryDevices() {
 
 	})
 }
-
+function writeFreqAndTimestampStatus(){
+	return new Promise(function (resolve, reject){
+	var query= "UPDATE `iotdb`.`contextbroker` SET `req_frequency`='"+ FREQUENCY_SEARCH +"', timestampstatus=NOW() WHERE `name`='" + ORION_CB + "';"; // query update rows with freq and Timestamp  Status
+	cid.query(query, function(error, result){
+		 console.log('result: '+JSON.stringify(result)+JSON.stringify(error))
+            if (error) {
+                reject(error);
+                return;
+            }
+		resolve(result);
+	});
+	
+	});
+}
 function getExtractionRules() {
 	return new Promise(function (resolve, reject) {
 		var extractionRulesDev = new Object();
@@ -424,4 +437,5 @@ Array.prototype.diff = function (arr) {
 var requestLoop = setInterval(function () {
 	retrieveData(xhttp, link, limit, offset);
 	registeredDevices = [];
+	writeFreqAndTimestampStatus().then(value=>{console.log(value+" Update db with freq and timestamp")});
 }, FREQUENCY_SEARCH);

@@ -92,11 +92,20 @@ function checkEditDeviceName()
 
 function checkEditDeviceType()
 {
+    
     var message = null;
     if ( !$("#editInfoTabDevice #inputTypeDeviceM").val() || $("#editInfoTabDevice #inputTypeDeviceM").val().length === 0)
     {
         $("#inputTypeDeviceMMsg").css("color", "red");
         message = 'Device Type is mandatory';
+        editDeviceConditionsArray['inputTypeDeviceM'] = false;
+    }
+    
+    var regex=/[^a-z0-9_-]/gi;
+    if ( regex.test($("#editInfoTabDevice #inputTypeDeviceM").val()) )
+    {
+        $("#inputTypeDeviceMMsg").css("color", "red");
+        message = 'No special characters are allowed';
         editDeviceConditionsArray['inputTypeDeviceM'] = false;
     }
 	/*
@@ -305,8 +314,8 @@ function checkEditDeviceConditions()
       
 
 	//check that any value has a value type selected
-	var p = $('#editSchemaTabDevice #editlistAttributes select[id*="value_type"]').filter(function(){return this.value!=="NOT VALID OPTION"}).length;
-	var px = $('#editSchemaTabDevice #addlistAttributesM select[id*="value_type"]').filter(function(){return this.value!=="NOT VALID OPTION"}).length;
+	var p = $('#editSchemaTabDevice #editlistAttributes select[id*="value_type"] ').filter(function(){return this.value!=="NOT VALID OPTION"}).length;
+	var px = $('#editSchemaTabDevice #addlistAttributesM select[id*="value_type"] ').filter(function(){return this.value!=="NOT VALID OPTION"}).length;
 
 	//console.log("p: "+p+" n1:"+n1+" px:"+px);
 	if ((p+px)==(n1+n1x))
@@ -319,8 +328,8 @@ function checkEditDeviceConditions()
 	}
 
 	//check that any value has a value unit selected
-	var c = $('#editSchemaTabDevice #editlistAttributes select[id*="value_unit"]').filter(function(){return this.value!=="NOT VALID OPTION"}).length;
-	var cx = $('#editSchemaTabDevice #addlistAttributesM select[id*="value_unit"]').filter(function(){return this.value!=="NOT VALID OPTION"}).length;
+	var c = $('#editSchemaTabDevice #editlistAttributes select[id*="value_unit"] ').filter(function(){return this.value!=="NOT VALID OPTION"}).length;
+	var cx = $('#editSchemaTabDevice #addlistAttributesM select[id*="value_unit"] ').filter(function(){return this.value!=="NOT VALID OPTION"}).length;
 
 	//console.log("c: "+c+" n1:"+n1+" cx:"+cx);
 	if ((c+cx)==(n1+n1x))

@@ -404,7 +404,7 @@ if ($action == 'is_broker_up') {
                         $rupdate = mysqli_fetch_assoc($r);
                     }
                     if ($enable_direct_access == 'false') {
-			$query = "UPDATE orionbrokers SET status='deploy', enable_direct_access=0 WHERE id_orionbroker='$id' and organization='$organization'";
+                        $query = "UPDATE orionbrokers SET status='deploy', enable_direct_access=0 WHERE id_orionbroker='$id' and organization='$organization'";
                     } else {
                         $query = "UPDATE orionbrokers SET status='deploy', enable_direct_access=1 WHERE id_orionbroker='$id' and organization='$organization'  ";
                     }
@@ -674,7 +674,7 @@ if ($action == 'is_broker_up') {
                                         $success = FALSE;
                                 }
                             }
-                            if ($direct_access_enable=='0' || $direct_access_enable=='1') {
+                            if ($direct_access_enable == '0' || $direct_access_enable == '1') {
                                 $r = "UPDATE orionbrokers SET enable_direct_access='$direct_access_enable' WHERE name = '$name' and organization='$obj_organization';";
                                 $a = mysqli_query($link, $r);
                                 if (!$a) {
@@ -867,7 +867,8 @@ if ($action == 'is_broker_up') {
 
     my_log($result);
     mysqli_close($link);
-} else if ($action == 'get_all_contextbroker' || $action == "get_all_contextbroker_simple") {
+} 
+else if ($action == 'get_all_contextbroker' || $action == "get_all_contextbroker_simple") {
     if (isset($_REQUEST['length']))
         $length = mysqli_real_escape_string($link, $_REQUEST['length']);
     else
@@ -886,8 +887,36 @@ if ($action == 'is_broker_up') {
     else
         $selection = array();
 
-    get_all_contextbrokers($username, $organization, $role, $accessToken, $link, $length, $start, $draw, $_REQUEST, $selection, $result);
+    if (isset($_REQUEST['number'])) {
+       // $cb = mysqli_real_escape_string($link, $_REQUEST['contextbroker']);
+        $q = "SELECT DISTINCT count(*), contextBroker FROM iotdb.temporary_devices group by contextBroker ;";
+        $r = mysqli_query($link, $q);
 
+        if ($r) {
+            // $row = mysqli_fetch_assoc($r);
+            // $row= json_encode($row);
+            $cb_number = array();
+            while ($row = mysqli_fetch_assoc($r)) {
+
+                $sub_row = array($row["contextBroker"] => $row["count(*)"]);
+                array_push($cb_number, $sub_row);
+            }
+
+            $result['status'] = 'ok';
+           
+            $result['log'] .= "\n\r action:get_all_contextbroker: number. access to " . $q;
+        } else {
+            $result['status'] = 'ko'; // . $q1 . generateErrorMessage($link);
+            $result['msg'] = 'Error: errors in reading data about cb. <br/>' . generateErrorMessage($link);
+            $result['log'] .= '\n\naction:get_all_contextbroker: number. Error: errors in reading data about devices. ' . generateErrorMessage($link);
+                my_log($result);
+                return;
+        }
+        
+    }
+
+    get_all_contextbrokers($username, $organization, $role, $accessToken, $link, $length, $start, $draw, $_REQUEST, $selection, $result);
+ $result['number'] = $cb_number;
     my_log($result);
     mysqli_close($link);
 } else if ($action == "get_all_contextbroker_latlong") {

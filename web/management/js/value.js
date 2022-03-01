@@ -242,7 +242,8 @@ function format ( d ) {
 				'data-status1="'+d.status1+'" '+
 		                'data-service="'+d.service+'" ' + 
 		                'data-servicePath="'+d.servicePath+'">Edit</button>';
-				} else { }
+				} else {
+                                return '';}
 				
 				}
             },
@@ -260,7 +261,8 @@ function format ( d ) {
 		                'data-service="'+d.service+'" ' + 
                 		'data-servicePath="'+d.servicePath+'" '+
 				'data-value_name="'+d.value_name+'">Delete</button>';
-				 } else { }
+				 } else {
+                                 return ''; }
 				}
             },
 			{

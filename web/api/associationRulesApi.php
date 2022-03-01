@@ -97,6 +97,7 @@ get_user_info($accessToken, $username, $organization, $oidc, $role, $result, $ld
 
 //TODO move to contextbroker apis
 if ($action == "get_cb_details") {
+  
 	$missingParams = missingParameters(array('cb'));
 
 	if (!empty($missingParams)) {
@@ -107,9 +108,17 @@ if ($action == "get_cb_details") {
 	} else {
 
 		$contextbroker = mysqli_real_escape_string($link, $_REQUEST['cb']);
+                 if($freq = mysqli_real_escape_string($link, $_REQUEST['freq'])){
+     
+       $q2= "UPDATE `iotdb`.`contextbroker` SET `req_frequency`='$freq', `timestampstatus`=NOW() WHERE name= '$contextbroker';";
+       $r2 = mysqli_query($link, $q2);  
+      
+    }
 
 		$q = "SELECT * FROM contextbroker WHERE name= '$contextbroker';";
+                
 		$r = mysqli_query($link, $q);
+              
 
 		$context = array();
 		if ($r) {

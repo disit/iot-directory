@@ -264,27 +264,107 @@ function format_result($draw, $number_all_row, $number_filter_row, $data, $msg, 
     return $output;
 }
 
+function get_searchPanes_CB($data, $param) {
+    if ($param == 'contextbroker') {
+        $searchPanes = array("options" => array("contextbroker" => array()));
+        $cb = array();
+
+        foreach ($data as $value) {
+            array_push($cb, $value["contextbroker"]);
+        }
+        $occur = array_count_values($cb);
+
+        foreach (array_keys($occur) as $value) {
+
+            array_push($searchPanes["options"]["contextbroker"], array("label" => $value, "total" => $occur[$value], "value" => $value, "count" => $occur[$value]));
+        }
+    } else if ($param == 'rule') {
+        $searchPanes = array("options" => array("mode" => array()));
+        $rul = array();
+
+        foreach ($data as $value) {
+            array_push($rul, $value["mode"]);
+            
+        }
+        //echo  json_encode($rul);
+        $occur = array_count_values($rul);
+        //echo json_encode($occur);
+        foreach (array_keys($occur) as $value) {
+            if ($value == 'not active') {
+                array_push($searchPanes["options"]["mode"], array("label" => 'not active', "total" => $occur[$value], "value" => '0', "count" => $occur[$value]));
+            }
+            else {
+                array_push($searchPanes["options"]["mode"], array("label" => 'active', "total" => $occur[$value], "value" => '1', "count" => $occur[$value]));
+            }
+        }
+    }
+
+
+    return $searchPanes;
+}
+
+function format_result_serverside($draw, $number_all_row, $number_filter_row, $data, $msg, $log, $status, $option, $searchPanes) {
+    $output = array(
+        "draw" => intval($draw),
+        "recordsTotal" => $number_all_row,
+        "recordsFiltered" => $number_filter_row,
+        "data" => ($data),
+        "msg" => $msg,
+        "log" => $log,
+        "status" => $status,
+        "option" => $option,
+        "searchPanes" => $searchPanes,
+        "files" => []
+    );
+    return $output;
+}
+
 function create_datatable_data($link, $request, $query, $where) {
+    $check_blanket=false;
     $columns = $request["columns"];
-    if (isset($request["search"]["value"])) {
+    if(isset($request["searchPanes"]["mode"]) ){
+        $query .= ' WHERE (mode  =' . $request["searchPanes"]["mode"][0].')';
+        
+    }
+    
+    if(isset($request["searchPanes"]["contextbroker"]) ){
+        $query .= ' WHERE (contextBroker  ="' . $request["searchPanes"]["contextbroker"][0].'")';
+        
+    }
+    
+    if (isset($request["search"]["value"]) && $request["search"]["value"]!='') {
+        if(strpos($query, 'WHERE')==false){
         $query .= ' WHERE ';
+                }else{
+                     $query .= ' AND (';
+                     $check_blanket=true;
+                     
+                }
+        
         if ($where != "")
             $query .= $where . ' AND (';
 
         foreach ($columns as $col) {
-            if (!in_array($col["name"], $request["no_columns"]))
+            if (!in_array($col["name"], $request["no_columns"]) )
                 $query .= " " . $col["name"] . ' LIKE "%' . $request["search"]["value"] . '%"  OR';
         }
+       
         $query = substr($query, 0, -1);
         $query = substr($query, 0, -1);
         if ($where != "")
             $query .= ') ';
+        
+        if($check_blanket==true){
+             $query .= ') ';
+        }
+        
     }
 
     if (isset($request["order"])) {
-        $query .= 'ORDER BY ' . $columns[$request['order']['0']['column']]['name'] . ' ' . $request['order']['0']['dir'] . '	';
+        $query .= ' ORDER BY ' . $columns[$request['order']['0']['column']]['name'] . ' ' . $request['order']['0']['dir'] . '	';
     }
-
+       
+  // echo $query;
     $result = mysqli_query($link, $query);
     return $result;
 }
@@ -772,7 +852,8 @@ function getUserDelegatedDevice($token, $user, $type, &$result) {
         }
         $result["status"] = 'ok';
         $result["delegation"] = $mykeys;
- 
+
+        // echo json_encode($result["delegation"]);
     } else {
         $result["status"] = 'ko';
         $result["error_msg"] .= 'Errors in reading delegations personal. ';
@@ -783,87 +864,96 @@ function getUserDelegatedDevice($token, $user, $type, &$result) {
 
 function getDelegatedDevice($token, $user, &$result) {
     getUserDelegatedDevice($token, $user, "IOTID", $result);
-    if($result['status']=='ko')
+    if ($result['status'] == 'ko') {
+        // echo "caso1: $user";
         return;
+    }
 
     getUserDelegatedDevice($token, "ANONYMOUS", "IOTID", $result);
-    if($result['status']=='ko')
+    if ($result['status'] == 'ko') {
+        // echo "caso2: $user";
         return;
+    }
+
 
     getUserDelegatedDevice($token, $user, "ServiceURI", $result);
-    if($result['status']=='ko')
+    if ($result['status'] == 'ko') {
+        // echo "caso3: $user";
         return;
+    }
 
     getUserDelegatedDevice($token, "ANONYMOUS", "ServiceURI", $result);
 }
+
 /*
-function getDelegatedDevice($token, $user, &$result) {
-    $local_result = "";
-    $mykeys = array();
-    try {
-        $url = $GLOBALS["delegationURI"] . "datamanager/api/v2/username/" . urlencode($user) . "/delegated?accessToken=" . $token .
-                "&sourceRequest=iotdirectory"; //&elementType=IOTID";
-        $local_result = file_get_contents($url);
-    } catch (Exception $ex) {
-        $result["status"] = 'ko';
-        $result["error_msg"] .= 'Error in accessing the delegation. ';
-        $result["msg"] .= '\n error in accessing the delegation ';
-        $result["log"] .= '\n error in accessing the delegation ' . $ex;
-    }
-    if (strpos($http_response_header[0], '200') == true || strpos($http_response_header[0], '204') == true) {
-        $lists = json_decode($local_result);
-        for ($i = 0; $i < count($lists); $i++) {
-            if (isset($lists[$i]->elementType) && ($lists[$i]->elementType == "ServiceURI" || $lists[$i]->elementType == "IOTID")) {
+  function getDelegatedDevice($token, $user, &$result) {
+  $local_result = "";
+  $mykeys = array();
+  try {
+  $url = $GLOBALS["delegationURI"] . "datamanager/api/v2/username/" . urlencode($user) . "/delegated?accessToken=" . $token .
+  "&sourceRequest=iotdirectory"; //&elementType=IOTID";
+  $local_result = file_get_contents($url);
+  } catch (Exception $ex) {
+  $result["status"] = 'ko';
+  $result["error_msg"] .= 'Error in accessing the delegation. ';
+  $result["msg"] .= '\n error in accessing the delegation ';
+  $result["log"] .= '\n error in accessing the delegation ' . $ex;
+  }
+  if (strpos($http_response_header[0], '200') == true || strpos($http_response_header[0], '204') == true) {
+  $lists = json_decode($local_result);
+  for ($i = 0; $i < count($lists); $i++) {
+  if (isset($lists[$i]->elementType) && ($lists[$i]->elementType == "ServiceURI" || $lists[$i]->elementType == "IOTID")) {
 
-                $a = $lists[$i]->elementId;
-                if (isset($lists[$i]->delegationDetails)) {
-                    $delegationDetails = json_decode($lists[$i]->delegationDetails);
-                    $mykeys[$a] = array("usernameDelegator" => $lists[$i]->usernameDelegator, "delegationId" => $lists[$i]->id, "kind" => 'specific', "k1" => $delegationDetails->k1, "k2" => $delegationDetails->k2);
-                } else {
-                    $mykeys[$a] = array("usernameDelegator" => $lists[$i]->usernameDelegator, "delegationId" => $lists[$i]->id, "kind" => 'specific', "k1" => "", "k2" => "");
-                }
-            }
-        }
-        try {
-            $url = $GLOBALS["delegationURI"] . "datamanager/api/v1/username/ANONYMOUS/delegated?accessToken=" . $token .
-                    "&sourceRequest=iotdirectory"; //&elementType=IOTID";
-            $local_result = file_get_contents($url);
+  $a = $lists[$i]->elementId;
+  if (isset($lists[$i]->delegationDetails)) {
+  $delegationDetails = json_decode($lists[$i]->delegationDetails);
+  $mykeys[$a] = array("usernameDelegator" => $lists[$i]->usernameDelegator, "delegationId" => $lists[$i]->id, "kind" => 'specific', "k1" => $delegationDetails->k1, "k2" => $delegationDetails->k2);
+  } else {
+  $mykeys[$a] = array("usernameDelegator" => $lists[$i]->usernameDelegator, "delegationId" => $lists[$i]->id, "kind" => 'specific', "k1" => "", "k2" => "");
+  }
+  }
+  }
+  try {
+  $url = $GLOBALS["delegationURI"] . "datamanager/api/v1/username/ANONYMOUS/delegated?accessToken=" . $token .
+  "&sourceRequest=iotdirectory"; //&elementType=IOTID";
+  $local_result = file_get_contents($url);
 
-            if (strpos($http_response_header[0], '200') == true || strpos($http_response_header[0], '204') == true) {
-                $lists = json_decode($local_result);
-                for ($i = 0; $i < count($lists); $i++) {
-                    if (isset($lists[$i]->elementType) && ($lists[$i]->elementType == "ServiceURI" || $lists[$i]->elementType == "IOTID")) {
-                        $a = $lists[$i]->elementId;
-                        if (isset($lists[$i]->delegationDetails) && isset($lists[$i]->delegationDetails->k1))
-                            $mykeys[$a] = array("usernameDelegator" => $lists[$i]->usernameDelegator, "delegationId" => $lists[$i]->id, "kind" => 'anonymous', "k1" => $lists[$i]->delegationDetails->k1, "k2" => $lists[$i]->delegationDetails->k2);
-                        else
-                            $mykeys[$a] = array("usernameDelegator" => $lists[$i]->usernameDelegator, "delegationId" => $lists[$i]->id, "kind" => 'anonymous', "k1" => "", "k2" => "");
-                    }
-                }
-                $result["status"] = 'ok';
-                $result["delegation"] = $mykeys;
-                //$result["msg"] .= '\n identified ' . count($lists) . ' anonymous delegated devices \n' . json_encode($mykeys);
-                //$result["log"] .= '\n identified ' . count($lists) . ' anonymous delegated devices \n' . json_encode($mykeys);
-            } else {
-                $result["status"] = 'ko';
-                $result["error_msg"] .= 'Errors in reading delegations anonymous. ';
-                $result["msg"] .= '\n errors in reading delegations anonymous' . $local_result . $url . "------" . $http_response_header[0];
-                $result["log"] .= '\n errors in reading delegations anonymous' . $local_result . $url . "------" . $http_response_header[0];
-            }
-        } catch (Exception $ex) {
-            $result["status"] = 'ko';
-            $result["error_msg"] .= 'Error in accessing the delegation. ';
-            $result["msg"] .= '\n error in accessing the delegation ' . $ex;
-            $result["log"] .= '\n error in accessing the delegation ' . $ex;
-        }
-    } else {
-        $result["status"] = 'ko';
-        $result["error_msg"] .= 'Errors in reading delegations personal. ';
-        $result["msg"] .= '\n errors in reading delegations personal ' . $local_result . $url . "------" . $http_response_header[0];
-        $result["log"] .= '\n errors in reading delegations personal' . $local_result . $url . "------" . $http_response_header[0];
-    }
-}
-*/
+  if (strpos($http_response_header[0], '200') == true || strpos($http_response_header[0], '204') == true) {
+  $lists = json_decode($local_result);
+  for ($i = 0; $i < count($lists); $i++) {
+  if (isset($lists[$i]->elementType) && ($lists[$i]->elementType == "ServiceURI" || $lists[$i]->elementType == "IOTID")) {
+  $a = $lists[$i]->elementId;
+  if (isset($lists[$i]->delegationDetails) && isset($lists[$i]->delegationDetails->k1))
+  $mykeys[$a] = array("usernameDelegator" => $lists[$i]->usernameDelegator, "delegationId" => $lists[$i]->id, "kind" => 'anonymous', "k1" => $lists[$i]->delegationDetails->k1, "k2" => $lists[$i]->delegationDetails->k2);
+  else
+  $mykeys[$a] = array("usernameDelegator" => $lists[$i]->usernameDelegator, "delegationId" => $lists[$i]->id, "kind" => 'anonymous', "k1" => "", "k2" => "");
+  }
+  }
+  $result["status"] = 'ok';
+  $result["delegation"] = $mykeys;
+  //$result["msg"] .= '\n identified ' . count($lists) . ' anonymous delegated devices \n' . json_encode($mykeys);
+  //$result["log"] .= '\n identified ' . count($lists) . ' anonymous delegated devices \n' . json_encode($mykeys);
+  } else {
+  $result["status"] = 'ko';
+  $result["error_msg"] .= 'Errors in reading delegations anonymous. ';
+  $result["msg"] .= '\n errors in reading delegations anonymous' . $local_result . $url . "------" . $http_response_header[0];
+  $result["log"] .= '\n errors in reading delegations anonymous' . $local_result . $url . "------" . $http_response_header[0];
+  }
+  } catch (Exception $ex) {
+  $result["status"] = 'ko';
+  $result["error_msg"] .= 'Error in accessing the delegation. ';
+  $result["msg"] .= '\n error in accessing the delegation ' . $ex;
+  $result["log"] .= '\n error in accessing the delegation ' . $ex;
+  }
+  } else {
+  $result["status"] = 'ko';
+  $result["error_msg"] .= 'Errors in reading delegations personal. ';
+  $result["msg"] .= '\n errors in reading delegations personal ' . $local_result . $url . "------" . $http_response_header[0];
+  $result["log"] .= '\n errors in reading delegations personal' . $local_result . $url . "------" . $http_response_header[0];
+  }
+  }
+ */
+
 function getDelegatedObject($token, $user, $object, &$result) {
     $local_result = "";
     $mykeys = array();
@@ -2482,7 +2572,11 @@ function nificallback_create($ip, $port, $name, $urlnificallback, $protocol, $se
 
             $msg = "{\"description\": \"$name nifi\",\"subject\": {	\"entities\": [{ \"idPattern\": \".*\",	\"typePattern\": \".*\"	}],\"condition\": {\"attrs\": []}},\"notification\": {	\"http\": {\"url\": \"$urlnificallback\" }}}";
 
-            $url = "http://" . $ip . ":" . $port . "/v2/subscriptions";
+            $IP_PORT = checkIP($ip, $port);
+
+            $url = $IP_PORT . "/v2/subscriptions";
+
+            echo $IP_PORT;
 
             $result["log"] .= "\n Payload to send is:" . $msg;
             $result["log"] .= "\n Post url is:" . $url;
@@ -2530,6 +2624,22 @@ function nificallback_create($ip, $port, $name, $urlnificallback, $protocol, $se
         $result["msg"] .= '\n Error in creating the subscription for NIFI ';
         $result["log"] .= '\n Error in creating the subscription for NIFI ' . $ex;
     }
+}
+
+function checkIP($IP, $PORT) {
+
+    if (substr($IP, -1) == '/')
+        $IP = substr($IP, 0, -1);
+
+    if ($PORT != "")
+        $PORT = ":" . $PORT;
+
+    if (substr($IP, 0, 4) != "http") {
+        $IP = "http://" . $IP;
+    }
+    $IP_PORT = $IP . $PORT;
+
+    return $IP_PORT;
 }
 
 function extract_subscription_id($headers) {
@@ -2687,9 +2797,11 @@ function is_broker_up($link, $cb, $service, $servicePath, $version, $organizatio
     $ip = $rowCB["ip"];
     $port = $rowCB["port"];
 
-    if ($version == "v2")
-        $url_orion = "http://$ip:$port/v2/entities";
-    else
+    if ($version == "v2") {
+
+        $IP_PORT = checkIP($ip, $port);
+        $url_orion = "$IP_PORT/v2/entities";
+    } else
         $url_orion = "http://$ip:$port/v1/queryContext";
 
 
@@ -2778,7 +2890,7 @@ function get_device($username, $role, $id, $cb, $accessToken, $link, &$result, $
                     $row["k1"] = $result["keys"][$eid]["k1"];
                     $row["k2"] = $result["keys"][$eid]["k2"];
                 }
-                //in case of delegation, resetting privatekey info
+                // in case of delegation, resetting privatekey info
                 else {
                     unset($row["sha"]);
                     unset($row["privatekey"]);
@@ -2893,7 +3005,7 @@ function get_all_contextbrokers($username, $organization, $loggedrole, $accessTo
 
             $Prov = (mysqli_fetch_assoc($rq));
 
-            if ($Prov['enable_direct_access']==1) {
+            if ($Prov['enable_direct_access'] == 1) {
                 $row["enable_direct_access"] = true;
             } else {
                 $row["enable_direct_access"] = false;
@@ -3205,6 +3317,11 @@ function get_device_data($link, $id, $type, $cb, $service, $servicePath, $versio
     }
 }
 
+//// Loading temporany value
+function get_value_attribute() {
+    
+}
+
 /// Loading value 
 
 function Loading_value($link, $id, $type, $cb, $service, $servicePath, $version, &$result) {
@@ -3235,8 +3352,10 @@ function Loading_value($link, $id, $type, $cb, $service, $servicePath, $version,
     }
     $isMobile = (mysqli_fetch_assoc($r));
 
+    $IP_PORT = checkIP($ip, $port);
+
     if ($version == "v2")
-        $url_orion = "http://$ip:$port/v2/entities/$id?options=keyValues";
+        $url_orion = "$IP_PORT/v2/entities/$id?options=keyValues";
     //"?options=keyValues";
 //    else
 //        $url_orion = "http://$ip:$port/v1/queryContext";
@@ -3277,6 +3396,7 @@ function Loading_value($link, $id, $type, $cb, $service, $servicePath, $version,
 
             $result["status"] = 'ok';
             $result["content"] = json_decode($response_orion);
+            // echo $result["content"];
             $result["isMobile"] = $isMobile ? "true" : "false";
             //'{"status": "Ok - Keeping data"}';
 
@@ -3422,7 +3542,7 @@ function logAction($link, $accessed_by, $target_entity_type, $access_type, $enti
         $result["msg"] = "correctly logged\n" . $accessed_by . " " . $target_entity_type . " " . $access_type . " " . $entity_name .
                 " " . $notes;
     } else {
-	$result["log"] .= " --- error in inserting log ".$query."\n";
+        $result["log"] .= " --- error in inserting log " . $query . "\n";
     }
     return $result["msg"];
 }

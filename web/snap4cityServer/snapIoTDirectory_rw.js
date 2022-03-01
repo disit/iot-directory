@@ -144,8 +144,10 @@ router.route('/ngsi')
 router.route('/ngsi_w_MultiService')
 	.post(function (req, res) {
 		var args = [];
+		console.log("POST / ngsi_w_MultiService "+JSON.stringify(req.body));
 
 		if (registeredStub.get(req.body.contextbroker) != undefined) {
+			
 			if (req.body.ip == "kill") {
 				registeredStub.get(req.body.contextbroker).kill();
 				registeredStub.delete(req.body.contextbroker);
@@ -188,7 +190,7 @@ router.route('/ngsi_w_MultiService')
 				res.json({ message: 'stub already active for ORION context broker ' + req.body.contextbroker });
 			}
 		}
-		else {
+		else if (req.body.ip != "kill"){
 			console.log("Retrieval from " + req.body.contextbroker + " activated.");
 
 			args = ['./snap4cityBroker/ngsiMTSP2IoTDirectory_rw.js',
