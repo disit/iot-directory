@@ -108,7 +108,11 @@ req.onreadystatechange = function () {
         schema = JSON.parse(this.responseText)["content"];
         if (schema.length > 0) {
             console.log("tenants/paths structure retrieved "+JSON.stringify(schema));
+			var t=new Date();
+			console.log("*_*_*_*_*_*_*_***** " + t +" START time of  inferImplicitPaths");
             inferImplicitPaths(schema);
+			var t2=new Date();
+			console.log("*_*_*_*_*_*_*_***** " + (t-t2) +" Difference  time of inferImplicitPaths");
         } else {
             console.log("tenants/paths structure empty response!");
         }
@@ -555,6 +559,13 @@ Array.prototype.diff = function (arr) {
     });
 };
 var requestLoop = setInterval(function () {
+	var t=new Date();
+	console.log("*_*_*_*_*_*_*_***** " + t +" START time");
     retrieveDataCaller(schema);
-	writeFreqAndTimestampStatus().then(value=>{console.log(value+" Update db with freq and timestamp")});
+	var t2=new Date();
+	console.log("*_*_*_*_*_*_*_***** " + (t2-t) +" after retrive data time");
+	writeFreqAndTimestampStatus().then(value=>{
+		var t3= new Date();
+			console.log("*_*_*_*_*_*_*_***** " + (t3- t) + " FINAL TIME");
+		console.log(value+" Update db with freq and timestamp")});
 }, FREQUENCY_SEARCH);

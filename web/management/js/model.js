@@ -696,15 +696,20 @@ $(document).ready(function ()
     });
 
 //--------------------------------------------------------------------------------------------------------------ADD NEW MODEL
+function checkIfDuplicateExists(arr) {
+    return new Set(arr).size !== arr.length;
+}
     $('#addNewModelConfirmBtn').off("click");
     $('#addNewModelConfirmBtn').click(function () {
         mynewAttributes = [];
         var regex = /[^a-z0-9_-]/gi;
         var someNameisWrong = false;
         var msg_whatiswrong = "";
+       AttrName=[];
         num1 = document.getElementById('addlistAttributes').childElementCount;
         for (var m = 0; m < num1; m++)
         {
+            AttrName.push(document.getElementById('addlistAttributes').childNodes[m].childNodes[0].childNodes[0].childNodes[0].value.trim());
             var newatt = {value_name: document.getElementById('addlistAttributes').childNodes[m].childNodes[0].childNodes[0].childNodes[0].value.trim(),
                 data_type: document.getElementById('addlistAttributes').childNodes[m].childNodes[3].childNodes[0].childNodes[0].value.trim(),
                 value_type: document.getElementById('addlistAttributes').childNodes[m].childNodes[1].childNodes[0].childNodes[0].value.trim(),
@@ -744,6 +749,15 @@ $(document).ready(function ()
             if (!someNameisWrong) {
                 mynewAttributes.push(newatt);
             }
+        }
+        
+        if(checkIfDuplicateExists(AttrName)){
+             someNameisWrong = true;
+                msg_whatiswrong += "The value name must be unique. ";
+        }
+        if($('#selectKindModel').val()==''){
+             someNameisWrong = true;
+                msg_whatiswrong += "The kind must be specificated. ";
         }
 
         if (!someNameisWrong) {
@@ -1094,7 +1108,10 @@ $(document).ready(function ()
         $('a[data-toggle="tab"]').off('shown.bs.tab').on('shown.bs.tab', function (e) {
             var target = $(e.target).attr("href");
             if ((target == '#editSchemaTabModel')) {
-                document.getElementById('editlistAttributes').innerHTML = ""; 
+                
+                 document.getElementById('editlistAttributes').innerHTML = "";
+            document.getElementById('addlistAttributesM').innerHTML = "";
+            document.getElementById('deletedAttributes').innerHTML = "";
                  
                   $('#editModelLoadingIcon').show();
                 $.ajax({
@@ -1131,7 +1148,7 @@ $(document).ready(function ()
 
                         checkEditAtlistOneAttributeM();
                         $("#editSchemaTabModel #editlistAttributes .row input:even").each(function () {
-                            checkModelValueNameM($(this));
+                            checkModelValueName($(this));
                         });
                         checkAddModelConditions();
 
@@ -1175,15 +1192,15 @@ $(document).ready(function ()
         $('#addlistAttributesM').append(content);
         checkEditAtlistOneAttributeM();
         $("#editSchemaTabModel #addistAttributesM .row input:even").each(function () {
-            checkModelValueNameM($(this));
+            checkModelValueName($(this));
         });
         checkEditModelConditions();
     });
 
     $("#editSchemaTabModel").off("click");
     $("#editSchemaTabModel").on('click keyup', function () {
-        $("#editSchemaTabModel #addlistAttributesM .row input:even").each(function () {
-            checkModelValueNameM($(this));
+        $("#editSchemaTabModel #addlistAttributesM .row input").each(function () { //:even
+            checkModelValueName($(this));
         });
         checkEditModelConditions();
     });
@@ -1234,6 +1251,15 @@ $(document).ready(function ()
         $('a[data-toggle="tab"]').off('shown.bs.tab').on('shown.bs.tab', function (e) {
             var target = $(e.target).attr("href");
             if ((target == '#editSchemaTabModel')) {
+                
+                if(document.querySelector("#addlistAttributesM > div")==null){
+                    document.getElementById('addlistAttributesM').innerHTML = "";
+                }
+                
+                   document.getElementById('editlistAttributes').innerHTML = "";
+            
+            document.getElementById('deletedAttributes').innerHTML = "";
+            
                 $.ajax({
                     url: "../api/model.php",
                     data: {
@@ -1266,7 +1292,7 @@ $(document).ready(function ()
                         }
                         checkEditAtlistOneAttributeM();
                         $("#editSchemaTabModel #editlistAttributes .row input:even").each(function () {
-                            checkModelValueNameM($(this));
+                            checkModelValueName($(this));
                         });
                         checkAddModelConditions();
                     },
@@ -1306,16 +1332,24 @@ $(document).ready(function ()
 
     //$('#editModelConfirmBtn').off("click");
     $("#editModelConfirmBtn").off("click").click(function () {
+        
 
         //MARCO: in case of model I do not have to distinguish between updated attributes and new inserted 
         // attributes. I can use a single variable for keeping trace of both of them
         //mynewAttributes = [];
         myAttributes = [];
+        msg_whatiswrong='';
         var regex = /[^a-z0-9_-]/gi;
         var someNameisWrong = false;
+        AttrName=[];
         num1 = document.getElementById('addlistAttributesM').childElementCount;
+        
+             
+        
+        
+        
         for (var m = 0; m < num1; m++)
-        {
+        {   AttrName.push(document.getElementById('addlistAttributesM').childNodes[m].childNodes[0].childNodes[0].childNodes[0].value.trim());
             //var selOpt= document.getElementById('addlistAttributesM').childNodes[m].childNodes[2].childNodes[0].childNodes[0].options;
             //var selIndex= document.getElementById('addlistAttributesM').childNodes[m].childNodes[2].childNodes[0].childNodes[0].selectedIndex;
             var newatt = {value_name: document.getElementById('addlistAttributesM').childNodes[m].childNodes[0].childNodes[0].childNodes[0].value.trim(),
@@ -1352,6 +1386,7 @@ $(document).ready(function ()
 //            var selectOpt_edit = document.getElementById('editlistAttributes').childNodes[j].childNodes[4].childNodes[0].childNodes[0].options;
 //            var selectIndex_edit = document.getElementById('editlistAttributes').childNodes[j].childNodes[4].childNodes[0].childNodes[0].selectedIndex;
 
+                 AttrName.push(document.getElementById('editlistAttributes').childNodes[j].childNodes[0].childNodes[0].childNodes[0].value.trim());
             var att = {value_name: document.getElementById('editlistAttributes').childNodes[j].childNodes[0].childNodes[0].childNodes[0].value.trim(),
                 data_type: selectOpt_data_type[selectIndex_data_type].value,
                 value_type: selectOpt_value_type[selectIndex_value_type].value,
@@ -1362,8 +1397,9 @@ $(document).ready(function ()
 
             if (att.value_name != "" && !regex.test(att.value_name) && att.value_name.length >= 2 && att.data_type != "" && att.value_type != "" && att.editable != "" && att.value_unit != "" && att.healthiness_criteria != "" && att.healthiness_value != "")
                 myAttributes.push(att);
-            else
+            else{
                 someNameisWrong = true;
+             msg_whatiswrong += "The value name must be valid. All the field are been filled ";}
 
         }
 
@@ -1399,6 +1435,16 @@ $(document).ready(function ()
          }
          */
 
+         if(checkIfDuplicateExists(AttrName)){
+             someNameisWrong = true;
+                msg_whatiswrong += "The value name must be unique. ";
+        }
+        
+        if($('#selectKindModelM').val()==''){
+             someNameisWrong = true;
+                msg_whatiswrong += "The kind must be specificated. ";
+        }
+        
         if (!someNameisWrong) {
             document.getElementById('editlistAttributes').innerHTML = "";
             document.getElementById('addlistAttributesM').innerHTML = "";
@@ -1425,6 +1471,28 @@ $(document).ready(function ()
                 if (servicePath[servicePath.length - 1] === "/" && servicePath.length > 1)
                     servicePath = servicePath.substr(0, servicePath.length - 1);
             }
+            
+            
+            if(JSON.stringify(myAttributes)=="[]"){
+                 $.ajax({
+                    url: "../api/model.php",
+                    data: {
+                        action: "get_value_attributes",
+                         id: $('#inputIdModelM').val(),
+                        token: sessionToken
+                    },
+                    type: "POST",
+                    async: false,
+                    dataType: 'json',
+                    success: function (mydata)
+                    {
+
+                      myAttributes = JSON.parse(mydata.content.attributes);
+                      console.log(myAttributes);
+                  }});
+            }
+            
+       
 
             $.ajax({
                 url: "../api/model.php",
@@ -1536,7 +1604,7 @@ $(document).ready(function ()
                 }
             });
         } else {
-            alert("Check the values of your device, make sure that data you entered are valid");
+            alert("Check the values of your device, make sure that data you entered are valid"+msg_whatiswrong );
         }
     });
 

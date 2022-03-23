@@ -233,7 +233,7 @@ $.ajax({
     type: "POST",
     async: true,
     success: function (data) {
-        CB_NUM = data.number;
+        
         //TO DO: mettere controllo ToolAdmin lato server
         if (data["status"] === 'ok' && (loggedRole == "ToolAdmin")) {
             data.data = data.data.filter(External_Organizzation);
@@ -251,6 +251,7 @@ $.ajax({
         } else {
             console.log("error getting the context brokers " + data);
         }
+        CB_NUM = data.number;
     },
     error: function (data) {
         console.log("error in the call to get the context brokers " + data);
@@ -348,7 +349,7 @@ function Element_Table(mydata) {
                     if (JSON.parse(a).message == '["' + row.name + '"]') {
                         return '<button id="DisabledbuttonB" type="button" data-contextbroker = "' + row.name + '" onclick="killDiscoveryCB();"  class="StatusCBDashBtn btn btn-danger" > <b>DISABLED </b></button>';
                     } else {
-                        return '<button id="ActivatebuttonB" type="button" data-contextbroker = "' + row.name + '" onclick="SetFreqNstart()" class="StatusCBDashBtn btn" style=" background-color: rgb(69, 183, 175); color: white;" ><b>ACTIVATE </b>  </button>';
+                        return '<button id="ActivatebuttonB" type="button" data-contextbroker = "' + row.name + '" onclick="SetFreqNstart(\'' + row.name + '\')" class="StatusCBDashBtn btn" style=" background-color: rgb(69, 183, 175); color: white;" ><b>ACTIVATE </b>  </button>';
                     }
                 }
             },
@@ -385,13 +386,18 @@ function Element_Table(mydata) {
             }, {
                 "name": "NumberNewDevice",
                 "data": function (row, type, val, meta) {
+                    var NUM_DEV="-"
+                    if(CB_NUM.length!=0){
                     for (let i = 0; i < CB_NUM.length; i++) {
                         if (CB_NUM[i][row.name]) {
-                            return CB_NUM[i][row.name];
+                            NUM_DEV= CB_NUM[i][row.name];
                         } else {
-                            return "-";
+                            NUM_DEV= "-";
                         }
-                    }
+                        
+                        return NUM_DEV;
+                    }}
+                return NUM_DEV;
 
 
                 }
@@ -403,9 +409,9 @@ function Element_Table(mydata) {
 }
 
 //function to set frequency and start discovery
-function SetFreqNstart() {
+function SetFreqNstart(id) {
     $('#FREQactiveBrokersModal').modal('show');
-    var contextbroker = $('#ActivatebuttonB').attr('data-contextbroker');
+    var contextbroker = id;
 
     $('#FREQsetButton').click(function () {
         $('#FREQsetButton').text("LOADING...PLEASE WAIT 10 seconds");
@@ -556,7 +562,8 @@ function getFrequency(secs) {
         var hrs = ~~(seconds / 3600);
         var mins = ~~((seconds % 3600) / 60);
         secs = ~~seconds % 60;
-        return secs + " seconds " + mins + " minutes " + hrs + " hours";
+        //secs + " seconds " +
+        return  mins + " minutes " + hrs + " hours";
     } else {
         return seconds + minutes + hours;
     }

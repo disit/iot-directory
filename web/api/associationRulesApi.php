@@ -110,12 +110,12 @@ if ($action == "get_cb_details") {
 		$contextbroker = mysqli_real_escape_string($link, $_REQUEST['cb']);
                  if($freq = mysqli_real_escape_string($link, $_REQUEST['freq'])){
      
-       $q2= "UPDATE `iotdb`.`contextbroker` SET `req_frequency`='$freq', `timestampstatus`=NOW() WHERE name= '$contextbroker';";
+       $q2= "UPDATE `iotdb`.`contextbroker` SET `req_frequency`='$freq', `timestampstatus`=NOW() WHERE name= '$contextbroker' AND organization = '$organization';";
        $r2 = mysqli_query($link, $q2);  
       
     }
 
-		$q = "SELECT * FROM contextbroker WHERE name= '$contextbroker';";
+		$q = "SELECT * FROM contextbroker WHERE name= '$contextbroker' AND organization = '$organization';";
                 
 		$r = mysqli_query($link, $q);
               
@@ -166,7 +166,7 @@ else if ($action == "get_multiple_cb_details") {
 
 		while ($i < count($contextbrokers)) {
 			$cb = $contextbrokers[$i];
-			$q = "SELECT * FROM contextbroker WHERE name= '$cb';";
+			$q = "SELECT * FROM contextbroker WHERE name= '$cb' AND organization = '$organization';";
 			$r = mysqli_query($link, $q);
 
 			if ($r) {

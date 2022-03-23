@@ -247,7 +247,7 @@ if (($hide_menu != "hide")) {
                                                 <div class=" col-xs-12 col-md-4">Minutes:
                                                     <select id="FselectorMinutes" style="margin-left: 5px;">
                                                         <?php
-                                                        for ($i = 0; $i <= 59; $i++) {
+                                                        for ($i = 1; $i <= 59; $i++) {
                                                             ?>
                                                             <option value="<?php echo $i; ?>"><?php echo $i; ?></option>
     <?php
@@ -257,8 +257,8 @@ if (($hide_menu != "hide")) {
                                                 </div>
 
 
-                                                <div class=" col-xs-12 col-md-4">Seconds:
-                                                    <select id="FselectorSeconds" style="margin-left: 5px;">
+                                                <div class=" col-xs-12 col-md-4" style=" display: none;">Seconds:
+                                                    <select id="FselectorSeconds" style="margin-left: 5px; display: none;" >
                                                         <?php
                                                         for ($i = 0; $i <= 59; $i++) {
                                                             

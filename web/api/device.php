@@ -698,7 +698,7 @@ if ($action == "insert") {
                     deleteKB($link, $id, $cb, retrieveKbUrl($organizationApiURI, $dev_organization), $result, $service, $servicePath, $accessToken);
 
                     if ($result["status"] == 'ko')
-                    $result["error_msg"]=$result["error_msg"];
+                        $result["error_msg"] = $result["error_msg"];
 
                     //unique name for deleted devices
                     $milliseconds = round(microtime(true) * 1000);
@@ -1101,11 +1101,11 @@ else if ($action == 'change_visibility') {
         $version = mysqli_real_escape_string($link, $_REQUEST['version']);
 
         // $payload =  $_REQUEST['payload'];
-        if (isset($_REQUEST['service']) && $_REQUEST['service']!="null")
+        if (isset($_REQUEST['service']) && $_REQUEST['service'] != "null")
             $service = mysqli_real_escape_string($link, $_REQUEST['service']);
         else
             $service = "";
-        if (isset($_REQUEST['servicePath']) && $_REQUEST['servicePath']!="null")
+        if (isset($_REQUEST['servicePath']) && $_REQUEST['servicePath'] != "null")
             $servicePath = mysqli_real_escape_string($link, $_REQUEST['servicePath']);
         else
             $servicePath = "";
@@ -1154,7 +1154,6 @@ else if ($action == 'change_visibility') {
 
     simple_log($result);
     mysqli_close($link);
-   
 
     if ($result["status"] == "ok") {
         echo json_encode($result);
@@ -1163,9 +1162,7 @@ else if ($action == 'change_visibility') {
         header('HTTP/1.1 500 Internal Server Error');
         echo $result["error_msg"];
     }
-}
-
-else if ($action == 'Insert_Value'){
+} else if ($action == 'Insert_Value') {
 
     $result["log"] .= "\n  ;invoked Insert_Value from device.php";
 
@@ -1182,11 +1179,11 @@ else if ($action == 'Insert_Value'){
         $cb = mysqli_real_escape_string($link, $_REQUEST['contextbroker']);
         $version = mysqli_real_escape_string($link, $_REQUEST['version']);
         $payload = $_REQUEST['payload'];
-        if (isset($_REQUEST['service']) && $_REQUEST['service']!="null")
+        if (isset($_REQUEST['service']) && $_REQUEST['service'] != "null")
             $service = mysqli_real_escape_string($link, $_REQUEST['service']);
         else
             $service = "";
-        if (isset($_REQUEST['servicePath']) && $_REQUEST['servicePath']!="null")
+        if (isset($_REQUEST['servicePath']) && $_REQUEST['servicePath'] != "null")
             $servicePath = mysqli_real_escape_string($link, $_REQUEST['servicePath']);
         else
             $servicePath = "";
@@ -1573,15 +1570,42 @@ else if ($action == 'Insert_Value'){
         $tobelimited = false;
     }
 
+
+    if (isset($_REQUEST['delegated']) || isset($_REQUEST['public']) || isset($_REQUEST['own'])) {
+        $subset = true;
+    } else {
+        $subset = false;
+    }
+
+
+
+
+
     $data = array();
+    
 
     if ($r) {
         while ($row = mysqli_fetch_assoc($r)) {
             $eid = $row["organization"] . ":" . $row["contextBroker"] . ":" . $row["id"];
-            if ((($row["organization"] == $organization) &&
-                    (
-                    ($row["visibility"] == 'public' || (isset($result["delegation"][$eid]) && $result["delegation"][$eid]["kind"] == "anonymous")))) || (isset($result["delegation"][$eid]) && $result["delegation"][$eid]["kind"] != "anonymous") || (isset($result["keys"][$eid]) && $result["keys"][$eid]["owner"] == $username)
-            ) {
+
+            $SelPub = ($row["organization"] == $organization) && ($row["visibility"] == 'public' || ( isset($result["delegation"][$eid]) && $result["delegation"][$eid]["kind"] == "anonymous") );
+            $SelDel =  (isset($result["delegation"][$eid]) && ($result["delegation"][$eid]["kind"] != "anonymous") && $row["visibility"] != "public");
+                    //(isset($result["delegation"][$eid]) && $result["delegation"][$eid]["kind"] != "anonymous" );
+            $SelOwn = (isset($result["keys"][$eid]) && $result["keys"][$eid]["owner"] == $username );
+
+            if (!$subset) {
+                $COND = $SelPub || $SelDel || $SelOwn;
+            } else {
+                if (isset($_REQUEST['delegated'])) {
+                    $COND =  $SelDel ;
+                } else if (isset($_REQUEST['public'])) {
+                   $COND = $SelPub ;
+                } else if (isset($_REQUEST['own'])) {
+                    $COND =  $SelOwn;
+                }
+            }
+
+            if ($COND) {
 
                 $selectedrows++;
                 if (!$tobelimited || ($tobelimited && $selectedrows >= $start && $selectedrows < ($start + $offset))) {
@@ -1648,7 +1672,7 @@ else if ($action == 'Insert_Value'){
                             $rec["visibility"] = 'public';
                             $rec["k1"] = "";
                             $rec["k2"] = "";
-                        } else if (isset($result["delegation"][$eid])) {
+                        } else if (isset($result["delegation"][$eid]) && ($result["delegation"][$eid]["kind"] != "anonymous") && $row["visibility"] != "public") {
                             //it's delegated personally
                             $rec["visibility"] = 'delegated';
                             $rec["k1"] = "";
@@ -1663,11 +1687,20 @@ else if ($action == 'Insert_Value'){
                             $rec["k2"] = "";
                         }
                     }
+                   
+
                     array_push($data, $rec);
                 }
             }
         }
-        $output = format_result($draw, $selectedrows + 1, $selectedrows + 1, $data, "", "\r\n action=get_all_device \r\n", 'ok');
+
+
+       
+            $output = format_result($draw, $selectedrows + 1, $selectedrows + 1, $data, "", "\r\n action=get_all_device \r\n", 'ok');
+        
+
+
+        //$output = format_result($draw, $selectedrows + 1, $selectedrows + 1, $data, "", "\r\n action=get_all_device \r\n", 'ok');
         logAction($link, $username, 'device', 'get_all_device', '', $organization, '', 'success');
     } else {
         logAction($link, $username, 'device', 'get_all_device', '', $organization, 'Error: errors in reading data about devices.', 'faliure');

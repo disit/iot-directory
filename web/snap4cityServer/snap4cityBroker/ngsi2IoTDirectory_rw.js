@@ -435,7 +435,15 @@ Array.prototype.diff = function (arr) {
 	});
 };
 var requestLoop = setInterval(function () {
+	var t=new Date();
+	console.log(t +" START time");
 	retrieveData(xhttp, link, limit, offset);
+	var t2=new Date();
+	console.log((t2-t) +" after retrive data time");
 	registeredDevices = [];
-	writeFreqAndTimestampStatus().then(value=>{console.log(value+" Update db with freq and timestamp")});
+	
+	writeFreqAndTimestampStatus().then(value=>{
+			var t3= new Date();
+			console.log((t3- t) + "FINAL TIME");
+	console.log(value+" Update db with freq and timestamp")});
 }, FREQUENCY_SEARCH);

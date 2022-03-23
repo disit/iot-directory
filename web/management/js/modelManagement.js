@@ -151,6 +151,8 @@ function checkModelValueName(current)
 {
     var message = null;
     var regex=/[^a-z0-9_-]/gi;
+     var regex2=/\bid\b/;
+    var regex3= /\btype\b/;
     value=current.val();
     element=current.parent().siblings().last();
 
@@ -162,6 +164,11 @@ function checkModelValueName(current)
         element.css("color", "red");
         message = 'Value name is mandatory';
         //addDeviceConditionsArray['inputNameValue'] = false;
+    }
+    else if(regex2.test(value) || regex3.test(value) )
+    {
+        element.css("color", "red");
+        message = 'No valid Value name: you can not use <b>id</b> or  <b>type</b>';
     }
     else if(value.length < 2)
     {

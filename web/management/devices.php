@@ -378,6 +378,7 @@
                                 <div class="col-xs-12 mainContentCellCnt ">
 								<div class="row" style= "background-color: rgb(241, 245, 244);">
 									<div class="col-xs-12 col-md-6 modalCell " style= "background-color: rgb(241, 245, 244);">
+                                                                            <div class="pull-left "><button id="ShowOnlyDelegated"  class="btn btn-primary">Show delegated dev.</button></div><div >&nbsp;<button id="ShowOnlyPublic"  class="btn btn-primary">Show public dev.</button>&nbsp;<button id="ShowOnlyOwn"  class="btn btn-primary">Show my dev.</button>&nbsp;<button id="ShowAll"  class="btn btn-primary">Show all dev.</button></div>
 									<div id="displayDevicesMap" class="pull-right"><button type="button" class="btn btn-primary btn-round"><span class="glyphicon glyphicon-globe" style="font-size:36px; color: #0000ff"></span></button></div>
 									</div>
 									<div class="col-xs-12 col-md-6 modalCell" style= "background-color: rgb(241, 245, 244);">

@@ -308,7 +308,7 @@ function checkValueName(current)
     var message = null;
     var regex=/[^a-z0-9:._-]/gi;
     var regex2=/\bid\b/;
-     var regex3= /\btype\b/;
+    var regex3= /\btype\b/;
      
     if 	(!value || value.length === 0)
     {
