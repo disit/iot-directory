@@ -239,6 +239,25 @@ function UserKey()
 			$("#KeyTwoDeviceUserMsg").html(message);
 	}
 
+function checkElement(el, msg, thing, key){
+    var message = null;
+    
+    if ( !el.val() ||  el.val().length === 0)
+    {
+       msg.css("color", "red");
+        message = thing +' is mandatory';
+        addMyDeviceConditionsArray[key] = false;
+    }
+    else 
+    {
+		msg.css("color", "#337ab7");
+		message = 'Ok';
+		addMyDeviceConditionsArray[key] = true;
+    }
+    
+    msg.html(message);
+}
+
 
 function checkAddMyDeviceConditions()
 {

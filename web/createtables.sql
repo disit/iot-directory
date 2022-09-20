@@ -420,9 +420,17 @@ COMMENT = 'Rules to ingestion of external broker';
 UPDATE `iotdb`.`fieldType` SET `query`='select distinct contextBroker FROM temporary_devices' WHERE `fieldName`='contextbroker';
 
 /* update contextbroker table*/
-ALTER TABLE `iotdb`.`contextbroker` 
-ADD COLUMN `contextbrokercol` VARCHAR(45) NULL AFTER `timestampstatus`;
 
+ALTER TABLE `iotdb`.`contextbroker` 
+ADD COLUMN `req_frequency` INT NULL AFTER `urlnificallback`,
+ADD COLUMN `timestampstatus` TIMESTAMP NULL DEFAULT now() AFTER `req_frequency`;
+
+
+/* update rule table*/
+ALTER TABLE `iotdb`.`EXT_values_rules` 
+ADD COLUMN `contextbroker` VARCHAR(45) NULL AFTER `mode`;
+ADD COLUMN `service` VARCHAR(25) NULL AFTER `contextbroker`,
+ADD COLUMN `servicePath` VARCHAR(96) NULL AFTER `service`;
 
 
 

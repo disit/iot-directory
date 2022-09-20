@@ -87,7 +87,9 @@ if (FREQUENCY_SEARCH.localeCompare("null") == 0 || FREQUENCY_SEARCH == undefined
 var req = new XMLHttpRequest();
 var link = apiLink + "device.php";
 req.open("POST", link + "?action=get_param_values", false);
+console.log(new Date().toISOString() +"  PRIMA CHIAMAMTA: "+link + "?action=get_param_values");
 req.onreadystatechange = function () {
+	  //console.log(new Date().toISOString() +"  CHIAMAMTA: "+link + "?action=get_param_values");
     if (this.readyState == 4 && this.status == 200) {
         let resp = JSON.parse(this.responseText);
         gb_datatypes = resp["data_type"];
@@ -104,16 +106,13 @@ req = new XMLHttpRequest();
 var connLink = apiLink + "deviceDiscoveryApi.php?action=getCBServiceTree&contextbroker=" + ORION_CB + "&token=" + TOKEN;
 req.open("POST", connLink, false);
 req.onreadystatechange = function () {
+	 console.log(new Date().toISOString() +"  SECONDA CHIAMAMTA: "+connLink);
     if (this.readyState == 4 && this.status == 200) {
         schema = JSON.parse(this.responseText)["content"];
         if (schema.length > 0) {
             console.log("tenants/paths structure retrieved "+JSON.stringify(schema));
-			var t=new Date();
-			console.log("*_*_*_*_*_*_*_***** " + t +" START time of  inferImplicitPaths");
-            inferImplicitPaths(schema);
-			var t2=new Date();
-			console.log("*_*_*_*_*_*_*_***** " + (t-t2) +" Difference  time of inferImplicitPaths");
-        } else {
+			inferImplicitPaths(schema);
+			} else {
             console.log("tenants/paths structure empty response!");
         }
     } else if (this.readyState == 4 && this.status != 200) {
@@ -191,6 +190,7 @@ function retrieveDataCaller(schema) {
         var xhttp = new XMLHttpRequest();
         retrieveData(xhttp, link, schema[i].service, schema[i].servicePath, limit, offset);
     }
+	
 }
 
 console.log(ORION_CB);
@@ -210,27 +210,30 @@ function retrieveData(xhttp, link, service, servicePath, limit, offset) {
     Promise.all([
         makeRequestToCB(xhttp, link, service, servicePath, limit, offset),
         getRegisteredDevices(service, servicePath),
-        getTemporaryDevices(service, servicePath),
-        getExtractionRules(service, servicePath)
-    ]).then(function ([result1, result2, result3, result4]) {
+        getTemporaryDevices(service, servicePath)
+    ]).then(function ([result1, result2, result3/*, result4*/]) {
+		getExtractionRules(service, servicePath).then(function (result4){
+			
+		
+		
         var obj = JSON.parse(result1);
 
         if (obj instanceof Array) {
             for (i = 0; i < obj.length; i++) {
-                if (obj[i].type != "LogEntry") {
+              // if (obj[i].type != "LogEntry") {
                     let index = obj[i].id;
                     orionDevices.push(index);
                     orionDevicesSchema[index] = obj[i];
                     orionDevicesType[index] = obj[i].type;
-                }
+               // }
 
             }
         } else {
-            if (obj.type != "LogEntry") {
+          //  if (obj.type != "LogEntry") {
                 orionDevices.push(obj.id);
                 orionDevicesSchema[obj.id] = obj;
                 orionDevicesType[obj.id] = obj.type;
-            }
+            //}
 
         }
         //console.log(JSON.stringify(orionDevicesType));
@@ -241,12 +244,13 @@ function retrieveData(xhttp, link, service, servicePath, limit, offset) {
         registeredDevices = result2.registeredDevices;
         registeredDevicesWithPath = result2.registeredDevicesWithPath;
         temporaryDevices = result3.temporaryDevices;
-        extractionRulesAtt = result4.extractionRulesAtt;
+       /* extractionRulesAtt = result4.extractionRulesAtt;*/
         extractionRulesDev = result4.extractionRulesDev;
 		
 
 
-        findNewValues(cid, ORION_CB, orionDevices, orionDevicesSchema, registeredDevicesWithPath, temporaryDevices, extractionRulesAtt);
+        findNewValues(cid, ORION_CB, orionDevices, orionDevicesSchema, registeredDevicesWithPath, temporaryDevices
+		/*, extractionRulesAtt*/);
 
         allDevices = registeredDevices.concat(temporaryDevices);
         newDevices = orionDevices.diff(allDevices);
@@ -313,10 +317,10 @@ function retrieveData(xhttp, link, service, servicePath, limit, offset) {
                 "deviceValues": attProperty
             };
 
-            var verify = verifyDevice(toVerify, modelsdata, gb_datatypes, gb_value_types, gb_value_units);
+           // var verify = verifyDevice(toVerify, modelsdata, gb_datatypes, gb_value_types, gb_value_units);
             var validity = "invalid";
-            if (verify.isvalid)
-                validity = "valid";
+       /*     if (verify.isvalid)
+                validity = "valid";*/
 
             se.push([
                 USER,
@@ -332,7 +336,7 @@ function retrieveData(xhttp, link, service, servicePath, limit, offset) {
                 devAttr["longitude"],
                 devAttr["mac"],
                 validity,
-                verify.message,
+               /* verify.message,*/'',
                 "no",
                 ORGANIZATION,
                 EDGE_GATEWAY_TYPE,
@@ -346,13 +350,17 @@ function retrieveData(xhttp, link, service, servicePath, limit, offset) {
                 devAttr["producer"]
             ]);
 
-        }//end for i
+        }
+		
+		//end for i
         if (se.length != 0) {
             //if there are devices to be inserted
             insertDevices(cid, se).then(function () {
                 if (sesc.length != 0) {
                     //if there are attributes to be inserted
                     insertValues(cid, sesc, "temporary_event_values")
+					console.log(new Date().toISOString() + " Time after insert value");
+					
                     // .then(function () {
                     //     if (!smallSearch) {
                     //         offset2 = offset2 + 100;
@@ -390,13 +398,15 @@ function retrieveData(xhttp, link, service, servicePath, limit, offset) {
             });
         }
         if(obj instanceof Array && obj.length > 1){
+			console.log("********* Lunghezza obj "+ obj.length );
+		
             if (!smallSearch) {
-                offset2 = offset2 + 500;
+                offset2 = offset2 + obj.length;
 
                 xhttp = new XMLHttpRequest();
         
-                retrieveData(xhttp, link, service, servicePath, 500, offset2);
-                console.log("**UPDATE**");
+                retrieveData(xhttp, link, service, servicePath, obj.length, offset2);
+                console.log( new Date().toISOString() +"  **UPDATE**");
             }
             else {
                 offset2 = offset2 + 1;
@@ -407,8 +417,9 @@ function retrieveData(xhttp, link, service, servicePath, limit, offset) {
         }
 
 
-    }).catch(function (err) {
-        console.log(err)
+		});
+   }).catch(function (err) {
+        console.log( new Date().toISOString() +" LINK: "+link+" ERRORE "+JSON.stringify(err));
         if (!smallSearch) {
             smallSearch = 1;
             retrieveData(xhttp, link, service, servicePath, 1, offset2);
@@ -445,14 +456,17 @@ function makeRequestToCB(xhttp, link, service, servicePath, limit, offset) {
                 });
             }
         };
-        xhttp.onerror = function () {
+        xhttp.onerror = function (e) {
+			console.log("makeRequestToCB: "+JSON.stringify(e));
             reject({
                 status: this.status,
                 statusText: this.statusText
             });
         };
         xhttp.send()
-    })
+    }).catch((error) => {
+  console.error("SONO IO 1:  "+JSON.stringify(error));
+});
 }
 
 function getRegisteredDevices(service, servicePath) {
@@ -479,7 +493,9 @@ function getRegisteredDevices(service, servicePath) {
                 registeredDevicesWithPath: registeredDevicesWithPath,
             })
         })
-    })
+    }).catch((error) => {
+  console.error("SONO IO 2:  "+JSON.stringify(error));
+});
 }
 
 function getTemporaryDevices(service, servicePath) {
@@ -505,7 +521,9 @@ function getTemporaryDevices(service, servicePath) {
         })
 
 
-    })
+    }).catch((error) => {
+  console.error("SONO IO 3:  "+JSON.stringify(error));
+});
 }
 
 function writeFreqAndTimestampStatus(){
@@ -525,29 +543,67 @@ function writeFreqAndTimestampStatus(){
 
 function getExtractionRules(service, servicePath) {
     return new Promise(function (resolve, reject) {
-        var extractionRulesDev = new Object();
-        var extractionRulesAtt = new Object();
-        var query = "SELECT * FROM extractionRules where contextbroker='" + ORION_CB + "'AND service = '" + service + "' AND servicePath = '" + servicePath + "';";
-        cid.query(query, function (error, resultRules, fields) {
-            console.log('result: '+JSON.stringify(resultRules)+JSON.stringify(error))
-            if (error) {
-                reject(error);
-                return;
-            }
-            for (var x = 0; x < resultRules.length; x++) {
-                if (resultRules[x]["kind"].localeCompare("property") == 0) {
-                    extractionRulesDev[resultRules[x]["id"]] = resultRules[x];
-                } else {
-                    extractionRulesAtt[resultRules[x]["id"]] = resultRules[x];
-                }
-            }
-            resolve({
-                extractionRulesDev: extractionRulesDev,
-                extractionRulesAtt: extractionRulesAtt
-            });
-        });
+		
+		/* chiamata a  update_all_values*/
+
+		var req = new XMLHttpRequest();
+		var link = apiLink + "bulkDeviceUpdate.php";
+		req.open("POST", link + "?action=update_all_values&cb=" + ORION_CB + "&token=" + TOKEN+ "&service_path=" + servicePath +"&service=" + service, false);
+		req.onreadystatechange = function () {
+			if (this.readyState == 4 && this.status == 200) {
+				
+				console.log( new Date().toISOString() +"  update_all_values: rules apply " +link + "?action=update_all_values&cb=" + ORION_CB + "&token=" + TOKEN+ "&service_path=" + servicePath +"&service=" + service);
+				console.log(" Result: "+ req.responseText);
+			
+					var extractionRulesDev = new Object();
+					// var extractionRulesAtt = new Object();
+						var query = "SELECT * FROM extractionRules where contextbroker='" + ORION_CB + "'AND service = '" + service + "' AND servicePath = '" + servicePath + "';";
+						cid.query(query, function (error, resultRules, fields) {
+							console.log('result: '+JSON.stringify(resultRules)+JSON.stringify(error))
+							if (error) {
+								reject(error);
+								return;
+							}
+							for (var x = 0; x < resultRules.length; x++) {
+								if (resultRules[x]["kind"].localeCompare("property") == 0) {
+									extractionRulesDev[resultRules[x]["id"]] = resultRules[x];
+								}/* else {
+									extractionRulesAtt[resultRules[x]["id"]] = resultRules[x];
+								}*/
+							}
+							resolve({
+								extractionRulesDev: extractionRulesDev
+							//   ,extractionRulesAtt: extractionRulesAtt
+							});
+						});
+			
+			
+			
+			} else if (this.readyState == 4 && this.status != 200) {
+						console.log(new Date().toISOString() +" update_all_values error " + this.status);
+						reject({
+								status: this.status,
+								statusText: this.statusText
+								});
+						
+			}
+		}
+		req.send();
+		
+		
+		
+		
+		
+
     });
 }
+
+
+
+
+
+
+
 
 
 /*functions */
@@ -563,9 +619,9 @@ var requestLoop = setInterval(function () {
 	console.log("*_*_*_*_*_*_*_***** " + t +" START time");
     retrieveDataCaller(schema);
 	var t2=new Date();
-	console.log("*_*_*_*_*_*_*_***** " + (t2-t) +" after retrive data time");
+	console.log("*_*_*_*_*_*_*_***** " + (t-t2) +" after retrive data time");
 	writeFreqAndTimestampStatus().then(value=>{
 		var t3= new Date();
-			console.log("*_*_*_*_*_*_*_***** " + (t3- t) + " FINAL TIME");
+			console.log("*_*_*_*_*_*_*_***** " + (t- t3) + " FINAL TIME");
 		console.log(value+" Update db with freq and timestamp")});
 }, FREQUENCY_SEARCH);

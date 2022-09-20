@@ -362,6 +362,7 @@ $accessToken = "";
                                                 <th data-cellTitle="ModeRule">Mode</th> 
                                                 <th data-cellTitle="Organization">Organization</th>
                                                 <th data-cellTitle="EditRule">Edit</th>
+                                                 <th data-cellTitle="Delete">Delete</th>
                                                 <!--<th data-cellTitle="ViewRule">View</th>-->
 
                                             </tr>
@@ -369,6 +370,30 @@ $accessToken = "";
                                     </table>
                                 </div>  
                             </div>  
+                            
+                            
+                            
+                            
+                            <!---<!-- Modal Delete rule -->
+                             <div class="modal fade" id="deleteRuleModal" tabindex="-1" role="dialog" aria-labelledby="deleteRuleModalLabel" aria-hidden="true">
+            <div class="modal-dialog" role="document">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="deleteRuleModalLabel">Rule deletion</h5>
+                    </div>
+                    <div class="modal-body">
+                        Do you want to confirm deletion of the following Rule?
+                    </div>
+                    <div id="deleteRuleModalInnerDiv1" class="modalBodyInnerDiv" style="display: none;"><h5>Rule deletion in progress, please wait</h5></div>
+                    <div id="deleteRuleModalInnerDiv2" class="modalBodyInnerDiv" style="display: none;"><i class="fa fa-circle-o-notch fa-spin" style="font-size:36px"></i></div>
+                    <div class="modal-footer">
+                        <button type="button" id="deleteRuleOkBtn" class="btn btn-primary" data-dismiss="modal" style="display: none;">Ok</button>
+                        <button type="button" id="deleteRuleCancelBtn" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+                        <button type="button" id="deleteRuleConfirmBtn" class="btn btn-primary">Confirm</button>
+                    </div>
+                </div>
+            </div>
+        </div>
 
 
 
@@ -395,13 +420,13 @@ $accessToken = "";
                                                         <div class="col-xs-12 modalCell">
                                                             <div class="modalFieldCnt">
                                                                 <h3 align="center">IF STATEMENT</h3>
-                                                                <table id="ifBlockTable" class="ifBlockBulk">
+                                                                <table id="ifBlockTableValue" class="ifBlockBulk">
                                                                     <thead>
                                                                     <th width="11%"></th>
                                                                     <th width="29%">Fields</th>
                                                                     <th width="30%">Operator</th>
                                                                     <th width="28%">Value</th>
-                                                                    <th width="5%"><i id="addifBlockBtn" class="fa fa-plus"></i></th>
+                                                                    <th width="5%"><i id="addifBlockBtnValue" class="fa fa-plus"></i></th>
                                                                     </thead>
                                                                     <tbody></tbody>
                                                                 </table>
@@ -414,12 +439,12 @@ $accessToken = "";
                                                         <div class="col-xs-12 modalCell">
                                                             <div class="modalFieldCnt">
                                                                 <h3 align="center">UPDATE STATEMENT</h3>
-                                                                <table id="decisionBlockTable" class="decisionBlockBulk" >
+                                                                <table id="decisionBlockTableValue" class="decisionBlockBulk" >
                                                                     <thead>
                                                                     <th width="15%"></th>
                                                                     <th width="40%">Fields</th>
                                                                     <th width="40%">Predicted Value</th>
-                                                                    <th width="5%"><i id="addDecisionBlockBtn" class="fa fa-plus"></i></th>
+                                                                    <th width="5%"><i id="addDecisionBlockBtnValue" class="fa fa-plus"></i></th>
                                                                     </thead>
                                                                     <tbody>
                                                                     </tbody>

@@ -279,7 +279,7 @@ uploadDealcsv.prototype.getParsecsvdata = function (data) {
 	try {
 		data = utf8decode(data2);
 	}
-	catch {
+	catch (err){
 		data = data2;
 	}
 

@@ -1,128 +1,218 @@
 //------------------------------------------------------------------------------------------------------------------- Rules Load
 //Function to create rules -///
 
-    function getIfRules2(num1) {
-        var attributesIfValues = [];
-        for (var m = 0; m < num1; m++) {
-            //var attribute= document.getElementById('ifBlockTable').rows[m].cells[1].selectedIndex;
+function getIfRules2(num1) {
+    var attributesIfValues = [];
+    for (var m = 0; m < num1; m++) {
+        //var attribute= document.getElementById('ifBlockTable').rows[m].cells[1].selectedIndex;
 
-            var fieldIf = document.getElementById('ifBlockTable').tBodies[0].rows.item(m).cells.item(1).childNodes[0].value;
-            var operatorIf = document.getElementById('ifBlockTable').tBodies[0].rows.item(m).cells.item(2).childNodes[0].value;
-            var valueIf = document.getElementById('ifBlockTable').tBodies[0].childNodes[m].childNodes[3].childNodes[0].value;
+        var fieldIf = document.getElementById('ifBlockTable').tBodies[0].rows.item(m).cells.item(1).childNodes[0].value;
+        var operatorIf = document.getElementById('ifBlockTable').tBodies[0].rows.item(m).cells.item(2).childNodes[0].value;
+        var valueIf = document.getElementById('ifBlockTable').tBodies[0].childNodes[m].childNodes[3].childNodes[0].value;
 
-            if (valueIf.localeCompare("Empty") == 0) {
-                valueIf = "";
-            }
-
-            var newIf = {"field": fieldIf, "operator": operatorIf, "value": valueIf};
-            attributesIfValues.push(newIf);
+        if (valueIf.localeCompare("Empty") == 0) {
+            valueIf = "";
         }
-        return attributesIfValues;
+
+        var newIf = {"field": fieldIf, "operator": operatorIf, "value": valueIf};
+        attributesIfValues.push(newIf);
     }
+    return attributesIfValues;
+}
 
-    function getThenRules2(num2) {
-        var attributesThenValues = [];
+function getThenRules2(num2) {
+    var attributesThenValues = [];
 
-        for (var m = 0; m < num2; m++) {
-            var fieldsThen = document.getElementById('decisionBlockTable').tBodies[0].rows.item(m).cells.item(1).childNodes[0].value;
+    for (var m = 0; m < num2; m++) {
+        var fieldsThen = document.getElementById('decisionBlockTable').tBodies[0].rows.item(m).cells.item(1).childNodes[0].value;
 
-            if (fieldsThen != "empty") {
-                
-                var valueThen = document.getElementById('decisionBlockTable').tBodies[0].rows.item(m).cells.item(2).childNodes[0].value;
-                        
+        if (fieldsThen != "empty") {
 
-                if (valueThen.localeCompare("Empty") == 0) {
-                    valueThen = "";
+            var valueThen = document.getElementById('decisionBlockTable').tBodies[0].rows.item(m).cells.item(2).childNodes[0].value;
+
+
+            if (valueThen.localeCompare("Empty") == 0) {
+                valueThen = "";
+            }
+            var newThen = {"field": fieldsThen, "valueThen": valueThen};
+            attributesThenValues.push(newThen);
+        }
+    }
+    return attributesThenValues;
+}
+
+
+
+
+/*get field call*/
+function getFields(fieldIf, pos, id, value) {
+    if (fieldIf == 'cb') {
+        fieldIf = "contextBroker";
+    }
+    $.ajax({
+        url: "../api/bulkDeviceUpdate.php",
+        data: {
+            action: "get_fields",
+            IfThenFieldValue: value,
+            fieldIf: fieldIf,
+            token: sessionToken
+        },
+        dataType: 'json',
+        type: "POST",
+        async: true,
+        success: function (myData) {
+
+            let myDataP = myData['content'];
+            //console.log(JSON.stringify(myDataP));
+            //console.log("INDICE "+ pos + " field if "+ fieldIf);
+
+            if (fieldIf.localeCompare("healthiness_value") == 0 && healthinessValueIsPresent(id) == 0) {
+                var num1 = document.getElementById(id).tBodies[0].childElementCount;
+                var idToPut = document.getElementById(id).tBodies[0].rows.item(pos).id;
+
+                if (id.localeCompare("decisionBlockTableValue") == 0) {
+                    var row = $('<tr id="' + idToPut + 'criteria"><td><h3><span class="label label-success">Then</span></h3></td><td class="fieldTdThenValue"><select><option value="healthiness_criteria">Healthiness Criteria</option></select></td></td><td class="fieldNameValue"><input type="text" class="fieldNameIfValue" value="Empty"><td></td></tr>');
+                    devicenamesArray['then'] = devicenamesArray['then'] + 1;
+
+                } else {
+                    var row = $('<tr id="' + idToPut + 'criteria"><td><h3><span class="label label-danger">AND</span></h3></td><td class="fieldTdValue"><select><option value="healthiness_criteria">Healthiness Criteria</option></select></td><td class="fieldEqualValue"><select class="fieldSelectEqualValue"><option value="IsEqual">Is Equal</option><option value="IsNotEqual">Is Not Equal</option><option value="IsNull">Is NULL</option></select></td><td class="fieldNameIfValue"></td><td></td></tr>');
+                    devicenamesArray['if'] = devicenamesArray['if'] + 1;
                 }
-                var newThen = {"field": fieldsThen, "valueThen": valueThen};
-                attributesThenValues.push(newThen);
-            }
-        }
-        return attributesThenValues;
-    }
+
+                var idTemp = "#" + id + " tbody ";
+                //$(idTemp).eq(pos+1).append(row);
+                $(idTemp).append(row);
+
+
+                $('#authorizedPagesJson').val(JSON.stringify(ifPages));
+
+
+                getFields("healthiness_criteria", num1, id, value);
 
 
 
 
-function getFields2(fieldIf, pos, id, value, left_value) {
-        $.ajax({
-            url: "../api/bulkDeviceUpdate.php",
-            data: {
-                action: "get_fields",
-                fieldIf: fieldIf,
-                token: sessionToken
-            },
-            dataType: 'json',
-            type: "POST",
-            async: true,
-            success: function (myData) {
-                let myDataP = myData['content'];
-                //console.log(JSON.stringify(myDataP));
-                //console.log("INDICE "+ pos + " field if "+ fieldIf);
+                if (id.localeCompare("decisionBlockTable") == 0 || id.localeCompare("decisionBlockTableValue") == 0) {
+                    document.getElementById(id).tBodies[0].rows.item(pos).cells.item(2).innerHTML = myDataP[0].fieldsHtml;
+                } else {
+                    //TO change
+                    document.getElementById(id).tBodies[0].childNodes[pos].childNodes[3].innerHTML = myDataP[0].fieldsHtml;
+                }
+            } else {
 
-                if (fieldIf.localeCompare("healthiness_value") == 0 && healthinessValueIsPresent(id) == 0) {
-                    var num1 = document.getElementById(id).tBodies[0].childElementCount;
-                    var idToPut = document.getElementById(id).tBodies[0].rows.item(pos).id;
+                if (id.localeCompare("decisionBlockTable") == 0 || id.localeCompare("decisionBlockTableValue") == 0) {
+                    document.getElementById(id).tBodies[0].rows.item(pos).cells.item(2).innerHTML = myDataP[0].fieldsHtml;
 
-                    if (id.localeCompare("decisionBlockTableValue") == 0) {
-                        var row = $('<tr id="' + idToPut + 'criteria"><td><h3><span class="label label-success">Then</span></h3></td><td class="fieldTdThenValue"><select><option value="healthiness_criteria">Healthiness Criteria</option></select></td></td><td class="fieldNameValue"><input type="text" class="fieldNameIfValue" value="Empty"><td></td></tr>');
-                        devicenamesArray['then'] = devicenamesArray['then'] + 1;
+                } else {
+                    //TO change
+                    document.getElementById(id).tBodies[0].childNodes[pos].childNodes[3].innerHTML = myDataP[0].fieldsHtml;
 
-                    } else {
-                        var row = $('<tr id="' + idToPut + 'criteria"><td><h3><span class="label label-danger">AND</span></h3></td><td class="fieldTdValue"><select><option value="healthiness_criteria">Healthiness Criteria</option></select></td><td class="fieldEqualValue"><select class="fieldSelectEqualValue"><option value="IsEqual">Is Equal</option><option value="IsNotEqual">Is Not Equal</option><option value="IsNull">Is NULL</option></select></td><td class="fieldNameIfValue"></td><td></td></tr>');
-                        devicenamesArray['if'] = devicenamesArray['if'] + 1;
+
+                    if (pos == "decisionBlockTable") {
+                        getAffectedRows();
+                    } else if (pos == "decisionBlockTableValue" || value == 1) {
+                        getAffectedRowsValue();
                     }
 
-                    var idTemp = "#" + id + " tbody ";
-                    //$(idTemp).eq(pos+1).append(row);
-                    $(idTemp).append(row);
-
-
-                    $('#authorizedPagesJson').val(JSON.stringify(ifPages));
-
-                    //getFields("healthiness_criteria", num1, id, value);
-
-                    if (id.localeCompare("decisionBlockTable") == 0 || id.localeCompare("decisionBlockTableValue") == 0) {
-                        document.getElementById(id).tBodies[0].rows.item(pos).cells.item(2).innerHTML = myDataP[0].fieldsHtml;
-                    } else {
-                        //TO change
-                        document.getElementById(id).tBodies[0].childNodes[pos].childNodes[3].innerHTML = myDataP[0].fieldsHtml;
-                    }
-                } else {
-
-                    if (id.localeCompare("decisionBlockTable") == 0 || id.localeCompare("decisionBlockTableValue") == 0) {
-                        document.getElementById(id).tBodies[0].rows.item(pos).cells.item(2).innerHTML = myDataP[0].fieldsHtml;
-                    } else if(myDataP[0].fieldsHtml.includes("select")) {
-                        //TO change                       
-                        document.getElementById(id).tBodies[0].childNodes[pos].childNodes[3].innerHTML = myDataP[0].fieldsHtml;
-                        
-                    }else {
-                             document.getElementById(id).tBodies[0].childNodes[pos].childNodes[3].innerHTML = myDataP[0].fieldsHtml.replace("Empty",left_value );
-                        }
-
-
-                      
-                    
                 }
-
-
-            },
-            error: function (myData) {
-                console.log("error" + JSON.stringify(myData));
-                if (id.localeCompare("decisionBlockTable") == 0) {
-                    document.getElementById(id).tBodies[0].rows.item(pos).cells.item(2).innerHTML = "<input type=\"text\" class=\"fieldNameThen\" value=\"Empty\">";
-                } else {
-                    document.getElementById(id).tBodies[0].childNodes[pos].childNodes[3].innerHTML = "<input type=\"text\" class=\"fieldNameIf\" value=\"Empty\">";
-                }
-
             }
-        });//end of ajax get_affected
+
+
+
+        },
+        error: function (myData) {
+            console.log("error" + JSON.stringify(myData));
+            if (id.localeCompare("decisionBlockTable") == 0) {
+                document.getElementById(id).tBodies[0].rows.item(pos).cells.item(2).innerHTML = "<input type=\"text\" class=\"fieldNameThen\" value=\"Empty\">";
+            } else {
+                document.getElementById(id).tBodies[0].childNodes[pos].childNodes[3].innerHTML = "<input type=\"text\" class=\"fieldNameIf\" value=\"Empty\">";
+            }
+
+        }
+    });//end of ajax get_affected
+}
+
+function getAffectedRows() {
+    var num1 = document.getElementById('ifBlockTable').tBodies[0].childElementCount;
+    var attributesIf = [];
+
+    for (var m = 0; m < num1; m++) {
+        //var attribute= document.getElementById('ifBlockTable').rows[m].cells[1].selectedIndex;
+
+        var fieldIf = document.getElementById('ifBlockTable').tBodies[0].rows.item(m).cells.item(1).childNodes[0].value;
+        var operatorIf = document.getElementById('ifBlockTable').tBodies[0].rows.item(m).cells.item(2).childNodes[0].value
+        var valueIf = document.getElementById('ifBlockTable').tBodies[0].childNodes[m].childNodes[3].childNodes[0].value;
+
+        //params.newValue
+        if (valueIf != undefined && valueIf.localeCompare("Empty") == 0) {
+            valueIf = "";
+        }
+
+        var newIf = {"field": fieldIf, "operator": operatorIf, "value": valueIf};
+        //console.log("newIf "+ JSON.stringify(newIf));
+        attributesIf.push(newIf);
     }
-    
+
+    var attributesThen = [];
+    var num2 = document.getElementById('decisionBlockTable').tBodies[0].childElementCount;
+    for (var m = 0; m < num2; m++) {
+        var fieldsThen = document.getElementById('decisionBlockTable').tBodies[0].rows.item(m).cells.item(1).childNodes[0].value;
+        if (fieldsThen != "empty") {
+            var operatorThen = document.getElementById('decisionBlockTable').tBodies[0].rows.item(m).cells.item(2).childNodes[0].innerHTML;
+
+            var newThen = {"field": fieldsThen, "operator": operatorThen};
+            attributesThen.push(newThen);
+        }
+    }
+
+
+    $.ajax({
+        url: "../api/bulkDeviceUpdate.php",
+        data: {
+            action: "get_affected_devices_count",
+            //username: loggedUser,
+            //organization:organization,
+            attributesIf: JSON.stringify(attributesIf),
+            token: sessionToken
+                    //attributesThen: JSON.stringify(attributesThen)	    
+        },
+        dataType: 'json',
+        type: "POST",
+        async: true,
+        success: function (myData) {
+
+            //console.log("data success "+ myData['content']);
+            $("#devicesFound").html(myData['content'] + " devices founded");
+
+            if (attributesIf.length == 0) {
+                buildPreview(JSON.stringify(attributesIf), true);
+            } else {
+                buildPreview(JSON.stringify(attributesIf), previewValuesFirstLoad);
+                previewValuesFirstLoad = true;
+            }
+            buildPreview(JSON.stringify(attributesIf), previewFirstLoad);
+            previewFirstLoad = true;
+
+            //	document.getElementById('devicesFound').value = myData['content'] + " devices found";
+        },
+        error: function (myData) {
+            console.log(JSON.stringify(myData));
+            $("#devicesFound").html("0 devices founded");
+            console.log("data faliure" + myData['msg']);
+        }
+    });//end of ajax get_affected
+}
+
+
+
 function RulesLoad(name, if_st, then_st, mode, modalif, modalthen) {
-
-    let If_st = JSON.parse(if_st.replaceAll('/"', ''));
-    let Then_st = JSON.parse(then_st.replaceAll('/"', ''));
+    if (name.includes("_", 3)) {
+        var If_st = JSON.parse(unescape(if_st).replaceAll('/"', ''));
+        var Then_st = JSON.parse(unescape(then_st).replaceAll('/"', ''));
+    } else {
+        var If_st = JSON.parse(if_st.replaceAll('/"', ''));
+        var Then_st = JSON.parse(then_st.replaceAll('/"', ''));
+    }
 
     //clear the form
     $('.ifrow').remove();
@@ -136,81 +226,64 @@ function RulesLoad(name, if_st, then_st, mode, modalif, modalthen) {
 
     // create a number of row equal a number of If_st    
     for (let i = 0; i < Object.keys((If_st)).length; i++) {
-         let str = '#IfHV' + i;
-        if(i==0){
-            
-            //var row = $('<tr id="IfHV' + idCounterIf + '"  class="ifrow"><td><h3><span class="label label-danger">If</span></h3></td><td class="fieldTd"><select class="fieldIf"><option value="empty">--Select an option--</option><option value="contextBroker" selected>Contextbroker</option><option value="id">Device name</option><option value="deviceType">Device Type</option><option value="model">Model</option><option value="producer">Producer</option><option value="frequency">Frequency</option><option value="kind">Kind</option><option value="protocol">Protocol</option><option value="format">Format</option><option value="latitude">Latitude</option><option value="longitude">Longitude</option><option value="macaddress">Mac address</option><option value="k1">Key1</option><option value="k2">Key2</option></select></td><td class="fieldEqual"><select class="fieldSelectEqual"><option value="IsEqual">Is Equal</option><option value="IsNotEqual">Is Not Equal</option><option value="IsNull">Is NULL</option><option value="Contains">Contains</option></select></td><td class="fieldName"> </td><td class="minusDevice"><i class="fa fa-minus"></i></td></tr>');
-            var row = $('<tr id="ifHV' + idCounterIf + '" class="ifrow"><td><h3><span class="label label-danger">If</span></h3></td><td class="fieldTdValue"><select class="fieldIfValue"><option value="empty">--Select an option--</option><option value="cb" >Contextbroker</option><option value="device">Device name</option><option value="deviceType" selected>Device type</option><option value="value_name">Value Name</option><option value="data_type">Data type</option><option value="model">Model</option><option value="producer">Producer</option><option value="frequency">Frequency</option><option value="kind">Kind</option><option value="protocol">Protocol</option><option value="format">Format</option><option value="latitude">Latitude</option><option value="longitude">Longitude</option><option value="macaddress">Mac address</option><option value="k1">Key1</option><option value="k2">Key2</option><option value="value_type">Value type</option><option value="value_unit">Value unit</option><option value="editable">Editable</option><option value="healthiness_criteria">Healthiness criteria</option><option value="healthiness_value">Healthiness value</option></select></td><td class="fieldEqualValue"><select class="fieldSelectEqualValue"><option value="IsEqual">Is Equal</option><option value="IsNotEqual">Is Not Equal</option><option value="IsNull">Is NULL</option><option value="Contains">Contains</option></select></td><td class="fieldNameIfValue"><input type="hidden"></td><td><i class="fa fa-minus"></i></td></tr>');
- 
-        $('#'+modalif+' tbody').append(row);
-        
-        devicenamesArray['if'] = devicenamesArray['if'] + 1;
-        var rowIndex = row.index();
-        var fieldIf = document.getElementById(''+modalif+'').tBodies[0].rows.item(rowIndex).cells.item(1).childNodes[0].value;
+        let str = '#ifHV' + i;
 
-        idCounterIf++;
+        if (i == 0) {
 
-      getFields2(If_st[i].field, i, modalif, 0, If_st[i].value);
-     
-       $(str + '> td.fieldTd > select').val(If_st[i].field);
+            var row1 = $('<tr id="ifHV' + idCounterIf + '" class="ifrow"><td><h3><span class="label label-danger">IF</span></h3></td><td class="fieldTdValue"><select class="fieldIfValue"><option value="empty">--Select an option--</option><option value="cb" >Contextbroker</option><option value="device">Device name</option><option value="deviceType" selected>Device type</option><option value="value_name">Value Name</option><option value="data_type">Data type</option><option value="model">Model</option><option value="producer">Producer</option><option value="frequency">Frequency</option><option value="kind">Kind</option><option value="protocol">Protocol</option><option value="format">Format</option><option value="latitude">Latitude</option><option value="longitude">Longitude</option><option value="macaddress">Mac address</option><option value="k1">Key1</option><option value="k2">Key2</option><option value="value_type">Value type</option><option value="value_unit">Value unit</option><option value="editable">Editable</option><option value="healthiness_criteria">Healthiness criteria</option><option value="healthiness_value">Healthiness value</option></select></td><td class="fieldEqualValue"><select class="fieldSelectEqualValue"><option value="IsEqual">Is Equal</option><option value="IsNotEqual">Is Not Equal</option><option value="IsNull">Is NULL</option><option value="Contains">Contains</option></select></td><td class="fieldNameIfValue"><input type="hidden"></td><td><i class="fa fa-minus"></i></td></tr>');
 
-        $(str + '> td.fieldEqual > select').val(If_st[i].operator);
-        
-        }else{
-            
-           // var row2 = $('<tr class="ifrow"><td><h3><span class="label label-danger">AND</span></h3></td><td class="fieldTd"><select class="fieldIf"><option value="empty">--Select an option--</option><option value="contextBroker">Contextbroker</option><option value="id" >Device name</option><option value="deviceType" selected>Device Type</option><option value="model">Model</option><option value="producer">Producer</option><option value="frequency">Frequency</option><option value="kind">Kind</option><option value="protocol">Protocol</option><option value="format">Format</option><option value="latitude">Latitude</option><option value="longitude">Longitude</option><option value="macaddress">Mac address</option><option value="k1">Key1</option><option value="k2">Key2</option></select></td><td class="fieldEqual"><select class="fieldSelectEqual"><option value="IsEqual">Is Equal</option><option value="IsNotEqual">Is Not Equal</option><option value="IsNull">Is NULL</option><option value="Contains">Contains</option></select></td><td class="fieldName"> </td><td class="minusDevice"><i class="fa fa-minus"></i></td></tr>');
-        var row2 = $('<tr id="ifHV' + idCounterIf + '" class="ifrow"><td><h3><span class="label label-danger">AND</span></h3></td><td class="fieldTdValue"><select class="fieldIfValue"><option value="empty">--Select an option--</option><option value="cb" >Contextbroker</option><option value="device">Device name</option><option value="deviceType" selected>Device type</option><option value="value_name">Value Name</option><option value="data_type">Data type</option><option value="model">Model</option><option value="producer">Producer</option><option value="frequency">Frequency</option><option value="kind">Kind</option><option value="protocol">Protocol</option><option value="format">Format</option><option value="latitude">Latitude</option><option value="longitude">Longitude</option><option value="macaddress">Mac address</option><option value="k1">Key1</option><option value="k2">Key2</option><option value="value_type">Value type</option><option value="value_unit">Value unit</option><option value="editable">Editable</option><option value="healthiness_criteria">Healthiness criteria</option><option value="healthiness_value">Healthiness value</option></select></td><td class="fieldEqualValue"><select class="fieldSelectEqualValue"><option value="IsEqual">Is Equal</option><option value="IsNotEqual">Is Not Equal</option><option value="IsNull">Is NULL</option><option value="Contains">Contains</option></select></td><td class="fieldNameIfValue"><input type="hidden"></td><td><i class="fa fa-minus"></i></td></tr>');
- 
-            $('#'+modalif+' tbody').append(row2);
-        devicenamesArray['if'] = devicenamesArray['if'] + 1;
-        var rowIndex = row2.index();
-        var fieldIf = document.getElementById(modalif).tBodies[0].rows.item(rowIndex).cells.item(1).childNodes[0].value;
-        getFields2(fieldIf, rowIndex, modalif, 0 , If_st[i].value);
-        
-        
+            $('#' + modalif + ' tbody').append(row1);
 
-        
+            devicenamesArray['if'] = devicenamesArray['if'] + 1;
+            var rowIndex = row1.index();
+            $(str + ' > td.fieldTdValue > select').val(If_st[i].field);
+            getFields(If_st[i].field, i, "ifBlockTableValue", If_st[i].value);
+
+            idCounterIf++;
+
+        } else {
+
+            var row2 = $('<tr id="ifHV' + idCounterIf + '" class="ifrow"><td><h3><span class="label label-danger">AND</span></h3></td><td class="fieldTdValue"><select class="fieldIfValue"><option value="empty">--Select an option--</option><option value="cb" >Contextbroker</option><option value="device">Device name</option><option value="deviceType" selected>Device type</option><option value="value_name">Value Name</option><option value="data_type">Data type</option><option value="model">Model</option><option value="producer">Producer</option><option value="frequency">Frequency</option><option value="kind">Kind</option><option value="protocol">Protocol</option><option value="format">Format</option><option value="latitude">Latitude</option><option value="longitude">Longitude</option><option value="macaddress">Mac address</option><option value="k1">Key1</option><option value="k2">Key2</option><option value="value_type">Value type</option><option value="value_unit">Value unit</option><option value="editable">Editable</option><option value="healthiness_criteria">Healthiness criteria</option><option value="healthiness_value">Healthiness value</option></select></td><td class="fieldEqualValue"><select class="fieldSelectEqualValue"><option value="IsEqual">Is Equal</option><option value="IsNotEqual">Is Not Equal</option><option value="IsNull">Is NULL</option><option value="Contains">Contains</option></select></td><td class="fieldNameIfValue"><input type="hidden"></td><td><i class="fa fa-minus"></i></td></tr>');
+
+            $('#' + modalif + ' tbody').append(row2);
+            devicenamesArray['if'] = devicenamesArray['if'] + 1;
+            var rowIndex = row2.index();
+            $(str + ' > td.fieldTdValue > select').val(If_st[i].field);
+            getFields(If_st[i].field, i, "ifBlockTableValue", If_st[i].value);
+
+
+            idCounterIf++;
         }
-        
-                
     }
 
 
     // create a number of row equal a number of Then_st    
     for (let i = 0; i < Object.keys((Then_st)).length; i++) {
-        
+
         var row = $('<tr id="thenHV' + idCounterThen + '" class="Thenrow" ><td><h3><span class="label label-success">Then</span></h3></td><td class="fieldTdThenValue"><select class="fieldThenValue"><option value="empty">--Select an option--</option><option value="data_type">Data type</option><option value="value_type">Value type</option><option value="value_unit">Value unit</option><option value="editable">Editable</option><option value="producer">Producer</option>	<option value="healthiness_criteria">Healthiness criteria</option><option value="healthiness_value">Healthiness value</option></select></td></td><td class="fieldNameValue"><input type="text" class="fieldNameIfValue" value="Empty"><td><i class="fa fa-minus"></i></td></tr>');
-        $('#'+modalthen+'  tbody').append(row);
+        $('#' + modalthen + '  tbody').append(row);
         idCounterThen++;
         valueNamesArray['then'] = valueNamesArray['then'] + 1;
-
-
     }
-
-   
-    
     //Select Then statement
-     for (let i = 0; i < Object.keys((Then_st)).length; i++) {
+    for (let i = 0; i < Object.keys((Then_st)).length; i++) {
 
         let str = '#thenHV' + i;
-
-        $(str + '> td.fieldTdThenValue > select').val(Then_st[i].field);
-        $(str + '> td.fieldNameValue > input').val(Then_st[i].valueThen);  
-        
-        
-         $('#IfHV' + i+ '> td.fieldName > input').val(If_st[i].value);
+        $(str + '> td.fieldTdThenValue  > select').val(Then_st[i].field);
+        getFields(Then_st[i].field, i, "decisionBlockTableValue", Then_st[i].valueThen);
 
     }
-    
+
+
     //Select mode
     $('#Update_mode').val(parseInt(mode));
-    
-    
+
+
 
 }
 
 
- 
+
 
 //---------------------------------------------------------------------------------------------------------------------------------------------managing valuetype-valueunit
 
@@ -414,6 +487,8 @@ var select2option = {
     closeOnSelect: false
 };
 
+
+
 function checkSubnatureChanged(element, old, nuovo, info, edit) {
     if ((old != "") && (!confirm("Are you sure you want to change the subnature? You will lose all the attributes inserted so far!"))) {
         info.preventDefault();
@@ -429,7 +504,7 @@ function checkSubnatureChanged(element, old, nuovo, info, edit) {
 function subnatureChanged(edit, staticAttributes) {
 
     removeStaticAttributes(edit);
-     updateIsMobile(edit, staticAttributes);//isMobile attributes is done separatly
+    updateIsMobile(edit, staticAttributes);//isMobile attributes is done separatly
 
 
     //get new subnature that has been selected
@@ -437,9 +512,9 @@ function subnatureChanged(edit, staticAttributes) {
         subnatureNew = $("#selectSubnatureM").val();
         if (subnatureNew === "") {
             $("#addNewStaticBtnM").hide();
-        } else if(checkIsMobile(staticAttributes)){
-            document.querySelector("#addNewStaticBtnM").disabled=true;
-        }else {
+        } else if (checkIsMobile(staticAttributes)) {
+            document.querySelector("#addNewStaticBtnM").disabled = true;
+        } else {
             $("#addNewStaticBtnM").show();
         }
     } else if (edit == "view") {
@@ -450,14 +525,14 @@ function subnatureChanged(edit, staticAttributes) {
         if (subnatureNew === "") {
             $("#addNewStaticBtn").hide();
 
-        } else if(checkIsMobile(staticAttributes)){
-            document.querySelector("#addNewStaticBtn").disabled=true;
-        }else {
+        } else if (checkIsMobile(staticAttributes)) {
+            document.querySelector("#addNewStaticBtn").disabled = true;
+        } else {
             $("#addNewStaticBtn").show();
         }
     }
 
-   
+
     if (subnatureNew !== "") {
         //retrieve new avaialbaility
         $.ajax({
@@ -560,7 +635,7 @@ function createRowElem(initialValueDictiornary, initialValue, currentDictionaryS
     var modalInputTxt0 = document.createElement("select");
     $(modalInputTxt0).attr('class', ' Select_onlyread');
     for (var i = 0; i < currentDictionaryStaticAttrib.length; i++) {
-        if ((currentDictionaryStaticAttrib[i].type === "http://www.w3.org/2001/XMLSchema#string") &&
+        if (((currentDictionaryStaticAttrib[i].type === "http://www.w3.org/2001/XMLSchema#string") || (currentDictionaryStaticAttrib[i].type === "https://www.w3.org/2001/XMLSchema#integer")) &&
                 (checkNotInsert(alreadyInserted, currentDictionaryStaticAttrib[i].uri)) &&
                 (currentDictionaryStaticAttrib[i].uri !== "http://www.disit.org/km4city/schema#isMobile"))//isMobile management outside 
         {
@@ -735,7 +810,233 @@ function addModel(element, data) {
     $.each(data['content'], function () {
         element.append("<option data_key=" + this.kgenerator + " data_subnature='" + this.subnature + "' data_static=" + btoa(this.static_attributes) + " value='" + this.name + "'>" + this.name + "</option>");
     });
+
+
+
 }
+
+
+function LoadAttr(kindModel, nameOpt, selectednameOpt, nameOptValue, version, domain, subdomain) {
+    if ((nameOptValue != "custom") && (nameOptValue != ""))
+            //if (nameOpt[selectednameOpt].value !="custom") 
+            {
+                $("#addNewDeviceGenerateKeyBtn").hide();
+                var gb_device = document.getElementById('inputNameDevice').value;
+                var gb_latitude = document.getElementById('inputLatitudeDevice').value;
+                var gb_longitude = document.getElementById('inputLongitudeDevice').value;
+                if (nameOpt[selectednameOpt].getAttribute("data_key") != "special") // && ownerSelect[ownerOpt].value=='private')
+                {
+                    if ($("#KeyOneDeviceUser").val() == "")
+                    {
+                        $("#sigFoxDeviceUserMsg").val("");
+                        $("#KeyOneDeviceUserMsg").html("");
+                        $("#KeyTwoDeviceUserMsg").html("");
+                        // $("#sigFoxDeviceUserMsg").html("These keys have been generated automatically for your device. Keep track of them. Details on <a href=\"https://www.snap4city.org/drupal/node/76\">info</a>");
+                        $("#KeyOneDeviceUser").val(generateUUID());
+                        $("#KeyTwoDeviceUser").val(generateUUID());
+                    }
+                }
+                if (nameOpt[selectednameOpt].getAttribute("data_key") == "special") // && ownerSelect[ownerOpt].value=='private')
+                {
+                    $("#sigFoxDeviceUserMsg").html("Generate in your SigFox server the keys and report them here.  Details on <a href=\"https://www.snap4city.org/drupal/node/76\">info</a>");
+                    $("#KeyOneDeviceUser").val("");
+                    $("#KeyTwoDeviceUser").val("");
+                }
+
+                //if(nameOpt[selectednameOpt].value !="custom" && nameOpt[selectednameOpt].value!="")
+                //{ 
+
+                if (kindModel == 'NATIVE') {
+                    $.ajax({
+                        url: "../api/model.php",
+                        data: {
+                            action: "get_model",
+                            name: nameOptValue,
+                            token: sessionToken
+                        },
+                        type: "POST",
+                        async: true,
+                        datatype: 'json',
+                        success: function (data) {
+                            SuccessOfLoadAttr(data, kindModel, '', '', '');
+                        },
+                        error: function (data)
+                        {
+                            ErrorManager(data);
+                        }
+                    });
+                } else {
+                    $.ajax({
+                        url: "../api/model.php",
+                        data: {
+                            action: "get_value_attributes_FIWIRE",
+                            id: nameOptValue,
+                            version: version,
+                            domain: domain,
+                            subdomain: subdomain,
+                            token: sessionToken
+                        },
+                        type: "POST",
+                        async: true,
+                        datatype: 'json',
+                        success: function (data)
+                        {
+                            SuccessOfLoadAttr(data, kindModel, version, domain, subdomain);
+                        },
+                        error: function (data)
+                        {
+                            ErrorManager(data);
+                        }
+                    });
+                }
+                if (nameOpt[selectednameOpt].getAttribute("data_key") != "special") {
+                    $("#KeyOneDeviceUser").attr({'disabled': 'disabled'});
+                    $("#KeyTwoDeviceUser").attr({'disabled': 'disabled'});
+                } else {
+                    $("#KeyOneDeviceUser").removeAttr('disabled');
+                    $("#KeyTwoDeviceUser").removeAttr('disabled');
+                }
+            } else if (nameOpt[selectednameOpt].value == "") { // case not specified
+        $('#inputTypeDevice').val("");
+        //$('#selectKindDevice').val("");
+        $('#inputProducerDevice').val("");
+        $('#inputFrequencyDevice').val("600");
+        $("#sigFoxDeviceUserMsg").html("");
+        $('#inputMacDevice').val("");
+        $('#selectContextBroker').val("");
+        //$('#selectProtocolDevice').val("");
+        //$('#selectFormatDevice').val(""); 
+        $("#KeyOneDeviceUser").val("");
+        $("#KeyTwoDeviceUser").val("");
+        $('#KeyOneDeviceUserMsg').html("");
+        $('#KeyTwoDeviceUserMsg').html("");
+        $('#KeyOneDeviceUserMsg').val("");
+        $('#KeyTwoDeviceUserMsg').val("");
+        // $('#addlistAttributes').html("");
+
+        addDeviceConditionsArray['contextbroker'] = false;
+        addDeviceConditionsArray['kind'] = false;
+        addDeviceConditionsArray['format'] = false;
+        addDeviceConditionsArray['protocol'] = false;
+        checkSelectionCB();
+        checkSelectionKind();
+        checkSelectionProtocol();
+        checkSelectionFormat();
+        addDeviceConditionsArray['inputTypeDevice'] = false;
+        checkDeviceType();
+        checkAddDeviceConditions();
+        addDeviceConditionsArray['inputFrequencyDevice'] = false;
+        checkFrequencyType();
+        checkAddDeviceConditions();
+        addDeviceConditionsArray['inputMacDevice'] = false;
+        checkMAC();
+        checkAddDeviceConditions();
+        document.getElementById('addlistAttributes').innerHTML = "";
+        $("#addNewDeviceGenerateKeyBtn").hide();
+        checkAtlistOneAttribute();
+    } else {// case custom 
+        $("#addNewDeviceGenerateKeyBtn").show();
+        $("#sigFoxDeviceUserMsg").html("Click on the generatekey botton to generate keys (if you need them)");
+        if ($('#inputTypeDevice').val() == "")
+            addDeviceConditionsArray['inputTypeDevice'] = false;
+        else
+            addDeviceConditionsArray['inputTypeDevice'] = true;
+        checkDeviceType();
+        checkAddDeviceConditions();
+        if ($('#inputFrequencyDevice').val() == "")
+            addDeviceConditionsArray['inputFrequencyDevice'] = false;
+        else
+            addDeviceConditionsArray['inputFrequencyDevice'] = true;
+        checkFrequencyType();
+        checkAddDeviceConditions();
+        if ($('#inputMacDevice').val() == "")
+            addDeviceConditionsArray['inputMacDevice'] = false;
+        else
+            addDeviceConditionsArray['inputMacDevice'] = true;
+        checkMAC();
+        checkAddDeviceConditions();
+        $("#KeyOneDeviceUser").removeAttr('disabled');
+        $("#KeyTwoDeviceUser").removeAttr('disabled');
+    }
+}
+
+
+function addModel2(element, data, kind) {
+
+
+
+    if (kind == 'NATIVE' && element.selector != $("#selectModelDevice").selector) {
+        $.each(data, function () {
+            element.append("<option data_key= '" + this.kgenerator + "' data_contextbroker='" + this.contextbroker + "' data_service='" + this.service + "' data_servicePath='" + this.servicePath + "' data_subnature='" + this.subnature + "' data_kind='" + kind + "' data_attributes='" + this.attributes + "' data_static= '" + btoa(this.static_attributes) + "'value='" + this.name + "'>" + this.name + "&#160;&#160;&#160;<font size=\"2\">( " + kind + " )</font>" + "</option>");
+        });
+        element.select2(select2option);
+    } else if (kind == 'NATIVE' && element.selector == $("#selectModelDevice").selector) {
+        $.each(data, function () {
+            element.append("<option data_key= '" + this.kgenerator + "' data_subnature='" + this.subnature + "' data_kind='" + kind + "' data_attributes='" + this.attributes + "' data_static= '" + btoa(this.static_attributes) + "'value='" + this.name + "'>" + this.name + "&#160;&#160;&#160;<font size=\"2\">( " + kind + " )</font>" + "</option>");
+        });
+        element.select2(select2option);
+    } else if (kind != 'NATIVE' && element.selector != $("#selectModel").selector) {
+
+
+        $.each(data, function () {
+            label = "FIWIRE RULED";
+            $.each(JSON.parse(this.attributes), function () {
+                if (this.checked == 'False') {
+                    label = "FIWARE UNRULED";
+                    return false;
+                }
+            });
+
+            element.append("<option data-version='" + this.version + "' data_kind='" + kind + "'data-modelSubDomain='" + this.subdomain + "'data-Domain='" + this.domain + "'value='" + this.model + "'>" + this.model + "&#160;&#160;&#160;<font size=\"2\">( " + label + " )</font>" + "</option>");
+        });
+        element.select2(select2option);
+    } else {
+        $.each(data, function () {
+            label = "FIWIRE RULED";
+            $.each(JSON.parse(this.attributes), function () {
+                if (this.checked == 'False') {
+                    label = "FIWARE UNRULED";
+                    return false;
+                }
+            });
+            if (label != "FIWARE UNRULED") {
+                element.append("<option data_kindDEVICE= 'sensor'  data-version='" + this.version + "' data_kind='FIWIRE' data-modelSubDomain='" + this.subdomain + "'data-Domain='" + this.domain + "'value='" + this.model + "'>" + this.model + "&#160;&#160;&#160;<font size=\"2\">( " + label + " )</font>" + "</option>");
+            }
+        });
+        element.select2(select2option);
+    }
+
+
+
+}
+// format attribute for FIWIRE 
+function keepAttr_FIWIRE(full_attr_field) {
+    var full_attr = JSON.parse(full_attr_field);
+    var k = Object.keys(full_attr);
+    var element = [];
+ 
+
+    for (var i = 0; i < k.length; i++) {
+        
+         chiave = k[i];
+         if(full_attr[chiave].value_name!='type'){
+
+
+        element.push({
+            "value_name": full_attr[chiave].value_name,
+            "data_type": full_attr[chiave].data_type,
+            "value_type": full_attr[chiave].value_type,
+            "editable": full_attr[chiave].editable,
+            "value_unit": full_attr[chiave].value_unit,
+            "healthiness_criteria": full_attr[chiave].healthiness_criteria,
+            "healthiness_value": full_attr[chiave].healthiness_value
+        });}
+    }
+
+ 
+    return JSON.stringify(element);
+}
+// end
 
 function addCB(element, data) {
     $.each(data['data'], function () {
@@ -1401,7 +1702,6 @@ function checkIsMobile(staticAttributes) {
         }
     return false;
 }
-
 
 //------------------------------------------------------------------------------------------------------------------------------------------ INFO LABEL
 function getInfoCert(privatekey, visibility, created, id, contextbroker, certificate, sha) {

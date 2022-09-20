@@ -100,7 +100,88 @@ if ($result["status"] != "ok") {
     exit();
 }
 
-if ($action == "get_model") {
+if ($action == "get_Fiwire_model") {
+    if (!($GLOBALS['FIWAREon'])) {
+        $result = array(
+            "data" => [],
+            "msg" => '',
+            "log" => "\r\n action=get_Fiwire_model is disabled\r\n",
+            "status" => 'ok'
+        );
+
+        my_log($result);
+        return;
+    }
+
+    if (isset($_REQUEST['length']))
+        $length = mysqli_real_escape_string($link, $_REQUEST['length']);
+    else
+        $length = -1;
+    $start = 1; //default is 1 but should throw an error
+    if (($length != -1) && (isset($_REQUEST['start'])))
+        $start = mysqli_real_escape_string($link, $_REQUEST['start']);
+    if (isset($_REQUEST['draw']))
+        $draw = mysqli_real_escape_string($link, $_REQUEST['draw']);
+    else
+        $draw = 1;
+    if (!isset($_REQUEST['columns']))
+        $_REQUEST["columns"] = array();
+    if (isset($_REQUEST['select']))
+        $selection = json_decode($_REQUEST['select']);
+    else
+        $selection = array();
+
+
+    $selectedrows = -1;
+    if ($length != -1) {
+        $offset = $length;
+        $tobelimited = true;
+    } else {
+        $tobelimited = false;
+    }
+
+    if (isset($_REQUEST['id'])) {
+        $id = mysqli_real_escape_string($link, $_REQUEST['id']);
+        $version = mysqli_real_escape_string($link, $_REQUEST['version']);
+        $domain = mysqli_real_escape_string($link, $_REQUEST['domain']);
+        $subdomain = mysqli_real_escape_string($link, $_REQUEST['subdomain']);
+         $q = "SELECT * from iotdb.raw_schema_model where model='$id' and domain='$domain'and subdomain='$subdomain' and version ='$version' ;";
+    }else{
+         $q = "SELECT domain, subdomain,model,version,attributes, subnature from iotdb.raw_schema_model;";
+    }
+
+
+
+   
+    $r = mysqli_query($link, $q);
+    if ($r) {
+        $data = array();
+
+        while ($row = mysqli_fetch_assoc($r)) {
+            $selectedrows++;
+            if (!$tobelimited || ($tobelimited && $selectedrows >= $start && $selectedrows < ($start + $offset))) {
+                $rec = array();
+                $rec["domain"] = $row["domain"];
+                $rec["subdomain"] = $row["subdomain"];
+                $rec["model"] = $row["model"];
+                $rec["version"] = $row["version"];
+                $rec["attributes"] = $row["attributes"];
+                $rec["subnature"] = $row["subnature"];
+                array_push($data, $rec);
+            }
+        }
+
+        $result = format_result($draw, $selectedrows + 1, $selectedrows + 1, $data, "", "\r\n action=get_Fiwire_model \r\n", 'ok');
+
+        logAction($link, $username, 'FIWIRE Model', 'get_Fiwire_model', '', $organization, '', 'success');
+    } else {
+        logAction($link, $username, 'FIWIRE Model', 'get_Fiwire_model', '', $organization, 'Error: errors in reading data about Fiwire models.', 'faliure');
+        $result = format_result($draw, 0, 0, $data, 'Error: errors in reading data about Fiwire models. <br/>' . generateErrorMessage($link), '\n\r Error: errors in reading data about Fiwire models.' . generateErrorMessage($link), 'ko');
+    }
+
+    my_log($result);
+    mysqli_close($link);
+} else if ($action == "get_model") {
     $missingParams = missingParameters(array('name'));
 
     if (!empty($missingParams)) {
@@ -613,6 +694,107 @@ if ($action == "delete") {
                     $result["log"] = "action=$action of model " . $id . " error " . mysqli_error($link) . "\r\n";
                 }
             }
+        }
+    }
+
+    my_log($result);
+    mysqli_close($link);
+} else if ($action == 'Update_values_attributes_FIWIRE') {
+    $missingParams = missingParameters(array('id', 'version', 'domain', 'subdomain', 'change'));
+    if (!empty($missingParams)) {
+        $result["status"] = "ko";
+        $result['msg'] = "Missing Parameters";
+        $result["error_msg"] .= "Problem in getting model value attributes (Missing parameters: " . implode(", ", $missingParams) . " )";
+        $result["log"] = "action=get_value_attributes - error Missing Parameters: " . implode(", ", $missingParams) . " \r\n";
+    } else {
+
+        $id = mysqli_real_escape_string($link, $_REQUEST['id']);
+        $version = mysqli_real_escape_string($link, $_REQUEST['version']);
+        $domain = mysqli_real_escape_string($link, $_REQUEST['domain']);
+        $subdomain = mysqli_real_escape_string($link, $_REQUEST['subdomain']);
+        $subNat = mysqli_real_escape_string($link, $_REQUEST['subNat']);
+
+        $change = mysqli_real_escape_string($link, $_REQUEST['change']);
+
+        $change = stripslashes($change);
+        $change = json_decode($change, true);
+
+        $q = "SELECT attributes,attributesLog  FROM raw_schema_model WHERE model = '$id' AND version= '$version' AND domain='$domain' AND subdomain='$subdomain'";
+        $r = mysqli_query($link, $q);
+
+        if (!$r) {
+
+            $result['status'] = 'ko';
+            $result['msg'] = 'Error: errors in reading data about attributes of the model. <br/>' . generateErrorMessage($link);
+            $result["log"] = "action=$action of model " . $id . " error " . mysqli_error($link) . "\r\n";
+        } else {
+
+            $result["status"] = "ok - first query done";
+
+            $row = mysqli_fetch_assoc($r);
+            $arrtibLog = $row["attributesLog"];
+            $arrtib = $row["attributes"];
+            $arrtib = json_decode($arrtib, true);
+
+            $arrtibLog = json_decode($arrtibLog, true);
+
+            foreach ($arrtib as $key => $val) {
+                if ($key != 'type') {
+                    $val["value_type"] = $change[$key]["value_type"];
+                    $val["data_type"] = $change[$key]["data_type"];
+                    $val["value_unit"] = $change[$key]["value_unit"];
+
+                    array_push($arrtibLog[$key], " s4c_rule value_type " . $change[$key]["value_type"] . " data_type " . $change[$key]["data_type"] . " value_unit " . $change[$key]["value_unit"] . "");
+                }
+            }
+
+
+            $queryUpdate = "UPDATE raw_schema_model SET  subnature='$subNat', attributesLog='" . mysqli_real_escape_string($link, json_encode($arrtibLog)) . "' WHERE domain='$domain' AND subdomain='$subdomain' AND version='$version' and model='$id' ";
+
+            $r = mysqli_query($link, $queryUpdate);
+            if (!$r) {
+
+                $result['status'] = 'ko';
+                $result['msg'] = 'Error: errors in reading data about attributes of the model. <br/>' . generateErrorMessage($link);
+                $result["log"] = "action=$action of model " . $id . " error " . mysqli_error($link) . "\r\n";
+                $result["query"] = $queryUpdate;
+            } else {
+
+                $result["status"] = "ok";
+                $result['msg'] = "ok - second query done";
+                $result["log"] = "action=$action of model " . $id . "domain='$domain', subdomain='$subdomain', version='$version' \r\n";
+            }
+        }
+    }
+    my_log($result);
+    mysqli_close($link);
+} else if ($action == 'get_value_attributes_FIWIRE') {
+    $missingParams = missingParameters(array('id', 'version', 'domain', 'subdomain'));
+
+    if (!empty($missingParams)) {
+        $result["status"] = "ko";
+        $result['msg'] = "Missing Parameters";
+        $result["error_msg"] .= "Problem in getting model value attributes (Missing parameters: " . implode(", ", $missingParams) . " )";
+        $result["log"] = "action=get_value_attributes - error Missing Parameters: " . implode(", ", $missingParams) . " \r\n";
+    } else {
+        $id = mysqli_real_escape_string($link, $_REQUEST['id']);
+        $version = mysqli_real_escape_string($link, $_REQUEST['version']);
+        $domain = mysqli_real_escape_string($link, $_REQUEST['domain']);
+        $subdomain = mysqli_real_escape_string($link, $_REQUEST['subdomain']);
+
+        $q = "SELECT attributes FROM raw_schema_model WHERE model = '$id' AND version= '$version' AND domain='$domain' AND subdomain='$subdomain'";
+        $r = mysqli_query($link, $q);
+        if (!$r) {
+            $result['status'] = 'ko';
+            $result['msg'] = 'Error: errors in reading data about attributes of the model. <br/>' . generateErrorMessage($link);
+            $result["log"] = "action=$action of model " . $id . " error " . mysqli_error($link) . "\r\n";
+        } else {
+
+            $row = mysqli_fetch_assoc($r);
+            $result["status"] = "ok";
+            $result["content"] = $row;
+
+            $result["log"] = "action=$action of model " . $id . " \r\n";
         }
     }
 

@@ -412,6 +412,8 @@ if ($action == "insert") {
                     my_log($result);
                     mysqli_close($link);
                 } else {
+                    $hasOwnership = !isset($result["delegationKind"]);
+                    $hasModifyDelegation = !$hasOwnership && $result["delegationKind"] === "MODIFY";
                     $notDuplicate = true;
                     $selectDevices = "SELECT contextBroker, id FROM devices WHERE contextBroker = '$contextbroker' AND id = '$id';";
                     $s1 = mysqli_query($link, $selectDevices);
@@ -532,7 +534,10 @@ if ($action == "insert") {
                             if ($edgegateway_uri != "")
                                 $ownmsg["elementDetails"]["edgegateway_uri"] = $edgegateway_uri;
                             $ownmsg["elementDetails"]["contextbroker"] = $contextbroker;
-                            registerOwnerShipDevice($eId, $ownmsg, $accessToken, $result);
+
+                            if ($hasOwnership) {
+                                registerOwnerShipDevice($eId, $ownmsg, $accessToken, $result);
+                            }
 
                             $ok = true;
                             $q = "";
@@ -857,6 +862,8 @@ else if ($action == 'change_visibility') {
                             }
                             unset($result["delegation"]);
                         }
+
+                        ServerCacheManage($token, 'clear');
                         $result["status"] = "ok";
                         $result["msg"] = "The delegation to anonymous has been changed";
                         $result["log"] = "The delegation to anonymous has been changed";
@@ -1218,7 +1225,7 @@ else if ($action == 'change_visibility') {
                 if (!enforcementRights($username, $accessToken, $role, $eId, 'IOTID', 'write', $result)) {
                     $result["status"] = "ko";
                     $result['msg'] = "Not ownership or enough right to update";
-                    $result["error_msg"] = "Problem in insert data data (Not ownership or enough right to update)";
+                    $result["error_msg"] = "Problem in insert data (Not ownership or enough right to update)";
                     $result["log"] .= "\n action=Insert_Value - error Not ownership or enough right to update\r\n";
                 } else {
 
@@ -1538,6 +1545,8 @@ else if ($action == 'change_visibility') {
     else
         $selection = array();
 
+    $Sel_Time = ( (isset($_REQUEST['start_time'])) || (isset($_REQUEST['end_time'])) );
+
     $ownDevices = getOwnerShipDevice($accessToken, $result);
     getDelegatedDevice($accessToken, $username, $result);
 
@@ -1546,6 +1555,13 @@ else if ($action == 'change_visibility') {
 				d.`macaddress`, d.`model`, d.`producer`, d.`longitude`, d.`latitude`, d.`protocol`, d.`format`, d.`visibility`, 
 				d.`frequency`, d.`created`, d.`privatekey`, d.`certificate`,d.`organization`, cb.`accesslink`, cb.`accessport`, cb.`version`,
 				cb.`sha`, d.`subnature`, d.`static_attributes`,d.`service`, d.`servicePath` FROM `devices` d JOIN `contextbroker` cb ON (d.contextBroker=cb.name)";
+
+    if ($Sel_Time) {
+
+        $start_int = mysqli_real_escape_string($link, $_REQUEST['start_time']);
+        $end_int = mysqli_real_escape_string($link, $_REQUEST['end_time']);
+        $q .= " WHERE d.created BETWEEN CAST('$start_int' AS DATETIME) AND CAST('$end_int' AS DATETIME)";
+    }
 
     if (count($selection) != 0) {
         $a = 0;
@@ -1577,31 +1593,26 @@ else if ($action == 'change_visibility') {
         $subset = false;
     }
 
-
-
-
-
     $data = array();
-    
 
     if ($r) {
         while ($row = mysqli_fetch_assoc($r)) {
             $eid = $row["organization"] . ":" . $row["contextBroker"] . ":" . $row["id"];
 
             $SelPub = ($row["organization"] == $organization) && ($row["visibility"] == 'public' || ( isset($result["delegation"][$eid]) && $result["delegation"][$eid]["kind"] == "anonymous") );
-            $SelDel =  (isset($result["delegation"][$eid]) && ($result["delegation"][$eid]["kind"] != "anonymous") && $row["visibility"] != "public");
-                    //(isset($result["delegation"][$eid]) && $result["delegation"][$eid]["kind"] != "anonymous" );
+            $SelDel = (isset($result["delegation"][$eid]) && ($result["delegation"][$eid]["kind"] != "anonymous") && $row["visibility"] != "public");
+
             $SelOwn = (isset($result["keys"][$eid]) && $result["keys"][$eid]["owner"] == $username );
 
             if (!$subset) {
-                $COND = $SelPub || $SelDel || $SelOwn;
+                $COND = $SelPub || $SelDel || $SelOwn || $role === 'RootAdmin';
             } else {
                 if (isset($_REQUEST['delegated'])) {
-                    $COND =  $SelDel ;
+                    $COND = $SelDel;
                 } else if (isset($_REQUEST['public'])) {
-                   $COND = $SelPub ;
+                    $COND = $SelPub;
                 } else if (isset($_REQUEST['own'])) {
-                    $COND =  $SelOwn;
+                    $COND = $SelOwn;
                 }
             }
 
@@ -1640,6 +1651,10 @@ else if ($action == 'change_visibility') {
                     $rec["edgegateway_uri"] = "";
                     $rec["url"] = get_LDgraph_link($logUriLD, $organizationApiURI, $row["organization"], $row["uri"]);
                     $rec["m_url"] = get_ServiceMap_link($row["uri"], $organizationApiURI, $row["organization"]);
+
+                    if (isset($result["delegation"][$eid]["delegationKind"])) {
+                        $rec["delegationKind"] = $result["delegation"][$eid]["delegationKind"];
+                    }
 
                     if ($row["protocol"] == "ngsi w/MultiService") {
                         // get the name from id
@@ -1687,19 +1702,15 @@ else if ($action == 'change_visibility') {
                             $rec["k2"] = "";
                         }
                     }
-                   
+
 
                     array_push($data, $rec);
                 }
             }
         }
 
-
-       
-            $output = format_result($draw, $selectedrows + 1, $selectedrows + 1, $data, "", "\r\n action=get_all_device \r\n", 'ok');
-        
-
-
+        $output = format_result($draw, $selectedrows + 1, $selectedrows + 1, $data, "", "\r\n action=get_all_device \r\n", 'ok');
+        $output['cache']=$result['cache'];
         //$output = format_result($draw, $selectedrows + 1, $selectedrows + 1, $data, "", "\r\n action=get_all_device \r\n", 'ok');
         logAction($link, $username, 'device', 'get_all_device', '', $organization, '', 'success');
     } else {
@@ -2214,6 +2225,8 @@ else if ($action == "add_delegation") {
         $delegated_group = (isset($_REQUEST['delegated_group'])) ? mysqli_real_escape_string($link, $_REQUEST['delegated_group']) : "";
         $k1 = mysqli_real_escape_string($link, $_REQUEST['k1']);
         $k2 = mysqli_real_escape_string($link, $_REQUEST['k2']);
+        $kind = isset($_REQUEST['kind']) ? $_REQUEST['kind'] : 'READ_ACCESS';
+
         if (isset($_REQUEST['service']))
             $service = mysqli_real_escape_string($link, $_REQUEST['service']);
         else
@@ -2258,11 +2271,11 @@ else if ($action == "add_delegation") {
 
                         //delegate any values of this device
                         while ($value = mysqli_fetch_assoc($values)) {
-                            delegateDeviceValue($uri . "/" . $value["value_name"], $cb, $value["value_name"], $username, $delegated_user, $delegated_group, $accessToken, $k1, $k2, $result);
+                            delegateDeviceValue($uri . "/" . $value["value_name"], $cb, $value["value_name"], $username, $delegated_user, $delegated_group, $accessToken, $k1, $k2, $result, $kind);
                         }
 
                         //delegate the device
-                        delegateDeviceValue($eId, $cb, NULL, $username, $delegated_user, $delegated_group, $accessToken, $k1, $k2, $result);
+                        delegateDeviceValue($eId, $cb, NULL, $username, $delegated_user, $delegated_group, $accessToken, $k1, $k2, $result, $kind);
                     } else {
                         $result["status"] = 'ko';
                         $result["msg"] = '\n the function delegate_value has been called without specifying mandatory parameters';

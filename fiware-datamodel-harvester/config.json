@@ -1,0 +1,29 @@
+{
+  "repository_base_link": "https://github.com/smart-data-models/",
+  "download_folder": "/Download/",
+  "results_folder": "/Results/",
+  "db_config_file": "dbconfig.json",
+  "s4c_dictionary_link": "http://localhost/processloader/api/dictionary/",
+  "domains": [
+    "data-models",
+    "SmartCities",
+    "SmartAgrifood",
+    "SmartWater",
+    "SmartEnergy",
+    "SmartEnvironment",
+    "SmartRobotics",
+    "Smart-Sensoring",
+    "CrossSector",
+    "SmartAeronautics",
+    "SmartDestination",
+    "SmartHealth",
+    "SmartManufacturing"
+  ],
+  "overwrite_rules": false,
+  "prefix_rules": "",
+  "harvest_smartdatamodels": false,
+  "overwrite_database_models": false,
+  "save_wrong_models": false,
+  "all_organizations": true,
+  "organization": "DISIT"
+}

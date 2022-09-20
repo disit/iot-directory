@@ -1,0 +1,25 @@
+{
+   "name":"",
+   "device_type":"",
+   "frequency":"",
+   "kind":"",
+   "protocol":"ngsi",
+   "protocol_version": "v2",
+   "format":"json",
+   "producer":"",
+   "subnature":"",
+   "static_attributes":"",
+   "service":"",
+   "service_path":"",
+   "d_attributes":[
+      {
+         "value_name":"",
+         "data_type":"",
+         "value_type":"",
+         "value_unit":"",
+         "healthiness_criteria":"refresh_rate",
+         "healthiness_value":"300",
+         "editable":"0"
+      }
+   ]
+}

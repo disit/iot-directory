@@ -198,6 +198,7 @@ if ($action == "insert") {
 
 
 	$q = "SELECT contextbroker, id, selector, kind, format, data_type, value_type, value_unit, structure_flag, service, servicePath FROM extractionRules";
+       // echo $q;
 	if ($role == 'ToolAdmin' || $role == 'RootAdmin') {
 		$r = create_datatable_data($link, $_REQUEST, $q, "");
 	} else {

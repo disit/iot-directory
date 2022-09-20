@@ -136,7 +136,9 @@ function LoadRules() {
         url: "../api/bulkDeviceLoad.php",
         data: {
             action: "get_rules_ext",
-            token: sessionToken
+            token: sessionToken,
+             start:0,
+                    length: -1
         },
         type: "POST",
         async: true,
@@ -149,14 +151,14 @@ function LoadRules() {
             }
 
             $('#selectRule').on({
-                change: function () {
+                click: function () {
                     var Rule = this.value;
                     for (let i = 0; i < myRules.data.length; i++) {
 
                         if (myRules.data[i]["Name"] == Rule) {
 
                             RulesLoad(myRules.data[i]["Name"], myRules.data[i]["If_statement"], myRules.data[i]["Then_statement"], myRules.data[i]["mode"], 'ifBlockTableValue', 'decisionBlockTableValue');
-                            let If_st = JSON.parse(myRules.data[i]["If_statement"].replaceAll('/"', ''));
+                           let If_st = JSON.parse(myRules.data[i]["If_statement"].replaceAll('/"', ''));
                             getAffectedRowsValue(If_st);
 
                             break
@@ -198,28 +200,7 @@ function External_Organizzation(item) {
 
 var a = (getStatus());
 var CB_NUM = [];
-//var freq_time=[];
-//$.ajax({
-//    url: "../api/bulkDeviceUpdate.php",
-//    data: {
-//        action: 'get_frequency_timestamStatus_CB',
-//        token: sessionToken,
-//
-//    },
-//    type: "POST",
-//    async: true,
-//    dataType: 'json',
-//    success: function (mydata) {
-//        freq_time = mydata["content"];
-//
-//        console.log(freq_time);
-//
-//    },
-//    error: function (mydata) {
-//        console.log(JSON.stringify(mydata));
-//        // alert("Network errors. <br/> Get in touch with the Snap4City Administrator<br/>" + JSON.stringify(mydata));
-//    }
-//});
+
 
 
 
@@ -233,7 +214,7 @@ $.ajax({
     type: "POST",
     async: true,
     success: function (data) {
-        
+
         //TO DO: mettere controllo ToolAdmin lato server
         if (data["status"] === 'ok' && (loggedRole == "ToolAdmin")) {
             data.data = data.data.filter(External_Organizzation);
@@ -289,31 +270,6 @@ $.ajax({
     }
 });
 
-//--------to get the list of temporary event_value----------
-// $.ajax({
-// 	url: "../api/bulkDeviceUpdate.php",
-// 	data: {
-// 		action: "get_all_temporary_attributes",
-// 		should_be_registered: "no",
-// 		token: sessionToken,
-// 	},
-// 	datatype: 'json',
-// 	type: "POST",
-// 	async: true,
-// 	success: function (data) {
-// 		if (data["status"] === 'ok') {
-// 			list_temporary_event_value = data.content;
-// 		}
-// 		else {
-// 			console.log("error getting temporary event values " + data);
-// 		}
-// 	},
-// 	error: function (data) {
-// 		console.log("error in the call to get  temporary event values " + data);
-// 		alert("Network errors. <br/> Get in touch with the Snap4City Administrator<br/>" + JSON.stringify(data));
-// 	}
-// });
-
 
 
 
@@ -344,41 +300,61 @@ function Element_Table(mydata) {
             }, {
                 "name": "StatusCB",
                 "data": function (row, type, val, meta) {
-                    // 
 
-                    if (JSON.parse(a).message == '["' + row.name + '"]') {
-                        return '<button id="DisabledbuttonB" type="button" data-contextbroker = "' + row.name + '" onclick="killDiscoveryCB();"  class="StatusCBDashBtn btn btn-danger" > <b>DISABLED </b></button>';
-                    } else {
+                    A = JSON.parse(JSON.parse(a)['message'])
+                    if( A.length==0)
                         return '<button id="ActivatebuttonB" type="button" data-contextbroker = "' + row.name + '" onclick="SetFreqNstart(\'' + row.name + '\')" class="StatusCBDashBtn btn" style=" background-color: rgb(69, 183, 175); color: white;" ><b>ACTIVATE </b>  </button>';
+                       
+                    for (var i = 0; i < A.length; i++) {
+                       
+
+                        if (A[i] == row.name) {
+                            return '<button id="DisabledbuttonB" type="button" data-contextbroker = "' + row.name + '" onclick="killDiscoveryCB();"  class="StatusCBDashBtn btn btn-danger" > <b>DISABLED </b></button>';
+                            
+                        } else {
+                            B= '<button id="ActivatebuttonB" type="button" data-contextbroker = "' + row.name + '" onclick="SetFreqNstart(\'' + row.name + '\')" class="StatusCBDashBtn btn" style=" background-color: rgb(69, 183, 175); color: white;" ><b>ACTIVATE </b>  </button>';
+                        }
+                    
                     }
+                    return B;
                 }
             },
             {
                 "name": "frequencyCB",
                 "data": function (row, type, val, meta) {
-                    //for (var i = 0; i < freq_time.length; i++) {
-                    //JSON.parse(a).message == '["' + freq_time[i].name + '"]' &&
-                    if (JSON.parse(a).message == '["' + row.name + '"]') {
-                        freq = getFrequency(row.req_frequency);
-                        return freq;
-                    } else
-                        return "-";
-                    // getFreq_timestampStatus(row.name).req_frequency;
-                }
+                    A = JSON.parse(JSON.parse(a)['message'])
+                     if( A.length==0)
+                        return '-';
+                    for (var i = 0; i < A.length; i++) {
 
-                //}
+                        if (A[i] == row.name) {
+                            freq = getFrequency(row.req_frequency);
+                            
+                        } else
+                            freq= "-";
+                        // getFreq_timestampStatus(row.name).req_frequency;
+                    }return freq;
+
+                }
+                
             },
             {
                 "name": "TimestampChangeStatusCB",
                 "data": function (row, type, val, meta) {
+                    A = JSON.parse(JSON.parse(a)['message'])
+                     if( A.length==0)
+                        return '-';
+                    for (var i = 0; i < A.length; i++) {
 
-                    //  for (var i = 0; i < freq_time.length; i++) {JSON.parse(a).message == '["' + freq_time[i].name + '"]' && 
-                    if (JSON.parse(a).message == '["' + row.name + '"]') {
-                        freq = (row.timestampstatus);
-                        return freq;
-                    } else
-                        return "-";
-                    // getFreq_timestampStatus(row.name).req_frequency;
+                        if (A[i] == row.name) {
+                            freq = (row.timestampstatus);
+                            
+                        } else
+                            freq= "-";
+                        // getFreq_timestampStatus(row.name).req_frequency;
+                    
+                    }
+                    return freq;
                 }
 
 
@@ -386,18 +362,19 @@ function Element_Table(mydata) {
             }, {
                 "name": "NumberNewDevice",
                 "data": function (row, type, val, meta) {
-                    var NUM_DEV="-"
-                    if(CB_NUM.length!=0){
-                    for (let i = 0; i < CB_NUM.length; i++) {
-                        if (CB_NUM[i][row.name]) {
-                            NUM_DEV= CB_NUM[i][row.name];
-                        } else {
-                            NUM_DEV= "-";
+                    var NUM_DEV = "-"
+                    if (CB_NUM.length != 0) {
+                        for (let i = 0; i < CB_NUM.length; i++) {
+                            if (CB_NUM[i][row.name]) {
+                                NUM_DEV = CB_NUM[i][row.name];
+                            } else {
+                                NUM_DEV = "-";
+                            }
+
+                            return NUM_DEV;
                         }
-                        
-                        return NUM_DEV;
-                    }}
-                return NUM_DEV;
+                    }
+                    return NUM_DEV;
 
 
                 }
@@ -479,6 +456,7 @@ function killDiscoveryCB() {
             action: "get_cb_details",
             cb: contextbroker,
             token: sessionToken
+
                     //username: loggedUser,
                     //organization:organization
         },
@@ -535,10 +513,12 @@ function activateStub(cb, ipa, protocol, user, accesslink, accessport, model, ed
     }, 10000);
 
     xhr.addEventListener("readystatechange", function () {
-        //console.log("this.readyState "+this.readyState);
+        console.log(" " + new Date() + " this.readyState " + this.readyState);
         if (this.readyState === 4 && this.status == 200) {
 
+
             return this.responseText;
+
         }
     });
 
@@ -653,9 +633,6 @@ function fetch_data(destroyOld, selected = null) {
         dom: 'Pfrtip',
         "processing": true,
 
-        "responsive": {
-            details: false
-        },
         "paging": true,
         "ajax": {
 
@@ -1186,8 +1163,7 @@ function getAffectedRowsValue(valueIfOp) {
     var num1 = document.getElementById('ifBlockTableValue').tBodies[0].childElementCount;
     var attributesIfValues = [];
     for (var m = 0; m < num1; m++) {
-        //var attribute= document.getElementById('ifBlockTable').rows[m].cells[1].selectedIndex;
-
+       
         var fieldIf = document.getElementById('ifBlockTableValue').tBodies[0].rows.item(m).cells.item(1).childNodes[0].value;
         var operatorIf = document.getElementById('ifBlockTableValue').tBodies[0].rows.item(m).cells.item(2).childNodes[0].value;
 
@@ -1210,6 +1186,7 @@ function getAffectedRowsValue(valueIfOp) {
         var newIf = {"field": fieldIf, "operator": operatorIf, "value": valueIf};
         attributesIfValues.push(newIf);
     }
+
     if (num1 != 0) {
         $.ajax({
             url: "../api/bulkDeviceUpdate.php",
@@ -2182,7 +2159,7 @@ $(document).ready(function () {
                                 content += drawAttributeMenu(myattributes[k].value_name,
                                         myattributes[k].data_type, myattributes[k].value_type, myattributes[k].editable, myattributes[k].value_unit, myattributes[k].healthiness_criteria,
                                         myattributes[k].healthiness_value, myattributes[k].old_value_name,
-                                        'addlistAttributes', indexValues);
+                                        'addlistAttributes', indexValues, '');
                                 k++;
                             }
                             $('#addlistAttributes').html(content);
@@ -2290,7 +2267,7 @@ $(document).ready(function () {
     $("#addAttrBtn").off("click");
     $("#addAttrBtn").click(function () {
         //console.log("#addAttrBtn");							   
-        content = drawAttributeMenu("", "", "", "", "", "", " ", " ", 'addlistAttributes', indexValues);
+        content = drawAttributeMenu("", "", "", "", "", "", " ", " ", 'addlistAttributes', indexValues,'');
         indexValues = indexValues + 1;
         // addDeviceConditionsArray['addlistAttributes'] = true;
         //console.log("contenuto drawAttr" +content);
@@ -2474,7 +2451,7 @@ $(document).ready(function () {
     $("#addAttrMBtn").off("click");
     $("#addAttrMBtn").click(function () {
         //console.log("#addAttrMBtn");					
-        content = drawAttributeMenu("", "", "", "", "", "", "300", " ", 'addlistAttributesM', indexValues);
+        content = drawAttributeMenu("", "", "", "", "", "", "300", " ", 'addlistAttributesM', indexValues,'');
         indexValues = indexValues + 1;
         editDeviceConditionsArray['addlistAttributesM'] = true;
         $('#addlistAttributesM').append(content);
@@ -2573,8 +2550,8 @@ $(document).ready(function () {
         $('#inputProducerDeviceM').val(producer);
         $('#selectEdgeGatewayTypeM').val(edge_gateway_type);
         $('#inputEdgeGatewayUriM').val(edge_gateway_uri);
-        $('#inputLatitudeDeviceM').val(latitude);
-        $('#inputLongitudeDeviceM').val(longitude);
+        $('#inputLatitudeDeviceM').val(latitude.substring(0, 8));
+        $('#inputLongitudeDeviceM').val(longitude.substring(0, 8));
         $('#inputFrequencyDeviceM').val(frequency);
         $('#selectVisibilityDeviceM').val(visibility);
 
@@ -2665,7 +2642,7 @@ $(document).ready(function () {
                     // console.log(k); 
                     content = drawAttributeMenu(myattributes[k].value_name,
                             myattributes[k].data_type, myattributes[k].value_type, myattributes[k].editable, myattributes[k].value_unit, myattributes[k].healthiness_criteria,
-                            myattributes[k].healthiness_value, myattributes[k].value_name, 'editlistAttributes', indexValues);
+                            myattributes[k].healthiness_value, myattributes[k].value_name, 'editlistAttributes', indexValues,'');
 
                     str = "#Value" + myattributes[k].value_name;
 
@@ -3112,7 +3089,7 @@ $(document).ready(function () {
         devicenamesArray['if'] = devicenamesArray['if'] + 1;
         var rowIndex = row.index();
         var fieldIf = document.getElementById('ifBlockTable').tBodies[0].rows.item(rowIndex).cells.item(1).childNodes[0].value;
-        getFields(fieldIf, rowIndex, 'ifBlockTable', 0);
+        getFields(fieldIf, rowIndex, 'ifBlockTable', '');
 
 
 
@@ -3142,7 +3119,7 @@ $(document).ready(function () {
         devicenamesArray['if'] = devicenamesArray['if'] + 1;
         var rowIndex = row2.index();
         var fieldIf = document.getElementById('ifBlockTable').tBodies[0].rows.item(rowIndex).cells.item(1).childNodes[0].value;
-        getFields(fieldIf, rowIndex, 'ifBlockTable', 0);
+        getFields(fieldIf, rowIndex, 'ifBlockTable', '');
 
         $(document).ready(function () {
             row2.find('i.fa-minus').off("click");
@@ -3520,87 +3497,6 @@ $(document).ready(function () {
     }
 
 
-    function getFields(fieldIf, pos, id, value) {
-        $.ajax({
-            url: "../api/bulkDeviceUpdate.php",
-            data: {
-                action: "get_fields",
-                fieldIf: fieldIf,
-                token: sessionToken
-            },
-            dataType: 'json',
-            type: "POST",
-            async: true,
-            success: function (myData) {
-                let myDataP = myData['content'];
-                //console.log(JSON.stringify(myDataP));
-                //console.log("INDICE "+ pos + " field if "+ fieldIf);
-
-                if (fieldIf.localeCompare("healthiness_value") == 0 && healthinessValueIsPresent(id) == 0) {
-                    var num1 = document.getElementById(id).tBodies[0].childElementCount;
-                    var idToPut = document.getElementById(id).tBodies[0].rows.item(pos).id;
-
-                    if (id.localeCompare("decisionBlockTableValue") == 0) {
-                        var row = $('<tr id="' + idToPut + 'criteria"><td><h3><span class="label label-success">Then</span></h3></td><td class="fieldTdThenValue"><select><option value="healthiness_criteria">Healthiness Criteria</option></select></td></td><td class="fieldNameValue"><input type="text" class="fieldNameIfValue" value="Empty"><td></td></tr>');
-                        devicenamesArray['then'] = devicenamesArray['then'] + 1;
-
-                    } else {
-                        var row = $('<tr id="' + idToPut + 'criteria"><td><h3><span class="label label-danger">AND</span></h3></td><td class="fieldTdValue"><select><option value="healthiness_criteria">Healthiness Criteria</option></select></td><td class="fieldEqualValue"><select class="fieldSelectEqualValue"><option value="IsEqual">Is Equal</option><option value="IsNotEqual">Is Not Equal</option><option value="IsNull">Is NULL</option></select></td><td class="fieldNameIfValue"></td><td></td></tr>');
-                        devicenamesArray['if'] = devicenamesArray['if'] + 1;
-                    }
-
-                    var idTemp = "#" + id + " tbody ";
-                    //$(idTemp).eq(pos+1).append(row);
-                    $(idTemp).append(row);
-
-
-                    $('#authorizedPagesJson').val(JSON.stringify(ifPages));
-
-                    getFields("healthiness_criteria", num1, id, value);
-
-                    if (id.localeCompare("decisionBlockTable") == 0 || id.localeCompare("decisionBlockTableValue") == 0) {
-                        document.getElementById(id).tBodies[0].rows.item(pos).cells.item(2).innerHTML = myDataP[0].fieldsHtml;
-                    } else {
-                        //TO change
-                        document.getElementById(id).tBodies[0].childNodes[pos].childNodes[3].innerHTML = myDataP[0].fieldsHtml;
-                    }
-                } else {
-
-                    if (id.localeCompare("decisionBlockTable") == 0 || id.localeCompare("decisionBlockTableValue") == 0) {
-                        document.getElementById(id).tBodies[0].rows.item(pos).cells.item(2).innerHTML = myDataP[0].fieldsHtml;
-                    } else {
-                        //TO change
-                        document.getElementById(id).tBodies[0].childNodes[pos].childNodes[3].innerHTML = myDataP[0].fieldsHtml;
-
-
-                        if (value == 1) {
-                            getAffectedRowsValue();
-                        } else {
-                            getAffectedRows();
-                        }
-                    }
-                }
-
-                /*if(myDataP[0].autocomplete != null){
-                 
-                 $( ".tags" ).autocomplete({
-                 source: myDataP[0].autocomplete
-                 });
-                 }*/
-
-            },
-            error: function (myData) {
-                console.log("error" + JSON.stringify(myData));
-                if (id.localeCompare("decisionBlockTable") == 0) {
-                    document.getElementById(id).tBodies[0].rows.item(pos).cells.item(2).innerHTML = "<input type=\"text\" class=\"fieldNameThen\" value=\"Empty\">";
-                } else {
-                    document.getElementById(id).tBodies[0].childNodes[pos].childNodes[3].innerHTML = "<input type=\"text\" class=\"fieldNameIf\" value=\"Empty\">";
-                }
-
-            }
-        });//end of ajax get_affected
-    }
-
 
     $("#updateAllConfirmBtn").off("click");
     $("#updateAllConfirmBtn").on("click", function () {
@@ -3626,7 +3522,7 @@ $(document).ready(function () {
 
             for (var m = 0; m < num2; m++) {
                 var fieldsThen = document.getElementById('decisionBlockTable').tBodies[0].rows.item(m).cells.item(1).childNodes[0].value;
-                var valueThen = document.getElementById('decisionBlockTable').tBodies[0].childNodes[m + 1].childNodes[2].childNodes[0].value;
+                var valueThen = document.getElementById('decisionBlockTable').tBodies[0].childNodes[m].childNodes[2].childNodes[0].value;
 
                 if (valueThen.localeCompare("Empty") == 0) {
                     valueThen = "";
@@ -3716,10 +3612,10 @@ $(document).ready(function () {
         $('#updateMultipleDeviceModal').modal('hide');
 
 
-        var row = $('<tr id="ifHV' + idCounterIf + '" class="ifrow"><td><h3><span class="label label-danger">If</span></h3></td><td class="fieldTd"><select class="fieldIf"><option value="empty">--Select an option--</option><option value="contextBroker" selected>Contextbroker</option><option value="id">Device name</option><option value="deviceType">Device Type</option><option value="model">Model</option><option value="producer">Producer</option><option value="frequency">Frequency</option><option value="kind">Kind</option><option value="protocol">Protocol</option><option value="format">Format</option><option value="latitude">Latitude</option><option value="longitude">Longitude</option><option value="macaddress">Mac address</option><option value="k1">Key1</option><option value="k2">Key2</option></select></td><td class="fieldEqual"><select class="fieldSelectEqual"><option value="IsEqual">Is Equal</option><option value="IsNotEqual">Is Not Equal</option><option value="IsNull">Is NULL</option><option value="Contains">Contains</option></select></td><td class="fieldName"> </td><td class="minusDevice"><i class="fa fa-minus"></i></td></tr>');
-
+        var row = $('<tr id="ifHV' + idCounterIf + '" class="ifrow"><td><h3><span class="label label-danger">If</span></h3></td><td class="fieldTdValue"><select class="fieldIfValue"><option value="empty">--Select an option--</option><option value="cb" selected>Contextbroker</option><option value="device">Device name</option><option value="deviceType">Device type</option><option value="value_name">Value Name</option><option value="data_type">Data type</option><option value="model">Model</option><option value="producer">Producer</option><option value="frequency">Frequency</option><option value="kind">Kind</option><option value="protocol">Protocol</option><option value="format">Format</option><option value="latitude">Latitude</option><option value="longitude">Longitude</option><option value="macaddress">Mac address</option><option value="k1">Key1</option><option value="k2">Key2</option><option value="value_type">Value type</option><option value="value_unit">Value unit</option><option value="editable">Editable</option><option value="healthiness_criteria">Healthiness criteria</option><option value="healthiness_value">Healthiness value</option></select></td><td class="fieldEqualValue"><select class="fieldSelectEqualValue"><option value="IsEqual">Is Equal</option><option value="IsNotEqual">Is Not Equal</option><option value="IsNull">Is NULL</option><option value="Contains">Contains</option></select></td><td class="fieldNameIfValue"><input type="hidden"></td><td><i class="fa fa-minus"></i></td></tr>');
         $('#ifBlockTableValue tbody').append(row);
-        valueNamesArray['if'] = devicenamesArray['if'] + 1;
+        valueNamesArray['if'] = 1;
+        //valueNamesArray['if'] + 
         getFields('contextBroker', 0, 'ifBlockTableValue', 1);
         idCounterIf++;
 
@@ -3733,9 +3629,9 @@ $(document).ready(function () {
                     document.getElementById('ifBlockTable').tBodies[0].rows.item(0).childNodes[0].childNodes[0].innerHTML = "<span class=\"label label-danger\">If</span>";
                 }
 
-                devicenamesArray['if'] = devicenamesArray['if'] - 1;
-                checkUpdateButton();
-                getAffectedRows();
+                valueNamesArray['if'] = valueNamesArray['if'] - 1;
+                //checkUpdateButton();
+                //getAffectedRows();
 
                 ifPages.splice(rowIndex, 1);
                 $('#authorizedPagesJson').val(JSON.stringify(ifPages));
@@ -3743,12 +3639,13 @@ $(document).ready(function () {
         });
 
 
-        var row2 = $('<tr id="ifHV' + idCounterIf + '"  class="ifrow"><td><h3><span class="label label-danger">AND</span></h3></td><td class="fieldTd"><select class="fieldIf"><option value="empty">--Select an option--</option><option value="contextBroker">Contextbroker</option><option value="id" >Device name</option><option value="deviceType" selected>Device Type</option><option value="model">Model</option><option value="producer">Producer</option><option value="frequency">Frequency</option><option value="kind">Kind</option><option value="protocol">Protocol</option><option value="format">Format</option><option value="latitude">Latitude</option><option value="longitude">Longitude</option><option value="macaddress">Mac address</option><option value="k1">Key1</option><option value="k2">Key2</option></select></td><td class="fieldEqual"><select class="fieldSelectEqual"><option value="IsEqual">Is Equal</option><option value="IsNotEqual">Is Not Equal</option><option value="IsNull">Is NULL</option><option value="Contains">Contains</option></select></td><td class="fieldName"> </td><td class="minusDevice"><i class="fa fa-minus"></i></td></tr>');
+        var row2 = $('<tr id="ifHV' + idCounterIf + '" class="ifrow"><td><h3><span class="label label-danger">AND</span></h3></td><td class="fieldTdValue"><select class="fieldIfValue"><option value="empty">--Select an option--</option><option value="cb" >Contextbroker</option><option value="device">Device name</option><option value="deviceType" selected>Device type</option><option value="value_name">Value Name</option><option value="data_type">Data type</option><option value="model">Model</option><option value="producer">Producer</option><option value="frequency">Frequency</option><option value="kind">Kind</option><option value="protocol">Protocol</option><option value="format">Format</option><option value="latitude">Latitude</option><option value="longitude">Longitude</option><option value="macaddress">Mac address</option><option value="k1">Key1</option><option value="k2">Key2</option><option value="value_type">Value type</option><option value="value_unit">Value unit</option><option value="editable">Editable</option><option value="healthiness_criteria">Healthiness criteria</option><option value="healthiness_value">Healthiness value</option></select></td><td class="fieldEqualValue"><select class="fieldSelectEqualValue"><option value="IsEqual">Is Equal</option><option value="IsNotEqual">Is Not Equal</option><option value="IsNull">Is NULL</option><option value="Contains">Contains</option></select></td><td class="fieldNameIfValue"><input type="hidden"></td><td><i class="fa fa-minus"></i></td></tr>');
+
         $('#ifBlockTableValue tbody').append(row2);
-        valueNamesArray['if'] = devicenamesArray['if'] + 1;
+        valueNamesArray['if'] = valueNamesArray['if'] + 1;
         idCounterIf++;
 
-        getFields('deviceType', 1, 'ifBlockTableValue', 0);
+        getFields('deviceType', 1, 'ifBlockTableValue', '');
 
 
         $(document).ready(function () {
@@ -3761,20 +3658,14 @@ $(document).ready(function () {
                     document.getElementById('ifBlockTable').tBodies[0].rows.item(0).childNodes[0].childNodes[0].innerHTML = "<span class=\"label label-danger\">If</span>";
                 }
 
-                devicenamesArray['if'] = devicenamesArray['if'] - 1;
+                valueNamesArray['if'] = valueNamesArray['if'] - 1;
                 checkUpdateButton();
-                getAffectedRows();
+               // getAffectedRows();
 
                 ifPages.splice(rowIndex, 1);
                 $('#authorizedPagesJson').val(JSON.stringify(ifPages));
             });
         });
-
-        //  checkUpdateButtonValue();
-//        getAffectedRowsValue();
-
-
-
 
     });
 
@@ -4298,7 +4189,53 @@ $(document).ready(function () {
         return attributesThenValues;
     }
 
+//////
+    function getService(cb) {
 
+        $.ajax({
+            url: "../api/bulkDeviceLoad.php",
+            data: {
+                action: "get_service_and_path",
+                cb: cb,
+                token: sessionToken
+            },
+            type: "POST",
+            async: true,
+            datatype: 'json',
+            success: function (data)
+            {
+
+                if (data["status"] === 'ok')
+                {
+                     $('.js-example-basic-multiple').select2();
+                    var SERV = data["content"];
+
+                    var opt = '';
+                    var all = [];
+
+
+                    for (let i = 0; i < SERV.length; i++) {
+                        opt += '<option value="' + SERV[i]['service'] + '_' + SERV[i]['servicePath'] + '">' + SERV[i]['service'] + ' (with servicepath  ' + SERV[i]['servicePath'] + ' )</option>';
+                        a = [SERV[i]['service'] + '_' + SERV[i]['servicePath']];
+                        all.push(a);
+                    }
+                  
+
+                    $('#OPTServiceRules').append(opt);
+                    opt = '';
+
+
+                }
+            },
+            error: function (data)
+            {
+                console.log("Ko result: " + data);
+                alert("Network errors. <br/> Get in touch with the Snap4City Administrator<br/>" + JSON.stringify(data));
+            }
+
+        });
+
+    }
 
 ///SAVE RULES ///
     $("#SAVEAllValuesRULEBtn").off("click");
@@ -4306,16 +4243,36 @@ $(document).ready(function () {
         LoadRules();
 
 
+
         var num1 = document.getElementById('ifBlockTableValue').tBodies[0].childElementCount;
         var num2 = document.getElementById('decisionBlockTableValue').tBodies[0].childElementCount;
+        var cb = null;
+
+
+
+        for (let i = 0; i <= num1; i++) {
+            if ((document.querySelector("#ifHV" + i + " > td.fieldTdValue > select"))) {
+                if ((document.querySelector("#ifHV" + i + "  > td.fieldTdValue > select").value == 'cb')) {
+                    //((document.querySelector("#ifHV"+i+" > td.fieldTdValue > select").value=='contextBroker' ||document.querySelector("#ifHV"+i+"  > td.fieldTdValue > select").value== 'cb')){
+                    cb = document.querySelector("#ifHV" + i + "  > td.fieldNameIfValue > select").value;
+                    break;
+
+                }
+            }
+        }
 
         if (num1 != 0 || num2 != 0) {
+
+
 
             var attributesIfValues = getIfRules(num1);
             var attributesThenValues = getThenRules(num2);
             $('#updateMultipleDeviceModal1').hide();
             $('#NamingValuesRULEModal').modal('show');
 
+            /////
+
+            getService(cb)
 
             document.getElementById('NamingValuesRULEMInput').addEventListener('input', updateValue);
 
@@ -4345,6 +4302,26 @@ $(document).ready(function () {
                     var mode = '1';
                 }
 
+                var service_path = $('#OPTServiceRules').val();
+                var service = new Array();
+                var servicePath = new Array();
+                if (service_path.includes(',')) {
+                    let l = service_path.split(',');
+                    for (i = 0; i < l.length; i++) {
+                        s = l[i].split('_')[0];
+                        sp = l[i].split('_')[1];
+                        service.push(s);
+                        servicePath.push(sp);
+                    }
+                    service = service.toString();
+                    servicePath = servicePath.toString();
+
+                } else {
+                    service = service_path.split("_")[0];
+                    servicePath = service_path.split("_")[1];
+                }
+
+
                 $.ajax({
                     url: "../api/bulkDeviceUpdate.php",
                     data: {
@@ -4355,6 +4332,9 @@ $(document).ready(function () {
                         attributesThen: JSON.stringify(attributesThenValues),
                         name: name,
                         mode: mode,
+                        service: service,
+                        servicePath: servicePath,
+                        contextbroker: cb,
                         token: sessionToken
                     },
                     dataType: 'json',
@@ -4374,7 +4354,8 @@ $(document).ready(function () {
                     },
                     error: function (myData) {
 
-
+                        $('#NamedRule').modal('show');
+                        $('#NamedRuleOK').html('There are some problems. Your rule is NOT saved');
                     }
                 });
             });
@@ -4406,6 +4387,10 @@ $(document).ready(function () {
                     //organization:organization,
                     attributesIf: JSON.stringify(attributesIfValues),
                     attributesThen: JSON.stringify(attributesThenValues),
+//                    cb: 'CapelonTampere',
+//                    service: '1,tampere',
+//                    service_path:'2,/',
+
                     token: sessionToken
                 },
                 dataType: 'json',
@@ -4504,7 +4489,7 @@ $(document).ready(function () {
         var indexValues = 0;
         var content = drawAttributeMenu(valuename,
                 datatype, valuetype, false, valueunit, healthinesscriteria,
-                refreshrate, valuename, 'editlistParameters', indexValues);
+                refreshrate, valuename, 'editlistParameters', indexValues,'');
         $('#editlistParameters').append(content);
         $('.delValueButton').hide();
 
@@ -4888,7 +4873,7 @@ function insertValidParams() {
 }
 
 function drawAttributeMenu
-        (attrName, data_type, value_type, editable, value_unit, healthiness_criteria, value_refresh_rate, old_value_name, parent, indice) {
+        (attrName, data_type, value_type, editable, value_unit, healthiness_criteria, value_refresh_rate, old_value_name, parent, indice, disabled_field) {
 
     if (attrName == "") {
         msg = "<div style=\"color:red;\" class=\"modalFieldMsgCnt\"></div>";
@@ -4962,68 +4947,36 @@ function drawAttributeMenu
     } else {
         editable_empty = "selected";
     }
-    //0910Fatima--block modification end
 
-    //---end sara
-
-
-//    if (data_type != "")
-//        labelcheck = data_type;
-//    else { //0910Fatima
-//        labelcheck = "";
-//        //mydatatypes += "<option value=' ' selected> </option>";
-//    }
-
-//    for (var n = 0; n < gb_datatypes.length; n++) {
-//        if (labelcheck == gb_datatypes[n])
-//            mydatatypes += "<option value=\"" + gb_datatypes[n] + "\" selected>" + gb_datatypes[n] + "</option>";
-//        else
-//            mydatatypes += "<option value=\"" + gb_datatypes[n] + "\">" + gb_datatypes[n] + "</option>";
-//    }
     console.log(data_type + "," + value_type + "," + editable + "," + value_unit + "," + healthiness_criteria + "," + value_refresh_rate + "," + parent);
     return "<div class=\"row\" style=\"border:2px solid blue;\" ><div class=\"col-xs-6 col-md-3 modalCell\">" +
             "<div class=\"modalFieldCnt\"><input type=\"text\" class=\"modalInputTxt valueName\"" +
-            "name=\"" + attrName + "\"  value=\"" + attrName + "\"disabled>" +
+            "name=\"" + attrName + "\"  value=\"" + attrName + "\"disabled id=\"value_name" + indice + "\" >" +
+            
             "</div><div class=\"modalFieldLabelCnt\">Value Name</div>" + msg + "</div>" +
-//            "<div class=\"col-xs-6 col-md-3 modalCell\"><div class=\"modalFieldCnt\">" +
-//            "<select class=\"modalInputTxt\" name=\"" + attrName + "-type" +
-//            "\">" + mydatatypes +
-//            "</select></div><div class=\"modalFieldLabelCnt\">Data Type</div></div>" +
-
             "<div class=\"col-xs-6 col-md-3 modalCell\"><div class=\"modalFieldCnt\">" +
             "<select class=\"modalInputTxt\"  id=\"value_type" + indice + "\" " +
             "onchange=valueTypeChanged(" + indice + ") " +
-            "\">" + options +
+            "\" "+ disabled_field +">" + options +
             "</select>" +
             "</div><div class=\"modalFieldLabelCnt\">Value Type" +
             "</div>" + msg_value_type + "</div>" +
             "<div class=\"col-xs-6 col-md-3 modalCell\"><div class=\"modalFieldCnt\">" +
             "<select class=\"modalInputTxt\" id=\"value_unit" + indice + "\" " +
             "onchange=valueUnitChanged(" + indice + ") " +
-            "\">" +
+            "\" "+disabled_field +">" +
             myunits +
             "</select>" +
             "</div><div class=\"modalFieldLabelCnt\">Value Unit" +
             "</div>" + msg_value_unit + "</div>" +
             "<div class=\"col-xs-6 col-md-3 modalCell\"><div class=\"modalFieldCnt\">" +
             "<select class=\"modalInputTxt\" id=\"data_type" + indice + "\"" +
-            "onchange=dataTypeChanged(" + indice + ") " +
-            "\">" + mydatatypes +
+            "onchange=dataTypeChanged(" + indice + ") " + 
+            "\" "+disabled_field +">" + mydatatypes +
             "</select></div><div class=\"modalFieldLabelCnt\">Data Type</div>" + msg_data_unit + "</div>" +
-//            "<div class=\"col-xs-6 col-md-3 modalCell\" style='display:none;'><div class=\"modalFieldCnt\">" +
-//            "<select class=\"modalInputTxt\" name=\"" + editable +
-//            "\">" +
-//            "<option value='0' " + editable_false + ">false</option>" +
-//            "<option value='1' " + editable_true + ">true</option> </select>" +
-//            "<option value='' " + editable_empty + "> </option> </select>" + //0910Fatima
-//            "</div><div class=\"modalFieldLabelCnt\">Editable</div></div>" +
-
-
-            // "<div class=\"col-xs-6 col-md-3 modalCell\"></div>" +
-
             "<div class=\"col-xs-6 col-md-3 modalCell\"><div class=\"modalFieldCnt\">" +
             "<select class=\"modalInputTxt\" name=\"" + healthiness_criteria +
-            "\" \>" +
+            "\" "+disabled_field +">" +
             "<option value=\"refresh_rate\" " + refresh_rate + ">Refresh rate</option>" +
             "<option value=\"different_values\" " + different_values + ">Different Values</option>" +
             "<option value=\"within_bounds\" " + within_bounds + ">Within bounds</option>" +
@@ -5031,16 +4984,16 @@ function drawAttributeMenu
             "</select></div><div class=\"modalFieldLabelCnt\">Healthiness criteria</div></div>" +
             "<div class=\"col-xs-6 col-md-3 modalCell\"><div class=\"modalFieldCnt\">" +
             "<input type=\"text\" class=\"modalInputTxt\" name=\"" + value_refresh_rate +
-            "\" value=\"" + value_refresh_rate + "\"></div><div class=\"modalFieldLabelCnt\">Healthiness value</div></div>" +
-            "<div class=\"col-xs-6 col-md-3 modalCell\">" + "<div   class=\"modalFieldCnt \" ><input type=\"text\" class=\"modalInputTxt \"" +
+            "\" value=\"" + value_refresh_rate + "\" "+disabled_field +"></div><div class=\"modalFieldLabelCnt\">Healthiness value</div></div>" +
+            "<div class=\"col-xs-6 col-md-3 modalCell\">" + "<div   class=\"modalFieldCnt HIDE\" ><input type=\"text\" class=\"modalInputTxt \"" +
             "id=\"Value" + attrName + "\"  \"name=\"Value" + attrName + "\" readonly=\"readonly\"  >" +
-            "</div><div  class=\"modalFieldLabelCnt \">Loading data</div> </div>" +
+            "</div><div  \"id=\"ValueLabel" + attrName + "\"  class=\"modalFieldLabelCnt HIDE \">Loading data</div> </div>" +
             "<select class=\"modalInputTxt\" style=\"display:none\" name=\"" + old_value_name +
-            "\" \>" +
+            "\" "+disabled_field +"\>" +
             "<option value=\"" + old_value_name + "\">" + old_value_name + "</option>" +
             "</select>" +
             "<div class=\"col-xs-6 col-md-3 modalCell delValueButton\"><div class=\"modalFieldCnt\">" +
-            "<button class=\"btn btn-danger\" onclick=\"removeElementAt('" + parent + "',this); return true;\">Remove Value</button></div></div></div>";
+            "<button class=\"btn btn-danger HIDE\" onclick=\"removeElementAt('" + parent + "',this); return true;\">Remove Value</button></div></div></div>";
 }
 
 function removeElementAt(parent, child) {

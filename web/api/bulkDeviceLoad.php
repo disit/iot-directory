@@ -33,7 +33,7 @@ include ('../config.php');
 include ('common.php');
 $link = mysqli_connect($host, $username, $password) or die("failed to connect to server !!");
 mysqli_select_db($link, $dbname);
-error_reporting(E_ERROR );
+error_reporting(E_ERROR);
 
 if (!$link->set_charset("utf8")) {
     exit();
@@ -635,25 +635,47 @@ else if ($action == "get_count_temporary_devices") {
             mysqli_close($link);
         }
     }
+} else if ($action == "delete_rules_ext") {
+
+    $missingParams = missingParameters(array('id'));
+
+    if (!empty($missingParams)) {
+        $result["status"] = "ko";
+        $result['msg'] = "Missing Parameters";
+        $result["error_msg"] .= "Problem in update device in bulk(Missing parameters: " . implode(", ", $missingParams) . " )";
+        $result["log"] = "action=update - error Missing Parameters: " . implode(", ", $missingParams) . " \r\n";
+        my_log($result);
+        mysqli_close($link);
+    } else {
+
+        $id = mysqli_real_escape_string($link, $_REQUEST['id']);
+        $query = "DELETE FROM `iotdb`.`EXT_values_rules`  WHERE Name = '$id' ";
+        $r = mysqli_query($link, $query);
+
+        if ($r) {
+            
+            $result["status"] = 'ok';
+            $result["msg"] .= "\n Rule $id and corresponding values corretly removed";
+            $result["log"] .= "\n Rule $id and corresponding values corretly removed ";
+            // echo json_encode($result);
+            logAction($link, $username, 'delete_rules_ext', 'delete', $id . " ", '', 'success', $result);
+           
+        } else {
+            echo "ko";
+            $result["status"] = 'ko';
+            $result["msg"] .= "\n Problem in deleting the Rule $id: " . generateErrorMessage($link);
+            $result["log"] .= "\n Problem in deleting the Rule $id: " . $query . " " . generateErrorMessage($link);
+           // logAction($link, $username, 'delete_rules_ext', 'delete', $id . " ", '', 'faliure');
+        }
+    }
+    my_log($result);
+    mysqli_close($link);
 } else if ($action == "get_rules_ext") {
- $query = 'SELECT Name, If_statement, Then_statement, Organization, mode FROM iotdb.EXT_values_rules ';
+    $query = 'SELECT Name, If_statement, Then_statement, Organization, mode FROM iotdb.EXT_values_rules ';
     $r = mysqli_query($link, $query);
-   // echo $result;
-
-
-
-    //$q = 'SELECT Name, If_statement, Then_statement, Organization, mode FROM iotdb.EXT_values_rules ';
-    //TODO not sure is should be registered has to be included or no
-
-    //$r = create_datatable_data($link, $_REQUEST, $q, '');
-
-    
-    //echo $q;
-   // echo json_encode($r);
-    
 
     $selectedrows = -1;
-   if ($_REQUEST["length"] != -1) {
+    if ($_REQUEST["length"] != -1) {
         $start = $_REQUEST['start'];
         $offset = $_REQUEST['length'];
         $tobelimited = true;
@@ -663,38 +685,89 @@ else if ($action == "get_count_temporary_devices") {
 
     if ($r) {
 
+
         $rules = array();
         $option = array();
-//        $dev2=array();
+        $total = array();
+        $count_0 = 0;
+        $count_1 = 0;
 
         $result["log"] = "\r\n action=get_rules_ext \r\n";
 
         while ($row = mysqli_fetch_assoc($r)) {
 
 
+
+            If ($row["mode"] == '0') {
+                $count_0++;
+            } else {
+                $count_1++;
+            }
+            //echo "to be limited: ".$tobelimited ."selectedrows: ".$selectedrows."start: ".$start."offset: ".$offset;
+
             $selectedrows++;
-            //if (!$tobelimited || ($tobelimited && $selectedrows >= $start && $selectedrows < ($start + $offset))) {
-            $rec = array();
+            if (!$tobelimited || ($tobelimited && $selectedrows >= $start && $selectedrows < ($start + $offset))) {
+                // echo "qui";
+                $rec = array();
 
-            $rec["Name"] = $row["Name"];
-            $rec["If_statement"] = $row["If_statement"];
-            $rec["Then_statement"] = $row["Then_statement"];
-            $rec["Organization"] = $row["Organization"];
-            $rec["mode"] = $row["mode"];
+                $rec["Name"] = $row["Name"];
+                $rec["If_statement"] = $row["If_statement"];
+                $rec["Then_statement"] = $row["Then_statement"];
+                $rec["Organization"] = $row["Organization"];
+                $rec["mode"] = $row["mode"];
 
-            array_push($rules, $rec);
-           // echo json_encode($rec);
+                array_push($rules, $rec);
+                //echo json_encode($rec);
+            }
         }
-        // }
 
 
+        $total['active'] = $count_1;
 
-        $output = format_result_serverside($_REQUEST["draw"], $selectedrows + 1, $selectedrows + 1, $rules, "", "\r\n action=get_rules_ext \r\n", 'ok', $option, $searchPanes = get_searchPanes_CB($rules, 'rule'));
+        $total['not active'] = $count_0;
+
+        $output = format_result_serverside($_REQUEST["draw"], $selectedrows + 1, $selectedrows + 1, $rules, "", "\r\n action=get_rules_ext \r\n", 'ok', $option, $searchPanes = get_searchPanes_CB($rules, 'rule', $total));
     } else {
         $output = format_result($_REQUEST["draw"], 0, 0, null, 'Error: errors in reading data about rules. <br/>' .
                 generateErrorMessage($link), '\n\r Error: errors in reading data about rules.' . generateErrorMessage($link), 'ko');
     }
     echo json_encode($output);
+} else if ($action == "get_service_and_path") {
+    $cb = mysqli_real_escape_string($link, ($_REQUEST["cb"]));
+    $missingParams = missingParameters(array('cb'));
+    if (!empty($missingParams)) {
+        $result["status"] = "ko";
+        $result['msg'] = "Missing Parameters";
+        $result["error_msg"] .= "Problem in get_service_and_path (Missing parameters: " . implode(", ", $missingParams) . " )";
+        $result["log"] = "action=get_service_and_path - error Missing Parameters: " . implode(", ", $missingParams) . " \r\n";
+        //TODO Copy to output
+    }
+    $Q = "SELECT DISTINCT service, servicePath FROM temporary_devices where contextbroker= '$cb' ;";
+    $r = mysqli_query($link, $Q);
+
+    if ($r) {
+        $service = array();
+
+        while ($row = mysqli_fetch_assoc($r)) {
+            $rec = array();
+
+            $rec["service"] = $row["service"];
+            $rec["servicePath"] = $row["servicePath"];
+            // echo json_encode($rec);
+
+            array_push($service, $rec);
+        }
+
+        $row = mysqli_fetch_assoc($r);
+        $result['status'] = 'ok';
+        $result['content'] = $service;
+        $result['log'] .= "\n\r action:get_service_and_path. access to " . $q;
+    } else {
+        $result['status'] = 'ko'; // . $q1 . generateErrorMessage($link);
+        $result['msg'] = 'Error: errors in reading table about temporary devices. <br/>' . generateErrorMessage($link);
+        $result['log'] .= '\n\naction:get_service_and_path. Error: errors in reading table about temporary devices. ' . generateErrorMessage($link);
+    }
+    echo json_encode($result);
 } else if ($action == "singleload") {
 
     $usernameNotHashed = $username;
@@ -706,16 +779,16 @@ else if ($action == "get_count_temporary_devices") {
 		status='valid' AND organization= '$organization' ;";
     $rup = mysqli_query($link, $qup);
 
-$resultInfo = array();
+    $resultInfo = array();
     $result["content"] = array();
-    
+
     //choose the device
 
     $q = "SELECT contextBroker, id, devicetype, model, status, macaddress,frequency,kind, protocol,format,latitude, longitude, visibility, k1, k2,producer, edge_gateway_type, edge_gateway_uri, validity_msg, subnature, static_attributes, service, servicePath FROM temporary_devices WHERE username = '$username' AND `id`='$name' AND deleted IS null AND organization='$organization' AND (toDelete IS NULL OR toDelete != 'yes');";
-    
+
     $r = mysqli_query($link, $q);
 //echo json_encode($r);
-    
+
     if ($r) {
         $row = mysqli_fetch_assoc($r);
         if ($row['status'] == 'valid') {
@@ -748,7 +821,7 @@ $resultInfo = array();
                         $row["macaddress"], $row["model"], $row["producer"], $row["latitude"], $row["longitude"],
                         $row["visibility"], $row["frequency"], $row["k1"], $row["k2"], $row["edge_gateway_type"],
                         $row["edge_gateway_uri"], json_decode(json_encode($deviceattributes)), $row["subnature"], $staticATT, $pathCertificate,
-                        $accessToken, $result, 'no' , $organization, $kbUrl, $username, $row["service"], $row["servicePath"]);
+                        $accessToken, $result, 'no', $organization, $kbUrl, $username, $row["service"], $row["servicePath"]);
 
                 $rec = array();
                 $rec["device"] = $row["id"];
@@ -790,8 +863,6 @@ $resultInfo = array();
                 $rec["inserted"] = "ko";
             }
             array_push($resultInfo, $rec);
-
-            
         } else {
             $rec = array();
             $rec["device"] = $row["id"];

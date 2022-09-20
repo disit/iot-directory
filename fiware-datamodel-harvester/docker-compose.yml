@@ -1,0 +1,47 @@
+version: '3'
+
+# Define services
+services:
+
+  # App Service
+  app:
+    image: disitlab/fiware-harvester:v0
+    # Configuration for building the docker image for the service
+    build:
+      context: . # Use an image built from the specified dockerfile in the current directory.
+      dockerfile: Dockerfile
+    command: bash -c "while true ; do python3 main.py ; echo sleep ; sleep 10s; done"
+#    ports:
+#      - "8080:8080" # Forward the exposed port 8080 on the container to port 8080 on the host machine
+    restart: unless-stopped
+    depends_on: 
+      - db # This service depends on redis. Start that first.
+    volumes:
+      - ./Download:/Download
+      - ./Results:/Results
+      - ./dbconfig.json:/app/dbconfig.json
+  makes-rule-fiware:
+    image: disitlab/fiware-harvester:v0
+    # Configuration for building the docker image for the service    
+    command: python3 API_ruleBuilder.py
+    ports:
+      - "5000:5000" # Forward the exposed port 8080 on the container to port 8080 on the host machine
+    restart: unless-stopped
+    depends_on: 
+      - db # This service depends on redis. Start that first.
+    volumes:
+      - ./dbconfig.json:/app/dbconfig.json
+  db:
+    image: "mysql" # Use a public Redis image to build the redis service    
+    restart: unless-stopped
+    ports:
+      - "3307:3306" 
+    environment: # Pass environment variables to the service
+      MYSQL_ROOT_PASSWORD: rootpwd 
+      MYSQL_USER: user
+      MYSQL_PASSWORD: mysecret
+      MYSQL_DATABASE: smartdatamodels
+    volumes:
+    - db-data:/var/lib/mysql
+volumes:
+  db-data:

@@ -473,7 +473,7 @@ else
                     <div class="modal-footer">
                         <button type="button" id="Register_Device" class="btn confirmBtn" style="display: none">Register device</button>
                         <button type="button" class="btn btn-primary" data-dismiss="modal">Close</button>
-                        
+
                     </div>
                 </div>
             </div>
@@ -493,14 +493,14 @@ else
                     <div class="modal-footer">
                         <!--<button type="button" id="Register_Device" class="btn confirmBtn" style="display: none">Register device</button>-->
                         <button type="button" class="btn btn-primary" id="CloseSave">Close</button>
-                        
+
                     </div>
                 </div>
             </div>
         </div>
         <!-- MODALE named rule ok END -->
-        
-        
+
+
         <!-- window to show active broker discovery-->
 
         <div class="modal fade" id="activeBrokersModal" tabindex="-1" role="dialog" aria-hidden="true">
@@ -720,6 +720,18 @@ else
                         <option value="1">recursiving</option>
 
                     </select>
+                    <br>
+                    <br>
+
+                    <label for="ServiceRules">The rule is applied on service/s:</label>
+
+                    <select class="js-example-basic-multiple"  multiple="multiple" style="width: 70%;" name="OPTServiceRules" id="OPTServiceRules">
+                        <!--<div id="OPTServiceRules"> </div>-->
+
+
+                    </select>
+
+                   
 
 
                 </div>
@@ -753,28 +765,28 @@ else
 
                             <div class="modalFieldCnt">
                                 <label> If you need, load a rule:  </label>
-                                        <select id="selectRule" name="selectRule" class="modalInputTxt" style="width: 40%;"  onchange="LoadRules()">
-                                            <?php
-                                            $query = "SELECT Name FROM iotdb.EXT_values_rules;";
-                                            $result = mysqli_query($link, $query);
+                                <select id="selectRule" name="selectRule" class="modalInputTxt" style="width: 40%;"  onclick="LoadRules()">
+                                    <?php
+                                    $query = "SELECT Name FROM iotdb.EXT_values_rules;";
+                                    $result = mysqli_query($link, $query);
 
-                                            if ($result) {
-                                                echo "<option value=\"NoOne\">  Select an option </option>";
-                                                while ($row = $result->fetch_assoc()) {
-                                                    $nameRule = $row["Name"];
-                                                    echo "<option value=\"$nameRule\">$nameRule</option>";
-                                                }
-                                            } else {
+                                    if ($result) {
+                                        echo "<option value=\"NoOne\">  Select an option </option>";
+                                        while ($row = $result->fetch_assoc()) {
+                                            $nameRule = $row["Name"];
+                                            echo "<option value=\"$nameRule\">$nameRule</option>";
+                                        }
+                                    } else {
 
-                                                $nameRule = "ERROR";
-                                                echo "<option value=\"$nameRule\">$nameRule</option>";
-                                            }
-                                            ?>
-                                        </select>
-                                    </div> 
-                            
-                            
-                            
+                                        $nameRule = "ERROR";
+                                        echo "<option value=\"$nameRule\">$nameRule</option>";
+                                    }
+                                    ?>
+                                </select>
+                            </div> 
+
+
+
                             <button style="float: right;" type="text" id="SAVEAllValuesRULEBtn" name="SAVEAllValuesRULEBtn" class="btn confirmBtn ">Save Rules</button>
 
 

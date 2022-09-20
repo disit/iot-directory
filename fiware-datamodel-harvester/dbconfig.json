@@ -1,0 +1,7 @@
+{
+    "host": "localhost",
+    "user": "user",
+    "password": "password",
+    "database": "iotdb",
+    "ssl_disabled" :1
+}

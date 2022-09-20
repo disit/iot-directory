@@ -242,6 +242,7 @@ function checkSelectionKind()
 
 
 
+
 function checkSelectionCB()
 {
     var message = null;

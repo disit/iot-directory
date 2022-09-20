@@ -147,8 +147,9 @@ function checkEditDeviceType()
 function checkEditDeviceLatitude()
 {
     var message = null;
-    var pattern = /^(\+|-)?(?:90(?:(?:\.0{1,6})?)|(?:[0-9]|[1-8][0-9])(?:(?:\.[0-9]{1,6})?))$/;
-    //var pattern = /^[-+]?([1-8]?\d(\.\d+)?|90(\.0+)?)$/;
+    //var pattern = /^(\+|-)?(?:90(?:(?:\.0{1,6})?)|(?:[0-9]|[1-8][0-9])(?:(?:\.[0-9]{1,6})?))$/;
+    
+  var pattern = /^[-+]?(180(\.0+)?|((1[0-7]\d)|([1-9]?\d))(\.\d+)?)$/;
 	var value = document.getElementById("inputLatitudeDeviceM").value;
 	
     if( !value || value === '')
@@ -179,6 +180,8 @@ function checkEditDeviceLongitude()
     var message = null;
    // var reg = new RegExp("^-?([1-8]?[1-9]|[1-9]0)\.{1}\d{1,6}");
     var pattern = /^[-+]?(180(\.0+)?|((1[0-7]\d)|([1-9]?\d))(\.\d+)?)$/;
+  
+  
 	var value = document.getElementById("inputLongitudeDeviceM").value;
 	
 	if(!value || value === '')

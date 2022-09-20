@@ -440,7 +440,7 @@ function getLocation(schema) {
 	return [latitude, longitude]
 }
 
-function findNewValues(cid, orion_cb, orionDevices, orionDevicesSchema, registeredDevices, idTemporaryDevices, extractionRulesAtt) {
+function findNewValues(cid, orion_cb, orionDevices, orionDevicesSchema, registeredDevices, idTemporaryDevices/*, extractionRulesAtt*/) {
 	/**
 	 * orionDevices: 		id of devices of context broker
 	 * orionDevicesSchema: 	schema of device, with values
@@ -493,12 +493,12 @@ function findNewValues(cid, orion_cb, orionDevices, orionDevicesSchema, register
 						//altrimenti lo inserisco come sotto.
 						var prop = { [param]: schema[param] }
 						//console.log(prop)
-						var _, attProperty = manageExtractionRulesAtt(extractionRulesAtt, orion_cb, registeredDevices[index], prop, [])
+					//	var _, attProperty = manageExtractionRulesAtt(extractionRulesAtt, orion_cb, registeredDevices[index], prop, [])
 						//console.log(attProperty[0])
-						var objProp = new Object()
+				/*		var objProp = new Object()
 						if (attProperty[0] != undefined) {
 							objProp = attProperty[0];
-						} else {
+						} else {*/
 							if (schema[param] !== null && typeof schema[param] === 'object' && schema[param].value != undefined) {
 								var data_type = (schema[param].type != undefined) ? schema[param].type : ""
 								objProp = {
@@ -512,7 +512,7 @@ function findNewValues(cid, orion_cb, orionDevices, orionDevicesSchema, register
 								};
 							}
 
-						}
+					//	}
 						if (objProp.value_name != undefined) {
 							valuesRegisteredDevices.push([registeredDevices[index], orion_cb, objProp.value_name, objProp.data_type, objProp.value_type, objProp.value_unit, objProp.editable, objProp.healthiness_criteria, objProp.healthiness_value, objProp.value_name]);
 
@@ -539,13 +539,13 @@ function findNewValues(cid, orion_cb, orionDevices, orionDevicesSchema, register
 
 						var prop = { [param]: schema[param] }
 						//console.log(prop)
-						var _, attProperty = manageExtractionRulesAtt(extractionRulesAtt, orion_cb, registeredDevices[index], prop, [])
+			//			var _, attProperty = manageExtractionRulesAtt(extractionRulesAtt, orion_cb, registeredDevices[index], prop, [])
 						//console.log(attProperty[0])
 						var objProp = new Object()
-						if (attProperty[0] != undefined) {
+			/*			if (attProperty[0] != undefined) {
 							objProp = attProperty[0];
 						} else {
-							if (schema[param] !== null && typeof schema[param] === 'object' && schema[param].value != undefined) {
+*/							if (schema[param] !== null && typeof schema[param] === 'object' && schema[param].value != undefined) {
 								var data_type = (schema[param].type != undefined) ? schema[param].type : ""
 								objProp = {
 									"value_name": param,
@@ -557,7 +557,7 @@ function findNewValues(cid, orion_cb, orionDevices, orionDevicesSchema, register
 									"healthiness_value": 300
 								};
 							}
-						}
+	//					}
 						if (objProp.value_name != undefined) {
 							valuesTemporaryDevices.push([id, orion_cb, objProp.value_name, objProp.data_type, objProp.value_type, objProp.value_unit, objProp.editable, objProp.healthiness_criteria, objProp.healthiness_value, objProp.value_name]);
 

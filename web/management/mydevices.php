@@ -357,7 +357,7 @@ if (isset($_SESSION['refreshToken'])) {
 									
 									<div class="col-xs-12 col-md-6 modalCell">
                                     <div class="modalFieldCnt">
-                                        <select id="selectModel" name="selectModel" class="modalInputTxt">
+                                        <select id="selectModel" name="selectModel" class="modalInputTxt js-example-responsive"  style="width: 75%" required >
 										    <option value=""></option>
 											<!--?php
                                             $query = "SELECT name,kgenerator FROM model";
@@ -464,6 +464,69 @@ if (isset($_SESSION['refreshToken'])) {
 									</div> 	 
                                 </div>
 								-->
+                                                                <div class="col-xs-12 col-md-6 modalCell">
+                                        <div class="modalFieldCnt">
+                                            <select id="selectContextBroker" name="selectContextBroker" class="modalInputTxt">
+                                                <option></option>
+                                            </select>
+                                        </div>
+                                        <div class="modalFieldLabelCnt">ContextBroker</div>
+                                        <div id="selectContextBrokerMsg" class="modalFieldMsgCnt">&nbsp;</div>
+                                    </div>
+                                                                    <div class="row">
+
+                                    <div class="col-xs-12 col-md-6 modalCell">
+                                        <div class="modalFieldCnt">
+                                            <select id="selectProtocolDevice" name="selectProtocolDevice" class="modalInputTxt">
+                                                <option></option>
+                                                <option value="amqp">amqp</option>
+                                                <option value="coap">coap</option>
+                                                <option value="mqtt">mqtt</option>
+                                                <option value="ngsi">ngsi</option>
+                                                <option value="ngsi w/MultiService">ngsi w/MultiService</option>
+                                            </select>
+                                        </div>
+                                        <div class="modalFieldLabelCnt">Protocol</div>
+                                        <div id="selectProtocolDeviceMsg" class="modalFieldMsgCnt">&nbsp;</div>
+                                    </div>
+                                    <div class="col-xs-12 col-md-6 modalCell">
+                                        <div class="modalFieldCnt">
+                                            <select id="selectFormatDevice" name="selectFormatDevice" class="modalInputTxt">
+                                                <option></option>
+                                                <option value="csv">csv</option>
+                                                <option value="json">json</option>
+                                                <option value="xml">xml</option>
+                                            </select>
+                                        </div>
+                                        <div class="modalFieldLabelCnt">Format</div>
+                                        <div id="selectFormatDeviceMsg" class="modalFieldMsgCnt">&nbsp;</div>
+                                    </div>
+                                    <div class="col-xs-12 col-md-6 modalCell"><div id="externalContextBrokerMsg" class="modalFieldMsgCnt"></div></div>
+                                    <div class="col-xs-12 col-md-6 modalCell"></div>
+
+                                </div>    
+
+                                <!-- Start MultiService + ServicePath Section -->
+                                <div class = "row" id = "multiServiceAndServicePath" hidden="true">
+                                    <div class="col-xs-12 col-md-6 modalCell">
+                                        <div class="modalFieldCnt">
+                                            <select id="selectService" name="selectService" class="modalInputTxt" required>
+                                                <option value="" selected></option>
+                                                <!-- other options will be created dynamically-->
+                                            </select>
+                                        </div>
+                                        <div id="selectServiceLabel" class="modalFieldLabelCnt">Service/Tenant</div>
+                                        <div id="selectServiceMsg" class="modalFieldMsgCnt">&nbsp;</div>
+                                    </div>
+
+                                    <div class="col-xs-12 col-md-6 modalCell">          
+                                        <div class="modalFieldCnt">
+                                            <input type="text" class="modalInputTxt" name="inputServicePathDevice" id="inputServicePathDevice" required>
+                                        </div>
+                                        <div id="inputServicePathLabel" class="modalFieldLabelCnt">ServicePath</div>
+                                        <div id="inputServicePathMsg" class="modalFieldMsgCnt">&nbsp;</div>
+                                    </div>
+                                </div>
 								<div id="addStaticTabModel" hidden="true">
 									<div class="row">
 										<div class="col-xs-12 col-md-8 modalCell" >

@@ -362,8 +362,11 @@ if ($action == 'is_broker_up') {
 					path, visibility, sha, organization, urlnificallback )
 					VALUES('$name', '$ip', '$kind', '$protocol', '$version', '$port', '$latitude', '$longitude', '$login', '$password', '$accesslink','$accessport', 
 					'$path', '$visibility', '$sha', '$organization', '$urlnificallback')";
-            if (!mysqli_query($link, $q))
+            if (!mysqli_query($link, $q)){
                 $success = FALSE;
+                
+                //echo $q;
+            }
             if ($protocol == 'ngsi w/MultiService' && count($services) > 0) {
                 // regex for syntax checking
                 $serviceRegex = "/^([a-z]|_|[0-9]){1,25}$/";

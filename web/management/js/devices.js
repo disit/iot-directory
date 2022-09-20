@@ -1,5 +1,4 @@
 $.fn.modal.Constructor.prototype.enforceFocus = function () {};
-
 var gb_datatypes = "";
 var gb_value_units = "";
 var gb_value_types = "";
@@ -15,8 +14,8 @@ var valueUnitOpt = "";
 var gb_valVU = "";
 var gb_valVT = "";
 var _serviceIP = "../stubs";
-var indexValues = 0;//it keeps track of unique identirier on the values, so it's possible to enforce specific value type 
-var currentEditId = "";//it keeps the current id of device in edit, so it's possibile to avoid to add any time the same values of the current device id
+var indexValues = 0; //it keeps track of unique identirier on the values, so it's possible to enforce specific value type 
+var currentEditId = ""; //it keeps the current id of device in edit, so it's possibile to avoid to add any time the same values of the current device id
 var filterDefaults = {
     myOwnPrivate: 'MyOwnPrivate',
     myOwnPublic: 'MyOwnPublic',
@@ -24,33 +23,55 @@ var filterDefaults = {
     public: 'public'
 };
 var tableFirstLoad = true;
+//--------to get the model data----------
+$.ajax(
+        {url: "../api/model.php",
+            data: {
+                action: 'get_Fiwire_model',
+                token: sessionToken
+            },
+            type: "POST",
+            async: true,
+            dataType: 'json',
+            success: function (mydata) {
+                if (mydata["status"] === 'ok') {
+                    addModel2($("#selectModelDevice"), mydata["data"], "");
 
+                } else {
+                    console.log("error getting the data types " + data);
+                }
+            },
+            error: function (mydata) {
+                console.log(JSON.stringify(mydata));
+                alert("Network errors. <br/> Get in touch with the Snap4City Administrator<br/>" + JSON.stringify(mydata));
+            }
+        });
 //--------to get the datatypes items----------
-$.ajax({url: "../api/device.php",
-    data: {
-        action: 'get_param_values',
-        token: sessionToken
-    },
-    type: "POST",
-    async: true,
-    dataType: 'json',
-    success: function (mydata) {
-        if (mydata["status"] === 'ok') {
-            gb_datatypes = mydata["data_type"];
-            gb_value_units = mydata["value_unit"];
-            gb_value_types = mydata["value_type"];
-            addSubnature($("#selectSubnature"), mydata["subnature"]);
-            addSubnature($("#selectSubnatureM"), mydata["subnature"]);
-        } else {
-            console.log("error getting the data types " + data);
-        }
-    },
-    error: function (mydata) {
-        console.log(JSON.stringify(mydata));
-        alert("Network errors. <br/> Get in touch with the Snap4City Administrator<br/>" + JSON.stringify(mydata));
-    }
-});
-
+$.ajax(
+        {url: "../api/device.php",
+            data: {
+                action: 'get_param_values',
+                token: sessionToken
+            },
+            type: "POST",
+            async: true,
+            dataType: 'json',
+            success: function (mydata) {
+                if (mydata["status"] === 'ok') {
+                    gb_datatypes = mydata["data_type"];
+                    gb_value_units = mydata["value_unit"];
+                    gb_value_types = mydata["value_type"];
+                    addSubnature($("#selectSubnature"), mydata["subnature"]);
+                    addSubnature($("#selectSubnatureM"), mydata["subnature"]);
+                } else {
+                    console.log("error getting the data types " + data);
+                }
+            },
+            error: function (mydata) {
+                console.log(JSON.stringify(mydata));
+                alert("Network errors. <br/> Get in touch with the Snap4City Administrator<br/>" + JSON.stringify(mydata));
+            }
+        });
 //--------to get the datatypes items----------
 $.ajax({
     url: "../api/contextbroker.php",
@@ -73,7 +94,6 @@ $.ajax({
         alert("Network errors. <br/> Get in touch with the Snap4City Administrator<br/>" + JSON.stringify(data));
     }
 });
-
 //--------to get the models with their details----------------------
 $.ajax({
     url: "../api/model.php",
@@ -85,7 +105,8 @@ $.ajax({
     async: true,
     success: function (data) {
         if (data["status"] === 'ok') {
-            addModel($("#selectModelDevice"), data);
+
+            addModel2($("#selectModelDevice"), data["content"], "NATIVE");
         } else {
             console.log("error getting the context brokers " + data);
         }
@@ -95,7 +116,6 @@ $.ajax({
         alert("Network errors. <br/> Get in touch with the Snap4City Administrator<br/>" + JSON.stringify(data));
     }
 });
-
 function ajaxRequest() {
     var request = false;
     try {
@@ -111,7 +131,7 @@ function ajaxRequest() {
             }
         }
     }
-    return request
+    return request;
 }
 
 function removeElementAt(parent, child) {
@@ -125,27 +145,94 @@ function removeElementAt(parent, child) {
 }
 
 
-//NEEDED SOMEWHERE??
-/*const url = 'https://helsinki.snap4city.org/ServiceMap/api/v1/value_type/';
- fetch(url)
- .then((resp) => resp.json())
- .then(function(data) {
- if(data) {
- //console.log("in");
- $.each(data, function (index, value) {
- //$('#value_type').append('<option my_data="'+value.value_unit+'">'+value.value_type+'</option>');
- //valueTypeOpt += '<option my_data="'+value.value_unit+'">'+value.value_type+'</option>';
- //valueUnitOpt  += '<option>'+value.value_unit+'</option>';
- //valueTypeOpt.push(value.value_type);
- //valueUnitOpt.push(value.value_unit);
- //getValueTypeUnit (valueUnitOpt);
- 
- });
- }
- })
- .catch(function(error) {
- console.log(error);
- });  */
+//LOAD attr of model 
+
+    function SuccessOfLoadAttr(data, kindModel, version, domain, subdomain) {
+        if (data["status"] === 'ko') {
+            alert("An error occured when reading the data. <br/> Get in touch with the Snap4City Administrator<br/>" + data["msg"]);
+        } else if (data["status"] === 'ok') {
+            var k = 0;
+            var content = "";
+            if (kindModel == 'NATIVE') {
+                var model = data.content.name;
+                var type = data.content.devicetype;
+                var kind = data.content.kind;
+                var producer = data.content.producer;
+                var frequency = data.content.frequency;
+                var contextbroker = data.content.contextbroker;
+                var protocol = data.content.protocol;
+                var format = data.content.format;
+                var myattributes = JSON.parse(data.content.attributes);
+                var subnature = data.content.subnature;
+                var edgegateway_type = data.content.edgegateway_type;
+                var static_attributes = data.content.static_attributes;
+                var service = data.content.service;
+                var servicePath = data.content.servicePath;
+                var valOrg = data.content.cb_organization;
+                // population of the value tab with the values taken from the db						
+                while (k < myattributes.length) {
+                    content += drawAttributeMenu(myattributes[k].value_name,
+                            myattributes[k].data_type, myattributes[k].value_type, myattributes[k].editable, myattributes[k].value_unit, myattributes[k].healthiness_criteria,
+                            myattributes[k].healthiness_value, myattributes[k].old_value_name, 'addlistAttributes', indexValues);
+                    indexValues = indexValues + 1;
+                    k++;
+                }
+                subnatureChanged(false, JSON.parse(static_attributes));
+                $('#inputTypeDevice').val(type);
+            } else {
+                var myattributes = JSON.parse(data.content.attributes);
+                Object.keys(myattributes).forEach(function (k) {
+                    if (myattributes[k].value_name != 'type') {
+                        content += drawAttributeMenu(myattributes[k].value_name,
+                                myattributes[k].data_type, myattributes[k].value_type, myattributes[k].editable, myattributes[k].value_unit, myattributes[k].healthiness_criteria,
+                                myattributes[k].healthiness_value, '', 'addlistAttributes', indexValues);
+                        indexValues = indexValues + 1;
+                    }
+
+
+                });
+            }
+
+
+            $('#addlistAttributes').html(content);
+
+            $('#selectKindDevice').val(kind);
+            $('#inputProducerDevice').val(producer);
+            $('#inputFrequencyDevice').val(frequency);
+            //$('#inputMacDevice').val(data.content.mac);
+            $('#selectContextBroker').val(contextbroker);
+            $('#selectProtocolDevice').val(protocol);
+            $('#selectFormatDevice').val(format);
+            $('#selectEdgeGatewayType').val(edgegateway_type);
+            $('#selectSubnature').val(subnature);
+            $('#selectSubnature').trigger('change');
+            addDeviceConditionsArray['contextbroker'] = true;
+            addDeviceConditionsArray['kind'] = true;
+            addDeviceConditionsArray['format'] = true;
+            addDeviceConditionsArray['protocol'] = true;
+            checkSelectionCB();
+            checkSelectionKind();
+            checkSelectionProtocol();
+            checkSelectionFormat();
+            addDeviceConditionsArray['inputTypeDevice'] = true;
+            checkDeviceType(); // checkAddDeviceConditions();
+            addDeviceConditionsArray['inputFrequencyDevice'] = true;
+            checkFrequencyType(); // checkAddDeviceConditions();
+            addDeviceConditionsArray['inputMacDevice'] = true;
+            checkMAC();
+            checkAtlistOneAttribute();
+            checkAddDeviceConditions();
+            getServicesByCBName($('#selectContextBroker').val(), 'add', service);
+            checkProtocol($('#selectProtocolDevice').val(), 'add', 'device');
+            $('#inputServicePathDevice').val(servicePath);
+            checkServicePath($('#inputServicePathDevice').val(), 'add', 'device');
+            checkAddDeviceConditions();
+            if (valOrg)
+                $("#selectContextBrokerMsg").html($("#selectContextBrokerMsg").html() + " - Organization:" + valOrg);
+        }
+    }
+
+    
 
 function drawAttributeMenu(attrName, data_type, value_type, editable, value_unit, healthiness_criteria, value_refresh_rate, old_value_name, parent, indice)
 {
@@ -164,13 +251,13 @@ function drawAttributeMenu(attrName, data_type, value_type, editable, value_unit
         msg_value_type = "<div style=\"color:#337ab7;\" class=\"modalFieldMsgCnt\">Ok</div>";
     }
 
+
     for (var n = 0; n < gb_value_types.length; n++)
     {
         if (value_type == gb_value_types[n].value) {
             options += "<option value=\"" + gb_value_types[n].value + "\" selected>" + gb_value_types[n].label + " (" + gb_value_types[n].value + ")</option>";
         } else {
             options += "<option value=\"" + gb_value_types[n].value + "\" >" + gb_value_types[n].label + " (" + gb_value_types[n].value + ")</option>";
-            //    mydatatypes += "<option value=\"" + gb_value_types[n].data_type_value + "\">" + gb_value_types[n].data_type_value + "</option>";
 
         }
     }
@@ -198,32 +285,15 @@ function drawAttributeMenu(attrName, data_type, value_type, editable, value_unit
         mydatatypes += validDataType;
     }
 
-
-//    if (data_type != "")
-//        labelcheck = data_type;
-//    else
-//        labelcheck = "";
-//    for (var n = 0; n < gb_datatypes.length; n++)
-//    {
-//        if (labelcheck == gb_datatypes[n])
-//            mydatatypes += "<option value=\"" + gb_datatypes[n] + "\" selected>" + gb_datatypes[n] + "</option>";
-//        else
-//            mydatatypes += "<option value=\"" + gb_datatypes[n] + "\">" + gb_datatypes[n] + "</option>";
-//    }
     return "<div class=\"row\" style=\"border:2px solid blue; padding: 8px;\" id=\"value" + indice + "\">" +
             "<div class=\"col-xs-6 col-md-3 modalCell\">" +
             "<div  class=\"modalFieldCnt \" title=\"Insert a name for the sensor/actuator\"><input type=\"text\" class=\"modalInputTxt Input_onlyread  valueName\"" +
             "name=\"" + attrName + "\"  value=\"" + attrName + "\" onkeyup=\"checkStrangeCharacters(this)\">" +
             "</div><div class=\"modalFieldLabelCnt\">Value Name</div>" + msg + "</div>" +
-//            "<div class=\"col-xs-6 col-md-3 modalCell\"><div class=\"modalFieldCnt\">" +
-//            "<select id=\"InputDataType" + attrName + "\" class=\"modalInputTxt Select_onlyread \" name=\"" + attrName + "-type" +
-//            "\" title=\"select the type of data generated by the sensor/actuator\">" + mydatatypes +
-//            "</select></div><div  class=\"modalFieldLabelCnt\">Data Type</div></div>" +
-
             "<div class=\"col-xs-6 col-md-3 modalCell\"><div class=\"modalFieldCnt\">" +
             "<select  class=\"modalInputTxt Select_onlyread\" id=\"value_type" + indice + "\" " +
             "onchange=valueTypeChanged(" + indice + ") " +
-            "title=\"select the type of the sensor/actuator\">" + options +
+            "title=\"select the type of the sensor/actuator\"> " + options +
             "</select></div><div   class=\"modalFieldLabelCnt\">Value Type</div>" + msg_value_type + "</div>" +
             "<div class=\"col-xs-6 col-md-3 modalCell\"><div class=\"modalFieldCnt\" title=\"select the unit of the data generated by the sensor/actuator\">" +
             "<select class=\"modalInputTxt Select_onlyread\" id=\"value_unit" + indice + "\" " +
@@ -231,22 +301,11 @@ function drawAttributeMenu(attrName, data_type, value_type, editable, value_unit
             "\">" +
             myunits +
             "</select></div><div  id=\"SELECTunit\" class=\"modalFieldLabelCnt\">Value Unit</div>" + msg_value_unit + "</div>" +
-            //id=\"InputDataType" + attrName + "\"
             "<div class=\"col-xs-6 col-md-3 modalCell\"><div class=\"modalFieldCnt\">" +
             "<select  class=\"modalInputTxt Select_onlyread InputDataType" + attrName + "\" id=\"data_type" + indice + "\"" +
             "onchange=dataTypeChanged(" + indice + ") " +
             "\" title=\"select the type of data generated by the sensor/actuator\">" + mydatatypes +
             "</select></div><div  class=\"modalFieldLabelCnt\">Data Type</div>" + msg_data_type + "</div>" +
-//            dataTypeChanged(indice)
-            // "<div  class=\"col-xs-6 col-md-3 modalCell\"><div class=\"modalFieldCnt\" title=\"is the sensor/actuator editable?\">" +
-//            "<select  id=\"SELECTeditable\" class=\"modalInputTxt Select_onlyread Hidden_insert\" name=\"" + editable +
-//            "\">" +
-//            "<option value='0' default>false</option>" +
-//            "<option value='1'>true</option> </select>" +
-//            "</div><div   class=\"modalFieldLabelCnt Hidden_insert\">Editable</div></div>" +
-
-
-
             "<div class=\"col-xs-6 col-md-3 modalCell\"><label   class=\"switch \"> <input type=\"checkbox\" onclick=\"disableInput(id)\" style=\"display:none\"  class=\" Check_BOX\" id=\"Checkbox_" + attrName + "\" checked> <span style=\"display:none\"   id=\"SpanCheckbox_" + attrName + "\" class=\" Check_BOX slider round\">Send value</span></label></div>" +
             "<div class=\"col-xs-6 col-md-3 modalCell\"><div class=\"modalFieldCnt\" title=\"select a criterion as a reference to decide whether the sensor/actuator is working well\">" +
             "<select id=\"SELECTHealthCriteria\" class=\"modalInputTxt Select_onlyread Hidden_insert\" name=\"" + healthiness_criteria +
@@ -268,7 +327,6 @@ function drawAttributeMenu(attrName, data_type, value_type, editable, value_unit
             "</select></div></div>" +
             "<div class=\"col-xs-6 col-md-3 modalCell\"><div class=\"modalFieldCnt\">" +
             "<button id=\"RemoveAttrEdit\" class=\"btn btn-danger RemoveAttrEdit\" onclick=\"removeElementAt('" + parent + "',this); return true;\">Remove Value</button></div></div></div></div>";
-
 }
 
 
@@ -295,7 +353,6 @@ function format(d) {
                     '</div>';
     } else
         showKey = "";
-
     var showPayload = '<div class="row">' +
             '<div class="col-xs-6 col-sm-6" style="background-color:#E6E6FA;"><button class="btn btn-info my-small-button" onclick="datainspect(\'' +
             d.id + '\',\'' + d.devicetype + '\',\'' + d.contextBroker + '\',\'' + d.service + '\',\'' + d.servicePath + '\',\'v1\');return true;"><b>PAYLOAD NGSI v1</b></button></div>' +
@@ -362,10 +419,12 @@ function format(d) {
         if ((loggedRole == "RootAdmin") || (loggedRole == "ToolAdmin") || d.visibility.substring(0, 5) == "MyOwn") {
             return a + b + c;
         }
+        if (d.delegationKind === 'READ_WRITE' || d.delegationKind === 'MODIFY') {
+            return a + b + c;
+        }
     }
 
     return a + c;
-
 }
 
 
@@ -385,18 +444,17 @@ function fetch_data(destroyOld, selected = null)
     {
         mydata = {action: "get_all_device", token: sessionToken, no_columns: ["position", "d.visibility", "status1", "edit", "delete", "map", "check"]};
     } else if (selected == 'delegated') {
-        mydata = {action: "get_all_device", delegated: true,  token: sessionToken, no_columns: ["position", "d.visibility", "status1", "edit", "delete", "map", "check"]};
+        mydata = {action: "get_all_device", delegated: true, token: sessionToken, no_columns: ["position", "d.visibility", "status1", "edit", "delete", "map", "check"]};
     } else if (selected == 'public') {
-        mydata = {action: "get_all_device",public: true, token: sessionToken, no_columns: ["position", "d.visibility", "status1", "edit", "delete", "map", "check"]};
+        mydata = {action: "get_all_device", public: true, token: sessionToken, no_columns: ["position", "d.visibility", "status1", "edit", "delete", "map", "check"]};
     } else if (selected == 'own') {
-        mydata = {action: "get_all_device",own: true, token: sessionToken, no_columns: ["position", "d.visibility", "status1", "edit", "delete", "map", "check"]};
-    }else
+        mydata = {action: "get_all_device", own: true, token: sessionToken, no_columns: ["position", "d.visibility", "status1", "edit", "delete", "map", "check"]};
+    } else
     {
-        mydata = {action: "get_all_device", own: true,token: sessionToken, select: selected, no_columns: ["position", "d.visibility", "status1", "edit", "delete", "map", "check"]};
+        mydata = {action: "get_all_device", own: true, token: sessionToken, select: selected, no_columns: ["position", "d.visibility", "status1", "edit", "delete", "map", "check"]};
     }
 
     var page_length = 10;
-
     if (loggedRole == "ToolAdmin") {
         page_length = 5;
     }
@@ -404,14 +462,14 @@ function fetch_data(destroyOld, selected = null)
     dataTable = $('#devicesTable').DataTable({
 
         "processing": true,
+        "search": {
+            return: true
+        },
         "serverSide": true,
         "lengthMenu": [[5, 25, 50, 100, -1], [5, 25, 50, 100, "All"]],
         "pageLength": page_length,
-
         "scrollX": true,
-
         "paging": true,
-
         "ajax": {
             url: "../api/device.php",
             data: mydata,
@@ -419,7 +477,6 @@ function fetch_data(destroyOld, selected = null)
             type: "POST"
 
         },
-
         "columns": [
             {
                 "class": "details-control",
@@ -476,7 +533,7 @@ function fetch_data(destroyOld, selected = null)
                 render: function (d) {
                     //defaultContent: '<button type="button" id="edit" class="editDashBtn data-id="'+ row.name +'"">Edit</button>'
 
-                    if (loggedRole == 'RootAdmin' || d.visibility == 'MyOwnPublic' || d.visibility == 'MyOwnPrivate') {
+                    if (loggedRole == 'RootAdmin' || d.visibility == 'MyOwnPublic' || d.visibility == 'MyOwnPrivate' || d.delegationKind === 'MODIFY') {
                         return '<button type="button" class="editDashBtn" ' +
                                 'data-id="' + d.id + '" ' +
                                 'data-contextBroker="' + d.contextBroker + '" ' +
@@ -501,7 +558,7 @@ function fetch_data(destroyOld, selected = null)
                                 'data-subnature="' + d.subnature + '" ' +
                                 'data-service="' + d.service + '" ' +
                                 'data-servicePath="' + d.servicePath + '" ' +
-                                'data-static-attributes="' + btoa(d.staticAttributes) + '" ' +
+                                'data-static-attributes="' + btoa(unescape(encodeURIComponent(d.staticAttributes))) + '" ' +
                                 'data-status1="' + d.status1 + '">Edit</button>';
                     } else {
                         return '';
@@ -567,7 +624,7 @@ function fetch_data(destroyOld, selected = null)
                             'data-subnature="' + d.subnature + '" ' +
                             'data-service="' + d.service + '" ' +
                             'data-servicePath="' + d.servicePath + '" ' +
-                            'data-static-attributes="' + btoa(d.staticAttributes) + '" ' +
+                            'data-static-attributes="' + btoa(unescape(encodeURIComponent(d.staticAttributes))) + '" ' +
                             'data-status1="' + d.status1 + '">View</button>';
                 }
             }
@@ -593,20 +650,15 @@ function NewValuesOnDevice(strID) {
     $('#editLatLongValue').hide();
     document.getElementById('NewValuesInputConfirmButton').style.display = 'left';
     $("#InsertModalStatus").hide();
-
     $('#NewValuesInputConfirmButton').show();
     $("#InsertDeviceModalTabs").show();
     $("#GETimeStamp").show();
     var strID = "#" + strID;
-
-
     var Nid = $(strID).attr('data-id');
     var Ntype = $(strID).attr('data-devicetype');
     var Ncb = $(strID).attr('data-contextbroker');
     var Nserv = $(strID).attr('data-service');
     var NservPath = $(strID).attr('data-servicePath');
-
-
     $.ajax({
         url: "../api/device.php",
         data: {
@@ -626,15 +678,10 @@ function NewValuesOnDevice(strID) {
         {
 
             var old_value = mydata['content'];
-
-
             $('a[data-toggle="tab"]').off('shown.bs.tab').on('shown.bs.tab', function (e) {
                 //   $('#InsertDataDeviceLoadingIcon').show();
                 $('#InsertDataDeviceLoadingIcon').hide();
-
-
                 var target = $(e.target).attr("href");
-
                 if ((target === '#editGeoPositionTabDeviceNewValue')) {
                     $('#InsertDataDeviceLoadingIcon').hide();
                     document.getElementById('editLatLongValue').innerHTML = "";
@@ -644,10 +691,8 @@ function NewValuesOnDevice(strID) {
                     $("#NOMob").hide();
                     $("#ValuesINPUT").hide();
                     $('#NewValuesInputConfirmButton').show();
-
                     $("#InsertModalStatus").hide();
                     $("#NoMobile").hide();
-
                     if (mydata['isMobile'] == "false") {
                         $('#editLatLongValue').hide();
                         $("#NOMob").hide();
@@ -659,29 +704,22 @@ function NewValuesOnDevice(strID) {
                         $("#InsertModalStatus").hide();
                         $('#InsertDataDeviceLoadingIcon').hide();
                         $("#NOMob").show();
-
                         $('#inputLatitudeDeviceValue').val(old_value['latitude']);
                         $('#inputLongitudeDeviceValue').val(old_value['longitude']);
-
                         drawMap1(old_value['latitude'], old_value['longitude'], 4);
-
                     }
                     $('#InsertDataDeviceLoadingIcon').hide();
-
-
                 } else if ((target === '#editAttributeValueTabDevice')) {
                     $('#InsertDataDeviceLoadingIcon').show();
                     // NewValuesInput management
 
                     $('#editLatLongValue').hide();
                     $("#GETimeStamp").show();
-
                     $("#NoMobile").hide();
                     $("#NOMob").hide();
                     $("#ValuesINPUT").show();
                     $('#NewValuesInputConfirmButton').show();
                     document.getElementById('ValuesINPUT').innerHTML = "";
-
                     if (old_value) {
                         delete old_value['id'];
                         delete old_value['type'];
@@ -692,13 +730,11 @@ function NewValuesOnDevice(strID) {
                     var DT = {};
                     var NameAttrUp = new Array();
                     var strTIME;
-
                     $.ajax({
                         url: "../api/device.php",
                         data: {
                             action: "get_device_attributes",
                             id: $(strID).attr('data-id'),
-
                             contextbroker: $(strID).attr('data-contextbroker'),
                             //document.getElementById('selectContextBrokerM').value,
                             token: sessionToken,
@@ -713,15 +749,9 @@ function NewValuesOnDevice(strID) {
                             $('#InsertDataDeviceLoadingIcon').hide();
                             $("#NewValuesInputMODAL").modal('show');
                             $("#GETimeStamp").hide();
-
-
-
-
-
                             var row = null;
                             var strTIMEtemp;
                             $("#editUserPoolsTable tbody").empty();
-
                             myattributes = mydata['content'];
                             content = "";
                             k = 0;
@@ -730,23 +760,15 @@ function NewValuesOnDevice(strID) {
                                 content = drawAttributeMenu(myattributes[k].value_name,
                                         myattributes[k].data_type, myattributes[k].value_type, myattributes[k].editable, myattributes[k].value_unit, myattributes[k].healthiness_criteria,
                                         myattributes[k].healthiness_value, myattributes[k].value_name, 'ValuesINPUT', indexValues);
-
-
                                 str = "#Value" + myattributes[k].value_name;
                                 str_checkBox = "Checkbox_" + myattributes[k].value_name;
                                 NameAttrUp.push("" + str_checkBox + "");
-
-
                                 indexValues = indexValues + 1;
-
                                 k++;
-
                                 $('#ValuesINPUT').append(content);
                                 $(".INSERTValues").show();
                                 $(".Check_BOX").show();
-
                                 j = k - 1;
-
                                 $(str).val(old_value[myattributes[j].value_name]);
                                 if ($(str).val() == "") {
                                     document.getElementById('NewValuesInputConfirmButton').disabled = true;
@@ -755,10 +777,8 @@ function NewValuesOnDevice(strID) {
                                 }
 
                                 const input = document.querySelector(str);
-
                                 var temp = {};
                                 temp['' + myattributes[j].value_name + ''] = {type: myattributes[j].data_type, value: old_value['' + myattributes[j].value_name + '' ]};
-
                                 $.extend(DT, temp);
                                 // console.log(DT);
 
@@ -769,12 +789,9 @@ function NewValuesOnDevice(strID) {
                                     strTIME = "#Value" + myattributes[j].value_name;
                                     var checkTime;
                                     checkTime = $(strTIME).val(old_value[myattributes[j].value_name]);
-
                                     $("#GETimeStamp").show();
                                     $("#" + str_checkBox).hide();
                                     $("#Span" + str_checkBox).hide();
-
-
                                 }
 
 
@@ -783,11 +800,8 @@ function NewValuesOnDevice(strID) {
                                     var a = (e.target.value);
                                     const okButton = document.getElementById('NewValuesInputConfirmButton');
                                     t = e.currentTarget.id.substring(5, e.currentTarget.id.length);
-
                                     str1 = "#access-code-error" + t;
                                     str2 = ".InputDataType" + t;
-
-
                                     switch (DT[t].type) {
 
                                         case "float" :
@@ -797,7 +811,6 @@ function NewValuesOnDevice(strID) {
                                                 if (/\s/.test(a) || a == "" || isNaN(a) || /[!@#$%^&*()_+\-=\[\]{};':"\\|<>\/?]+/.test(a)) {
                                                     $(str1).show();
                                                     okButton.disabled = true;
-
                                                 } else {
                                                     a = parseFloat(a);
                                                     $(str1).hide();
@@ -885,29 +898,21 @@ function NewValuesOnDevice(strID) {
                                             break;
                                     }
                                 });
-
                             }
                             $("#editSchemaTabDevice #ValuesINPUT .row input:even").each(function () {
                                 checkEditValueName($(this));
                             });
-
                             $("#GETimeStamp").click(function () {
 
                                 $(strTIME).val(old_value[myattributes[j].value_name]);
                                 const currentTime = new Date().toISOString();
                                 $(strTIME).val(currentTime.toString());
-
-
                             });
                             checkEditDeviceConditions();
                             $(".RemoveAttrEdit").hide();
                             $(".Hidden_insert").hide();
                             $('.Select_onlyread').prop('disabled', true);
-
                             $('.Input_onlyread').attr('readonly', true);
-
-
-
                             $('#NewValuesInputConfirmButton').click(function () {
                                 if (strTIME != null && (old_value[strTIME.substr(6, strTIME.length)] == $(strTIME).val())) {
                                     // if(old_value[strTIME.substr(6, strTIME.length)]==$(strTIME).val()){
@@ -923,13 +928,9 @@ function NewValuesOnDevice(strID) {
 
 
                                     var pay_new_data = CreateJsonNewValue(mydata['content'], NameAttrUp, old_value);
-
                                     $("#NoMobile").hide();
                                     $('#ValuesINPUT').hide();
                                     $("#InsertDataDeviceLoadingIcon").show();
-
-
-
                                     $.ajax({
                                         url: "../api/device.php",
                                         data: {
@@ -951,22 +952,15 @@ function NewValuesOnDevice(strID) {
                                             $('#ValuesINPUT').hide();
                                             $('#InsertDataDeviceLoadingIcon').hide();
                                             console.log(mydata);
-
                                             console.log("Values update");
-
-
                                             $("#InsertModalStatus").html('<br><br>' + Nid + "'s value updates! ");
                                             $("#NOMob").hide();
                                             $("#editLatLongValue").hide();
                                             $("#GETimeStamp").hide();
-
                                             $("#InsertModalStatus").show();
                                             $('#NewValuesInputConfirmButton').hide();
                                             document.getElementById('editLatLongValue').innerHTML = "";
                                             document.getElementById('ValuesINPUT').innerHTML = "";
-
-
-
                                         },
                                         error: function (data)
                                         {
@@ -982,9 +976,6 @@ function NewValuesOnDevice(strID) {
                                     });
                                 }
                             });
-
-
-
                         },
                         error: function (data)
                         {
@@ -995,20 +986,14 @@ function NewValuesOnDevice(strID) {
                             console.log("Get values pool KO");
                             console.log(JSON.stringify(data));
                             alert("Error in reading data from the database<br/> Please get in touch with the Snap4city Administrator");
-
-
-
                         }
 
 
                     });
-
-
                 }
             });
             $('a[href=#editGeoPositionTabDeviceNewValue]').click();
             $('#InsertDataDeviceLoadingIcon').hide();
-
             // $('#InsertDataDeviceLoadingIcon').show();
         },
         error: function (data)
@@ -1029,13 +1014,10 @@ function NewValuesOnDevice(strID) {
             $('#Mtab').hide();
             $('#Itab').hide();
             document.getElementById('NewValuesInputConfirmButton').style.display = 'none';
-
-
         }
 
 
     });
-
 }
 
 
@@ -1064,10 +1046,9 @@ function disableInput(id) {
 
 
 function CreateJsonNewValue(someData, NameAttrUp, old) {
-    //console.log(new_co);
+//console.log(new_co);
     var attr = {};
     var a = "";
-
     for (var i in someData) {
 
         if (document.getElementById(NameAttrUp[i]).checked == true) {
@@ -1109,16 +1090,12 @@ function CreateJsonNewValue(someData, NameAttrUp, old) {
         }
 
         attr['' + someData[i].value_name + ''] = {"value": a, "type": someData[i].data_type};
-
-
-
     }
     if (!!document.getElementById("inputLatitudeDeviceValue").value) {
         attr["latitude"] = {"value": document.getElementById("inputLatitudeDeviceValue").value, "type": "float"};
-
         attr["longitude"] = {"value": document.getElementById("inputLongitudeDeviceValue").value, "type": "float"};
     }
-    // console.log(attr);
+// console.log(attr);
     return attr;
 }
 
@@ -1132,35 +1109,26 @@ function CreateJsonNewValue(someData, NameAttrUp, old) {
 $(document).ready(function ()
 {
 
- $("#ShowOnlyDelegated").click(function () {
- fetch_data(true, 'delegated');
-                                 });
-                                 
-                                 
- $("#ShowOnlyPublic").click(function () {
- fetch_data(true, 'public');
-                                 });
-                                 
- $("#ShowOnlyOwn").click(function () {
- fetch_data(true, 'own');
-                                 });
-                                 
-   $("#ShowAll").click(function () {
- fetch_data(true);
-                                 });           
-
+    $("#ShowOnlyDelegated").click(function () {
+        fetch_data(true, 'delegated');
+    });
+    $("#ShowOnlyPublic").click(function () {
+        fetch_data(true, 'public');
+    });
+    $("#ShowOnlyOwn").click(function () {
+        fetch_data(true, 'own');
+    });
+    $("#ShowAll").click(function () {
+        fetch_data(true);
+    });
 //fetch_data function will load the device table 	
     fetch_data(false, 'own');
-
 //detail control for device dataTable
     var detailRows = [];
-
     $('#devicesTable tbody').on('click', 'td.details-control', function () {
         var tr = $(this).closest('tr');
         var tdi = tr.find("i.fa");
         var row = dataTable.row(tr);
-
-
         if (row.child.isShown()) {
             // This row is already open - close it
             row.child.hide();
@@ -1170,8 +1138,6 @@ $(document).ready(function ()
         } else {
             // Open this row
             row.child(format(row.data())).show();
-
-
             tr.addClass('shown');
             tdi.first().removeClass('fa-plus-square');
             tdi.first().addClass('fa-minus-square');
@@ -1179,15 +1145,16 @@ $(document).ready(function ()
 
     }
     );
-
-
 //end of detail control for device dataTable 
 
 
 
 //Start Related to Add Device 
 
+    $("#selectModelDevice").append("<option value='custom'>" + 'Custom' + "&#160;&#160;&#160;<font size=\"2\"></font>" + "</option>");
+    $("#selectModelDevice").select2(select2option);
 
+    $("selectModelDevice").val('').change();
 
 
 
@@ -1199,9 +1166,6 @@ $(document).ready(function ()
         $('.modalInputTxt').attr('readonly', false);
         //select custom model
         $("#selectModelDevice").prop('selectedIndex', 1);
-
-
-
         $("#addDeviceModalTabs").show();
         $('.nav-tabs a[href="#addInfoTabDevice"]').tab('show');
         $("#addDeviceModalBody").show();
@@ -1214,8 +1178,6 @@ $(document).ready(function ()
         $("#addDeviceKoIcon").hide();
         $('#addDeviceLoadingMsg').hide();
         $('#addDeviceLoadingIcon').hide();
-
-
         $("#addDeviceLoadingMsg").hide();
         $("#addDeviceLoadingIcon").hide();
         $("#addDeviceOkMsg").hide();
@@ -1226,15 +1188,10 @@ $(document).ready(function ()
         $("#addDeviceModalBody").show();
         $("#addDeviceModalTabs").show();
         $("#addDeviceModalFooter").show();
-
-
         $("#addNewDeviceGenerateKeyBtn").show();
         showAddDeviceModal();
         $("#selectContextBroker").change();
-
-
     });
-
     // Add lines related to attributes			
     $("#addAttrBtn").off("click");
     $("#addAttrBtn").click(function () {
@@ -1243,16 +1200,12 @@ $(document).ready(function ()
         content = drawAttributeMenu("", "", "", "", "", "", "300", "", 'addlistAttributes', indexValues);
         indexValues = indexValues + 1;
         $('#addlistAttributes').append(content);
-
         checkAtlistOneAttribute();
         $("#addSchemaTabDevice #addlistAttributes .row input:even").each(function () {
             checkValueName($(this));
         });
         checkAddDeviceConditions();
     });
-
-
-
     $("#addSchemaTabDevice").off("click");
     $("#addSchemaTabDevice").on('click keyup', function () {
         //console.log("#addSchemaTabDevice");	
@@ -1263,8 +1216,6 @@ $(document).ready(function ()
         });
         checkAddDeviceConditions();
     });
-
-
 //End Related to Add Device
 
 
@@ -1280,7 +1231,6 @@ $(document).ready(function ()
         indexValues = indexValues + 1;
         //editDeviceConditionsArray['addlistAttributesM'] = true;
         $('#addlistAttributesM').append(content);
-
         checkEditAtlistOneAttribute();
         $("#editSchemaTabDevice #addlistAttributesM .row input:even").each(function () {
             checkEditValueName($(this));
@@ -1290,7 +1240,6 @@ $(document).ready(function ()
         });
         checkEditDeviceConditions();
     });
-
     $("#editSchemaTabDevice").off("click");
     $("#editSchemaTabDevice").on('click keyup', function () {
         //console.log("#editSchemaTabDevice");
@@ -1304,7 +1253,6 @@ $(document).ready(function ()
         });
         checkEditDeviceConditions();
     });
-
     //testing
 
     function get_form(mode) {
@@ -1322,8 +1270,6 @@ $(document).ready(function ()
         $('#editDeviceKoMsg').hide();
         $('#editDeviceKoIcon').hide();
         $('#editDeviceOkBtn').hide();
-
-
         $('#inputNameDeviceM').attr('readonly', mode);
         $('#inputOrganizationDeviceM').attr('readonly', mode);
         $('#selectContextBrokerM').prop('disabled', mode);
@@ -1334,7 +1280,7 @@ $(document).ready(function ()
         $('#selectFormatDeviceM').prop('disabled', mode);
         //$('#createdDateDeviceM').val($(this).parents('tr').attr('data-created'));
         $('#inputMacDeviceM').attr('readonly', mode);
-        $('#selectModelDeviceM').prop('disabled', mode);
+        $('#selectModelDeviceM').prop('disabled', true);
         $('#inputProducerDeviceM').attr('readonly', mode);
         $('#inputLatitudeDeviceM').attr('readonly', mode);
         $('#inputLongitudeDeviceM').attr('readonly', mode);
@@ -1344,19 +1290,16 @@ $(document).ready(function ()
         $('#KeyTwoDeviceUserM').attr('readonly', mode);
         $('#selectEdgeGatewayTypeM').prop('disabled', mode);
         $('#inputEdgeGatewayUriM').attr('readonly', mode);
-
         $('#selectSubnatureM').prop('disabled', mode);
         $('#selectSubnatureM').prop('disabled', mode);
         document.getElementById("isMobileTickM").disabled = mode;
         $('.modalInputTxt').attr('readonly', mode);
         $('.modalFieldCnt').prop('disabled', mode);
         $('.Select_onlyread').prop('disabled', mode);
-
         if ($("#isMobileTickM").is(":checked"))
             $("#positionMsgHintM").show();
         else
             $("#positionMsgHintM").hide();
-
     }
 
 
@@ -1365,9 +1308,7 @@ $(document).ready(function ()
     $('#devicesTable tbody').on('click', 'button.viewDashBtn', function () {
         get_form(true);
         $("#editDeviceConfirmBtn").hide();
-
         $("#addAttrMBtn").hide();
-
         $("#editDeviceModal").modal('show');
         $("#editDeviceModalLabel").html("View device -  " + $(this).attr("data-id"));
         // show GeoPostion Tab on view Device Button 
@@ -1393,12 +1334,12 @@ $(document).ready(function ()
         var gtw_uri = $(this).attr('data-edgegateway_uri');
         var subnature = $(this).attr('data-subnature');
         fillMultiTenancyFormSection($(this).attr('data-service'), $(this).attr('data-servicePath'), contextbroker, 'device');
+        var serv = $(this).attr('data-service');
+        var servP = $(this).attr('data-servicePath');
         //console.log(key1 + key2);
 
 
         $("#editDeviceGenerateKeyBtn").hide();
-
-
         $('#inputNameDeviceM').val($(this).attr('data-id'));
         $('#inputOrganizationDeviceM').val($(this).attr('data-organization'));
         $('#selectContextBrokerM').val(contextbroker);
@@ -1419,18 +1360,13 @@ $(document).ready(function ()
         $('#KeyTwoDeviceUserM').val(key2);
         $('#selectEdgeGatewayTypeM').val(gtw_type);
         $('#inputEdgeGatewayUriM').val(gtw_uri);
-
         $('#selectSubnatureM').val(subnature);
-
         subnatureChanged("view", JSON.parse(atob($(this).attr("data-static-attributes"))));
         //$('#removeCBServiceBtn').hide();
 
 
         $('#addNewStaticBtnM').hide();
-
         $('#EStatus').hide();
-
-
         $('a[data-toggle="tab"]').off('shown.bs.tab').on('shown.bs.tab', function (e) {
             var target = $(e.target).attr("href");
             if ((target == '#editGeoPositionTabDevice')) {
@@ -1446,11 +1382,12 @@ $(document).ready(function ()
                     data: {
                         action: "get_device_attributes",
                         id: document.getElementById('inputNameDeviceM').value,
-
                         contextbroker: document.getElementById('selectContextBrokerM').value,
                         token: sessionToken,
-                        service: $(this).attr('data-service'),
-                        servicePath: $(this).attr('data-servicePath')
+                        service: serv,
+                        //$(this).attr('data-service'),
+                        servicePath: servP
+                                //$(this).attr('data-servicePath')
                     },
                     type: "POST",
                     async: true,
@@ -1474,7 +1411,7 @@ $(document).ready(function ()
                             indexValues = indexValues + 1;
                             k++;
                             $('#editlistAttributes').append(content);
-
+                            
                         }
 
                         $("#editSchemaTabDevice #editlistAttributes .row input:even").each(function () {
@@ -1483,34 +1420,22 @@ $(document).ready(function ()
                         checkEditDeviceConditions();
                         $(".RemoveAttrEdit").hide();
                         $('.Select_onlyread').prop('disabled', true);
-
                         $('.Input_onlyread').attr('readonly', true);
-
-
-
-
                         $('#editDeviceLoadingIcon').hide();
-
                     },
                     error: function (data)
                     {
                         console.log("Get values pool KO");
                         console.log(JSON.stringify(data));
                         alert("Error in reading data from the database<br/> Please get in touch with the Snap4city Administrator");
-
-
-
                         // $("#editDeviceModal").modal('hide');
 
 
                     }
                 });
-
             }
 
         });
-
-
     }
 
 
@@ -1521,11 +1446,9 @@ $(document).ready(function ()
 
     //Edit button in dataTable 
     $('#devicesTable tbody').on('click', 'button.editDashBtn', function () {
+        mydata = {action: "get_all_device", strat_time: '2022-04-13 2012:15:18', end_time: '2022-04-13 2012:25:18', token: sessionToken, no_columns: ["position", "d.visibility", "status1", "edit", "delete", "map", "check"]};
         get_form(false);
         $('#EStatus').show();
-
-
-
         //$("#editDeviceModalFooter").show();
         //
 
@@ -1564,8 +1487,6 @@ $(document).ready(function ()
 
 
             $("#editDeviceGenerateKeyBtn").show();
-
-
             $('#inputNameDeviceM').val($(this).attr('data-id'));
             $('#inputOrganizationDeviceM').val($(this).attr('data-organization'));
             $('#selectContextBrokerM').val(contextbroker);
@@ -1586,11 +1507,9 @@ $(document).ready(function ()
             $('#KeyTwoDeviceUserM').val(key2);
             $('#selectEdgeGatewayTypeM').val(gtw_type);
             $('#inputEdgeGatewayUriM').val(gtw_uri);
-
             $('#selectSubnatureM').val(subnature);
             $('#selectSubnatureM').trigger('change');
             subnatureChanged(true, JSON.parse(atob($(this).attr("data-static-attributes"))));
-
             $('a[data-toggle="tab"]').off('shown.bs.tab').on('shown.bs.tab', function (e) {
                 var target = $(e.target).attr("href");
                 if ((target == '#editGeoPositionTabDevice')) {
@@ -1598,7 +1517,6 @@ $(document).ready(function ()
                     var latitude = document.getElementById('inputLatitudeDeviceM').value;
                     var longitude = document.getElementById('inputLongitudeDeviceM').value;
                     drawMap1(latitude, longitude, 1);
-
                 } else if ((target == '#editStatusTabDevice')) {
 
                     var id = document.getElementById('inputNameDeviceM').value;
@@ -1608,7 +1526,6 @@ $(document).ready(function ()
                     var latitude = document.getElementById('inputLatitudeDeviceM').value;
                     var longitude = document.getElementById('inputLongitudeDeviceM').value;
                     var protocol = document.getElementById('selectProtocolDeviceM').value;
-
                     if (id == null || id == "") {
                         var idNote = ("\n id not specified");
                     } else {
@@ -1654,7 +1571,6 @@ $(document).ready(function ()
                     }
 
                     var x = inputPropertiesDeviceMMsg.innerHTML;
-
                     var div = document.createElement("div");
                     //console.log("IPDMM:" + x);
 
@@ -1676,16 +1592,11 @@ $(document).ready(function ()
                             "<tr><td>Overall Status</td><td>" + statusNote + "</td></tr>" +
                             "</tbody></table></div>");
                     inputPropertiesDeviceMMsg.appendChild(div);
-
-
                 }
             }
             );
-
-
             //UserEditKey();
             checkEditDeviceConditions();
-
             $.ajax({
                 url: "../api/device.php",
                 data: {
@@ -1714,9 +1625,10 @@ $(document).ready(function ()
                                 myattributes[k].data_type, myattributes[k].value_type, myattributes[k].editable, myattributes[k].value_unit, myattributes[k].healthiness_criteria,
                                 myattributes[k].healthiness_value, myattributes[k].value_name, 'editlistAttributes', indexValues);
                         indexValues = indexValues + 1;
+                      
+                            
                         k++;
                         $('#editlistAttributes').append(content);
-
                     }
 
                     $("#editSchemaTabDevice #editlistAttributes .row input.valueName").each(function () {
@@ -1729,7 +1641,6 @@ $(document).ready(function ()
                     console.log("Get values pool KO");
                     console.log(JSON.stringify(data));
                     alert("Error in reading data from the database<br/> Please get in touch with the Snap4city Administrator");
-
                     $('#inputNameDeviceM').val("");
                     $('#inputOrganizationDeviceM').val("");
                     $('#selectContextBrokerM').val("");
@@ -1750,7 +1661,6 @@ $(document).ready(function ()
                     $('#KeyOneDeviceUserM').val("");
                     $('#KeyTwoDeviceUserM').val("");
                     $('#selectSubnatureM').val("");
-
                     // $("#editDeviceModal").modal('hide');
 
                 }
@@ -1758,8 +1668,6 @@ $(document).ready(function ()
         }
         showEditDeviceModal();
     });
-
-
     //Edit button hover - needs to be checked
     $('#devicesTable tbody').on('hover', 'button.editDashBtn', function () {
         //$('#devicesTable tbody button.editDashBtn').off('hover')
@@ -1771,7 +1679,6 @@ $(document).ready(function ()
                 $(this).css('background', 'rgb(69, 183, 175)');
                 $(this).parents('tr').find('td').eq(1).css('background', $(this).parents('td').css('background'));
             });
-
 //End Related to Edit Device
 
 
@@ -1783,7 +1690,6 @@ $(document).ready(function ()
         //console.log("#attrNameDelbtn");	
         $(this).parent('tr').remove();
     });
-
     //Delete device button 
 
     $('#devicesTable tbody').on('click', 'button.delDashBtn', function () {
@@ -1796,9 +1702,7 @@ $(document).ready(function ()
         var protocol = $(this).attr('data-protocol');
         var service = $(this).attr('data-service');
         var servicePath = $(this).attr('data-servicepath');
-
         $("#deleteDeviceModal div.modal-body").html('<div class="modalBodyInnerDiv"><span data-id = "' + id + '" data-contextbroker = "' + contextbroker + '" data-organization = "' + dev_organization + '"  data-uri ="' + uri + '" data-service ="' + service + '" data-servicepath="' + servicePath + '" data-protocol="' + protocol + '">Do you want to confirm deletion of device <b>' + id + '</b>?</span></div>');
-
         $("#deleteDeviceModalInnerDiv1").html('<h5>Device deletion in progress, please wait</h5>');
         $("#deleteDeviceModalInnerDiv2").html('<i class="fa fa-circle-o-notch fa-spin" style="font-size:36px"></i>');
         $("#deleteDeviceModalInnerDiv1").hide();
@@ -1808,7 +1712,6 @@ $(document).ready(function ()
         $("#deleteDeviceConfirmBtn").show();
         $("#deleteDeviceModal").modal('show');
     });
-
     //Delete button hover - needs to be checked
     $('#devicesTable tbody').on('hover', 'button.delDashBtn', function () {
         //$('#devicesTable button.delDashBtn').off('hover');
@@ -1821,10 +1724,6 @@ $(document).ready(function ()
                 $(this).css('background', '#e37777');
                 $(this).parents('tr').find('td').eq(1).css('background', $(this).parents('td').css('background'));
             });
-
-
-
-
 //End Related to Delete Device
 
 
@@ -1834,7 +1733,6 @@ $(document).ready(function ()
     $("#addNewStaticBtn").click(function () {
         createRowElem('', '', currentDictionaryStaticAttribAdd, "addlistStaticAttributes");
     });
-
 //--------------------- static attribute ADD end
 //--------------------- static attribute EDIT start
 
@@ -1842,31 +1740,26 @@ $(document).ready(function ()
     $("#addNewStaticBtnM").click(function () {
         createRowElem('', '', currentDictionaryStaticAttribEdit, "editlistStaticAttributes");
     });
-
 //--------------------- static attribute EDIT end
+
 
     $('#selectSubnature').on('select2:selecting', function (e) {
         checkSubnatureChanged($('#selectSubnature'), e.target.value, e.params.args.data.id, e);
     });
-
     $('#selectSubnatureM').on('select2:selecting', function (e) {
         checkSubnatureChanged($('#selectSubnatureM'), e.target.value, e.params.args.data.id, e, true);
     });
     $('#selectSubnature').on('select2:clearing', function (e) {
         checkSubnatureChanged($('#selectSubnature'), e.params.args.data.id, "", e);
     });
-
     $('#selectSubnatureM').on('select2:clearing', function (e) {
         checkSubnatureChanged($('#selectSubnatureM'), e.params.args.data.id, "", e, true);
     });
-
 // Device dataTable table Style 
 
     $('#devicesTable thead').css("background", "rgba(0, 162, 211, 1)");
     $('#devicesTable thead').css("color", "white");
     $('#devicesTable thead').css("font-size", "1em");
-
-
     $('#devicesTable tbody tr').each(function () {
         if ((dataTable.row(this).index()) % 2 !== 0)
         {
@@ -1880,7 +1773,6 @@ $(document).ready(function ()
             $(this).find('td').eq(0).css("border-top", "none");
         }
     });
-
     /*$('#devicesTable tbody').on( 'click', 'tr', function () {
      alert( 'Row index: '+dataTable.row( this ).index() );
      });*/
@@ -1909,7 +1801,6 @@ $(document).ready(function ()
                     (data["status"] === 'ok')
                 {
                     var data = data["content"];
-
                     $("#addMap1").modal('show');
                     drawMapAll(data, 'searchDeviceMapModalBody');
                 }
@@ -1922,7 +1813,6 @@ $(document).ready(function ()
 
         });
     });
-
 //Default Title 
 
     if (titolo_default != "") {
@@ -1946,11 +1836,9 @@ $(document).ready(function ()
 
     $('#sessionExpiringPopup').css("top", parseInt($('body').height() - $('#sessionExpiringPopup').height()) + "px");
     $('#sessionExpiringPopup').css("left", parseInt($('body').width() - $('#sessionExpiringPopup').width()) + "px");
-
     setInterval(function () {
         var now = parseInt(new Date().getTime() / 1000);
         var difference = sessionEndTime - now;
-
         if (difference === 300)
         {
             $('#sessionExpiringPopupTime').html("5 minutes");
@@ -1989,9 +1877,7 @@ $(document).ready(function ()
             location.href = "logout.php?sessionExpired=true";
         }
     }, 1000);
-
     $('#mainContentCnt').height($('#mainMenuCnt').height() - $('#headerTitleCnt').height());
-
     $(window).resize(function () {
         $('#mainContentCnt').height($('#mainMenuCnt').height() - $('#headerTitleCnt').height());
         if ($(window).width() < 992)
@@ -2022,9 +1908,7 @@ $(document).ready(function ()
 
         }
     });
-
     $("#addMyNewDeviceRow").hide();
-
     for (var func = 0; func < functionality.length; func++)
     {
         var element = functionality[func];
@@ -2046,15 +1930,11 @@ $(document).ready(function ()
     $('#devicesLink .mainMenuItemCnt').addClass("mainMenuItemCntActive");
     $('#mobMainMenuPortraitCnt #devicesLink .mobMainMenuItemCnt').addClass("mainMenuItemCntActive");
     $('#mobMainMenuLandCnt #devicesLink .mobMainMenuItemCnt').addClass("mainMenuItemCntActive");
-
-
-
 //Add MyNewDevice Button  
     $("#addMyNewDevice").click(function () {
         //console.log("add new device");	
         $("#displayAllDeviceRow").hide();
         $("#addMyNewDeviceRow").show();
-
         $('#inputNameDeviceUser').val("");
         $('#inputTypeDeviceUser').val("");
         $('#inputLatitudeDeviceUser').val("");
@@ -2062,22 +1942,18 @@ $(document).ready(function ()
         drawMapUser(43.78, 11.23);
         // showAddDeviceModal();					
     });
-
 // All Device Button 		
     $("#allDevice").click(function () {
         $("#displayAllDeviceRow").show();
         // $("#addDeviceModal").modal('show');
         $("#addMyNewDeviceRow").hide();
     });
-
     $("#myDevice").click(function () {
 
         $("#displayAllDeviceRow").show();
         // $("#addDeviceModal").modal('show');
         $("#addMyNewDeviceRow").hide();
     });
-
-
 //GeoPosition Tab on Add Device Button 		
     $('a[data-toggle="tab"]').on('shown.bs.tab', function (e) {
         var target = $(e.target).attr("href");
@@ -2099,7 +1975,6 @@ $(document).ready(function ()
         } else {//nothing
         }
     });
-
 ////Edit GeoPostion Tab on Edit Device Button 
     $('a[data-toggle="tab"]').off('shown.bs.tab').on('shown.bs.tab', function (e) {
         var target = $(e.target).attr("href");
@@ -2111,228 +1986,64 @@ $(document).ready(function ()
             drawMap1(latitude, longitude, flag);
         }
     });
-
-
-
 //EdgeGateWayType
     $("#selectEdgeGatewayType").click(function () {
         checkUri();
         checkAddDeviceConditions();
     });
+    //Select Model Device 
+
+//Error function load attr of model
+    function ErrorManager(data) {
+        console.log("Ko result: " + JSON.stringify(data));
+        $('#addlistAttributes').html("");
+        $('#inputTypeDevice').val("");
+        //$('#selectKindDevice').val("");
+        $('#inputProducerDevice').val("");
+        $('#inputFrequencyDevice').val("600");
+        $('#inputMacDevice').val("");
+        $('#selectContextBroker').val("");
+        //$('#selectProtocolDevice').val("");
+        //$('#selectFormatDevice').val("");
+        alert("An error occured when reading the information about model. <br/> Try again or get in touch with the Snap4City Administrator<br/>");
+    }
 
 
-
-
-    //Select Model Device 	
-    $("#selectModelDevice").click(function () {
+    $("#selectModelDevice").change(function () {
         var nameOpt = document.getElementById('selectModelDevice').options;
         var selectednameOpt = document.getElementById('selectModelDevice').selectedIndex;
-        var ownerSelect = document.getElementById('selectVisibilityDevice').options;
-        var ownerOpt = document.getElementById('selectVisibilityDevice').selectedIndex;
+        //var ownerSelect = document.getElementById('selectVisibilityDevice').options;
+        //var ownerOpt = document.getElementById('selectVisibilityDevice').selectedIndex;
         checkModel();
-        //Fatima3	 
-        if ((nameOpt[selectednameOpt].value != "custom") && (nameOpt[selectednameOpt].value != ""))
-                //if (nameOpt[selectednameOpt].value !="custom") 
-                {
-                    $("#addNewDeviceGenerateKeyBtn").hide();
+        //Fatima3
+        if (nameOpt[selectednameOpt].attributes.data_kind.value=='NATIVE') {
+            var nameOptValue = nameOpt[selectednameOpt].value;
 
-                    var gb_device = document.getElementById('inputNameDevice').value;
-                    var gb_latitude = document.getElementById('inputLatitudeDevice').value;
-                    var gb_longitude = document.getElementById('inputLongitudeDevice').value;
-
-                    if (nameOpt[selectednameOpt].getAttribute("data_key") != "special") // && ownerSelect[ownerOpt].value=='private')
-                    {
-                        if ($("#KeyOneDeviceUser").val() == "")
-                        {
-                            $("#sigFoxDeviceUserMsg").val("");
-                            $("#KeyOneDeviceUserMsg").html("");
-                            $("#KeyTwoDeviceUserMsg").html("");
-                            $("#sigFoxDeviceUserMsg").html("These keys have been generated automatically for your device. Keep track of them. Details on <a href=\"https://www.snap4city.org/drupal/node/76\">info</a>");
-                            $("#KeyOneDeviceUser").val(generateUUID());
-                            $("#KeyTwoDeviceUser").val(generateUUID());
-                        }
-                    }
-                    if (nameOpt[selectednameOpt].getAttribute("data_key") == "special") // && ownerSelect[ownerOpt].value=='private')
-                    {
-                        $("#sigFoxDeviceUserMsg").html("Generate in your SigFox server the keys and report them here.  Details on <a href=\"https://www.snap4city.org/drupal/node/76\">info</a>");
-                        $("#KeyOneDeviceUser").val("");
-                        $("#KeyTwoDeviceUser").val("");
-                    }
-
-                    //if(nameOpt[selectednameOpt].value !="custom" && nameOpt[selectednameOpt].value!="")
-                    //{ 
-                    $.ajax({
-                        url: "../api/model.php",
-                        data: {
-                            action: "get_model",
-                            name: nameOpt[selectednameOpt].value,
-                            token: sessionToken
-                        },
-                        type: "POST",
-                        async: true,
-                        datatype: 'json',
-                        success: function (data)
-                        {
-                            if (data["status"] === 'ko') {
-                                alert("An error occured when reading the data. <br/> Get in touch with the Snap4City Administrator<br/>" + data["msg"]);
-                            } else if (data["status"] === 'ok') {
-                                var model = data.content.name;
-                                var type = data.content.devicetype;
-                                var kind = data.content.kind;
-                                var producer = data.content.producer;
-                                //var mac = data.content.mac;
-                                var frequency = data.content.frequency;
-                                var contextbroker = data.content.contextbroker;
-                                //var protocol = data.content.protocol;
-                                var format = data.content.format;
-                                var myattributes = JSON.parse(data.content.attributes);
-                                var k = 0;
-                                var content = "";
-                                // population of the value tab with the values taken from the db						
-                                while (k < myattributes.length) {
-                                    content += drawAttributeMenu(myattributes[k].value_name,
-                                            myattributes[k].data_type, myattributes[k].value_type, myattributes[k].editable, myattributes[k].value_unit, myattributes[k].healthiness_criteria,
-                                            myattributes[k].healthiness_value, myattributes[k].old_value_name, 'addlistAttributes', indexValues);
-                                    indexValues = indexValues + 1;
-                                    k++;
-                                }
-                                $('#addlistAttributes').html(content);
-                                $('#inputTypeDevice').val(data.content.devicetype);
-                                $('#selectKindDevice').val(data.content.kind);
-                                $('#inputProducerDevice').val(data.content.producer);
-                                $('#inputFrequencyDevice').val(data.content.frequency);
-                                //$('#inputMacDevice').val(data.content.mac);
-                                $('#selectContextBroker').val(data.content.contextbroker);
-                                $('#selectProtocolDevice').val(data.content.protocol);
-                                $('#selectFormatDevice').val(data.content.format);
-                                $('#selectEdgeGatewayType').val(data.content.edgegateway_type);
-                                $('#selectSubnature').val(data.content.subnature);
-                                $('#selectSubnature').trigger('change');
-
-                                subnatureChanged(false, JSON.parse(data.content.static_attributes));
-
-                                addDeviceConditionsArray['contextbroker'] = true;
-                                addDeviceConditionsArray['kind'] = true;
-                                addDeviceConditionsArray['format'] = true;
-                                addDeviceConditionsArray['protocol'] = true;
-                                checkSelectionCB();
-                                checkSelectionKind();
-                                checkSelectionProtocol();
-                                checkSelectionFormat();
-
-                                addDeviceConditionsArray['inputTypeDevice'] = true;
-                                checkDeviceType(); // checkAddDeviceConditions();
-                                addDeviceConditionsArray['inputFrequencyDevice'] = true;
-                                checkFrequencyType(); // checkAddDeviceConditions();
-                                addDeviceConditionsArray['inputMacDevice'] = true;
-                                checkMAC();
-                                checkAtlistOneAttribute();
-                                checkAddDeviceConditions();
-
-                                getServicesByCBName($('#selectContextBroker').val(), 'add', data.content.service);
-                                checkProtocol($('#selectProtocolDevice').val(), 'add', 'device');
-                                $('#inputServicePathDevice').val(data.content.servicePath);
-                                checkServicePath($('#inputServicePathDevice').val(), 'add', 'device');
-                                checkAddDeviceConditions();
-
-
-
-                                var valOrg = data.content.cb_organization;
-                                if (valOrg)
-                                    $("#selectContextBrokerMsg").html($("#selectContextBrokerMsg").html() + " - Organization:" + valOrg);
-                            }
-                        },
-                        error: function (data)
-                        {
-                            console.log("Ko result: " + JSON.stringify(data));
-                            $('#addlistAttributes').html("");
-                            $('#inputTypeDevice').val("");
-                            //$('#selectKindDevice').val("");
-                            $('#inputProducerDevice').val("");
-                            $('#inputFrequencyDevice').val("600");
-                            $('#inputMacDevice').val("");
-                            $('#selectContextBroker').val("");
-                            //$('#selectProtocolDevice').val("");
-                            //$('#selectFormatDevice').val("");
-                            alert("An error occured when reading the information about model. <br/> Try again or get in touch with the Snap4City Administrator<br/>");
-                        }
-                    });
-
-                    if (nameOpt[selectednameOpt].getAttribute("data_key") != "special") {
-                        $("#KeyOneDeviceUser").attr({'disabled': 'disabled'});
-                        $("#KeyTwoDeviceUser").attr({'disabled': 'disabled'});
-                    } else {
-                        $("#KeyOneDeviceUser").removeAttr('disabled');
-                        $("#KeyTwoDeviceUser").removeAttr('disabled');
-                    }
-                } else if (nameOpt[selectednameOpt].value == "") { // case not specified
-            $('#inputTypeDevice').val("");
-            //$('#selectKindDevice').val("");
-            $('#inputProducerDevice').val("");
-            $('#inputFrequencyDevice').val("600");
-            $("#sigFoxDeviceUserMsg").html("");
-            $('#inputMacDevice').val("");
-            $('#selectContextBroker').val("");
-            //$('#selectProtocolDevice').val("");
-            //$('#selectFormatDevice').val(""); 
-            $("#KeyOneDeviceUser").val("");
-            $("#KeyTwoDeviceUser").val("");
-            $('#KeyOneDeviceUserMsg').html("");
-            $('#KeyTwoDeviceUserMsg').html("");
-            $('#KeyOneDeviceUserMsg').val("");
-            $('#KeyTwoDeviceUserMsg').val("");
-            // $('#addlistAttributes').html("");
-
-            addDeviceConditionsArray['contextbroker'] = false;
-            addDeviceConditionsArray['kind'] = false;
-            addDeviceConditionsArray['format'] = false;
-            addDeviceConditionsArray['protocol'] = false;
-            checkSelectionCB();
-            checkSelectionKind();
-            checkSelectionProtocol();
-            checkSelectionFormat();
-
-            addDeviceConditionsArray['inputTypeDevice'] = false;
-            checkDeviceType();
-            checkAddDeviceConditions();
-            addDeviceConditionsArray['inputFrequencyDevice'] = false;
-            checkFrequencyType();
-            checkAddDeviceConditions();
-            addDeviceConditionsArray['inputMacDevice'] = false;
-            checkMAC();
-            checkAddDeviceConditions();
-
+            LoadAttr('NATIVE', nameOpt, selectednameOpt, nameOptValue, '', '', '');
+            $('#addlistAttributesMsg').hide();
+        } else if (nameOpt[selectednameOpt].value == 'custom') {
+            $("#selectModelDevice").val('custom');
             document.getElementById('addlistAttributes').innerHTML = "";
-            $("#addNewDeviceGenerateKeyBtn").hide();
-            checkAtlistOneAttribute();
-        } else {// case custom 
-            $("#addNewDeviceGenerateKeyBtn").show();
-            $("#sigFoxDeviceUserMsg").html("Click on the generatekey botton to generate keys (if you need them)");
-            if ($('#inputTypeDevice').val() == "")
-                addDeviceConditionsArray['inputTypeDevice'] = false;
-            else
-                addDeviceConditionsArray['inputTypeDevice'] = true;
-            checkDeviceType();
-            checkAddDeviceConditions();
-            if ($('#inputFrequencyDevice').val() == "")
-                addDeviceConditionsArray['inputFrequencyDevice'] = false;
-            else
-                addDeviceConditionsArray['inputFrequencyDevice'] = true;
-            checkFrequencyType();
-            checkAddDeviceConditions();
-            if ($('#inputMacDevice').val() == "")
-                addDeviceConditionsArray['inputMacDevice'] = false;
-            else
-                addDeviceConditionsArray['inputMacDevice'] = true;
-            checkMAC();
-            checkAddDeviceConditions();
 
-            $("#KeyOneDeviceUser").removeAttr('disabled');
-            $("#KeyTwoDeviceUser").removeAttr('disabled');
+            document.getElementById('addlistAttributesMsg').innerHTML = "At least a value needs to be specified";
+            $('#addlistAttributesMsg').show();
+        } else if (typeof nameOpt[selectednameOpt].attributes['data-version'] !== 'undefined') {
+
+            var nameOptValue = nameOpt[selectednameOpt].value.replace('( FIWIRE )', '').trim();
+            var version = nameOpt[selectednameOpt].attributes['data-version'].value;
+            var domain = nameOpt[selectednameOpt].attributes['data-domain'].value;
+            var subdomain = nameOpt[selectednameOpt].attributes['data-modelsubdomain'].value;
+            $('#inputTypeDevice').val(nameOptValue);
+            LoadAttr('FIWIRE', nameOpt, selectednameOpt, nameOptValue, version, domain, subdomain);
+            $('#addlistAttributesMsg').hide();
+        } else {
+            $("#selectModelDevice").val('');
+            document.getElementById('addlistAttributes').innerHTML = "";
+            document.getElementById('addlistAttributesMsg').innerHTML = "At least a value needs to be specified";
+            $('#addlistAttributesMsg').show();
         }
 
     });
-
 // ADD NEW DEVICE  (INSERT INTO DB) 
 
     $('#addNewDeviceConfirmBtn').off("click");
@@ -2351,7 +2062,6 @@ $(document).ready(function ()
                 value_unit: document.getElementById('addlistAttributes').childNodes[m].childNodes[2].childNodes[0].childNodes[0].value.trim(),
                 healthiness_criteria: document.getElementById('addlistAttributes').childNodes[m].childNodes[5].childNodes[0].childNodes[0].value.trim(),
                 healthiness_value: document.getElementById('addlistAttributes').childNodes[m].childNodes[6].childNodes[0].childNodes[0].value.trim()};
-
             //console.log("new att:"+JSON.stringify(newatt));
 
             if (newatt.value_name != "" && !regex.test(newatt.value_name) && newatt.data_type != "" && newatt.value_type != "" && newatt.editable != "" && newatt.healthiness_criteria != "" && newatt.healthiness_value != "")
@@ -2374,7 +2084,6 @@ $(document).ready(function ()
             $("#addDeviceKoIcon").hide();
             $('#addDeviceLoadingMsg').show();
             $('#addDeviceLoadingIcon').show();
-
             //console.log("LISTA" + JSON.stringify(mynewAttributes));
             var d = new Date();
             var t = d.getTime();
@@ -2386,7 +2095,6 @@ $(document).ready(function ()
 
             var service = $('#selectService').val();
             var servicePath = $('#inputServicePathDevice').val();
-
             if ($('#selectProtocolDevice').val() === "ngsi w/MultiService") {
                 // servicePath value pre-processing
                 if (servicePath[0] !== "/" || servicePath === "")
@@ -2394,6 +2102,13 @@ $(document).ready(function ()
                 if (servicePath[servicePath.length - 1] === "/" && servicePath.length > 1)
                     servicePath = servicePath.substr(0, servicePath.length - 1);
             }
+
+            if ($('#selectModelDevice').val().includes('( NATIVE )')) {
+                var TempModel = $('#selectModelDevice').val().replace('( NATIVE )', '').trim();
+            } else {
+                var TempModel = $('#selectModelDevice').val();
+            }
+
 
 
             $.ajax({
@@ -2407,7 +2122,7 @@ $(document).ready(function ()
                     contextbroker: $('#selectContextBroker').val(),
                     format: $('#selectFormatDevice').val(),
                     mac: $('#inputMacDevice').val(),
-                    model: $('#selectModelDevice').val(),
+                    model: TempModel,
                     producer: $('#inputProducerDevice').val(),
                     latitude: $('#inputLatitudeDevice').val(),
                     longitude: $('#inputLongitudeDevice').val(),
@@ -2440,9 +2155,7 @@ $(document).ready(function ()
                         console.log(mydata);
                         $('#addDeviceLoadingMsg').hide();
                         $('#addDeviceLoadingIcon').hide();
-
                         $("#addDeviceModal").modal('hide');
-
                         $('#inputNameDevice').val("");
                         $('#inputTypeDevice').val("");
                         //$('#selectKindDevice').val(""),
@@ -2463,22 +2176,16 @@ $(document).ready(function ()
                         $("#KeyTwoDeviceUser").val("");
                         $("#KeyOneDeviceUserMsg").html("");
                         $("#KeyTwoDeviceUserMsg").html("");
-
-
-
-
                         $('#selectSubnature').val("");
                         $('#selectSubnature').trigger("change");
                         $("#addNewStaticBtn").hide();
                         removeStaticAttributes();
-
                         $("#addDeviceKoModal").modal('show');
                         $("#addDeviceOkModal").hide();
                         if (mydata["error_msg"] != 'undefined' && mydata["error_msg"] != "")
                             $("#addDeviceKoModalInnerDiv1").html('<h5>Operation failed, due to the following Error: ' + mydata["error_msg"] + '</h5>');
                         else
                             $("#addDeviceKoModalInnerDiv1").html('<h5>An error occurred, operation failed.</h5>');
-
                     } else if (mydata["status"] === 'ok')
                     {
                         //console.log("Success adding Device");
@@ -2486,8 +2193,6 @@ $(document).ready(function ()
                         $('#addDeviceLoadingMsg').hide();
                         $('#addDeviceLoadingIcon').hide();
                         $("#addDeviceModal").modal('hide');
-
-
                         $('#inputNameDevice').val("");
                         $('#inputTypeDevice').val("");
                         $('#selectContextBroker').val("NULL");
@@ -2507,17 +2212,13 @@ $(document).ready(function ()
                         $("#KeyTwoDeviceUser").val("");
                         $("#KeyOneDeviceUserMsg").html("");
                         $("#KeyTwoDeviceUserMsg").html("");
-
                         $('#selectSubnature').val("");
                         $('#selectSubnature').trigger("change");
                         $("#addNewStaticBtn").hide();
                         removeStaticAttributes();
-
                         $("#addDeviceOkModal").modal('show');
                         $("#addDevicekoModal").hide();
-
                         $("#addDeviceOkModalInnerDiv1").html('<h5>The device has been successfully registered. You can find further information on how to use and set up your device at the following page:</h5>' + "   " + '<h5>https://www.snap4city.org/drupal/node/76</h5>');
-
                         $('#devicesTable').DataTable().destroy();
                         fetch_data(true);
                     }
@@ -2529,10 +2230,7 @@ $(document).ready(function ()
                     console.log("Error status -- Ko result: " + JSON.stringify(mydata));
                     $('#addDeviceLoadingMsg').hide();
                     $('#addDeviceLoadingIcon').hide();
-
                     $("#addDeviceModal").modal('hide');
-
-
                     $('#inputNameDevice').val("");
                     $('#inputTypeDevice').val("");
                     $('#selectContextBroker').val("NULL");
@@ -2552,13 +2250,10 @@ $(document).ready(function ()
                     $("#KeyTwoDeviceUser").val("");
                     $("#KeyOneDeviceUserMsg").html("");
                     $("#KeyTwoDeviceUserMsg").html("");
-
-
                     $('#selectSubnature').val("");
                     $('#selectSubnature').trigger("change");
                     $("#addNewStaticBtn").hide();
                     removeStaticAttributes();
-
                     console.log("Error adding Device type");
                     console.log(mydata);
                     $("#addDeviceKoModal").modal('show');
@@ -2569,7 +2264,6 @@ $(document).ready(function ()
                         $("#addDeviceKoModalInnerDiv1").html('<h5>An error occurred, operation failed.</h5>');
                 }
             });
-
         } else {
             alert("Check the values of your device, make sure that data you entered are valid");
         }
@@ -2582,10 +2276,11 @@ $(document).ready(function ()
         indexValues = indexValues + 1;
         $('#addlistAttributesUser').append(content);
     });
-
-
 //END ADD NEW DEVICE  (INSERT INTO DB) 
 
+
+
+    $('#selectModel').val('').trigger('change');
 //DELETE DEVICE (DELETE FROM DB) 			
     $('#deleteDeviceConfirmBtn').off("click");
     $("#deleteDeviceConfirmBtn").click(function () {
@@ -2601,15 +2296,12 @@ $(document).ready(function ()
             service = "";
         if (servicePath === "null")
             servicePath = "";
-
-
         $("#deleteDeviceModal div.modal-body").html("");
         $("#deleteDeviceOkBtn").hide();
         $("#deleteDeviceCancelBtn").hide();
         $("#deleteDeviceConfirmBtn").hide();
         $("#deleteDeviceModalInnerDiv1").show();
         $("#deleteDeviceModalInnerDiv2").show();
-
         $.ajax({
             url: "../api/device.php",
             data: {
@@ -2631,14 +2323,11 @@ $(document).ready(function ()
                 {
                     $("#deleteDeviceModalInnerDiv1").html(data["error_msg"]);
                     $("#deleteDeviceModalInnerDiv2").html('<i class="fa fa-frown-o" style="font-size:42px"></i>');
-
                 } else if (data["status"] === 'ok')
                 {
                     $("#deleteDeviceModalInnerDiv1").html('Device &nbsp; <b>' + id + '</b> &nbsp;deleted successfully');
                     $("#deleteDeviceModalInnerDiv1").show();
                     $("#deleteDeviceModalInnerDiv2").html('<i class="fa fa-check" style="font-size:42px"></i>');
-
-
                     $('#dashboardTotNumberCnt .pageSingleDataCnt').html(parseInt($('#dashboardTotNumberCnt .pageSingleDataCnt').html()) - 1);
                     if (data["active"])
                         $('#dashboardTotActiveCnt .pageSingleDataCnt').html(parseInt($('#dashboardTotActiveCnt .pageSingleDataCnt').html()) - 1);
@@ -2646,10 +2335,8 @@ $(document).ready(function ()
                         $('#dashboardTotPermCnt .pageSingleDataCnt').html(parseInt($('#dashboardTotPermCnt .pageSingleDataCnt').html()) - 1);
                     else
                         $('#dashboardTotPrivateCn .pageSingleDataCnt').html(parseInt($('#dashboardTotPrivateCn .pageSingleDataCnt').html()) - 1);
-
                     $('#devicesTable').DataTable().destroy();
                     fetch_data(true);
-
                     // $('#dashboardTotNumberCnt .pageSingleDataCnt').html(parseInt($('#dashboardTotNumberCnt .pageSingleDataCnt').html()) - 1);
                     // $('#dashboardTotActiveCnt .pageSingleDataCnt').html(parseInt($('#dashboardTotActiveCnt .pageSingleDataCnt').html()) - 1);
 
@@ -2662,11 +2349,9 @@ $(document).ready(function ()
                 console.log(JSON.stringify(data));
                 $("#deleteDeviceModalInnerDiv1").html(data["error_msg"]);
                 $("#deleteDeviceModalInnerDiv2").html('<i class="fa fa-frown-o" style="font-size:42px"></i>');
-
             }
         });
     });
-
     $("#deleteDeviceOkBtn").off("click");
     $("#deleteDeviceOkBtn").click(function () {
         $("#deleteDeviceModal div.modal-body").html("Do you want to confirm deletion of the following device?");
@@ -2678,8 +2363,6 @@ $(document).ready(function ()
         $("#deleteDeviceModalInnerDiv1").hide();
         $("#deleteDeviceModalInnerDiv2").hide();
     });
-
-
 //END DELETE DEVICE (DELETE FROM DB) 		
 
 
@@ -2688,7 +2371,6 @@ $(document).ready(function ()
     //$('#editDeviceConfirmBtn').off("click");
     $("#editDeviceConfirmBtn").off("click").click(function () {
         mynewAttributes = [];
-
         var regex = /[^a-z0-9:_-]/gi;
         var someNameisWrong = false;
         num1 = document.getElementById('addlistAttributesM').childElementCount;
@@ -2703,7 +2385,6 @@ $(document).ready(function ()
                 healthiness_criteria: document.getElementById('addlistAttributesM').childNodes[m].childNodes[5].childNodes[0].childNodes[0].value.trim(),
                 healthiness_value: document.getElementById('addlistAttributesM').childNodes[m].childNodes[6].childNodes[0].childNodes[0].value.trim(),
                 old_value_name: document.getElementById('addlistAttributesM').childNodes[m].childNodes[8].childNodes[0].childNodes[0].value.trim()};
-
             if (newatt.value_name != "" && !regex.test(newatt.value_name) && newatt.data_type != "" && newatt.value_type != "" &&
                     newatt.editable != "" && newatt.healthiness_criteria != "" && newatt.healthiness_value != "")
                 mynewAttributes.push(newatt);
@@ -2749,7 +2430,6 @@ $(document).ready(function ()
                 editable: '0',
                 healthiness_value: document.getElementById('editlistAttributes').childNodes[j].childNodes[6].childNodes[0].childNodes[0].value.trim(),
                 old_value_name: document.getElementById('editlistAttributes').childNodes[j].childNodes[8].childNodes[0].childNodes[0].value};
-
             if (att.value_name != "" && !regex.test(att.value_name) && att.data_type != "" && att.value_type != "" &&
                     att.editable != "" && att.value_unit != "" && att.healthiness_criteria != "" && att.healthiness_value != "")
                 myAttributes.push(att);
@@ -2777,7 +2457,6 @@ $(document).ready(function ()
                 healthiness_value: document.getElementById('deletedAttributes').childNodes[j].childNodes[6].childNodes[0].childNodes[0].value.trim(),
                 //new
                 old_value_name: document.getElementById('deletedAttributes').childNodes[j].childNodes[8].childNodes[0].childNodes[0].value};
-
             mydeletedAttributes.push(att);
         }
         if (theSameNameAgain(myAttributes, mynewAttributes) == false) {
@@ -2797,10 +2476,8 @@ $(document).ready(function ()
             $("#editDeviceModalBody").hide();
             $('#editDeviceLoadingMsg').show();
             $('#editDeviceLoadingIcon').show();
-
             var service = $('#editSelectService').val();
             var servicePath = $('#editInputServicePathDevice').val();
-
             if ($('#selectProtocolDeviceM').val() === "ngsi w/MultiService") {
                 // servicePath value pre-processing
                 if (servicePath[0] !== "/" || servicePath === "")
@@ -2846,7 +2523,6 @@ $(document).ready(function ()
                     if (data["status"] === 'ko') {
                         console.log("Error editing Device type");
                         console.log(data);
-
                         $('#editDeviceLoadingMsg').hide();
                         $('#editDeviceLoadingIcon').hide();
                         $('#editDeviceOkMsg').hide();
@@ -2859,7 +2535,6 @@ $(document).ready(function ()
                         document.getElementById('addlistAttributesM').innerHTML = "";
                         document.getElementById('deletedAttributes').innerHTML = "";
                         currentEditId = "";
-
                         $('#inputNameDevice').val("");
                         $('#inputTypeDevice').val("");
                         //$('#selectKindDevice').val("");
@@ -2882,7 +2557,6 @@ $(document).ready(function ()
                         $('#editDeviceKoMsg').hide();
                         $('#editDeviceKoIcon').hide();
                         $('#editDeviceOkBtn').show();
-
                         $('#devicesTable').DataTable().destroy();
                         fetch_data(true);
                     } else {
@@ -2894,7 +2568,6 @@ $(document).ready(function ()
                     console.log("newattributes " + JSON.stringify(mynewAttributes));
                     console.log("attributes " + JSON.stringify(myAttributes));
                     console.log("deleteattributes " + JSON.stringify(mydeletedAttributes));
-
                     $('#editDeviceLoadingMsg').hide();
                     $('#editDeviceLoadingIcon').hide();
                     $('#editDeviceOkMsg').hide();
@@ -2908,8 +2581,6 @@ $(document).ready(function ()
             alert("Check the values of your device, make sure that data you entered are valid or those have not the same value name");
         }
     });
-
-
 //EDIT DEVICE CANCEL BUTTON 		
 
     $("#editDeviceCancelBtn").off("click");
@@ -2919,7 +2590,6 @@ $(document).ready(function ()
         document.getElementById('deletedAttributes').innerHTML = "";
         currentEditId = "";
     });
-
 //END EDIT DEVICE CANCEL BUTTON  	
 
 //ADD DEVICE CANCEL BUTTON 		
@@ -2950,15 +2620,11 @@ $(document).ready(function ()
         //  $('#addDeviceModal div.modalCell').show();
         //  $('#addDeviceModalFooter').show(); 
         document.getElementById('addlistAttributes').innerHTML = "";
-
         $('#selectSubnature').val("");
         $('#selectSubnature').trigger("change");
         $("#addNewStaticBtn").hide();
         removeStaticAttributes();
-
-
     });
-
 //END ADD DEVICE CANCEL BUTTON 		
 
 //KO RELATED BUTTONS
@@ -2967,25 +2633,21 @@ $(document).ready(function ()
         $("#addDeviceKoModal").modal('hide');
         $("#addDeviceModal").modal('show');
     });
-
     $("#addDeviceKoConfirmBtn").off("click");
     $("#addDeviceKoConfirmBtn").on('click', function () {
         $("#addDeviceKoModal").modal('hide');
         $("#addDeviceForm").trigger("reset");
     });
-
     $("#editDeviceKoBackBtn").off("click");
     $("#editDeviceKoBackBtn").on('click', function () {
         $("#editDeviceKoModal").modal('hide');
         $("#editDeviceModal").modal('show');
     });
-
     $("#editDeviceKoConfirmBtn").off("click");
     $("#editDeviceKoConfirmBtn").on('click', function () {
         $("#editDeviceKoModal").modal('hide');
         $("#editDeviceForm").trigger("reset");
     });
-
 //END KO RELATED BUTTONS	
 
 //START ISMOBILE PROPERTIES
@@ -2996,14 +2658,12 @@ $(document).ready(function ()
         else
             $("#positionMsgHint").hide();
     });
-
     $("#isMobileTickM").change(function () {
         if (this.checked)
             $("#positionMsgHintM").show();
         else
             $("#positionMsgHintM").hide();
     });
-
 //END ISMOBILE PROPERTIES
 
 //CONTEXTBROKER AND PROTOCOL RELATION FOR ADD DEVICE -SELECTOR 
@@ -3013,7 +2673,6 @@ $(document).ready(function ()
         var valCB = opt[index].getAttribute("my_data");
         var valkind = opt[index].getAttribute("data_kind");
         var valOrg = opt[index].getAttribute("data_org");
-
         if (valCB === 'ngsi') {
             document.getElementById("selectProtocolDevice").value = 'ngsi';
             document.getElementById("selectFormatDevice").value = 'json';
@@ -3036,11 +2695,9 @@ $(document).ready(function ()
 
         if (valOrg != null)
             $("#selectContextBrokerMsg").html($("#selectContextBrokerMsg").html() + " - Organization:" + valOrg);
-
         if (valkind == "external") {
             $("#addNewDeviceCheckExternalBtn").show();
             $("#addNewDeviceConfirmBtn").hide();
-
             //$('#inputTypeDevice').val("");
             //$("#inputTypeDevice").attr("disabled", true);
             $('#inputMacDevice').val("");
@@ -3061,14 +2718,12 @@ $(document).ready(function ()
             $("#addNewDeviceGenerateKeyBtn").attr("disabled", true);
             $('#addlistAttributes').html("");
             $("#addAttrBtn").attr("disabled", true);
-
             $("#externalContextBrokerMsg").css("color", "#337ab7");
             $("#externalContextBrokerMsg").html("You've selected a broker from an external environment, you need to check if your device is registered on this broker before adding it.");
             $("#externalContextBrokerMsg").show();
         } else {
             $("#addNewDeviceCheckExternalBtn").hide();
             $("#addNewDeviceConfirmBtn").show();
-
             $("#inputTypeDevice").attr("disabled", false);
             $("#inputMacDevice").attr("disabled", false);
             $("#inputProducerDevice").attr("disabled", false);
@@ -3080,9 +2735,7 @@ $(document).ready(function ()
             $("#selectModelDevice").attr("disabled", false);
             $("#addNewDeviceGenerateKeyBtn").attr("disabled", false);
             $("#addAttrBtn").attr("disabled", false);
-
             $("#externalContextBrokerMsg").hide();
-
         }
 
         checkEverything();
@@ -3128,7 +2781,6 @@ $(document).ready(function ()
         //checkAddMyDeviceConditions();
 
     });
-
 //END CONTEXTBROKER AND PROTOCOL RELATION FOR EDIT DEVICE -SELECTOR     
 
 //Validation of the name of the new owner during typing
@@ -3157,7 +2809,6 @@ $(document).ready(function ()
             }
         }
     });
-
 // DELEGATIONS
     function updateGroupList(ouname) {
         $.ajax({
@@ -3189,7 +2840,6 @@ $(document).ready(function ()
                     $.each(data['content'], function () {
                         $dropdown.append($("<option />").val(this).text(this));
                     });
-
                 }
             },
             error: function (data)
@@ -3263,18 +2913,14 @@ $(document).ready(function ()
 
     //populate group list with selected organization
     updateGroupList($("#newDelegationOrganization").val());
-
     //eventually update the group list
     $('#newDelegationOrganization').change(function () {
         $(this).find(":selected").each(function () {
             updateGroupList($(this).val());
         });
     });
-
     $('#newDelegation').val('');
-
     $('#newDelegation').off('input');
-
     $('#newDelegation').on('input', function (e)
     {
         if ($(this).val().trim() === '')
@@ -3287,7 +2933,6 @@ $(document).ready(function ()
             $('#newDelegatedMsg').css('color', 'white');
             $('#newDelegatedMsg').html('User can be delegated');
             $('#newDelegationConfirmBtn').removeClass('disabled');
-
             $('#delegationsTable tbody tr').each(function (i)
             {
                 if ($(this).attr('data-delegated').trim() === $('#newDelegation').val())
@@ -3299,11 +2944,9 @@ $(document).ready(function ()
             });
         }
     });
-
     $('#valuesTable thead').css("background", "rgba(0, 162, 211, 1)");
     $('#valuesTable thead').css("color", "white");
     $('#valuesTable thead').css("font-size", "1em");
-
     $('#valuesTable tbody tr').each(function (i) {
         if (i % 2 !== 0)
         {
@@ -3315,50 +2958,17 @@ $(document).ready(function ()
             $(this).find('td').eq(0).css("border-top", "none");
         }
     });
-
     $('#delegationsModal').on('hidden.bs.modal', function (e)
     {
         $(this).removeData();
     });
 
-
-    /*	   
-     $(function(){
-     // $('#value_type')[0].selectedIndex = 0;
-     $('#value_type').change(function(){
-     var index = $(this)[0].selectedIndex;
-     //console.log(index);
-     var opt = $(this)[0].options;
-     //console.log(opt);
-     gb_valVT = opt[index].value;
-     gb_valVU = opt[index].getAttribute("my_data");
-     $('#value_unit')[0].selectedIndex = index;
-     //console.log("Value Type= " + gb_valVT +  " Value Unit= " + gb_valVU);
-     });    
-     });
-     */
-
-//$(document).on('change', '#value_type', function() {
-//$("#value_type").change(function() {
-//	var index = document.getElementById("value_type").selectedIndex;
-//	console.log(index);	
-//	var opt = document.getElementById("value_type").options;
-//	var gb_valVU = opt[index].getAttribute("my_data");
-//	document.getElementById("value_unit").value = gb_valVU ;
-//	gb_valVT = opt[index].value;
-//	console.log("Value Type= " + gb_valVT +  " Value Unit= " + gb_valVU);	
-
-//});
-
     $("#addNewDeviceCheckExternalBtn").on('click', function () {
 
         $("#addDeviceCheckExternalLoadingIcon").show();
-
         var contextbroker = $('#selectContextBroker').val();
-
         var deviceService = $('#selectService').val();
         var deviceServicePath = $('#inputServicePathDevice').val();
-
         if ($('#selectProtocolDevice').val() === "ngsi w/MultiService") {
             // servicePath value pre-processing
             if (deviceServicePath[0] !== "/" || deviceServicePath === "")
@@ -3379,7 +2989,7 @@ $(document).ready(function ()
             datatype: 'json',
             success: function (data)
             {
-                var content = data["data"];//TOTEST
+                var content = data["data"]; //TOTEST
                 for (let i = 0; i < content.length; i++) {
                     if (content[i].name == contextbroker) {
                         var ip = content[i].ip;
@@ -3413,10 +3023,8 @@ $(document).ready(function ()
                 console.log("faliure" + JSON.stringify(data));
             }
         });
-
     });
-
-});  // end of ready-state
+}); // end of ready-state
 function activateStub(cb, deviceName, ipa, protocol, user, accesslink, accessport, model, edge_type, edge_uri, path, apikey, kind, latid, longi, deviceService, deviceServicePath)
 {
     //console.log("log "+ cb + " "+ipa+" "+accesslink+" "+accessport+" "+model+ " api "+ apikey + " organization "+ organization + " kind "+kind);
@@ -3428,13 +3036,10 @@ function activateStub(cb, deviceName, ipa, protocol, user, accesslink, accesspor
     }
 
     data += "&service=" + deviceService + "&service_path=" + deviceServicePath;
-
     var service = _serviceIP + "/api/" + protocol;
-
     //console.log(data);
     //console.log(service);
     var xhr = ajaxRequest();
-
     xhr.addEventListener("readystatechange", function () {
         if (this.readyState === 4 && this.status == 200) {
             //console.log("RESPONSE TEXT"+this.responseText);
@@ -3443,7 +3048,6 @@ function activateStub(cb, deviceName, ipa, protocol, user, accesslink, accesspor
             //console.log(resp.message);
 
             $("#addDeviceCheckExternalLoadingIcon").hide();
-
             if (resp.message.indexOf("not found") == 0) {
                 confirm("The device you entered does not exist on the Context Broker " + cb + ", modify the device's name and try again");
             } else if (resp.message.indexOf("not reacheable") == 0) {
@@ -3495,16 +3099,12 @@ function activateStub(cb, deviceName, ipa, protocol, user, accesslink, accesspor
                 }
                 $("#inputLongitudeDevice").attr("disabled", false);
                 drawMap1(msg.latitude, msg.longitude, 2);
-
                 $("#selectModelDevice").attr("disabled", false);
                 $("#selectModelDevice").val(msg.model);
                 //$("#selectProtocolDevice").val(msg.protocol);
                 $("#selectKindDevice").val(msg.kind);
-
                 $("#addNewDeviceGenerateKeyBtn").attr("disabled", false);
                 $("#addAttrBtn").attr("disabled", false);
-
-
                 myattributes = msg.deviceValues;
                 content = "";
                 k = 0;
@@ -3527,8 +3127,6 @@ function activateStub(cb, deviceName, ipa, protocol, user, accesslink, accesspor
              }, 2000);*/
         }
     });
-
-
     xhr.open("POST", service);
     xhr.setRequestHeader("Content-Type", "application/x-www-form-urlencoded");
     /*	xhr.setRequestHeader("Content-Type", "text/plain;charset=UTF-8");*/
@@ -3550,7 +3148,6 @@ function changeVisibility(id, contextbroker, dev_organization, visibility, uri, 
         $("#visID").html("Visibility - Private");
         document.getElementById('newVisibilityPrivateBtn').style.visibility = 'hidden';
         document.getElementById('newVisibilityPublicBtn').style.visibility = 'show';
-
     } else //(visibility=='MyOwnPublic'){
     {
         newVisibility = 'private';
@@ -3594,7 +3191,6 @@ function changeVisibility(id, contextbroker, dev_organization, visibility, uri, 
                     //document.getElementById('newVisibilityPrivateBtn').style.visibility = 'show';
 
                     $('#newVisibilityPublicBtn').addClass('disabled');
-
                     setTimeout(function ()
                     {
                         $('#devicesTable').DataTable().destroy();
@@ -3606,7 +3202,6 @@ function changeVisibility(id, contextbroker, dev_organization, visibility, uri, 
                     $('#newVisibilityResultMsg').show();
                     $('#newVisibilityResultMsg').html('Error setting new visibility');
                     $('#newVisibilityPublicBtn').addClass('disabled');
-
                     setTimeout(function ()
                     {
                         $('#newVisibilityPublicBtn').removeClass('disabled');
@@ -3622,7 +3217,6 @@ function changeVisibility(id, contextbroker, dev_organization, visibility, uri, 
                 $('#newVisibilityResultMsg').show();
                 $('#newVisibilityResultMsg').html('Error setting new visibility');
                 $('#newVisibilityPublicBtn').addClass('disabled');
-
                 setTimeout(function ()
                 {
                     $('#newVisibilityPublicBtn').removeClass('disabled');
@@ -3632,8 +3226,6 @@ function changeVisibility(id, contextbroker, dev_organization, visibility, uri, 
             }
         });
     });
-
-
 // To Change from Private to Public 	
     //$('#newVisibilityPrivateBtn').off("click");
     //$('#newVisibilityPrivateBtn').click(function(e){
@@ -3677,7 +3269,6 @@ function changeVisibility(id, contextbroker, dev_organization, visibility, uri, 
                     $('#newVisibilityResultMsg').show();
                     $('#newVisibilityResultMsg').html('Error setting new visibility');
                     $('#newVisibilityPrivateBtn').addClass('disabled');
-
                     setTimeout(function ()
                     {
                         $('#newVisibilityPrivateBtn').removeClass('disabled');
@@ -3693,7 +3284,6 @@ function changeVisibility(id, contextbroker, dev_organization, visibility, uri, 
                 $('#newVisibilityResultMsg').show();
                 $('#newVisibilityResultMsg').html('Error setting new visibility');
                 $('#newVisibilityPrivateBtn').addClass('disabled');
-
                 setTimeout(function ()
                 {
                     $('#newVisibilityPrivateBtn').removeClass('disabled');
@@ -3703,7 +3293,6 @@ function changeVisibility(id, contextbroker, dev_organization, visibility, uri, 
             }
         });
     });
-
     //$('#newOwnershipConfirmBtn').off("click");
     //$('#newOwnershipConfirmBtn').click(function(e){	
     $(document).on("click", "#newOwnershipConfirmBtn", function (event) {
@@ -3736,8 +3325,6 @@ function changeVisibility(id, contextbroker, dev_organization, visibility, uri, 
                     $('#newOwnershipResultMsg').show();
                     $('#newOwnershipResultMsg').html('New ownership set correctly');
                     $('#newOwnershipConfirmBtn').addClass('disabled');
-
-
                     setTimeout(function ()
                     {
                         $('#devicesTable').DataTable().destroy();
@@ -3749,7 +3336,6 @@ function changeVisibility(id, contextbroker, dev_organization, visibility, uri, 
                     $('#newOwner').addClass('disabled');
                     $('#newOwnershipResultMsg').html('Error setting new ownership: please try again');
                     $('#newOwnershipConfirmBtn').addClass('disabled');
-
                     setTimeout(function ()
                     {
                         $('#newOwner').removeClass('disabled');
@@ -3765,7 +3351,6 @@ function changeVisibility(id, contextbroker, dev_organization, visibility, uri, 
                 $('#newOwner').addClass('disabled');
                 $('#newOwnershipResultMsg').html('Error setting new ownership: please try again');
                 $('#newOwnershipConfirmBtn').addClass('disabled');
-
                 setTimeout(function ()
                 {
                     $('#newOwner').removeClass('disabled');
@@ -3775,9 +3360,6 @@ function changeVisibility(id, contextbroker, dev_organization, visibility, uri, 
             }
         });
     });
-
-
-
     $("#delegationsCancelBtn").off("click");
     $("#delegationsCancelBtn").on('click', function () {
         $('#newDelegation').val("");
@@ -3789,7 +3371,6 @@ function changeVisibility(id, contextbroker, dev_organization, visibility, uri, 
         location.reload();
         $('#delegationsModal').modal('hide');
     });
-
 //	} //end of tab visibilityCnt
 
 
@@ -3827,8 +3408,17 @@ function changeVisibility(id, contextbroker, dev_organization, visibility, uri, 
                 for (var i = 0; i < delegations.length; i++)
                 {
                     if ((delegations[i].userDelegated != "ANONYMOUS") && (delegations[i].userDelegated != null)) {
-                        $('#delegationsTable tbody').append('<tr class="delegationTableRow" data-delegationId="' + delegations[i].delegationId + '" data-delegated="' + delegations[i].userDelegated + '"><td class="delegatedName">' + delegations[i].userDelegated + '</td><td><i class="fa fa-remove removeDelegationBtn"></i></td></tr>');
-
+                        $('#delegationsTable tbody').append(
+                                '<tr class="delegationTableRow" data-delegationId="' +
+                                delegations[i].delegationId +
+                                '" data-delegated="' +
+                                delegations[i].userDelegated +
+                                '"><td class="delegatedName">' +
+                                delegations[i].userDelegated +
+                                '</td><td class="kind">' +
+                                delegations[i].kind +
+                                '</td><td><i class="fa fa-remove removeDelegationBtn"></i></td></tr>'
+                                );
                     } else if (delegations[i].groupDelegated != null) {
 
                         //extract cn and ou
@@ -3847,8 +3437,19 @@ function changeVisibility(id, contextbroker, dev_organization, visibility, uri, 
                         }
 
                         var DN = ou + "," + gr;
-
-                        $('#delegationsTableGroup tbody').append('<tr class="delegationTableRowGroup" data-delegationId="' + delegations[i].delegationId + '" data-delegated="' + ou + "," + gr + '"><td class="delegatedName">' + DN + '</td><td><i class="fa fa-remove removeDelegationBtnGroup"></i></td></tr>');
+                        $('#delegationsTableGroup tbody').append(
+                                '<tr class="delegationTableRowGroup" data-delegationId="' +
+                                delegations[i].delegationId +
+                                '" data-delegated="' +
+                                ou +
+                                ',' +
+                                gr +
+                                '"><td class="delegatedName">' +
+                                DN +
+                                '</td><td class="kind">' +
+                                delegations[i].kind +
+                                '</td><td><i class="fa fa-remove removeDelegationBtnGroup"></i></td></tr>'
+                                );
                     }
 
                 }
@@ -3887,7 +3488,6 @@ function changeVisibility(id, contextbroker, dev_organization, visibility, uri, 
                         }
                     });
                 });
-
                 $('#delegationsTableGroup tbody').on("click", "i.removeDelegationBtnGroup", function () {
                     var rowToRemove = $(this).parents('tr');
                     $.ajax({
@@ -3922,15 +3522,10 @@ function changeVisibility(id, contextbroker, dev_organization, visibility, uri, 
                         }
                     });
                 });
-
-
-
-
             } else
             {
                 // hangling situation of error
                 console.log(json_encode(data));
-
             }
 
         },
@@ -3939,12 +3534,10 @@ function changeVisibility(id, contextbroker, dev_organization, visibility, uri, 
             //TBD  insert a message of error
         }
     });
-
-
-
     //listen about the confimation
     $(document).on("click", "#newDelegationConfirmBtn", function (event) {
         var newDelegation = document.getElementById('newDelegation').value;
+        var kind = document.getElementById('newDelegationKind').value;
         newk1 = generateUUID();
         newk2 = generateUUID();
         $.ajax({
@@ -3958,6 +3551,7 @@ function changeVisibility(id, contextbroker, dev_organization, visibility, uri, 
                         delegated_user: newDelegation,
                         k1: newk1,
                         k2: newk2,
+                        kind: kind,
                         service: service,
                         servicePath: servicePath
                     },
@@ -3968,15 +3562,22 @@ function changeVisibility(id, contextbroker, dev_organization, visibility, uri, 
             {
                 if (data["status"] === 'ok')
                 {
-                    $('#delegationsTable tbody').append('<tr class="delegationTableRow" data-delegationId="' + data["delegationId"] + '" data-delegated="' + $('#newDelegation').val() + '"><td class="delegatedName">' + $('#newDelegation').val() + '</td><td><i class="fa fa-remove removeDelegationBtn"></i></td></tr>');
-
-
+                    $('#delegationsTable tbody').append(
+                            '<tr class="delegationTableRow" data-delegationId="' +
+                            data['delegationId'] +
+                            '" data-delegated="' +
+                            $('#newDelegation').val() +
+                            '"><td class="delegatedName">' +
+                            $('#newDelegation').val() +
+                            '</td><td class="kind">' +
+                            data['kind'] +
+                            '</td><td><i class="fa fa-remove removeDelegationBtn"></i></td></tr>'
+                            );
                     $('#newDelegation').val('');
                     $('#newDelegation').addClass('disabled');
                     $('#newDelegatedMsg').css('color', 'white');
                     $('#newDelegatedMsg').html('New delegation added correctly');
                     $('#newDelegationConfirmBtn').addClass('disabled');
-
                     setTimeout(function ()
                     {
                         $('#newDelegation').removeClass('disabled');
@@ -3986,14 +3587,11 @@ function changeVisibility(id, contextbroker, dev_organization, visibility, uri, 
                 } else
                 {
                     var errorMsg = null;
-
-
                     $('#newDelegation').val('');
                     $('#newDelegation').addClass('disabled');
                     $('#newDelegatedMsg').css('color', '#f3cf58');
                     $('#newDelegatedMsg').html(data["msg"]);
                     $('#newDelegationConfirmBtn').addClass('disabled');
-
                     setTimeout(function ()
                     {
                         $('#newDelegation').removeClass('disabled');
@@ -4010,7 +3608,6 @@ function changeVisibility(id, contextbroker, dev_organization, visibility, uri, 
                 $('#newDelegatedMsg').css('color', '#f3cf58');
                 $('#newDelegatedMsg').html(errorMsg);
                 $('#newDelegationConfirmBtn').addClass('disabled');
-
                 setTimeout(function ()
                 {
                     $('#newDelegation').removeClass('disabled');
@@ -4019,8 +3616,7 @@ function changeVisibility(id, contextbroker, dev_organization, visibility, uri, 
                 }, 3000);
             }
         });
-
-    });//single delegation -end
+    }); //single delegation -end
 
     //group delegation -start------------------------------------------------------------------------------------------------------------
     $(document).on("click", "#newDelegationConfirmBtnGroup", function (event) {
@@ -4031,7 +3627,7 @@ function changeVisibility(id, contextbroker, dev_organization, visibility, uri, 
         }
         var e2 = document.getElementById("newDelegationOrganization");
         delegatedDN = delegatedDN + "ou=" + e2.options[e2.selectedIndex].text;
-
+        var kind = document.getElementById('newDelegationKindGroup').value;
         newk1 = generateUUID();
         newk2 = generateUUID();
         $.ajax({
@@ -4045,6 +3641,7 @@ function changeVisibility(id, contextbroker, dev_organization, visibility, uri, 
                         delegated_group: delegatedDN,
                         k1: newk1,
                         k2: newk2,
+                        kind: kind,
                         service: service,
                         servicePath: servicePath
                     },
@@ -4060,10 +3657,19 @@ function changeVisibility(id, contextbroker, dev_organization, visibility, uri, 
                         toadd = toadd + "," + $('#newDelegationGroup').val();
                     }
 
-                    $('#delegationsTableGroup tbody').append('<tr class="delegationTableRowGroup" data-delegationId="' + data["delegationId"] + '" data-delegated="' + toadd + '"><td class="delegatedNameGroup">' + toadd + '</td><td><i class="fa fa-remove removeDelegationBtnGroup"></i></td></tr>');
+                    $('#delegationsTableGroup tbody').append(
+                            '<tr class="delegationTableRowGroup" data-delegationId="' +
+                            data['delegationId'] +
+                            '" data-delegated="' +
+                            toadd +
+                            '"><td class="delegatedNameGroup">' +
+                            toadd +
+                            '</td><td class="kind">' +
+                            data['kind'] +
+                            '</td><td><i class="fa fa-remove removeDelegationBtnGroup"></i></td></tr>'
+                            );
                     $('#newDelegatedMsgGroup').css('color', 'white');
                     $('#newDelegatedMsgGroup').html('New delegation added correctly');
-
                     setTimeout(function ()
                     {
                         $('#newDelegatedMsgGroup').css('color', '#f3cf58');
@@ -4074,7 +3680,6 @@ function changeVisibility(id, contextbroker, dev_organization, visibility, uri, 
                     var errorMsg = null;
                     $('#newDelegatedMsgGroup').css('color', '#f3cf58');
                     $('#newDelegatedMsgGroup').html(data["msg"]);
-
                     setTimeout(function ()
                     {
                         $('#newDelegationGroup').removeClass('disabled');
@@ -4089,7 +3694,6 @@ function changeVisibility(id, contextbroker, dev_organization, visibility, uri, 
                 var errorMsg = "Error calling internal API";
                 $('#newDelegatedMsgGroup').css('color', '#f3cf58');
                 $('#newDelegatedMsgGroup').html(errorMsg);
-
                 setTimeout(function ()
                 {
                     $('#newDelegatedMsgGroup').css('color', '#f3cf58');
@@ -4097,7 +3701,7 @@ function changeVisibility(id, contextbroker, dev_organization, visibility, uri, 
                 }, 2000);
             }
         });
-    });     //group delegation -end
+    }); //group delegation -end
 
 }
 
@@ -4108,7 +3712,6 @@ function changeVisibility(id, contextbroker, dev_organization, visibility, uri, 
 
 function drawMap1(latitude, longitude, flag) {
     var marker;
-
     if (typeof map1 != 'undefined' && map1) {
         map1.remove();
         map1 = null;
@@ -4152,8 +3755,6 @@ function drawMap1(latitude, longitude, flag) {
                 marker = new L.marker([lat, lng]).addTo(map1).bindPopup(lat + ',' + lng);
             }
         });
-
-
     } else if (flag == 1) {
 
         map1 = L.map('editLatLong').setView([latitude, longitude], 10);
@@ -4166,9 +3767,7 @@ function drawMap1(latitude, longitude, flag) {
         setTimeout(function () {
             map1.invalidateSize()
         }, 400);
-
         marker = new L.marker([latitude, longitude]).addTo(map1).bindPopup(longitude + ',' + longitude);
-
         map1.on("click", function (e) {
 
             //console.log($('#inputLatitudeDevice').is(':disabled'));
@@ -4193,7 +3792,6 @@ function drawMap1(latitude, longitude, flag) {
                 marker = new L.marker([lat, lng]).addTo(map1).bindPopup(lat + ',' + lng);
             }
         });
-
     } else if (flag == 2) {
 
         map1 = L.map('addLatLong').setView([latitude, longitude], 10);
@@ -4206,9 +3804,7 @@ function drawMap1(latitude, longitude, flag) {
         setTimeout(function () {
             map1.invalidateSize()
         }, 400);
-
         marker = new L.marker([latitude, longitude]).addTo(map1).bindPopup(longitude + ',' + longitude);
-
         map1.on("click", function (e) {
 
             //console.log($('#inputLatitudeDevice').is(':disabled'));
@@ -4233,7 +3829,6 @@ function drawMap1(latitude, longitude, flag) {
                 marker = new L.marker([lat, lng]).addTo(map1).bindPopup(lat + ',' + lng);
             }
         });
-
     } else if (flag == 3) {
 
 
@@ -4247,9 +3842,7 @@ function drawMap1(latitude, longitude, flag) {
             map1.invalidateSize()
         }, 400);
         marker = L.marker([latitude, longitude]).addTo(map1).bindPopup(latitude + ',' + longitude);
-
         map1.off("click");
-
     } else if (flag == 4) {
 
 
@@ -4276,14 +3869,9 @@ function drawMap1(latitude, longitude, flag) {
             console.log(lat + ' - ' + lng);
             document.getElementById('inputLatitudeDeviceValue').value = lat;
             document.getElementById('inputLongitudeDeviceValue').value = lng;
-
-
-
         }
 
         );
-
-
     }
 }
 
@@ -4298,12 +3886,10 @@ function drawMap(latitude, longitude, id, devicetype, kind, divName) {
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
             attribution: '&copy; <a href="https://openstreetmap.org/copyright">OpenStreetMap</a> contributors'
         }).addTo(map);
-
         window.node_input_map = map;
     }
 
     map.setView([latitude, longitude], 10);
-
     if (typeof theMarker != 'undefined') {
         map.removeLayer(theMarker);
     }
@@ -4317,7 +3903,6 @@ function drawMap(latitude, longitude, id, devicetype, kind, divName) {
 function drawMapAll(data, divName) {
     var latitude = 43.7800;
     var longitude = 11.2300;
-
     if (typeof map_all === 'undefined' || !map_all) {
         //map_all = L.map(divName).setView([latitude,longitude], 10);
         var centerMapArr = gpsCentreLatLng.split(",", 2);
@@ -4328,7 +3913,6 @@ function drawMapAll(data, divName) {
             attribution: '&copy; <a href="https://openstreetmap.org/copyright">OpenStreetMap</a> contributors'
         }).addTo(map_all);
         window.node_input_map = map_all;
-
         /**************************Fatima-start******************************/
         /*var blueIcon = L.icon({
          iconUrl: 'data:image/svg+xml;utf-8, \
@@ -4350,7 +3934,6 @@ function drawMapAll(data, divName) {
         /*************Fatima2-start*************/
         green_markersGroup = undefined;
         marker_selection = [];
-
         redIcon = new L.Icon({
 
             iconUrl: '../img/markerPrivate.png',
@@ -4359,7 +3942,6 @@ function drawMapAll(data, divName) {
             popupAnchor: new L.Point(0, -18)
 
         });
-
         blueIcon = new L.Icon({
 
             iconUrl: '../img/markerPublic.png',
@@ -4381,7 +3963,6 @@ function drawMapAll(data, divName) {
         var mapLayers = {};
         drawnItems = new L.FeatureGroup();
         map_all.addLayer(drawnItems);
-
         var editControl = new L.Control.Draw({
             draw: false,
             edit: {
@@ -4394,7 +3975,6 @@ function drawMapAll(data, divName) {
             }
         });
         map_all.addControl(editControl);
-
         drawControl = new L.Control.Draw({
             //Fatima2-add-line
             remove: false,
@@ -4412,13 +3992,11 @@ function drawMapAll(data, divName) {
             }
         });
         map_all.addControl(drawControl);
-
         L.control.layers(mapLayers, {
             'drawlayer': drawnItems
         }, {
             collapsed: true
         }).addTo(map_all);
-
         map_all.on(L.Draw.Event.CREATED, function (e) {
             var fence = e.layer;
             if (drawnItems.hasLayer(fence) == false) {
@@ -4428,7 +4006,6 @@ function drawMapAll(data, divName) {
             drawControl.remove();
             TYPE = e.layerType;
             layer = e.layer;
-
             var resultsOut = drawSelection(layer, TYPE, data);
             $('#addMap1').modal('hide');
             //Fatima2-moveAndupdate-1-line
@@ -4439,7 +4016,6 @@ function drawMapAll(data, divName) {
             //      //console.log(resultsOut);
 
         });
-
         map_all.on('draw:edited', function (e) {
             var fences = e.layers;
             fences.eachLayer(function (fence) {
@@ -4458,11 +4034,7 @@ function drawMapAll(data, divName) {
                 //console.log (JSON.stringify(resultsOut));
                 fetch_data(true, JSON.stringify(resultsOut));
             });
-
-
-
         });
-
         /******************Fatima-start*************************/
         /*map_all.on('draw:deleted', function(e) {
          drawControl.addTo(map_all);
@@ -4481,7 +4053,6 @@ function drawMapAll(data, divName) {
                                 .addListener(controlDiv, 'click', L.DomEvent.preventDefault)
                                 .addListener(controlDiv, 'click', function () {
                                     drawnItems.clearLayers();
-
                                     if (typeof green_markersGroup != 'undefined') {
                                         map_all.removeLayer(green_markersGroup);
                                         green_markersGroup = undefined;
@@ -4493,9 +4064,7 @@ function drawMapAll(data, divName) {
                                     }
 
                                     drawControl.addTo(map_all);
-
                                 });
-
                         var controlUI = L.DomUtil.create('a', 'leaflet-draw-edit-remove', controlDiv);
                         controlUI.title = 'Delete';
                         controlUI.href = '#';
@@ -4506,7 +4075,6 @@ function drawMapAll(data, divName) {
                 });
         var removeAllControl = new L.Control.RemoveAll();
         map_all.addControl(removeAllControl);
-
         /******************Fatima-end***************************/
 
 
@@ -4561,7 +4129,6 @@ function colorSelectedMarkers(selections, greenIcon) {
     green_markersGroup = L.layerGroup(green_marker_array);
     green_markersGroup.addTo(map_all);
     marker_selection = selections;
-
 }
 
 /**********************Fatima-end******************************/
@@ -4574,29 +4141,21 @@ function drawSelection(layer, type, data) {
 
         case 'circle':
             circles = {};
-
             drawnItems.eachLayer(function (layer) {
                 circles[layer.nodeID] = layer.toGeoJSON();
                 circles[layer.nodeID].properties.radius = Math.round(layer.getRadius()) / 1000;
             });
-
-
             var lat_map = (circles[layer.nodeID].geometry.coordinates[1]);
             var long_map = (circles[layer.nodeID].geometry.coordinates[0]);
             var center_latlong = new L.LatLng(lat_map, long_map);
             var rad_map = (circles[layer.nodeID].properties.radius);
-
-
             for (var deviceTocheck in data) {
 
 
                 var deviceLatLng = new L.LatLng(Number(data[deviceTocheck]["latitude"]), Number(data[deviceTocheck]["longitude"]));
-
-
                 if (Math.abs(center_latlong.distanceTo(deviceLatLng) / 1000) <= rad_map) {
 
                     resultsOut.push(data[deviceTocheck]);
-
                 }
             }
 
@@ -4608,12 +4167,10 @@ function drawSelection(layer, type, data) {
 
                 //Ray Casting algorithm for checking if a point lies inside of a polygon
                 var x = Number(data[deviceTocheck]["latitude"]), y = Number(data[deviceTocheck]["longitude"]);
-
                 var inside = false;
                 for (var i = 0, j = polyPoints.length - 1; i < polyPoints.length; j = i++) {
                     var xi = polyPoints[i].lat, yi = polyPoints[i].lng;
                     var xj = polyPoints[j].lat, yj = polyPoints[j].lng;
-
                     var intersect = ((yi > y) != (yj > y)) && (x < (xj - xi) * (y - yi) / (yj - yi) + xi);
                     if (intersect) {
                         inside = !inside;
@@ -4623,36 +4180,28 @@ function drawSelection(layer, type, data) {
                 if (inside) {
 
                     resultsOut.push(data[deviceTocheck]);
-
                 }
             }
             break;
         case 'marker':
 
             var markerPoint = layer.getLatLng();
-
             for (var deviceTocheck in data) {
 
                 var deviceLatLng = new L.LatLng(Number(data[deviceTocheck]["latitude"]), Number(data[deviceTocheck]["longitude"]));
-
-
                 if (Math.abs(markerPoint.distanceTo(deviceLatLng) / 1000) <= 1) { //1 km 
 
                     resultsOut.push(data[deviceTocheck]);
-
                 }
             }
             break;
         case 'polyline':
 
             var polyVerts = layer._latlngs;
-
             for (var deviceTocheck in data) {
 
                 isclose = false;
-
                 var deviceLatLng = new L.LatLng(Number(data[deviceTocheck]["latitude"]), Number(data[deviceTocheck]["longitude"]));
-
                 for (var vi = 0, vl = polyVerts.length; vi < vl; vi++) {
                     var d = polyVerts[vi].distanceTo(deviceLatLng);
                     if (d / 1000 <= 1) {
@@ -4666,8 +4215,6 @@ function drawSelection(layer, type, data) {
                 }
             }
             break;
-
-
     }
 
     return resultsOut;
@@ -4708,17 +4255,14 @@ function UserKey()
 {
     var message = null;
     var pattern = /^[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}$/;
-
     var value1 = document.getElementById("KeyOneDeviceUser").value;
     var value2 = document.getElementById("KeyTwoDeviceUser").value;
-
     if ((value1 === '') && (value2 === ''))
     {
         message = 'Specify Key for the selected option';
         document.getElementById("addMyNewDeviceConfirmBtn").disabled = true;
         $("#KeyOneDeviceUserMsg").css("color", "red");
         $("#KeyTwoDeviceUserMsg").css("color", "red");
-
     } else if (!pattern.test(value1) || !pattern.test(value2))
     {
         message = 'The Key should contain at least one special character and a number';

@@ -261,10 +261,11 @@ function format_result($draw, $number_all_row, $number_filter_row, $data, $msg, 
         "log" => $log,
         "status" => $status
     );
+
     return $output;
 }
 
-function get_searchPanes_CB($data, $param) {
+function get_searchPanes_CB($data, $param, $total) {
     if ($param == 'contextbroker') {
         $searchPanes = array("options" => array("contextbroker" => array()));
         $cb = array();
@@ -273,10 +274,12 @@ function get_searchPanes_CB($data, $param) {
             array_push($cb, $value["contextbroker"]);
         }
         $occur = array_count_values($cb);
+        $occur_tot = array_count_values($total);
+        // echo json_decode($occur_tot);
 
         foreach (array_keys($occur) as $value) {
 
-            array_push($searchPanes["options"]["contextbroker"], array("label" => $value, "total" => $occur[$value], "value" => $value, "count" => $occur[$value]));
+            array_push($searchPanes["options"]["contextbroker"], array("label" => $value, "total" => $occur_tot[$value], "value" => $value, "count" => $occur[$value]));
         }
     } else if ($param == 'rule') {
         $searchPanes = array("options" => array("mode" => array()));
@@ -284,17 +287,14 @@ function get_searchPanes_CB($data, $param) {
 
         foreach ($data as $value) {
             array_push($rul, $value["mode"]);
-            
         }
-        //echo  json_encode($rul);
         $occur = array_count_values($rul);
-        //echo json_encode($occur);
+
         foreach (array_keys($occur) as $value) {
             if ($value == 'not active') {
-                array_push($searchPanes["options"]["mode"], array("label" => 'not active', "total" => $occur[$value], "value" => '0', "count" => $occur[$value]));
-            }
-            else {
-                array_push($searchPanes["options"]["mode"], array("label" => 'active', "total" => $occur[$value], "value" => '1', "count" => $occur[$value]));
+                array_push($searchPanes["options"]["mode"], array("label" => 'not active', "total" => $total['not active'], "value" => '0', "count" => $occur[$value]));
+            } else {
+                array_push($searchPanes["options"]["mode"], array("label" => 'active', "total" => $total['active'], "value" => '1', "count" => $occur[$value]));
             }
         }
     }
@@ -320,52 +320,49 @@ function format_result_serverside($draw, $number_all_row, $number_filter_row, $d
 }
 
 function create_datatable_data($link, $request, $query, $where) {
-    $check_blanket=false;
+    $check_blanket = false;
     $columns = $request["columns"];
-    if(isset($request["searchPanes"]["mode"]) ){
-        $query .= ' WHERE (mode  =' . $request["searchPanes"]["mode"][0].')';
-        
+    if (isset($request["searchPanes"]["mode"])) {
+        $query .= ' WHERE (mode  =' . $request["searchPanes"]["mode"][0] . ')';
     }
-    
-    if(isset($request["searchPanes"]["contextbroker"]) ){
-        $query .= ' WHERE (contextBroker  ="' . $request["searchPanes"]["contextbroker"][0].'")';
-        
+
+    if (isset($request["searchPanes"]["contextbroker"])) {
+        $query .= ' WHERE (contextBroker  ="' . $request["searchPanes"]["contextbroker"][0] . '")';
     }
-    
-    if (isset($request["search"]["value"]) && $request["search"]["value"]!='') {
-        if(strpos($query, 'WHERE')==false){
-        $query .= ' WHERE ';
-                }else{
-                     $query .= ' AND (';
-                     $check_blanket=true;
-                     
-                }
-        
+
+    if (isset($request["search"]["value"]) && $request["search"]["value"] != '') {
+        if (strpos($query, 'WHERE') == false) {
+            $query .= ' WHERE ';
+        } else {
+            $query .= ' AND (';
+            $check_blanket = true;
+        }
+
         if ($where != "")
             $query .= $where . ' AND (';
 
         foreach ($columns as $col) {
-            if (!in_array($col["name"], $request["no_columns"]) )
+            if (!in_array($col["name"], $request["no_columns"]))
                 $query .= " " . $col["name"] . ' LIKE "%' . $request["search"]["value"] . '%"  OR';
         }
-       
+
         $query = substr($query, 0, -1);
         $query = substr($query, 0, -1);
         if ($where != "")
             $query .= ') ';
-        
-        if($check_blanket==true){
-             $query .= ') ';
+
+        if ($check_blanket == true) {
+            $query .= ') ';
         }
-        
     }
 
     if (isset($request["order"])) {
         $query .= ' ORDER BY ' . $columns[$request['order']['0']['column']]['name'] . ' ' . $request['order']['0']['dir'] . '	';
     }
-       
-  // echo $query;
+
+    // echo $query;
     $result = mysqli_query($link, $query);
+    $GLOBALS['DataTableQuery']=$query;
     return $result;
 }
 
@@ -407,8 +404,8 @@ function registerCertificatePrivateKey($link, $cb, $deviceId, $model, $path, &$r
 
         $row = mysqli_fetch_assoc($res);
         if ($row["name"] == $model) {
-            $result["msg"] .= "\n the model $model is of type authenticated";
-            $result["log"] .= "\n the model $model is of type authenticated";
+            $result["msg"] .= "\n the model $model is of type authenticated (registerCertificatePrivateKey() )";
+            $result["log"] .= "\n the model $model is of type authenticated. (registerCertificatePrivateKey() )";
 
             $cmd1 = "$path/generate-device-keys.sh $cb/$deviceId?" . $username . " $deviceId $path 2>&1";
             $output = shell_exec($cmd1);
@@ -679,7 +676,7 @@ function registerOwnerShipObject($msg, $token, $object, &$result) {
     }
 }
 
-function delegateDeviceValue($elementId, $contextbroker, $value_name, $user, $userdelegated, $groupdelegated, $token, $k1, $k2, &$result) {
+function delegateDeviceValue($elementId, $contextbroker, $value_name, $user, $userdelegated, $groupdelegated, $token, $k1, $k2, &$result, $kind="READ_ACCESS") {
     $msg["elementId"] = $elementId;
     if ($value_name !== NULL) {//delegate a sensor scenario
         $msg["variableName"] = $value_name;
@@ -698,6 +695,7 @@ function delegateDeviceValue($elementId, $contextbroker, $value_name, $user, $us
         $msg["delegationDetails"]["k1"] = $k1;
         $msg["delegationDetails"]["k2"] = $k2;
     }
+    $msg["kind"] = $kind;
 
     try {
         $url = $GLOBALS["delegationURI"] . "datamanager/api/v1/username/" . urlencode($user) . "/delegation?accessToken=" . $token .
@@ -721,6 +719,7 @@ function delegateDeviceValue($elementId, $contextbroker, $value_name, $user, $us
             $elem = json_decode($local_result);
             $result["status"] = 'ok';
             $result["delegationId"] = $elem->id;
+            $result["kind"] = $kind;
 
             $result["msg"] = "\n the registration of the delegation succeded";
             $result["log"] .= "\n the registration of the delegation succeded" . $url . " result " . $local_result . " msg " .
@@ -839,14 +838,40 @@ function getUserDelegatedDevice($token, $user, $type, &$result) {
     }
     if (strpos($http_response_header[0], '200') == true || strpos($http_response_header[0], '204') == true) {
         $lists = json_decode($local_result);
+        $kind = ($user == "ANONYMOUS" ? 'anonymous' : 'specific');
         for ($i = 0; $i < count($lists); $i++) {
             if (isset($lists[$i]->elementType) && ($lists[$i]->elementType == "ServiceURI" || $lists[$i]->elementType == "IOTID")) {
                 $a = $lists[$i]->elementId;
-                if (isset($lists[$i]->delegationDetails)) {
-                    $delegationDetails = json_decode($lists[$i]->delegationDetails);
-                    $mykeys[$a] = array("usernameDelegator" => $lists[$i]->usernameDelegator, "delegationId" => $lists[$i]->id, "kind" => 'specific', "k1" => $delegationDetails->k1, "k2" => $delegationDetails->k2);
+                if (isset($mykeys[$a])) {
+                    switch($mykeys[$a]["delegationKind"]) {
+                        case "READ_ACCESS":
+                            if ($lists[$i]->kind == "READ_WRITE" || $lists[$i]->kind == "MODIFY") {
+                                if (isset($lists[$i]->delegationDetails)) {
+                                    $delegationDetails = json_decode($lists[$i]->delegationDetails);
+                                    $mykeys[$a] = array("usernameDelegator" => $lists[$i]->usernameDelegator, "delegationId" => $lists[$i]->id, "kind" => $kind, "k1" => $delegationDetails->k1, "k2" => $delegationDetails->k2, "delegationKind" => $lists[$i]->kind);
+                                } else {
+                                    $mykeys[$a] = array("usernameDelegator" => $lists[$i]->usernameDelegator, "delegationId" => $lists[$i]->id, "kind" => $kind, "k1" => "", "k2" => "", "delegationKind" => $lists[$i]->kind);
+                                }
+                            }
+                            break;
+                        case "READ_WRITE":
+                            if ($lists[$i]->kind == "MODIFY") {
+                                if (isset($lists[$i]->delegationDetails)) {
+                                    $delegationDetails = json_decode($lists[$i]->delegationDetails);
+                                    $mykeys[$a] = array("usernameDelegator" => $lists[$i]->usernameDelegator, "delegationId" => $lists[$i]->id, "kind" => $kind, "k1" => $delegationDetails->k1, "k2" => $delegationDetails->k2, "delegationKind" => $lists[$i]->kind);
+                                } else {
+                                    $mykeys[$a] = array("usernameDelegator" => $lists[$i]->usernameDelegator, "delegationId" => $lists[$i]->id, "kind" => $kind, "k1" => "", "k2" => "", "delegationKind" => $lists[$i]->kind);
+                                }
+                            }
+                            break;
+                    }
                 } else {
-                    $mykeys[$a] = array("usernameDelegator" => $lists[$i]->usernameDelegator, "delegationId" => $lists[$i]->id, "kind" => 'specific', "k1" => "", "k2" => "");
+                    if (isset($lists[$i]->delegationDetails)) {
+                        $delegationDetails = json_decode($lists[$i]->delegationDetails);
+                        $mykeys[$a] = array("usernameDelegator" => $lists[$i]->usernameDelegator, "delegationId" => $lists[$i]->id, "kind" => $kind, "k1" => $delegationDetails->k1, "k2" => $delegationDetails->k2, "delegationKind" => $lists[$i]->kind);
+                    } else {
+                        $mykeys[$a] = array("usernameDelegator" => $lists[$i]->usernameDelegator, "delegationId" => $lists[$i]->id, "kind" => $kind, "k1" => "", "k2" => "", "delegationKind" => $lists[$i]->kind);
+                    }
                 }
             }
         }
@@ -863,26 +888,56 @@ function getUserDelegatedDevice($token, $user, $type, &$result) {
 }
 
 function getDelegatedDevice($token, $user, &$result) {
+    if (isset($GLOBALS['Cached_config']) && $GLOBALS['Cached_config']) { 
+        $GLOBALS['m'] = new Memcached();
+        $GLOBALS['m']->addServer($GLOBALS['Cached_host'], $GLOBALS['Cached_port']);
+        $IoT_Anonymus_id = $GLOBALS['m']->get('ANONYMOUS_IOTID');
+         unset($IoT_Anonymus_id['log']);
+         
+        if (!($IoT_Anonymus_id)) {
+            getUserDelegatedDevice($token, "ANONYMOUS", "IOTID", $result);
+            if ($result['status'] == 'ko') {
+                return;
+            }
+            getUserDelegatedDevice($token, "ANONYMOUS", "ServiceURI", $result);
+            if ($result['status'] == 'ko') {
+                return;
+            }
+            $result['log']='...omissis...';
+            $r = $GLOBALS['m']->set('ANONYMOUS_IOTID', $result['delegation'], $GLOBALS['expTimeCache']);
+            $result['cache']='SAVED ' . $r . ' -- ' . $GLOBALS['m']->getResultCode();
+        } else {
+            $result['delegation'] = $IoT_Anonymus_id;
+            $result['cache']='READ';
+        }
+    } else {
+        getUserDelegatedDevice($token, "ANONYMOUS", "IOTID", $result);
+        if ($result['status'] == 'ko') {
+            return;
+        }
+        getUserDelegatedDevice($token, "ANONYMOUS", "ServiceURI", $result);
+        if ($result['status'] == 'ko') {
+            return;
+        }
+        $result['cache']='NO';
+    }
     getUserDelegatedDevice($token, $user, "IOTID", $result);
     if ($result['status'] == 'ko') {
-        // echo "caso1: $user";
         return;
     }
-
-    getUserDelegatedDevice($token, "ANONYMOUS", "IOTID", $result);
-    if ($result['status'] == 'ko') {
-        // echo "caso2: $user";
-        return;
-    }
-
-
     getUserDelegatedDevice($token, $user, "ServiceURI", $result);
     if ($result['status'] == 'ko') {
-        // echo "caso3: $user";
         return;
     }
+   
+}
 
-    getUserDelegatedDevice($token, "ANONYMOUS", "ServiceURI", $result);
+function ServerCacheManage($token, $action) {
+    if ($action == 'clear' && isset($GLOBALS['Cached_config'])) {
+        $GLOBALS['m'] = new Memcached();
+        $GLOBALS['m']->addServer($GLOBALS['Cached_host'], $GLOBALS['Cached_port']);
+        $GLOBALS['m']->delete('ANONYMOUS_IOTID');
+    }
 }
 
 /*
@@ -971,7 +1026,22 @@ function getDelegatedObject($token, $user, $object, &$result) {
         for ($i = 0; $i < count($lists); $i++) {
             if (isset($lists[$i]->elementType) && $lists[$i]->elementType == $object) {
                 $a = $lists[$i]->elementId;
-                $mykeys[$a] = array("usernameDelegator" => $lists[$i]->usernameDelegator, "delegationId" => $lists[$i]->id, "kind" => 'specific');
+                if (isset($mykeys[$a])) {
+                    switch($mykeys[$a]["delegationKind"]) {
+                        case "READ_ACCESS":
+                            if ($lists[$i]->kind == "READ_WRITE" || $lists[$i]->kind == "MODIFY") {
+                                $mykeys[$a] = array("usernameDelegator" => $lists[$i]->usernameDelegator, "delegationId" => $lists[$i]->id, "kind" => 'specific', "delegationKind" => $lists[$i]->kind);
+                            }
+                            break;
+                        case "READ_WRITE":
+                            if ($lists[$i]->kind == "MODIFY") {
+                                $mykeys[$a] = array("usernameDelegator" => $lists[$i]->usernameDelegator, "delegationId" => $lists[$i]->id, "kind" => 'specific', "delegationKind" => $lists[$i]->kind);
+                            }
+                            break;
+                    }
+                } else {
+                    $mykeys[$a] = array("usernameDelegator" => $lists[$i]->usernameDelegator, "delegationId" => $lists[$i]->id, "kind" => 'specific', "delegationKind" => $lists[$i]->kind);
+                }
             }
         }
         try {
@@ -982,7 +1052,22 @@ function getDelegatedObject($token, $user, $object, &$result) {
                 for ($i = 0; $i < count($lists); $i++) {
                     if (isset($lists[$i]->elementType) && $lists[$i]->elementType == $object) {
                         $a = $lists[$i]->elementId;
-                        $mykeys[$a] = array("usernameDelegator" => $lists[$i]->usernameDelegator, "delegationId" => $lists[$i]->id, "kind" => 'anonymous');
+                        if (isset($mykeys[$a])) {
+                            switch($mykeys[$a]["delegationKind"]) {
+                                case "READ_ACCESS":
+                                    if ($lists[$i]->kind == "READ_WRITE" || $lists[$i]->kind == "MODIFY") {
+                                        $mykeys[$a] = array("usernameDelegator" => $lists[$i]->usernameDelegator, "delegationId" => $lists[$i]->id, "kind" => 'anonymous', "delegationKind" => $lists[$i]->kind);
+                                    }
+                                    break;
+                                case "READ_WRITE":
+                                    if ($lists[$i]->kind == "MODIFY") {
+                                        $mykeys[$a] = array("usernameDelegator" => $lists[$i]->usernameDelegator, "delegationId" => $lists[$i]->id, "kind" => 'anonymous', "delegationKind" => $lists[$i]->kind);
+                                    }
+                                    break;
+                            }
+                        } else {
+                            $mykeys[$a] = array("usernameDelegator" => $lists[$i]->usernameDelegator, "delegationId" => $lists[$i]->id, "kind" => 'anonymous', "delegationKind" => $lists[$i]->kind);
+                        }
                     }
                 }
                 $result["status"] = 'ok';
@@ -1014,6 +1099,7 @@ function checkDelegationObject($username, $token, $elementId, $elementType, &$re
     if ($result["status"] == "ok") {
         if (isset($result["delegation"][$elementId])) {
             $toreturn = true;
+            $result["delegationKind"] = isset($result["delegation"][$elementId]["delegationKind"]) ? $result["delegation"][$elementId]["delegationKind"] : "READ_ACCESS";
         }
         $result["status"] = 'ok';
         $result["msg"] .= '\n check delegation ' . $toreturn;
@@ -1044,17 +1130,18 @@ function getDelegatorDevice($token, $user, &$result, $eId) {
                 if (isset($lists[$i]->elementType) && ($lists[$i]->elementType == "ServiceURI" || $lists[$i]->elementType == "IOTID")) {
                     $a = $lists[$i]->elementId;
                     if ($eId == $a) {
+                        $kind = isset($lists[$i]->kind) ? $lists[$i]->kind : "READ_ACCESS";
                         if (isset($lists[$i]->delegationDetails) && isset($lists[$i]->delegationDetails->k1)) {
                             if (isset($lists[$i]->usernameDelegated)) {
-                                $mykeys[] = array("userDelegated" => $lists[$i]->usernameDelegated, "delegationId" => $lists[$i]->id, "k1" => $lists[$i]->delegationDetails->k1, "k2" => $lists[$i]->delegationDetails->k2);
+                                $mykeys[] = array("userDelegated" => $lists[$i]->usernameDelegated, "delegationId" => $lists[$i]->id, "k1" => $lists[$i]->delegationDetails->k1, "k2" => $lists[$i]->delegationDetails->k2, "kind" => $kind);
                             } else {
-                                $mykeys[] = array("groupDelegated" => $lists[$i]->groupnameDelegated, "delegationId" => $lists[$i]->id, "k1" => $lists[$i]->delegationDetails->k1, "k2" => $lists[$i]->delegationDetails->k2);
+                                $mykeys[] = array("groupDelegated" => $lists[$i]->groupnameDelegated, "delegationId" => $lists[$i]->id, "k1" => $lists[$i]->delegationDetails->k1, "k2" => $lists[$i]->delegationDetails->k2, "kind" => $kind);
                             }
                         } else {
                             if (isset($lists[$i]->usernameDelegated)) {
-                                $mykeys[] = array("userDelegated" => $lists[$i]->usernameDelegated, "delegationId" => $lists[$i]->id, "k1" => "", "k2" => "");
+                                $mykeys[] = array("userDelegated" => $lists[$i]->usernameDelegated, "delegationId" => $lists[$i]->id, "k1" => "", "k2" => "", "kind" => $kind);
                             } else {
-                                $mykeys[] = array("groupDelegated" => $lists[$i]->groupnameDelegated, "delegationId" => $lists[$i]->id, "k1" => "", "k2" => "");
+                                $mykeys[] = array("groupDelegated" => $lists[$i]->groupnameDelegated, "delegationId" => $lists[$i]->id, "k1" => "", "k2" => "", "kind" => $kind);
                             }
                         }
                     }
@@ -1412,9 +1499,9 @@ function insert_ngsi($name, $type, $contextbroker, $kind, $protocol, $format, $m
         // Check for errors
         if ($response_orion === FALSE) {
             // die(curl_error($ch));
-            $result["error_msg"] .= "Error in the connection with the ngsi context broker. ";
-            $result["msg"] .= "\n error in the connection with the ngsi context broker";
-            $result["log"] .= "\n error in the connection with the ngsi context broker";
+            $result["error_msg"] .= "Error in the connection with the ngsi context broker. In function  insert_ngsi() ";
+            $result["msg"] .= "\n error in the connection with the ngsi context broker. In function  insert_ngsi()";
+            $result["log"] .= "\n error in the connection with the ngsi context broker. In function  insert_ngsi()";
             $res = 'ko';
         } else {
             // Decode the response
@@ -1719,7 +1806,7 @@ function registerKB($link, $name, $type, $contextbroker, $kind, $protocol, $form
                     'header' => "Authorization: Bearer " . $accessToken,
                     'method' => 'POST',
                     'content' => $encoda,
-                    'timeout' => 30,
+                    'timeout' => 60,
                     'ignore_errors' => true
                 )
             );
@@ -1778,7 +1865,7 @@ function registerKB($link, $name, $type, $contextbroker, $kind, $protocol, $form
             $result["log"] .= "\n ok registration in the context broker";
         } elseif ($res == "ko") {
             $result["status"] = 'ko';
-            $result["error_msg"] .= "No registration in the context broker. ";
+            $result["error_msg"] .= "No registration in the context broker. Error in registerKB() ";
             $result["msg"] .= "\n no registration in the context broker";
             $result["log"] .= "\n no registration in the context broker";
         } else {// the value is no -- no registration in the context broker
@@ -2576,7 +2663,7 @@ function nificallback_create($ip, $port, $name, $urlnificallback, $protocol, $se
 
             $url = $IP_PORT . "/v2/subscriptions";
 
-            echo $IP_PORT;
+           // echo $IP_PORT;
 
             $result["log"] .= "\n Payload to send is:" . $msg;
             $result["log"] .= "\n Post url is:" . $url;
@@ -3197,7 +3284,13 @@ function enforcementRights($username, $token, $role, $elementId, $elementType, $
     } else {
         //for write check owenrship
         if ($action == "write") {
-            $toreturn = checkOwnershipObject($token, $elementId, $elementType, $result);
+            if (checkOwnershipObject($token, $elementId, $elementType, $result)) {
+                $toreturn = true;
+            } else {
+                checkDelegationObject($username, $token, $elementId, $elementType, $result);
+                $toreturn = $result["delegationKind"] == "READ_WRITE" || $result["delegationKind"] == "MODIFY";
+                $result["delegationKind"] = $result["delegationKind"];
+            }
         } else if ($action == "read") {
             $toreturn = checkOwnershipObject($token, $elementId, $elementType, $result) ||
                     checkDelegationObject($username, $token, $elementId, $elementType, $result);

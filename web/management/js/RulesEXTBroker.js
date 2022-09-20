@@ -8,16 +8,12 @@ $(document).ready(function () {
 
 
     // DATI
-    data = {action: "get_rules_ext", token: sessionToken, should_be_registered: "no", no_columns: ["position", "edit"]};
+    data = {action: "get_rules_ext", token: sessionToken, should_be_registered: "no", no_columns: ["position", "edit", "delete"]};
 
 
     dataTable3 = $('#RulesContextExternalBrokerTable').DataTable({
         dom: 'Plfrtip',
         "processing": true,
-
-        "responsive": {
-            details: false
-        },
         "paging": true,
         "ajax": {
             url: "../api/bulkDeviceLoad.php",
@@ -29,7 +25,7 @@ $(document).ready(function () {
         "searchPanes": {
             "columns": [2],
             "initCollapsed": true,
-            orderable: false,
+            orderable: false
         },
         columnDefs: [{
                 searchPanes: {
@@ -83,38 +79,62 @@ $(document).ready(function () {
                 className: "center",
                 data: null,
                 render: function (d) {
-
-                    return '<button type="button" class="editDashBtn" ' +
+                    if(d.Organization==''){
+                        Bottone='<button type="button" class="editDashBtn" ' +
+                            'data-id="' + d.Name + '" ' +
+                            'data-if=/"' + escape(d.If_statement) + '/" ' +
+                            'data-then=/"' + escape(d.Then_statement) + '/" ' +
+                            'data-mode="' + d.mode + '" ' +
+                            '"">Edit</button>';
+                        console.log(Bottone);
+                        
+                              return (Bottone);
+                         }else if(d.Organization!=''){
+                             Bottone= '<button type="button" class="editDashBtn" ' +
                             'data-id="' + d.Name + '" ' +
                             'data-organization="' + d.Organization + '" ' +
                             'data-if=/"' + d.If_statement + '/" ' +
                             'data-then=/"' + d.Then_statement + '/" ' +
                             'data-mode="' + d.mode + '" ' +
                             '"">Edit</button>';
+                       console.log(Bottone);
+                        
+                              return (Bottone);
+                    } else {
+                        return '';
+                    }
+
+                    
                 }
 
 
 
             }
-//            ,
-//            {
-//                "name": "ViewRule",
-//                "orderable": false,
-//                className: "center",
-//                data: null,
-//
-//                render: function (d) {
-//
-//                    return '<button type="button" class="viewDashBtn" ' +
-//                            'data-id="' + d.Name + '" ' +
-//                            'data-organization="' + d.Organization + '" ' +
-//                            'data-if= /"' + d.If_statement + '/" ' +
-//                            'data-then= /"' + d.Then_statement + '/" ' +
-//                            'data-mode="' + d.mode + '" ' +
-//                            '"">View</button>';
-//                }
-//
-//            }
+            ,
+            {
+                "name": "Delete",
+                "orderable": false,
+                className: "center",
+                data: null,
+
+                render: function (d) {
+                     if (loggedRole == 'RootAdmin' ) {
+                        
+                        return '<button type="button" class="delDashBtn" ' +
+                            'data-id="' + d.Name + '" ' +
+                            'data-organization="' + d.Organization + '" ' +
+                            'data-if= /"' + d.If_statement + '/" ' +
+                            'data-then= /"' + d.Then_statement + '/" ' +
+                            'data-mode="' + d.mode + '" ' +
+                            '"">Delete</button>';
+                    } else {
+                        return '';
+                    }
+
+                  
+                }
+
+            }
         ],
         "order": []
     });
@@ -122,8 +142,8 @@ $(document).ready(function () {
     //function for edit and view rule
     function ReadOnly(block, flag) {
         //button
-        $('#addifBlockBtn').css('display', block);
-        $('#addDecisionBlockBtn').css('display', block);
+        $('#addifBlockBtnValue').css('display', block);
+        $('#addDecisionBlockBtnValue').css('display', block);
         $('.minusDevice').css('display', block);
         $('.fa ').css('display', block);
 
@@ -147,9 +167,9 @@ $(document).ready(function () {
     $('#RulesContextExternalBrokerTable tbody').on('click', 'button.editDashBtn', function () {
         //show modal
         $('#updateMultipleDeviceModal').modal('show');
-        $("#title_rule_form").html("<b>Edit -  </b>" + $(this).attr('data-id'));
+        $("#title_rule_form").html("<b>Edit -  </b> " + " " + $(this).attr('data-id'));
         //fit modal on rule
-        RulesLoad($(this).attr('data-id'), $(this).attr('data-if'), $(this).attr('data-then'), $(this).attr('data-mode'), 'ifBlockTable', 'decisionBlockTable');
+        RulesLoad($(this).attr('data-id'), $(this).attr('data-if'), $(this).attr('data-then'), $(this).attr('data-mode'), 'ifBlockTableValue', 'decisionBlockTableValue');
 
         //display block for updating
         ReadOnly('block', false);
@@ -160,25 +180,102 @@ $(document).ready(function () {
 
     });
 
-// View rules
-//    $('#RulesContextExternalBrokerTable tbody').on('click', 'button.viewDashBtn', function () {
-//        //show modal
-//        $('#updateMultipleDeviceModal').modal('show');
-//        $("#title_rule_form").html("<b>View - </b>" + $(this).attr('data-id'));
-//
-//        //fit modal on rule
-//        RulesLoad($(this).attr('data-id'), $(this).attr('data-if'), $(this).attr('data-then'), $(this).attr('data-mode'));
-//        
-//         //only read mode
-//        ReadOnly('none', true);
-//        $('#Update_rules').hide();
-//   
-//    });
+//Delete rules
+ $('#RulesContextExternalBrokerTable tbody').on('click', 'button.delDashBtn', function () {
+      
+        var id = $(this).attr('data-id');
+        var dev_organization = $(this).attr('data-organization');
+        var if_st = $(this).attr("data-if");
+        var then_st = $(this).attr('data-then');
+        var mode = $(this).attr('data-mode');
+        
+        $("#deleteRuleModal div.modal-body").html('<div class="modalBodyInnerDiv"><span data-id = "' + id + '" data-organization = "' + dev_organization + '"  data-if ="' + if_st + '" data-then ="' + then_st + '" data-mode="' + mode + '" >Do you want to confirm deletion of rule <b>' + id + '</b>?</span></div>');
+        $("#deleteRuleModalInnerDiv1").html('<h5>Rule deletion in progress, please wait</h5>');
+        $("#deleteRuleModalInnerDiv2").html('<i class="fa fa-circle-o-notch fa-spin" style="font-size:36px"></i>');
+        $("#deleteRuleModalInnerDiv1").hide();
+        $("#deleteRuleModalInnerDiv2").hide();
+        $("#deleteRuleOkBtn").hide();
+        $("#deleteRuleCancelBtn").show();
+        $("#deleteRuleConfirmBtn").show();
+        $("#deleteRuleModal").modal('show');
+    });
+
+  $('#deleteRuleConfirmBtn').off("click");
+    $("#deleteRuleConfirmBtn").click(function () {
+
+       var id = document.querySelector("#deleteRuleModal > div > div > div.modal-body > div > span").dataset.id ;//$(this).attr('data-id');
+//        var dev_organization = $(this).attr('data-organization');
+//        var if_st = $(this).attr("data-if");
+//        var then_st = $(this).attr('data-then');
+//        var mode = $(this).attr('data-mode');
+        
+        
+        $("#deleteRuleModal div.modal-body").html("");
+        $("#deleteRuleOkBtn").hide();
+        $("#deleteRuleCancelBtn").hide();
+        $("#deleteRuleConfirmBtn").hide();
+        $("#deleteRuleModalInnerDiv1").show();
+        $("#deleteRuleModalInnerDiv2").show();
+        $.ajax({
+            url: "../api/bulkDeviceLoad.php",
+            data: {
+                action: "delete_rules_ext",
+                 token: sessionToken,
+                id: id
+                
+            },
+            type: "POST",
+            datatype: "json",
+            async: true,
+            success: function (data)
+            {
+                //console.log(JSON.stringify(data));
+                $("#deleteRuleOkBtn").show();
+                if (data["status"] === 'ko')
+                {
+                    $("#deleteRuleModalInnerDiv1").html(data["error_msg"]);
+                    $("#deleteRuleModalInnerDiv2").html('<i class="fa fa-frown-o" style="font-size:42px"></i>');
+                } else if (data["status"] === 'ok')
+                {
+                    $("#deleteRuleModalInnerDiv1").html('Rule &nbsp; <b>' + id + '</b> &nbsp;deleted successfully');
+                    $("#deleteRuleModalInnerDiv1").show();
+                    $("#deleteRuleModalInnerDiv2").html('<i class="fa fa-check" style="font-size:42px"></i>');
+                    $('#dashboardTotNumberCnt .pageSingleDataCnt').html(parseInt($('#dashboardTotNumberCnt .pageSingleDataCnt').html()) - 1);
+                    
+                    $('#RulesContextExternalBrokerTable').DataTable().destroy();
+                    fetch_data(true);
+                    
+                }
+            },
+            error: function (data)
+            {
+                $("#deleteRuleOkBtn").show();
+                console.log(JSON.stringify(data));
+                $("#deleteRuleModalInnerDiv1").html(data["error_msg"]);
+                $("#deleteRuleModalInnerDiv2").html('<i class="fa fa-frown-o" style="font-size:42px"></i>');
+            }
+        });
+    });
+    $("#deleteRuleOkBtn").off("click");
+    $("#deleteRuleOkBtn").click(function () {
+        $("#deleteRuleModal div.modal-body").html("Do you want to confirm deletion of the following Rule?");
+        $("#deleteRuleOkBtn").hide();
+        $("#deleteRuleCancelBtn").show();
+        $("#deleteRuleConfirmBtn").show();
+        $("#deleteRuleModalInnerDiv1").html('<h5>Device deletion in progress, please wait</h5>');
+        $("#deleteRuleModalInnerDiv2").html('<i class="fa fa-circle-o-notch fa-spin" style="font-size:36px"></i>');
+        $("#deleteRuleModalInnerDiv1").hide();
+        $("#deleteRuleModalInnerDiv2").hide();
+    });
+
+
+
+
 
 // Update rules
     $("#Update_rules").on("click", function () {
-        var num1 = document.getElementById('ifBlockTable').tBodies[0].childElementCount;
-        var num2 = document.getElementById('decisionBlockTable').tBodies[0].childElementCount;
+        var num1 = document.getElementById('ifBlockTableValue').tBodies[0].childElementCount;
+        var num2 = document.getElementById('decisionBlockTableValue').tBodies[0].childElementCount;
 
         if (num1 != 0 || num2 != 0) {
 

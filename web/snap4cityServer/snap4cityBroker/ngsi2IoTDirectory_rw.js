@@ -146,9 +146,11 @@ function retrieveData(xhttp, link, limit, offset) {
 	Promise.all([
 		makeRequestToCB(xhttp, link, limit, offset),
 		getRegisteredDevices(),
-		getTemporaryDevices(),
-		getExtractionRules()
-	]).then(function ([result1, result2, result3, result4]) {
+		getTemporaryDevices()
+		
+	]).then(function ([result1, result2, result3/*, result4*/]) {
+		getExtractionRules(service, servicePath).then(function (result4){
+		
 		var obj = JSON.parse(result1);
 		if (obj instanceof Array) {
 
@@ -170,10 +172,10 @@ function retrieveData(xhttp, link, limit, offset) {
 
 		registeredDevices = result2.registeredDevices;
 		temporaryDevices = result3.temporaryDevices;
-		extractionRulesAtt = result4.extractionRulesAtt;
+		/*extractionRulesAtt = result4.extractionRulesAtt;*/
 		extractionRulesDev = result4.extractionRulesDev;
 
-		findNewValues(cid, ORION_CB, orionDevices, orionDevicesSchema, registeredDevices, temporaryDevices, extractionRulesAtt);
+		findNewValues(cid, ORION_CB, orionDevices, orionDevicesSchema, registeredDevices, temporaryDevices/*, extractionRulesAtt*/);
 
 		allDevices = registeredDevices.concat(temporaryDevices);
 		newDevices = orionDevices.diff(allDevices);
@@ -239,10 +241,10 @@ function retrieveData(xhttp, link, limit, offset) {
 				"deviceValues": attProperty
 			};
 
-			var verify = verifyDevice(toVerify, modelsdata, gb_datatypes, gb_value_types, gb_value_units);
+			//var verify = verifyDevice(toVerify, modelsdata, gb_datatypes, gb_value_types, gb_value_units);
 			var validity = "invalid";
-			if (verify.isvalid)
-				validity = "valid";
+			/*if (verify.isvalid)
+				validity = "valid";*/
 
 			// console.log('MESSAGGIO: ' + verify.message)
 			se.push([
@@ -259,7 +261,7 @@ function retrieveData(xhttp, link, limit, offset) {
 				devAttr["longitude"],
 				devAttr["mac"],
 				validity,
-				verify.message,
+				 /* verify.message,*/'',
 				"no",
 				ORGANIZATION,
 				EDGE_GATEWAY_TYPE,
@@ -285,7 +287,7 @@ function retrieveData(xhttp, link, limit, offset) {
 				xhttp = new XMLHttpRequest();
 
 				retrieveData(xhttp, link, 100, offset2);
-				console.log("**UPDATE**");
+				console.log( new Date().toISOString() +"  **UPDATE**");
 			}
 			else {
 				offset2 = offset2 + 1;
@@ -294,6 +296,7 @@ function retrieveData(xhttp, link, limit, offset) {
 				retrieveData(xhttp, link, 1, offset2);
 			}
 		}
+		});
 	}).catch(function (err) {
 		console.log(err);
 		if (!smallSearch) {
@@ -403,8 +406,26 @@ function writeFreqAndTimestampStatus(){
 }
 function getExtractionRules() {
 	return new Promise(function (resolve, reject) {
+		
+			/* chiamata a  update_all_values*/
+
+var req = new XMLHttpRequest();
+var link = apiLink + "bulkDeviceUpdate.php";
+req.open("POST", link + "?action=update_all_values&cb=" + ORION_CB + "&token=" + TOKEN, false);
+req.onreadystatechange = function () {
+    if (this.readyState == 4 && this.status == 200) {
+        console.log(new Date().toISOString() +"  update_all_values: rules apply "+ link + "?action=update_all_values&cb=" + ORION_CB + "&token=" + TOKEN);
+    } else if (this.readyState == 4 && this.status != 200) {
+        console.log(new Date().toISOString() +"  update_all_values error " + this.status);
+    }
+}
+req.send();
+		
+		
+		
+		
 		var extractionRulesDev = new Object();
-		var extractionRulesAtt = new Object();
+		//var extractionRulesAtt = new Object();
 		var query = "SELECT * FROM extractionRules where contextbroker='" + ORION_CB + "';";
 		cid.query(query, function (error, resultRules, fields) {
 			//console.log('result: '+JSON.stringify(resultRules))
@@ -414,13 +435,13 @@ function getExtractionRules() {
 			for (var x = 0; x < resultRules.length; x++) {
 				if (resultRules[x]["kind"].localeCompare("property") == 0) {
 					extractionRulesDev[resultRules[x]["id"]] = resultRules[x];
-				} else {
+				} /*else {
 					extractionRulesAtt[resultRules[x]["id"]] = resultRules[x];
-				}
+				}*/
 			}
 			resolve({
-				extractionRulesDev: extractionRulesDev,
-				extractionRulesAtt: extractionRulesAtt
+				extractionRulesDev: extractionRulesDev
+				//, extractionRulesAtt: extractionRulesAtt
 			});
 		});
 	});
@@ -439,11 +460,11 @@ var requestLoop = setInterval(function () {
 	console.log(t +" START time");
 	retrieveData(xhttp, link, limit, offset);
 	var t2=new Date();
-	console.log((t2-t) +" after retrive data time");
+	console.log((t-t2) +" after retrive data time");
 	registeredDevices = [];
 	
 	writeFreqAndTimestampStatus().then(value=>{
 			var t3= new Date();
-			console.log((t3- t) + "FINAL TIME");
+			console.log((t- t3) + "FINAL TIME");
 	console.log(value+" Update db with freq and timestamp")});
 }, FREQUENCY_SEARCH);

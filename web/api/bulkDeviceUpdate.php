@@ -33,7 +33,7 @@ include('../config.php');
 include('common.php');
 $link = mysqli_connect($host, $username, $password) or die("failed to connect to server !!");
 mysqli_select_db($link, $dbname);
-error_reporting(E_ERROR | E_NOTICE);
+error_reporting(E_ERROR  );
 
 if (!$link->set_charset("utf8")) {
     exit();
@@ -105,68 +105,8 @@ if ($result["status"] != "ok") {
     mysqli_close($link);
     exit();
 }
-//if ($action == "get_number_temporary_devices_grouped_by_CB") {
-//
-//    $cb = mysqli_real_escape_string($link, $_REQUEST['contextbroker']);
-//    $q = "SELECT DISTINCT count(id), contextBroker FROM iotdb.temporary_devices;";
-//    $r = mysqli_query($link, $q);
-//    
-//   
-//    if ($r) {
-//       // $row = mysqli_fetch_assoc($r);
-//       // $row= json_encode($row);
-//        $cb_number = array();
-//        while ($row = mysqli_fetch_assoc($r)) {
-//            
-//            $sub_row= array($row["contextBroker"] => $row["count(id)"]);
-//            array_push($cb_number, $sub_row);
-//        }
-//        
-//        $result['status'] = 'ok';
-//        $result['content'] = $cb_number;
-//        $result['log'] .= "\n\r action:get_number_temporary_devices_grouped_by_CB. access to " . $q;
-//    } else {
-//        $result['status'] = 'ko'; // . $q1 . generateErrorMessage($link);
-//        $result['msg'] = 'Error: errors in reading data about cb. <br/>' . generateErrorMessage($link);
-//        $result['log'] .= '\n\naction:get_number_temporary_devices_grouped_by_CB. Error: errors in reading data about devices. ' . generateErrorMessage($link);
-//    }
-//    my_log($result);
-//    mysqli_close($link);
-//}
-//else if ($action == "get_frequency_timestamStatus_CB") {
-//
-//    // $cb = mysqli_real_escape_string($link, $_REQUEST['contextbroker']);
-//    
-//    $q = "SELECT req_frequency, timestampstatus, name FROM iotdb.contextbroker ";
-//    $r = mysqli_query($link, $q);
-//    
-//   
-//   
-//    if ($r) {
-//      // $row = mysqli_fetch_assoc($r);
-//       // $row= json_encode($row);
-//        $cb_number = array();
-//        while ($row = mysqli_fetch_assoc($r)) {
-//            $sub_row["name"]= $row["name"];
-//            $sub_row["req_frequency"]= $row["req_frequency"];
-//            $sub_row["timestampstatus"]= $row["timestampstatus"];
-//            
-//            array_push($cb_number, $sub_row);
-//        }
-//        
-//        $result['status'] = 'ok';
-//        $result['content'] = $cb_number;
-//        $result['log'] .= "\n\r action:get_frequency_timestamStatus_CB. access to " . $q;
-//    } else {
-//        $result['status'] = 'ko'; // . $q1 . generateErrorMessage($link);
-//        $result['msg'] = 'Error: errors in reading data about cb. <br/>' . generateErrorMessage($link);
-//        $result['log'] .= '\n\naction:get_frequency_timestamStatus_CB. Error: errors in reading data about devices. ' . generateErrorMessage($link);
-//    }
-//    my_log($result);
-//    mysqli_close($link);
-//}
-//else 
-    if ($action== "Save_device_rules"){
+
+if ($action == "Save_device_rules") {
     $missingParams = missingParameters(array('attributesIf', 'attributesThen'));
 
     if (!empty($missingParams)) {
@@ -175,54 +115,57 @@ if ($result["status"] != "ok") {
         $result["error_msg"] .= "Problem in get bulk device (Missing parameters: " . implode(", ", $missingParams) . " )";
         $result["log"] = "action=Save_device_rules - error Missing Parameters: " . implode(", ", $missingParams) . " \r\n";
         //TODO Copy to output
-    } else if(mysqli_real_escape_string($link, $_REQUEST['update'])){
+    } else if (mysqli_real_escape_string($link, $_REQUEST['update'])) {
         $attributesIf = mysqli_real_escape_string($link, $_REQUEST['attributesIf']);
         $attributesThen = mysqli_real_escape_string($link, $_REQUEST['attributesThen']);
         $namerule = mysqli_real_escape_string($link, $_REQUEST['name']);
         $mode = mysqli_real_escape_string($link, $_REQUEST['mode']);
-         $q="UPDATE `iotdb`.`EXT_values_rules` SET `Timestamp`=NOW(), `If_statement`= '$attributesIf', `Then_statement`= '$attributesThen', `mode`='$mode' WHERE `Name`='$namerule' ;";
-            
-        $r = mysqli_query($link, $q);
-        
-         if($r){
-            $row = mysqli_fetch_assoc($r);
-            $result['status'] = 'ok';
-            $result['content'] = $row;
-            $result['log'] .= "\n\r action:Save_device_rules. access to " . $q;
-        } else {
-            $result['status'] = 'ko'; // . $q1 . generateErrorMessage($link);
-            $result['msg'] = 'Error: errors in writing data about devices. <br/>' . generateErrorMessage($link);
-            $result['log'] .= '\n\naction:Save_device_rules. Error: errors in reading data about devices. ' . generateErrorMessage($link);
-        
-        }
-        echo json_encode($result);
-        
-    }
-    else {
-        $attributesIf = mysqli_real_escape_string($link, $_REQUEST['attributesIf']);
-        $attributesThen = mysqli_real_escape_string($link, $_REQUEST['attributesThen']);
-        $namerule = mysqli_real_escape_string($link, $_REQUEST['name']);
-        $mode = mysqli_real_escape_string($link, $_REQUEST['mode']);
-        
-        $q= "INSERT INTO `iotdb`.`EXT_values_rules` (`Name`,`If_statement`, `Then_statement`, `Organization`, `Timestamp`,`mode` ) VALUES ('$namerule','$attributesIf', '$attributesThen', '$organization', NOW(), '$mode');";
-        $r = mysqli_query($link, $q);
-        
-        if($r){
-            $row = mysqli_fetch_assoc($r);
-            $result['status'] = 'ok';
-            $result['content'] = $row;
-            $result['log'] .= "\n\r action:Save_device_rules. access to " . $q;
-        } else {
-            $result['status'] = 'ko'; // . $q1 . generateErrorMessage($link);
-            $result['msg'] = 'Error: errors in writing data about devices. <br/>' . generateErrorMessage($link);
-            $result['log'] .= '\n\naction:Save_device_rules. Error: errors in reading data about devices. ' . generateErrorMessage($link);
-        
-        }
-        echo json_encode($result);
-    }
-}
+        $q = "UPDATE `iotdb`.`EXT_values_rules` SET `Timestamp`=NOW(), `If_statement`= '$attributesIf', `Then_statement`= '$attributesThen', `mode`='$mode' WHERE `Name`='$namerule' ;";
 
-else if ($action == "get_temporary_devices") {
+        $r = mysqli_query($link, $q);
+
+        if ($r) {
+            $row = mysqli_fetch_assoc($r);
+
+            $result['status'] = 'ok';
+            $result['content'] = $row;
+            $result['log'] .= "\n\r action:Save_device_rules. access to " . $q;
+        } else {
+            $result['status'] = 'ko'; // . $q1 . generateErrorMessage($link);
+            $result['msg'] = 'Error: errors in writing data about devices. <br/>' . generateErrorMessage($link);
+            $result['log'] .= '\n\naction:Save_device_rules. Error: errors in reading data about devices. ' . generateErrorMessage($link);
+        }
+        echo json_encode($result);
+    } else {
+        $attributesIf = mysqli_real_escape_string($link, $_REQUEST['attributesIf']);
+        $attributesThen = mysqli_real_escape_string($link, $_REQUEST['attributesThen']);
+        $namerule = mysqli_real_escape_string($link, $_REQUEST['name']);
+        $mode = mysqli_real_escape_string($link, $_REQUEST['mode']);
+
+        $cb = mysqli_real_escape_string($link, $_REQUEST['contextbroker']);
+
+        //$qInfoCb="SELECT "
+
+        $service = mysqli_real_escape_string($link, $_REQUEST['service']);
+        $servicePath = mysqli_real_escape_string($link, $_REQUEST['servicePath']);
+
+        $q = "INSERT INTO `iotdb`.`EXT_values_rules` (`Name`,`If_statement`, `Then_statement`, `Organization`, `Timestamp`,`mode`, `contextbroker`, `service`, `servicePath` ) VALUES ('$namerule','$attributesIf', '$attributesThen', '$organization', NOW(), '$mode', '$cb', '$service', '$servicePath');";
+
+        $r = mysqli_query($link, $q);
+
+        if ($r) {
+            $row = mysqli_fetch_assoc($r);
+            $result['status'] = 'ok';
+            $result['content'] = $row;
+            $result['log'] .= "\n\r action:Save_device_rules. access to " . $q;
+        } else {
+            $result['status'] = 'ko'; // . $q1 . generateErrorMessage($link);
+            $result['msg'] = 'Error: errors in writing data about devices. <br/>' . generateErrorMessage($link);
+            $result['log'] .= '\n\naction:Save_device_rules. Error: errors in reading data about devices. ' . generateErrorMessage($link);
+        }
+        echo json_encode($result);
+    }
+} else if ($action == "get_temporary_devices") {
     $missingParams = missingParameters(array('should_be_registered'));
 
     if (!empty($missingParams)) {
@@ -243,7 +186,7 @@ else if ($action == "get_temporary_devices") {
 		protocol,format,latitude, longitude, visibility, k1, k2,producer, edge_gateway_type, edge_gateway_uri, validity_msg, subnature, static_attributes, service, servicePath
 		 FROM temporary_devices"; // WHERE username = '$username' AND deleted IS null;";
         //TODO not sure is should be registered has to be included or no
-        $r = create_datatable_data($link, $_REQUEST, $q, 
+        $r = create_datatable_data($link, $_REQUEST, $q,
                 "deleted IS null AND username = '$username' AND organization='$organization' AND should_be_registered='$should_be_registered' AND (toDelete IS NULL OR toDelete != 'yes')");
 
         $selectedrows = -1;
@@ -256,26 +199,33 @@ else if ($action == "get_temporary_devices") {
         }
 
         if ($r) {
-           
+
             $device = array();
-            $option=array();
+            $option = array();
+            $total=array();
 //        $dev2=array();
-            
+
             $result["log"] = "\r\n action=get_temporary_devices \r\n";
 
             while ($row = mysqli_fetch_assoc($r)) {
-              
+
                 $selectedrows++;
+                
+                
+                 array_push($total, $row["contextBroker"]);
+                
+                
                 if (!$tobelimited || ($tobelimited && $selectedrows >= $start && $selectedrows < ($start + $offset))) {
                     $rec = array();
-                    $format_msg = str_replace("-"," <br> <br> - ",$row["validity_msg"]);
-                    $count_err= substr_count($format_msg, "- ");
-                    
-//                    $format_msg = str_replace("For "," <br> <br> For ",$row["validity_msg"]);
-//                    $format_msg = str_replace("-","",$format_msg);
-//                    $count_err= substr_count($format_msg, "For ");
-                    
-                    
+                    if (strpos($row["validity_msg"], "For ") == false) {
+                        $format_msg = str_replace("-", " <br> <br> - ", $row["validity_msg"]);
+                        $count_err = substr_count($format_msg, "- ");
+                    } else {
+                        $format_msg = str_replace("For ", " <br> <br> For ", $row["validity_msg"]);
+                        $format_msg = str_replace("-", "", $format_msg);
+                        $count_err = substr_count($format_msg, "For ");
+                    }
+
                     $rec["contextbroker"] = $row["contextBroker"];
                     $rec["name"] = $row["id"];
                     $rec["devicetype"] = $row["devicetype"];
@@ -294,29 +244,25 @@ else if ($action == "get_temporary_devices") {
                     $rec["k2"] = $row["k2"];
                     $rec["edge_gateway_type"] = $row["edge_gateway_type"];
                     $rec["edge_gateway_uri"] = $row["edge_gateway_uri"];
-                    
-                    $rec["validity_msg"] = "<b>There is ". $count_err." errors. </b>" . $format_msg;
-                            
-                            //$row["validity_msg"];
-                            //
+
+                    $rec["validity_msg"] = "<b>There is " . $count_err . " errors. </b>" . $format_msg;
+
                     $rec["subnature"] = $row["subnature"];
                     $rec["static_attributes"] = $row["static_attributes"];
                     $rec["service"] = $row["service"];
                     $rec["servicePath"] = $row["servicePath"];
 
                     array_push($device, $rec);
-//                    array_push($dev2, $row);
-                   
-                  
-                     
+
                 }
             }
-         
-           // $output = format_result($_REQUEST["draw"], $selectedrows + 1, $selectedrows + 1, $device, "", "\r\n action=get_temporary_devices \r\n", 'ok');
-          //  echo json_encode($searchPanes);
+
+
+
+            $output = format_result_serverside($_REQUEST["draw"], $selectedrows + 1, $selectedrows + 1, $device, "", "\r\n action=get_temporary_devices \r\n", 'ok', $option, $searchPanes = get_searchPanes_CB($device, 'contextbroker', $total));
+      
             
-             $output = format_result_serverside($_REQUEST["draw"], $selectedrows + 1, $selectedrows + 1, $device, "", "\r\n action=get_temporary_devices \r\n", 'ok', $option, $searchPanes=  get_searchPanes_CB($device, 'contextbroker'));
-        } else {
+                    } else {
             $output = format_result($_REQUEST["draw"], 0, 0, null, 'Error: errors in reading data about devices. <br/>' .
                     generateErrorMessage($link), '\n\r Error: errors in reading data about devices.' . generateErrorMessage($link), 'ko');
         }
@@ -324,9 +270,7 @@ else if ($action == "get_temporary_devices") {
 
     my_log($output);
     mysqli_close($link);
-} 
-
-else if ($action == "get_temporary_attributes") {
+} else if ($action == "get_temporary_attributes") {
     $missingParams = missingParameters(array('id', 'contextbroker'));
 
     if (!empty($missingParams)) {
@@ -342,18 +286,18 @@ else if ($action == "get_temporary_attributes") {
         $q1 = "SELECT * FROM temporary_event_values WHERE device = '$id' AND cb = '$cb' AND (toDelete IS NULL OR toDelete != 'yes')";
 
         $r1 = mysqli_query($link, $q1);
-      
-         if (isset( $_REQUEST['value'])) {
-               $type = mysqli_real_escape_string($link, $_REQUEST['type']);
-        $service = mysqli_real_escape_string($link, $_REQUEST['service']);
-        $servicePath = mysqli_real_escape_string($link, $_REQUEST['servicePath']);
-        $version = mysqli_real_escape_string($link, $_REQUEST['version']);
-             Loading_value($link, $id, $type, $cb, $service, $servicePath, $version, $result);
-              // Loading_value($link, $id, 'SwitchingGroup', $cb, '', '', 'v2', $result);
-               //echo $type;
+
+        if (isset($_REQUEST['value'])) {
+            $type = mysqli_real_escape_string($link, $_REQUEST['type']);
+            $service = mysqli_real_escape_string($link, $_REQUEST['service']);
+            $servicePath = mysqli_real_escape_string($link, $_REQUEST['servicePath']);
+            $version = mysqli_real_escape_string($link, $_REQUEST['version']);
+            Loading_value($link, $id, $type, $cb, $service, $servicePath, $version, $result);
+            // Loading_value($link, $id, 'SwitchingGroup', $cb, '', '', 'v2', $result);
+            //echo $type;
             // echo json_encode($result);
-                $result['value']=  $result['content'];
-            }
+            $result['value'] = $result['content'];
+        }
 
         $attributes = array();
         if ($r1) {
@@ -377,10 +321,6 @@ else if ($action == "get_temporary_attributes") {
             $result['status'] = 'ok';
             $result['content'] = $attributes;
             $result['log'] .= "\n\r action:get_device_attributes. access to " . $q1;
-            
-           
-            
-            
         } else {
             $result['status'] = 'ko'; // . $q1 . generateErrorMessage($link);
             $result['msg'] = 'Error: errors in reading data about devices. <br/>' . generateErrorMessage($link);
@@ -850,7 +790,7 @@ else if ($action == "get_affected_devices_count") {
     my_log($result);
     mysqli_close($link);
 } else if ($action == "get_affected_values_count") {
-    
+
     $attributesIf = json_decode($_REQUEST['attributesIf']);
     $usernameNotHashed = $username;
     $username = md5($username);
@@ -943,8 +883,60 @@ else if ($action == "get_affected_devices_count") {
     my_log($result);
     mysqli_close($link);
 } else if ($action == "update_all_values") {
-    $attributesThen = json_decode($_REQUEST['attributesThen']);
-    $attributesIf = json_decode($_REQUEST['attributesIf']);
+    
+    $startTime= microtime(true);
+
+    ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    if ($_REQUEST['attributesThen'] || $_REQUEST['attributesIf']) {
+        $attributesThen = json_decode($_REQUEST['attributesThen']);
+        $attributesIf = json_decode($_REQUEST['attributesIf']);
+        $loop = false;
+    }
+
+
+
+    if (isset($_REQUEST['cb'])) {
+
+
+        $attributesThen1 = array();
+        $attributesIf1 = array();
+        $attributesThen = array();
+        $attributesIf = array();
+        $loop = true;
+        $count_attributes = 0;
+
+        // gli passo cb, serv e servPath
+        $cb = $_REQUEST['cb'];
+        if (isset($_REQUEST['service']) && isset($_REQUEST['service_path'])) {
+            $service = $_REQUEST['service'];
+            $service_path = $_REQUEST['service_path'];
+
+            $q = "SELECT * FROM EXT_values_rules where contextbroker='$cb' AND mode='1' AND service = '$service' AND servicePath = '$service_path' AND organization = '$organization';";
+            //AND service = '$service' AND servicePath = '$service_path' AND organization = '$organization' 
+        } else {
+            $q = "SELECT * FROM EXT_values_rules where contextbroker='$cb' AND mode='1'  AND organization = '$organization';";
+            //AND service = '$service' AND servicePath = '$service_path' AND organization = '$organization'   
+        }
+
+        $res_newStat = mysqli_query($link, $q);
+
+        if ($res_newStat) {
+
+            while ($row = mysqli_fetch_assoc($res_newStat)) {
+                //controlla se conti il numero giusto di iterazioni
+                $count_attributes++;
+                $rec_if = array();
+                $rec_then = array();
+                // $rec_if["Name"]=($row["Name"]);
+                // $rec_then["Name"]=($row["Name"]);
+                $rec_if["If_statement"] = json_decode($row["If_statement"]);
+                $rec_then ["Then_statement"] = json_decode($row["Then_statement"]);
+
+                array_push($attributesIf1, json_decode($row["If_statement"])); // $rec_if);
+                array_push($attributesThen1, json_decode($row["Then_statement"])); // $rec_then);
+            }
+        }
+    }
 
     $usernameNotHashed = $username;
     $username = md5($username);
@@ -982,9 +974,326 @@ else if ($action == "get_affected_devices_count") {
     for ($i = 0; $i < count($array); $i++) {
         array_push($valueunits, $array[$i]->value);
     }
+/////////////
+
+    if ($loop) {
+
+
+        $count_if = 0;
+        $rules=array();
+        while ($count_if < $count_attributes ) {
+
+            $result = query_if_then($attributesIf1[$count_if], $attributesThen1[$count_if], $organization, $username, $link, $datatypes, $valuetypes, $valueunits );
+               array_push($rules,$result['rows']. "  *****RULE applies: ".json_encode($attributesIf1[$count_if]). "  " . json_encode($attributesThen1[$count_if]));
+
+            $count_if++;
+                if($result["status"]=='ko'){
+                    break;
+                }
+        }
+    } else {
+         
+        $result = query_if_then($attributesIf, $attributesThen, $organization, $username, $link, $datatypes, $valuetypes, $valueunits );
+    }
+    
+ //$result["rules"]=$rules;
+ 
+ $endTime= microtime(true);
+ $result["timeLaps"]=$endTime-$startTime;
+ 
+   if($loop){
+       unset($result["validity_message"] );
+       unset($result["valid"]);
+       unset($result["content"]);
+       unset($result["msg"]);
+       
+            
+        }
+
+
+    my_log($result);
+    mysqli_close($link);
+} else if ($action == "get_affected_values") {
+    $attributesIf = json_decode($_REQUEST['attributes']);
+
+    $usernameNotHashed = $username;
+    $username = md5($username);
+
+    $hv = 0;
+    $hcriteria = "";
+    while ($hv < count($attributesIf)) {
+        $attHv = $attributesIf[$hv];
+        if ($attHv->field == "healthiness_criteria") {
+            if ($attHv->value == "refresh_rate") {
+                $hcriteria = "value_refresh_rate";
+            } else if ($attHv->value == "within_bounds") {
+                $hcriteria = "value_bounds";
+            } else {
+                $hcriteria = $attHv->value;
+            }
+            break;
+        }
+        $hv++;
+    }
+
+    $a = 0;
+   // $query = "te.cb = td.contextbroker AND te.device = td.id AND deleted IS null AND username = '$username' AND organization='$organization' AND (te.toDelete IS NULL OR te.toDelete != 'yes')";
+   
+    $query = "SELECT * FROM temporary_devices td INNER JOIN temporary_event_values te WHERE te.cb = td.contextbroker AND username = '$username' AND organization='$organization'  ";
+    
+    while ($a < count($attributesIf)) {
+        $attIf = $attributesIf[$a];
+        if ($attIf->field == "empty") {
+            $a++;
+            break;
+        }
+        if ($attIf->field == "healthiness_value") {
+            $query .= " AND " . $hcriteria;
+        } else {
+            $query .= " AND " . $attIf->field;
+        }
+        if ($attIf->operator == "IsNull") {
+            $query .= " IS NULL";
+        } else {
+            if ($attIf->operator == "IsEqual") {
+                if ($attIf->value == "Empty" || empty($attIf->value)) {
+                    $query .= " = ''";
+                } else {
+                    $query .= " =  '" . $attIf->value . "'";
+                }
+            } else if ($attIf->operator == "Contains") {
+                if ($attIf->value == "Empty" || empty($attIf->value)) {
+                    $query .= " LIKE ''";
+                } else {
+                    $query .= " LIKE  '%" . $attIf->value . "%'";
+                }
+            } else if ($attIf->operator == "IsNotEqual") {
+                $query .= "<> '" . $attIf->value . "'";
+            }
+        }
+        $a++;
+    }
+    if (count($attributesIf) > 0) {
+        
+
+        //$q2 = "SELECT * FROM temporary_devices td INNER JOIN temporary_event_values te limit 300";
+        $query=$query.' limit 500';
+
+        $r = create_datatable_data($link, $_REQUEST, $query, '');
+
+        $selectedrows = -1;
+        if ($_REQUEST["length"] != -1) {
+            $start = $_REQUEST['start'];
+            $offset = $_REQUEST['length'];
+            $tobelimited = true;
+        } else {
+            $tobelimited = false;
+        }
+
+        if ($r) {
+            //$result['status'] = 'ok';
+            //$result['content'] = array();
+            $value = array();
+            $result["log"] = "\r\n action=get_preview \r\n";
+            while ($row = mysqli_fetch_assoc($r)) {
+                $selectedrows++;
+                if (!$tobelimited || ($tobelimited && $selectedrows >= $start && $selectedrows < ($start + $offset))) {
+                    $rec = array();
+                    $rec["contextbroker"] = $row["cb"];
+                    $rec["name"] = $row["device"];
+                    $rec["value_name"] = $row["value_name"];
+                    $rec["data_type"] = $row["data_type"];
+                    $rec["value_type"] = $row["value_type"];
+                    $rec["value_unit"] = $row["value_unit"];
+                    $rec["healthiness_criteria"] = $row["healthiness_criteria"];
+
+                    if ($rec["healthiness_criteria"] == "refresh_rate") {
+                        $rec["healthiness_value"] = $row["value_refresh_rate"];
+                    } else if ($rec["healthiness_criteria"] == "within_bounds") {
+                        $rec["healthiness_value"] = $row["value_bounds"];
+                    } else {
+                        $rec["healthiness_value"] = $row["different_values"];
+                    }
+                    array_push($value, $rec);
+                }
+            }
+            $output = format_result($_REQUEST["draw"], $selectedrows + 1, $selectedrows + 1, $value, "", "\r\n action=get_preview \r\n", 'ok');
+            $output['query']=  $GLOBALS['DataTableQuery'];
+        } else {
+            $output = format_result($_REQUEST["draw"], 0, 0, null, 'Error: errors in reading data about devices. <br/>' .
+                    generateErrorMessage($link), '\n\r Error: errors in reading data about devices.' . generateErrorMessage($link), 'ko');
+            $output['query']=  $GLOBALS['DataTableQuery'];
+        }
+        $result = $output;
+    }
+
+    my_log($result);
+    mysqli_close($link);
+} else if ($action == "get_fields") {
+    $fieldIf = mysqli_real_escape_string($link, $_REQUEST['fieldIf']);
+    $IfThenFieldValue=mysqli_real_escape_string($link, $_REQUEST['IfThenFieldValue']);
+
+    $sql = 'SELECT * FROM fieldType WHERE fieldName ="' . $fieldIf . '";';
+
+    $r = mysqli_query($link, $sql);
+    if ($r) {
+        $rec = array();
+        while ($row = mysqli_fetch_assoc($r)) {
+            if ($row["fieldName"] == 'value_type') {
+                retrieveFromDictionary("value%20type", $result_value_types);
+                //$r1 = mysqli_query($link, $row["query"]);
+                $htmlstring = "<select class= \"fieldSelectIf\" >";
+                // $array = array();
+                $array = $result_value_types["content"];
+                for ($i = 0; $i < count($array); $i++) {
+                    if($IfThenFieldValue==$array[$i]->value){
+                         $htmlstring .= "<option value=" . $array[$i]->value . " selected >" . $array[$i]->label . "</option>";
+                    }else{
+                        $htmlstring .= "<option value=" . $array[$i]->value . ">" . $array[$i]->label . "</option>";
+                    }
+                            
+                    
+                }
+                $rec["fieldsHtml"] = $htmlstring . "</select>";
+                $rec["query"] = $row["query"];
+                $rec["fieldName"] = $row["fieldName"];
+                $rec["menuType"] = $row["menuType"];
+            } else if ($row["fieldName"] == 'value_unit') {
+                retrieveFromDictionary("value%20unit", $result_value_units);
+                //$r1 = mysqli_query($link, $row["query"]);
+                $htmlstring = "<select class= \"fieldSelectIf\" >";
+                // $array = array();
+                $array = $result_value_units["content"];
+                for ($i = 0; $i < count($array); $i++) {
+                    if($IfThenFieldValue==$array[$i]->value){
+                         $htmlstring .= "<option value=" . $array[$i]->value . " selected >" . $array[$i]->label . "</option>";
+                    }else{
+                        $htmlstring .= "<option value=" . $array[$i]->value . ">" . $array[$i]->label . "</option>";
+                    }
+                    
+                }
+
+                $rec["fieldsHtml"] = $htmlstring . "</select>";
+                $rec["query"] = $row["query"];
+                $rec["fieldName"] = $row["fieldName"];
+                $rec["menuType"] = $row["menuType"];
+            } else {
+                if ($row["query"] == NULL) {
+                    $rec["query"] = $row["query"];
+                    $rec["fieldName"] = $row["fieldName"];
+                    $rec["menuType"] = $row["menuType"];
+                    //ADD value  $IfThenFieldValue
+                    if($IfThenFieldValue){
+                         $rec["fieldsHtml"] =str_replace("Empty",$IfThenFieldValue , $row["fieldsHtml"]); 
+                    }else{
+                        $rec["fieldsHtml"] = $row["fieldsHtml"]; 
+                    }
+                   
+                   
+                } else if($row["fieldName"] == "model"){
+                    $r1 = mysqli_query($link, $row["query"]);
+                    $htmlstring = "<select class= \"fieldSelectIf\" >";
+                    while ($row1 = mysqli_fetch_assoc($r1)) {
+                        if ($row["menuType"] == "select") {     
+                         if($IfThenFieldValue== $row1["name"]){
+                          $htmlstring .= "<option value=" . $row1["name"] . " selected >" . $row1["name"] . "</option>";
+                    }else{
+                         $htmlstring .= "<option value=" . $row1["name"] . ">" . $row1["name"] . "</option>";
+                    }
+                    
+                        }
+                    }
+                    if($IfThenFieldValue== "custom"){
+                           $htmlstring .= "<option value=\"custom\" selected >custom</option>";
+                    }else{
+                          $htmlstring .= "<option value=\"custom\">custom</option>";
+                    }
+                    
+                    $rec["fieldsHtml"] = $htmlstring . "</select>";                    
+                    $rec["query"] = $row["query"];
+                    $rec["fieldName"] = $row["fieldName"];
+                    $rec["menuType"] = $row["menuType"];
+                } else if($row["fieldName"] == "data_type"){
+                    $r1 = mysqli_query($link, $row["query"]);
+                    $htmlstring = "<select class= \"fieldSelectIf\" >";
+                    while ($row1 = mysqli_fetch_assoc($r1)) {
+                        // echo json_encode($row1);
+                        if ($row["menuType"] == "select") {
+                            if($IfThenFieldValue== $row1["name"]){
+                          $htmlstring .= "<option value=" . $row1["name"] . " selected >" . $row1["name"] . "</option>";
+                    }else{
+                         $htmlstring .= "<option value=" . $row1["name"] . ">" . $row1["name"] . "</option>";
+                    }
+                            
+                        }
+                    }
+                    
+                    $rec["fieldsHtml"] = $htmlstring . "</select>";                    
+                    $rec["query"] = $row["query"];
+                    $rec["fieldName"] = $row["fieldName"];
+                    $rec["menuType"] = $row["menuType"];
+                }              
+                else{
+                    $r1 = mysqli_query($link, $row["query"]);
+                    $htmlstring = "<select class= \"fieldSelectIf\" >";
+                    while ($row1 = mysqli_fetch_assoc($r1)) {
+                        
+                        // echo json_encode($row1);
+                        if ($row["menuType"] == "select") {
+                            if($IfThenFieldValue== $row1["contextBroker"] ){
+                          $htmlstring .= "<option value=" .$row1["contextBroker"]  . " selected >" . $row1["contextBroker"] . "</option>";
+                    }else{
+                         $htmlstring .= "<option value=" . $row1["contextBroker"]  . ">" .$row1["contextBroker"]  . "</option>";
+                    }
+                            
+                            
+                        }
+                    }
+                   
+                    
+                    $rec["fieldsHtml"] = $htmlstring . "</select>";                    
+                    $rec["query"] = $row["query"];
+                    $rec["fieldName"] = $row["fieldName"];
+                    $rec["menuType"] = $row["menuType"];
+                }
+
+                $autocomplete = array();
+                if ($row["autocomplete"] != NULL) {
+
+                    $r2 = mysqli_query($link, $row["autocomplete"]);
+                    while ($row2 = mysqli_fetch_assoc($r2)) {
+                        array_push($autocomplete, $row2["id"]);
+                    }
+                    $rec["autocomplete"] = $autocomplete;
+                } else {
+                    $rec["autocomplete"] = null;
+                }
+            }
+        }
+        $result['status'] = 'ok';
+        $result['content'] = array();
+        array_push($result['content'], $rec);
+        $result['log'] .= "\n\r  get field type";
+    } else {
+        $result['status'] = 'ko';
+        $result["msg"] .= "Error during the update 3" . generateErrorMessage($link);
+        $result["log"] .= "\r\n Error during update";
+    }
+
+    my_log($result);
+    mysqli_close($link);
+} else {
+    $result['status'] = 'ko';
+    $result['msg'] = 'invalid action ' . $action;
+    $result['log'] = 'invalid action ' . $action;
+    my_log($result);
+}
+
+function query_if_then($attributesIf, $attributesThen, $organization, $username, $link, $datatypes, $valuetypes, $valueunits ) {
 
     $hv = 0;
     $hcriteriaIf = "";
+
     while ($hv < count($attributesIf)) {
         $attHv = $attributesIf[$hv];
         if ($attHv->field == "healthiness_criteria") {
@@ -1017,7 +1326,9 @@ else if ($action == "get_affected_devices_count") {
         $hv++;
     }
 
-    $query = "UPDATE temporary_event_values te JOIN temporary_devices td ON te.cb = td.contextbroker AND te.device = td.id ";
+    //$query = "UPDATE temporary_event_values te JOIN temporary_devices td ON te.cb = td.contextbroker AND te.device = td.id ";
+    $query = "UPDATE temporary_event_values ";
+    
 
     $a = 0;
     $set = 0;
@@ -1077,140 +1388,156 @@ else if ($action == "get_affected_devices_count") {
 
         $b++;
     }
+
+
+   // $query .= " AND username =  '$username' AND organization = '$organization' AND (te.toDelete IS NULL OR te.toDelete != 'yes');";
+    
+     $query .="and (cb,device) in (select contextbroker,id from temporary_devices where username =  '$username' AND organization = '$organization') 
+AND (toDelete IS NULL OR toDelete != 'yes')";
+
+     
+   // echo $query; 
+   // console.log("query:".$query);
     $logFields = substr($logFields, 0, strlen($logFields) - 2);
-
-    $query .= " AND username =  '$username' AND organization = '$organization' AND (te.toDelete IS NULL OR te.toDelete != 'yes');";
-
     $r = mysqli_query($link, $query);
 
-    if ($r) {
-        logAction($link, $usernameNotHashed, 'bulk_update', 'update_all_values', '', $organization, 'updated ' . $logFields . " fields", 'success');
 
-        $q1 = "SELECT * FROM temporary_devices";
-        $a1 = 0;
-        $where = 0;
-        //acquisition of data for validate device function and color hilight
-        while ($a1 < count($attributesIf)) {
-            $attIf = $attributesIf[$a1];
-            if ($where == 0) {
-                $q1 .= " WHERE ";
-                if ($attIf->field == 'device') {
-                    $q1 .= ' id ';
-                } else {
-                    $q1 .= $attIf->field;
-                }
-                $where = 1;
-            } else {
-                $q1 .= " AND ";
-                if ($attIf->field == 'device') {
-                    $q1 .= ' id ';
-                } else {
-                    $q1 .= $attIf->field;
-                }
-                //$q1 .=  $attIf->field;
-            }
-            if ($attIf->operator == "IsNull") {
-                $q1 .= " IS NULL";
-            } else {
-                if ($attIf->operator == "IsEqual") {
-                    $q1 .= "=  '" . $attIf->value . "'";
-                } else if ($attIf->operator == "IsNotEqual") {
-                    $q1 .= "<> '" . $attIf->value . "'";
-                } else if ($attIf->operator == "Contains") {
-                    $q1 .= " LIKE '%" . $attIf->value . "%'";
-                }
-            }
+    if ($r) { {
+           $result['rows']= mysqli_affected_rows($link);
 
-            $a1++;
-        }
+            logAction($link, $usernameNotHashed, 'bulk_update', 'update_all_values', '', $organization, 'updated ' . $logFields . " fields", 'success');
 
-        $q1 .= " AND username =  '$username' AND organization = '$organization';";
-        // $q1 .= " ;";
-
-        $r1 = mysqli_query($link, $q1);
-
-        $resultDevices = array();
-        if ($r1) {
-
-            while ($row1 = mysqli_fetch_assoc($r1)) {
-                $q2 = 'SELECT * FROM temporary_event_values WHERE device="' . $row1["id"] . '" AND cb = "' . $row1["contextBroker"] . '" AND (toDelete IS NULL OR toDelete != "yes")';
-                $r2 = mysqli_query($link, $q2);
-                $updatedDevice = array();
-
-                if ($r2) {
-                    $devValues = array();
-                    $values = array();
-
-                    while ($row2 = mysqli_fetch_assoc($r2)) {
-                        $hvalue;
-                        if ($row2["healthiness_criteria"] == "refresh_rate")
-                            $hvalue = $row2["value_refresh_rate"];
-                        if ($row2["healthiness_criteria"] == "different_values")
-                            $hvalue = $row2["different_values"];
-                        if ($row2["healthiness_criteria"] == "within_bounds")
-                            $hvalue = $row2["value_bounds"];
-                        ////	$att= '{"value_name": "'.$row2["value_name"].'", "value_type": "'.$row2["value_type"].'", "editable": "'. $row2["editable"]. '",  "value_unit": "'.$row2["value_unit"].'", "healthiness_criteria":"'.$row2["healthiness_criteria"].'", "healthiness_value":"'.$hvalue.'"}';
-                        //	$devValues .=  $att.",";
-                        $devValues["value_name"] = $row2["value_name"];
-                        $devValues["value_type"] = $row2["value_type"];
-                        $devValues["data_type"] = $row2["data_type"];
-                        $devValues["editable"] = $row2["editable"];
-                        $devValues["value_unit"] = $row2["value_unit"];
-                        $devValues["healthiness_criteria"] = $row2["healthiness_criteria"];
-                        $devValues["healthiness_value"] = $hvalue;
-                        array_push($values, $devValues);
+          //  $q1 = "SELECT * FROM temporary_devices";
+            $q1="SELECT * from  temporary_devices td  JOIN temporary_event_values te ON te.cb=td.contextbroker AND te.device=td.id"; 
+           
+            $a1 = 0;
+            $where = 0;
+            //acquisition of data for validate device function and color hilight
+            while ($a1 < count($attributesIf)) {
+                $attIf = $attributesIf[$a1];
+                if ($where == 0) {
+                    $q1 .= " WHERE ";
+                    if ($attIf->field == 'device') {
+                        $q1 .= ' id ';
+                    } else if ($attIf->field == 'cb') {
+                        $q1 .= ' contextBroker ';
+                    } else {
+                        $q1 .= $attIf->field;
                     }
-                    //	$devValues= rtrim($devValues,',');
-                    //	$devValues .= "]";
-                    //	$updatedDevice='{"contextbroker": "'.$row1["contextBroker"].'", "name": "'.$row1["id"].'", "devicetype": "'.$row1["devicetype"].'", "model": "'.$row1["model"].'","macaddress": "'.$row1["macaddress"].'", "frequency": "'.$row1["frequency"].'", "kind": "'.$row1["kind"].'", "protocol": "'.$row1["protocol"]. '", "format": "'.$row1["format"].'", "latitude": "' .$row1["latitude"].'", "longitude":"'.$row1["longitude"].'", "visibility":"'.$row1["visibility"].'", "k1":"'.$row1["k1"].'", "k2": "'.$row1["k2"].'", "producer":"'.$row1["producer"].'", "edge_gateway_type": "' .$row1["edge_gateway_type"].'", "edge_gateway_uri":"'.$row1["edge_gateway_uri"].'", "deviceValues": '. $devValues.'}';
-                    $updatedDevice["contextbroker"] = $row1["contextBroker"];
-                    $updatedDevice["name"] = $row1["id"];
-                    $updatedDevice["devicetype"] = $row1["devicetype"];
-                    $updatedDevice["model"] = $row1["model"];
-                    $updatedDevice["macaddress"] = $row1["macaddress"];
-                    $updatedDevice["frequency"] = $row1["frequency"];
-                    $updatedDevice["kind"] = $row1["kind"];
-                    $updatedDevice["protocol"] = $row1["protocol"];
-                    $updatedDevice["format"] = $row1["format"];
-                    $updatedDevice["latitude"] = $row1["latitude"];
-                    $updatedDevice["longitude"] = $row1["longitude"];
-                    $updatedDevice["visibility"] = $row1["visibility"];
-                    $updatedDevice["k1"] = $row1["k1"];
-                    $updatedDevice["k2"] = $row1["k2"];
-                    $updatedDevice["producer"] = $row1["producer"];
-                    $updatedDevice["edge_gateway_type"] = $row1["edge_gateway_type"];
-                    $updatedDevice["edge_gateway_uri"] = $row1["edge_gateway_uri"];
-                    $updatedDevice["deviceValues"] = array();
-                    $updatedDevice["deviceValues"] = $values;
-                    array_push($resultDevices, $updatedDevice);
+                    $where = 1;
+                } else {
+                    $q1 .= " AND ";
+                    if ($attIf->field == 'device') {
+                        $q1 .= ' id ';
+                    } else {
+                        $q1 .= $attIf->field;
+                    }
+                    //$q1 .=  $attIf->field;
                 }
+                if ($attIf->operator == "IsNull") {
+                    $q1 .= " IS NULL";
+                } else {
+                    if ($attIf->operator == "IsEqual") {
+                        $q1 .= "=  '" . $attIf->value . "'";
+                    } else if ($attIf->operator == "IsNotEqual") {
+                        $q1 .= "<> '" . $attIf->value . "'";
+                    } else if ($attIf->operator == "Contains") {
+                        $q1 .= " LIKE '%" . $attIf->value . "%'";
+                    }
+                }
+
+                $a1++;
             }
 
-            while (count($resultDevices) > 0) {
-                $device = array_pop($resultDevices);
-                $verification = verifyDevice($device, $modelsdata, $datatypes, $valuetypes, $valueunits);
-                $validity = "valid";
-                if ($verification["isvalid"] == 0) {
-                    $validity = "invalid";
+            $q1 .= " AND username =  '$username' AND organization = '$organization';";
+            // $q1 .= " ;";
+
+            $r1 = mysqli_query($link, $q1);
+
+            $resultDevices = array();
+            if ($r1) {
+
+                while ($row1 = mysqli_fetch_assoc($r1)) {
+                    $q2 = 'SELECT * FROM temporary_event_values WHERE device="' . $row1["id"] . '" AND cb = "' . $row1["contextBroker"] . '" AND (toDelete IS NULL OR toDelete != "yes")';
+
+                    $r2 = mysqli_query($link, $q2);
+                    $updatedDevice = array();
+
+                    if ($r2) {
+                        $devValues = array();
+                        $values = array();
+
+                        while ($row2 = mysqli_fetch_assoc($r2)) {
+                            $hvalue;
+                            if ($row2["healthiness_criteria"] == "refresh_rate")
+                                $hvalue = $row2["value_refresh_rate"];
+                            if ($row2["healthiness_criteria"] == "different_values")
+                                $hvalue = $row2["different_values"];
+                            if ($row2["healthiness_criteria"] == "within_bounds")
+                                $hvalue = $row2["value_bounds"];
+                            ////	$att= '{"value_name": "'.$row2["value_name"].'", "value_type": "'.$row2["value_type"].'", "editable": "'. $row2["editable"]. '",  "value_unit": "'.$row2["value_unit"].'", "healthiness_criteria":"'.$row2["healthiness_criteria"].'", "healthiness_value":"'.$hvalue.'"}';
+                            //	$devValues .=  $att.",";
+                            $devValues["value_name"] = $row2["value_name"];
+                            $devValues["value_type"] = $row2["value_type"];
+                            $devValues["data_type"] = $row2["data_type"];
+                            $devValues["editable"] = $row2["editable"];
+                            $devValues["value_unit"] = $row2["value_unit"];
+                            $devValues["healthiness_criteria"] = $row2["healthiness_criteria"];
+                            $devValues["healthiness_value"] = $hvalue;
+                            array_push($values, $devValues);
+                        }
+                        //	$devValues= rtrim($devValues,',');
+                        //	$devValues .= "]";
+                        //	$updatedDevice='{"contextbroker": "'.$row1["contextBroker"].'", "name": "'.$row1["id"].'", "devicetype": "'.$row1["devicetype"].'", "model": "'.$row1["model"].'","macaddress": "'.$row1["macaddress"].'", "frequency": "'.$row1["frequency"].'", "kind": "'.$row1["kind"].'", "protocol": "'.$row1["protocol"]. '", "format": "'.$row1["format"].'", "latitude": "' .$row1["latitude"].'", "longitude":"'.$row1["longitude"].'", "visibility":"'.$row1["visibility"].'", "k1":"'.$row1["k1"].'", "k2": "'.$row1["k2"].'", "producer":"'.$row1["producer"].'", "edge_gateway_type": "' .$row1["edge_gateway_type"].'", "edge_gateway_uri":"'.$row1["edge_gateway_uri"].'", "deviceValues": '. $devValues.'}';
+                        $updatedDevice["contextbroker"] = $row1["contextBroker"];
+                        $updatedDevice["name"] = $row1["id"];
+                        $updatedDevice["devicetype"] = $row1["devicetype"];
+                        $updatedDevice["model"] = $row1["model"];
+                        $updatedDevice["macaddress"] = $row1["macaddress"];
+                        $updatedDevice["frequency"] = $row1["frequency"];
+                        $updatedDevice["kind"] = $row1["kind"];
+                        $updatedDevice["protocol"] = $row1["protocol"];
+                        $updatedDevice["format"] = $row1["format"];
+                        $updatedDevice["latitude"] = $row1["latitude"];
+                        $updatedDevice["longitude"] = $row1["longitude"];
+                        $updatedDevice["visibility"] = $row1["visibility"];
+                        $updatedDevice["k1"] = $row1["k1"];
+                        $updatedDevice["k2"] = $row1["k2"];
+                        $updatedDevice["producer"] = $row1["producer"];
+                        $updatedDevice["edge_gateway_type"] = $row1["edge_gateway_type"];
+                        $updatedDevice["edge_gateway_uri"] = $row1["edge_gateway_uri"];
+                        $updatedDevice["deviceValues"] = array();
+                        $updatedDevice["deviceValues"] = $values;
+                        array_push($resultDevices, $updatedDevice);
+                    }
                 }
-                $result["validity_message"] .= trim($verification["message"]);
-                $result["valid"] .= $validity;
-                $sql = 'UPDATE temporary_devices SET validity_msg =\'' . trim($verification["message"]) . '\', status = "' . $validity . '" WHERE contextbroker = "' . $device["contextbroker"] . '" AND id ="' . $device["name"] . '";';
-                $r = mysqli_query($link, $sql);
-                if ($r) {
-                    $result['status'] = 'ok';
-                    $result["msg"] .= "Update correctly executed";
-                } else {
-                    $result['status'] = 'ko';
-                    $result["msg"] .= "Error during the update 1" . generateErrorMessage($link);
-                    $result["log"] .= "\r\n Error during update";
+
+                while (count($resultDevices) > 0) {
+                    $device = array_pop($resultDevices);
+                    $verification = verifyDevice($device, $modelsdata, $datatypes, $valuetypes, $valueunits);
+                    $validity = "valid";
+                    if ($verification["isvalid"] == 0) {
+                        $validity = "invalid";
+                    }
+                    $result["validity_message"] .= trim($verification["message"]);
+                    $result["valid"] .= $validity;
+                    $sql = 'UPDATE temporary_devices SET validity_msg =\'' . trim($verification["message"]) . '\', status = "' . $validity . '" WHERE contextbroker = "' . $device["contextbroker"] . '" AND id ="' . $device["name"] . '";';
+                    $r = mysqli_query($link, $sql);
+                    if ($r) {
+                        $result['status'] = 'ok';
+                        $result["msg"] .= "Update correctly executed";
+                    } else {
+                        $result['status'] = 'ko';
+                        $result["msg"] .= "Error during the update 1" . generateErrorMessage($link);
+                        $result["log"] .= "\r\n Error during update";
+                    }
                 }
+            } else {
+                $result["msg"] .= "Empty Result";
+                $result["log"] .= "\r\n No data";
+                $result['status'] = 'ok';
+                $result['query'] .= $q1;
             }
-        } else {
-            $result["msg"] .= "Empty Result";
-            $result["log"] .= "\r\n No data";
-            $result['status'] = 'ok';
-            $result['query'] .= $q1;
         }
     } else {
         logAction($link, $usernameNotHashed, 'bulk_update', 'update_all_values', '', $organization, 'Error: bulk update of values has failed ', 'faliure');
@@ -1218,211 +1545,10 @@ else if ($action == "get_affected_devices_count") {
         $result['status'] = 'ko';
         $result["msg"] .= "Error during the update 2" . generateErrorMessage($link);
         $result["log"] .= "\r\n Error during update";
-    }
-    my_log($result);
-    mysqli_close($link);
-} else if ($action == "get_affected_values") {
-    $attributesIf = json_decode($_REQUEST['attributes']);
-
-    $usernameNotHashed = $username;
-    $username = md5($username);
-
-    $hv = 0;
-    $hcriteria = "";
-    while ($hv < count($attributesIf)) {
-        $attHv = $attributesIf[$hv];
-        if ($attHv->field == "healthiness_criteria") {
-            if ($attHv->value == "refresh_rate") {
-                $hcriteria = "value_refresh_rate";
-            } else if ($attHv->value == "within_bounds") {
-                $hcriteria = "value_bounds";
-            } else {
-                $hcriteria = $attHv->value;
-            }
-            break;
-        }
-        $hv++;
+        $result["query"] .= $query ;
     }
 
-    $a = 0;
-    $query = "te.cb = td.contextbroker AND te.device = td.id AND deleted IS null AND username = '$username' AND organization='$organization' AND (te.toDelete IS NULL OR te.toDelete != 'yes')";
-    while ($a < count($attributesIf)) {
-        $attIf = $attributesIf[$a];
-        if ($attIf->field == "empty") {
-            $a++;
-            break;
-        }
-        if ($attIf->field == "healthiness_value") {
-            $query .= " AND " . $hcriteria;
-        } else {
-            $query .= " AND " . $attIf->field;
-        }
-        if ($attIf->operator == "IsNull") {
-            $query .= " IS NULL";
-        } else {
-            if ($attIf->operator == "IsEqual") {
-                if ($attIf->value == "Empty" || empty($attIf->value)) {
-                    $query .= " = ''";
-                } else {
-                    $query .= " =  '" . $attIf->value . "'";
-                }
-            } else if ($attIf->operator == "Contains") {
-                if ($attIf->value == "Empty" || empty($attIf->value)) {
-                    $query .= " LIKE ''";
-                } else {
-                    $query .= " LIKE  '%" . $attIf->value . "%'";
-                }
-            } else if ($attIf->operator == "IsNotEqual") {
-                $query .= "<> '" . $attIf->value . "'";
-            }
-        }
-        $a++;
-    }
-    if (count($attributesIf) > 0) {
-//echo "qui";
-       // $q = " SELECT * FROM temporary_event_values te, temporary_devices td ";
-        
-        $q2="SELECT * FROM temporary_devices td INNER JOIN temporary_event_values te limit 300";
-
-        $r = create_datatable_data($link, $_REQUEST, $q2, $query);
-
-        $selectedrows = -1;
-        if ($_REQUEST["length"] != -1) {
-            $start = $_REQUEST['start'];
-            $offset = $_REQUEST['length'];
-            $tobelimited = true;
-        } else {
-            $tobelimited = false;
-        }
-
-        if ($r) {
-            //$result['status'] = 'ok';
-            //$result['content'] = array();
-            $value = array();
-            $result["log"] = "\r\n action=get_preview \r\n";
-            while ($row = mysqli_fetch_assoc($r)) {
-                $selectedrows++;
-                if (!$tobelimited || ($tobelimited && $selectedrows >= $start && $selectedrows < ($start + $offset))) {
-                    $rec = array();
-                    $rec["contextbroker"] = $row["cb"];
-                    $rec["name"] = $row["device"];
-                    $rec["value_name"] = $row["value_name"];
-                    $rec["data_type"] = $row["data_type"];
-                    $rec["value_type"] = $row["value_type"];
-                    $rec["value_unit"] = $row["value_unit"];
-                    $rec["healthiness_criteria"] = $row["healthiness_criteria"];
-
-                    if ($rec["healthiness_criteria"] == "refresh_rate") {
-                        $rec["healthiness_value"] = $row["value_refresh_rate"];
-                    } else if ($rec["healthiness_criteria"] == "within_bounds") {
-                        $rec["healthiness_value"] = $row["value_bounds"];
-                    } else {
-                        $rec["healthiness_value"] = $row["different_values"];
-                    }
-                    array_push($value, $rec);
-                }
-            }
-            $output = format_result($_REQUEST["draw"], $selectedrows + 1, $selectedrows + 1, $value, "", "\r\n action=get_preview \r\n", 'ok');
-        } else {
-            $output = format_result($_REQUEST["draw"], 0, 0, null, 'Error: errors in reading data about devices. <br/>' .
-                    generateErrorMessage($link), '\n\r Error: errors in reading data about devices.' . generateErrorMessage($link), 'ko');
-        }
-        $result = $output;
-    }
-
-    my_log($result);
-    mysqli_close($link);
-} else if ($action == "get_fields") {
-    $fieldIf = mysqli_real_escape_string($link, $_REQUEST['fieldIf']);
-
-    $sql = 'SELECT * FROM fieldType WHERE fieldName ="' . $fieldIf . '";';
-
-    $r = mysqli_query($link, $sql);
-    if ($r) {
-        $rec = array();
-        while ($row = mysqli_fetch_assoc($r)) {
-            if ($row["fieldName"] == 'value_type') {
-                retrieveFromDictionary("value%20type", $result_value_types);
-                //$r1 = mysqli_query($link, $row["query"]);
-                $htmlstring = "<select class= \"fieldSelectIf\" >";
-                // $array = array();
-                $array = $result_value_types["content"];
-                for ($i = 0; $i < count($array); $i++) {
-                    $htmlstring .= "<option value=" . $array[$i]->value . ">" . $array[$i]->label . "</option>";
-                }
-
-                $rec["fieldsHtml"] = $htmlstring . "</select>";
-                $rec["query"] = $row["query"];
-                $rec["fieldName"] = $row["fieldName"];
-                $rec["menuType"] = $row["menuType"];
-            } else if ($row["fieldName"] == 'value_unit') {
-                retrieveFromDictionary("value%20unit", $result_value_units);
-                //$r1 = mysqli_query($link, $row["query"]);
-                $htmlstring = "<select class= \"fieldSelectIf\" >";
-                // $array = array();
-                $array = $result_value_units["content"];
-                for ($i = 0; $i < count($array); $i++) {
-                    $htmlstring .= "<option value=" . $array[$i]->value . ">" . $array[$i]->label . "</option>";
-                }
-
-                $rec["fieldsHtml"] = $htmlstring . "</select>";
-                $rec["query"] = $row["query"];
-                $rec["fieldName"] = $row["fieldName"];
-                $rec["menuType"] = $row["menuType"];
-            } else {
-                if ($row["query"] == NULL) {
-                    $rec["query"] = $row["query"];
-                    $rec["fieldName"] = $row["fieldName"];
-                    $rec["menuType"] = $row["menuType"];
-                    $rec["fieldsHtml"] = $row["fieldsHtml"];
-                } else {
-                    $r1 = mysqli_query($link, $row["query"]);
-                    $htmlstring = "<select class= \"fieldSelectIf\" >";
-                    while ($row1 = mysqli_fetch_assoc($r1)) {
-                       // echo json_encode($row1);
-                        if ($row["menuType"] == "select") {
-                            $htmlstring .= "<option value=" . $row1["contextBroker"] . ">" . $row1["contextBroker"] . "</option>";
-                        }
-                    }
-                    if ($row["fieldName"] == "model") {
-                        $htmlstring .= "<option value=\"custom\">custom</option>";
-                    }
-                    $rec["fieldsHtml"] = $htmlstring . "</select>";
-                    $rec["query"] = $row["query"];
-                    $rec["fieldName"] = $row["fieldName"];
-                    $rec["menuType"] = $row["menuType"];
-                }
-
-                $autocomplete = array();
-                if ($row["autocomplete"] != NULL) {
-
-                    $r2 = mysqli_query($link, $row["autocomplete"]);
-                    while ($row2 = mysqli_fetch_assoc($r2)) {
-                        array_push($autocomplete, $row2["id"]);
-                    }
-                    $rec["autocomplete"] = $autocomplete;
-                } else {
-                    $rec["autocomplete"] = null;
-                }
-            }
-        }
-        $result['status'] = 'ok';
-        $result['content'] = array();
-        array_push($result['content'], $rec);
-        $result['log'] .= "\n\r  get field type";
-    } else {
-        $result['status'] = 'ko';
-        $result["msg"] .= "Error during the update 3" . generateErrorMessage($link);
-        $result["log"] .= "\r\n Error during update";
-    }
-
-    my_log($result);
-    mysqli_close($link);
-} else {
-    $result['status'] = 'ko';
-    $result['msg'] = 'invalid action ' . $action;
-    $result['log'] = 'invalid action ' . $action;
-    my_log($result);
+    return $result;
 }
 
 function verifyDevice($deviceToverify, $modelsdata, $datatypes, $valuetypes, $valueunits) {

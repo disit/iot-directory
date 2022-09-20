@@ -10,6 +10,10 @@
  *   DataTables 1.11.3, AutoFill 2.3.7, Buttons 2.0.1, Column visibility 2.0.1, ColReorder 1.5.5, KeyTable 2.6.4, Responsive 2.2.9, RowReorder 1.2.8, Scroller 2.0.5, SearchPanes 1.4.0, Select 1.3.3
  */
 
+ .select2-container {
+  width: 100% !important;
+  }
+
 td.dt-control {
   background: url("https://www.datatables.net/examples/resources/details_open.png") no-repeat center center;
   cursor: pointer;
