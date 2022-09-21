@@ -17,9 +17,12 @@ import random
 import similarity_checker
 
 # Avendo un payload validato, procedo a generare il value_type. Se lo trovo, creo una regola per quel dispositivo
+
+
 class RuleGenerator():
     def __init__(self, database, dict_link):
-        self.sim_checker = similarity_checker.SimilarityChecker(database, dict_link)
+        self.sim_checker = similarity_checker.SimilarityChecker(
+            database, dict_link)
         self.db_helper = database
 
 # Rule is a tuple:
@@ -45,11 +48,13 @@ class RuleGenerator():
         return True
 
    # def create_rule(self, payload: dict, context_brocker, multitenancy, service, servicePath, organization, prefix):
-    def create_general_rules(self,_domain, _subdomain, _model, _attr ):
+    def create_general_rules(self, _domain, _subdomain, _model, _attr):
         if _attr["checked"] == "True":
-            _rule_name = _domain + "_" + _subdomain + "_" + _model + "_" + _attr["value_name"]+ str((100*random.random()).__round__())
+            _rule_name = _domain + "_" + _subdomain + "_" + _model + "_" + \
+                _attr["value_name"] + str((100*random.random()).__round__())
         else:
-            _rule_name = _domain + "_" + _subdomain + "_" + _model + "_" + _attr["value_name"]
+            _rule_name = _domain + "_" + _subdomain + \
+                "_" + _model + "_" + _attr["value_name"]
         _ifs = []
         _thens = []
         _ifs.append(self._gen_if("value_name", "IsEqual", _attr["value_name"]))
@@ -57,12 +62,11 @@ class RuleGenerator():
         _thens.append(self._gen_then("value_unit", _attr["value_unit"]))
         _thens.append(self._gen_then("data_type", _attr["data_type"]))
         print(f"Generated rule with ifs  {_ifs}\n and  {_thens}\n ")
-        _rule = [_rule_name, _ifs, _thens, '','', '']
+        _rule = [_rule_name, _ifs, _thens, '', '', '']
         print(f"Generated rule for value_type of {_attr['value_name']}\n")
         return _rule
 
-
-    def create_rule(self, payload:dict, context_brocker, multitenancy, service, servicePath, organization, prefix):
+    def create_rule(self, payload: dict, context_brocker, multitenancy, service, servicePath, organization, prefix):
         _payload = payload[0][0]
         _metadata = payload[0][1]
         _schema_tuple = payload[1]
@@ -79,8 +83,9 @@ class RuleGenerator():
         print(f"\nCreating rules for device '{_device}'")
         for attribute in _payload.keys():
             _create_rule = False
-            value_type = self.sim_checker.fit_value_type(attribute, _schema_tuple)
-            if isinstance(value_type, tuple): # Quando trovo un match con id
+            value_type = self.sim_checker.fit_value_type(
+                attribute, _schema_tuple)
+            if isinstance(value_type, tuple):  # Quando trovo un match con id
                 _create_rule = True
             elif attribute not in ["type", "id"]:
                 print(f"No value_type found for '{attribute}'")
@@ -96,20 +101,24 @@ class RuleGenerator():
                 _thens.append(self._gen_then("value_type",
                                              value_type[0] if isinstance(value_type, tuple) else value_type)
                               )
-                #if attribute in _metadata.keys():
+                # if attribute in _metadata.keys():
                 #    if "unit" in _metadata[attribute].keys():
-                        # Devo creare una nuova regola che vincola questo unit?
-                        # Potrebbe essere non necessario
+                # Devo creare una nuova regola che vincola questo unit?
+                # Potrebbe essere non necessario
                 #        _thens.append(self._gen_then("value_unit", _metadata[attribute]["unit"]))
-                _rule = [_rule_name, _ifs, _thens, _organization, _context_broker]
+                _rule = [_rule_name, _ifs, _thens,
+                         _organization, _context_broker]
                 if multitenancy:
                     _rule.append(service)
                     _rule.append(servicePath)
                 _rule.append(_device)
-                _rules.append(tuple(_rule))  # Devo creare una regola per ognuno degli attributi.
+                # Devo creare una regola per ognuno degli attributi.
+                _rules.append(tuple(_rule))
                 print(f"Generated rule for value_type of {attribute}\n")
                 _rules_created += 1
             else:
-                print(f"Unable to generate rule for value_type of {attribute}\n")
-        print(f"Numer of rules created for '{_device}': {_rules_created} | Expected {_needed_rules} \n")
+                print(
+                    f"Unable to generate rule for value_type of {attribute}\n")
+        print(
+            f"Numer of rules created for '{_device}': {_rules_created} | Expected {_needed_rules} \n")
         return _rules

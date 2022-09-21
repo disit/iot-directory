@@ -1,17 +1,18 @@
- #Snap4City: IoT-Directory
- # Copyright (C) 2017 DISIT Lab https://www.disit.org - University of Florence
+#Snap4City: IoT-Directory
+# Copyright (C) 2017 DISIT Lab https://www.disit.org - University of Florence
 
-  #This program is free software; you can redistribute it and/or
-  #modify it under the terms of the GNU General Public License
-  #as published by the Free Software Foundation; either version 2
-  #of the License, or (at your option) any later version.
-  #This program is distributed in the hope that it will be useful,
-  #but WITHOUT ANY WARRANTY; without even the implied warranty of
-  #MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-  #GNU General Public License for more details.
-  #You should have received a copy of the GNU General Public License
-  #along with this program; if not, write to the Free Software
-  #Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+# This program is free software; you can redistribute it and/or
+# modify it under the terms of the GNU General Public License
+# as published by the Free Software Foundation; either version 2
+# of the License, or (at your option) any later version.
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+
 import loader as ld
 import os
 import json
@@ -31,7 +32,8 @@ class SmartDataModelsHarvester:
             return
         self.domains = domains
         if download_folder == "":
-            self.download_folder = "/media/giuseppe/Archivio2/Download/"  # Where to downaload Repos
+            # Where to downaload Repos
+            self.download_folder = "/media/giuseppe/Archivio2/Download/"
         else:
             self.download_folder = download_folder
         self.loader = ld.Loader(self.download_folder)
@@ -45,13 +47,14 @@ class SmartDataModelsHarvester:
         self.base_link = base_link
         self.location_schemas = None
         self.pandas_dataframe = None
-        #if not self.dict_already_exists():
+        # if not self.dict_already_exists():
         self.load_required_files()
         self.load_domain_dict()
-            #self.save_domain_dict()
-        #else:
-            #self.load_created_dict()
-        self.schema_reader = s4c.Schema_interpreter(result_folder=self.result_folder)
+        # self.save_domain_dict()
+        # else:
+        # self.load_created_dict()
+        self.schema_reader = s4c.Schema_interpreter(
+            result_folder=self.result_folder)
         self.unsaved_models = []
 
     def dict_already_exists(self):
@@ -80,7 +83,8 @@ class SmartDataModelsHarvester:
             _def_schema["field-common-schema"][_name] = _0["0"][_field_common_schema]
         _temp = {}
         _temp["definition-schemas"] = _definition_schemas
-        self.location_schemas = {**_temp["definition-schemas"], **self.location_schemas}
+        self.location_schemas = {
+            **_temp["definition-schemas"], **self.location_schemas}
 
     def _clean_location_schema(self):
         if "0" in self.location_schemas.keys():
@@ -104,7 +108,8 @@ class SmartDataModelsHarvester:
                     _schema_link = self.location_schemas[domain][subdomain][model]
                     with open(_schema_link, encoding="utf8") as _json_schema:
                         _schema_content = json.load(_json_schema)
-                    self.schema_reader.procedure(_schema_link, domain, subdomain, model)
+                    self.schema_reader.procedure(
+                        _schema_link, domain, subdomain, model)
                     if model not in self.schema_reader.get_wrongs() or also_wrongs:
                         _scalar_attr = self.schema_reader.get_scalar_attribute()
                         _attributes = self.schema_reader.get_s4c_attrs()
@@ -127,7 +132,8 @@ class SmartDataModelsHarvester:
     def load_required_files(self):
         for domain in self.domains:
             print(f"Loading {domain}")
-            self.loader.get_repo(link=self.base_link + domain + ".git", folder_name=domain)
+            self.loader.get_repo(link=self.base_link +
+                                 domain + ".git", folder_name=domain)
         print("Domains loaded.")
 
     def load_domain_dict(self):

@@ -37,7 +37,8 @@ class Schema_interpreter:
         self.model = model
         self.attribute_type = None  # Type property (Building, etc)
         self.schema_uri = schema_uri
-        self.subdomain_common_schema_uri = []  # Can exist some definitions schema into a domain
+        # Can exist some definitions schema into a domain
+        self.subdomain_common_schema_uri = []
         self.raw_schema = None
         self.scalar_attributes = {
             "title": "-DEFAULT TITLE-",
@@ -62,7 +63,8 @@ class Schema_interpreter:
         self.schema_valid = ""  # append this to the end of the file that save schema_details
         self.properties = None
         self.errors = []
-        self.common_definitions = []  # Definitions keys of all definitions schema inside a subdomain
+        # Definitions keys of all definitions schema inside a subdomain
+        self.common_definitions = []
         self.definition_schema = False
         self.schemas_commons = []
         self.analyzed_attrs = {}
@@ -99,7 +101,8 @@ class Schema_interpreter:
         if not self._exists_schema(self.schema_uri):
             self.schema_details += f"Error: {self.schema_uri} doesn't exist! THIS SCHEMA IS INVALID-!\n"
             self.schema_valid = "INVALID-"
-            raise Schema_exception(f"Error: {self.schema_uri} doesn't exist! THIS SCHEMA IS INVALID-!")
+            raise Schema_exception(
+                f"Error: {self.schema_uri} doesn't exist! THIS SCHEMA IS INVALID-!")
 
         with open(self.schema_uri, encoding="utf8") as schema:
             _raw_schema = json.load(schema)
@@ -132,7 +135,8 @@ class Schema_interpreter:
             for _unkn_key in self.raw_schema.keys():
                 for _scal_key in self.scalar_attributes.keys():
                     if re.findall(_unkn_key, _scal_key):
-                        self.errors.append(f"- Attention: assumed key '{_unkn_key}' equals to '{_scal_key}'.")
+                        self.errors.append(
+                            f"- Attention: assumed key '{_unkn_key}' equals to '{_scal_key}'.")
                         self.schema_details += f"\tI'm assuming that key '{_unkn_key}' is '{_scal_key}'.\n"
                         self.scalar_attributes[_scal_key] = self.raw_schema[_unkn_key]
                         _keys_to_delete.append(_unkn_key)
@@ -147,14 +151,16 @@ class Schema_interpreter:
         else:
             self.schema_valid = "INVALID-"
             self.schema_details += f"- ATTENTION: unable recognize the following keys. [{str(self.raw_schema.keys())}]"
-            self.errors.append(f"- Error: unable recognize the following keys. [{str(self.raw_schema.keys())}]")
+            self.errors.append(
+                f"- Error: unable recognize the following keys. [{str(self.raw_schema.keys())}]")
             raise Schema_exception(
                 f"Raw schema can't be recognized in all of its attributes.\n\tAttributes '{str(self.raw_schema.keys())}' hasn't been recognized")
 
     def _control_standardized_schema(self):
         if self.scalar_attributes["type"] != "object":
             self.schema_details += f"Attention: this schema is not OBJECT. It's {self.schema_type} . THIS SCHEMA IS INVALID-\n"
-            self.errors.append(f"- Attention: Schema is not an 'object', but '{self.schema_type}' So its wrong.")
+            self.errors.append(
+                f"- Attention: Schema is not an 'object', but '{self.schema_type}' So its wrong.")
             # Delete "type" attribute (this "type" is nomally object, and its not reffered to true "type" in propierties)
         elif "definitions" in self.raw_schema.keys():
             self.schema_details += "This schema is a definition schema. It contains definitions (collections of objects), " \
@@ -172,7 +178,8 @@ class Schema_interpreter:
         _temp, path = self.find_from_schema("properties")
         _constraint = self._check_constraint(path)
         if _constraint is None:
-            self.properties = self.find_from_schema("properties", delete=True)[0]
+            self.properties = self.find_from_schema(
+                "properties", delete=True)[0]
         else:
             if _constraint != "allOf":
                 self.errors.append(
@@ -196,7 +203,8 @@ class Schema_interpreter:
                         while _iterator > 0 and not _key_found:
                             if key in self.properties[_iterator].keys():
                                 _key_found = True
-                                self.scalar_attributes[key] = self.properties[_iterator].pop(key)
+                                self.scalar_attributes[key] = self.properties[_iterator].pop(
+                                    key)
                                 if key == "required":
                                     if "type" not in self.scalar_attributes["required"]:
                                         self.errors.append(
@@ -207,7 +215,8 @@ class Schema_interpreter:
                                         self.scalar_attributes.pop(key)
                                 elif key == "type":
                                     if type(self.scalar_attributes["type"]) is not str:
-                                        self.errors.append(f"- Error: 'type' attribute was expected to be a string. ")
+                                        self.errors.append(
+                                            f"- Error: 'type' attribute was expected to be a string. ")
                                         self.scalar_attributes[key] = "object"
                                         _key_found = False
                                         self.properties[_iterator][key] = self.scalar_attributes[key]
@@ -216,14 +225,18 @@ class Schema_interpreter:
                     elif type(self.properties) is dict:
                         if key in self.properties.keys():
                             if not self._is_attribute(self.properties[key]):
-                                self.scalar_attributes[key] = self.properties.pop(key)
+                                self.scalar_attributes[key] = self.properties.pop(
+                                    key)
 
                     if not _key_found:
-                        self.errors.append(f"- Error: scalar attribute '{key}' not found")
-                        self.schema_details += "I haven't found any attribute named " + key + ". Set default value for this.\n"
+                        self.errors.append(
+                            f"- Error: scalar attribute '{key}' not found")
+                        self.schema_details += "I haven't found any attribute named " + \
+                            key + ". Set default value for this.\n"
                         if key == "required":
                             self.scalar_attributes["required"] = []
-                            self.errors.append(f"- Error: attribute 'required' not found.")
+                            self.errors.append(
+                                f"- Error: attribute 'required' not found.")
                             if self.model not in self.wrong_models:
                                 self.wrong_models.append(self.model)
                         else:
@@ -245,25 +258,31 @@ class Schema_interpreter:
                 if type(_property) is dict:
                     if "$ref" in _property.keys() and len(_property.keys()) == 1:
                         if not self._is_known_ref(_property["$ref"]):
-                            self.errors.append(f"- Error: $ref is unknown. $ref='{_property['$ref']}'")
+                            self.errors.append(
+                                f"- Error: $ref is unknown. $ref='{_property['$ref']}'")
                         else:
-                            self.raw_attributes["$ref"].append(_property['$ref'])
+                            self.raw_attributes["$ref"].append(
+                                _property['$ref'])
                             _iterators_to_delete.append(_property)
                     elif "$ref" in _property.keys() and len(_property.keys()) > 1:
                         if not self._is_known_ref(_property["$ref"]):
-                            self.errors.append(f"- Error: $ref is unknown. $ref='{_property['$ref']}'")
+                            self.errors.append(
+                                f"- Error: $ref is unknown. $ref='{_property['$ref']}'")
                         else:
-                            self.raw_attributes["$ref"].append(_property['$ref'])
+                            self.raw_attributes["$ref"].append(
+                                _property['$ref'])
                             _iterators_to_delete.append(_property)
                     else:
                         _fields_to_delete = []
                         for _field in _property.keys():
                             if _field == "properties":
-                                self._control_properties_dict(_property["properties"])
+                                self._control_properties_dict(
+                                    _property["properties"])
                                 _fields_to_delete.append(_field)
                             elif _field == "$ref":
                                 if not self._is_known_ref(_property['$ref']):
-                                    self.errors.append(f"- Error: $ref is unknown. $ref='{_property['$ref']}'")
+                                    self.errors.append(
+                                        f"- Error: $ref is unknown. $ref='{_property['$ref']}'")
                                 else:
                                     _fields_to_delete.append(_field)
                             else:
@@ -271,11 +290,13 @@ class Schema_interpreter:
                                     self.raw_attributes[_field] = _property[_field]
                                     _fields_to_delete.append(_field)
                                 else:
-                                    self.errors.append(f"- Error: look in '{_field}' of 'properties'")
+                                    self.errors.append(
+                                        f"- Error: look in '{_field}' of 'properties'")
                         for _field in _fields_to_delete:
                             _property.pop(_field)
                         if not len(_property) == 0:
-                            self.errors.append(f"- Error: '[{str(_property)}]' hasn't been recognized.")
+                            self.errors.append(
+                                f"- Error: '[{str(_property)}]' hasn't been recognized.")
 
                 else:
                     self.errors.append(
@@ -285,13 +306,15 @@ class Schema_interpreter:
                 _properties.remove(_delete)
             for _property in _properties:
                 if len(_property.keys()) > 0:
-                    self.errors.append(f"- Error: some of the raw properties hasn't been recognized")
+                    self.errors.append(
+                        f"- Error: some of the raw properties hasn't been recognized")
         elif type(_properties) is dict:
             self._control_properties_dict(_properties)
         elif _properties is None:
             self.errors.append(f"- Error: 'properties' hasn't been found.")
         else:
-            self.errors.append(f"- Error: 'properties' hasn't been recognized. Type: {type(self.properties)}")
+            self.errors.append(
+                f"- Error: 'properties' hasn't been recognized. Type: {type(self.properties)}")
             self.schema_valid = "INVALID-"
             print(f"self.properties type {type(self.properties)} - ???")
 
@@ -329,7 +352,8 @@ class Schema_interpreter:
                 _iterator -= 1
         # Ok if i pass here, attribute is an Real attribute of the form allOf[{..},{...}]
         if not "description" in attribute.keys():
-            self.errors.append(f"- Attention: {attribute_name} haven't a description")
+            self.errors.append(
+                f"- Attention: {attribute_name} haven't a description")
         return True
 
     def _control_properties_dict(self, _properties):
@@ -355,12 +379,14 @@ class Schema_interpreter:
                     _properties_to_delete.append(_property)
                 elif type(_properties[_property]) is list:
                     if self._check_constraint(_properties[_property].keys()):
-                        self.errors.append(f"- Error: problem analyzing '{_property}' in 'properties'")
+                        self.errors.append(
+                            f"- Error: problem analyzing '{_property}' in 'properties'")
                     else:
                         a = None
                         # Ok questo caso
                 else:
-                    self.errors.append(f"- Error: problem analyzing '{_property}' in 'properties'")
+                    self.errors.append(
+                        f"- Error: problem analyzing '{_property}' in 'properties'")
             else:
                 self.schema_details += f"{_property} is not a dict. Please check schema.json.\n"
                 self.schema_valid = "INVALID-"
@@ -370,7 +396,8 @@ class Schema_interpreter:
             _properties.pop(_property)
 
         if len(_properties) > 0:
-            self.errors.append(f"- Error: some properties hasn't been recognized.")
+            self.errors.append(
+                f"- Error: some properties hasn't been recognized.")
 
     def _exists_schema(self, schema_uri):
         if os.path.exists(schema_uri) and not os.path.isdir(schema_uri):
@@ -378,7 +405,8 @@ class Schema_interpreter:
         return False
 
     def _calculate_errors(self):
-        self._escape_attributes_name()  # verifica i nomi di ogni singolo attributo (fai l'escape)
+        # verifica i nomi di ogni singolo attributo (fai l'escape)
+        self._escape_attributes_name()
         self._check_required()  # verifica che ci siano tutti gli attributi
         self._localization_check()  # scrivi quando manca l'attributo di localizzazione
         # (questa operazione viene fatta in check required)
@@ -406,18 +434,21 @@ class Schema_interpreter:
             if requirement not in self.external_ref:  # Known referenced
                 if requirement not in self.raw_attributes.keys():
                     if requirement not in self.common_definitions:
-                        self.errors.append(f"- Attention: missing requirement '{requirement}'")
+                        self.errors.append(
+                            f"- Attention: missing requirement '{requirement}'")
                         self.schema_details += f"\t Missing requirement '{requirement}'\n"
                         print(f"Missing {requirement}")
 
     def _localization_check(self):
         _location_found = False
-        _localization_values = ["location", "Location-Commons", "address", "areaServed"]
+        _localization_values = ["location",
+                                "Location-Commons", "address", "areaServed"]
         for requirement in _localization_values:
             if requirement in self.scalar_attributes["required"]:
                 _location_found = True
         if not _location_found:
-            self.errors.append(f"- Attention: missing any 'Localization' requirement.")
+            self.errors.append(
+                f"- Attention: missing any 'Localization' requirement.")
             self.schema_valid = "INVALID-"
 
     def _check_remains(self):
@@ -425,20 +456,25 @@ class Schema_interpreter:
         if type(self.properties) is list:
             for _attr in self.properties:
                 if len(_attr.keys()) > 0:
-                    self.errors.append(f"- Error: Unrecognized properties. 'properties'=[{str(self.properties)}].")
+                    self.errors.append(
+                        f"- Error: Unrecognized properties. 'properties'=[{str(self.properties)}].")
         elif type(self.properties) is dict:
             if len(self.properties.keys()) > 0:
-                self.errors.append(f"- Error: schema was misinterpreted; Some attributes hasn't been interpreted")
+                self.errors.append(
+                    f"- Error: schema was misinterpreted; Some attributes hasn't been interpreted")
         elif self.properties is None:
             self.errors.append(f"- Error: 'properties' not found.")
             # if self.properties is None, this has already been write as an error!!
         else:
-            self.errors.append(f"- Error: 'properties' is type '{type(self.properties)}'")
+            self.errors.append(
+                f"- Error: 'properties' is type '{type(self.properties)}'")
 
     def _load_common_schema(self, common_schema):
-        _defs = self.find_key_from_dict("definitions", False, common_schema, [])
+        _defs = self.find_key_from_dict(
+            "definitions", False, common_schema, [])
         for _definition in _defs.keys():
-            _temp_propr = self.find_key_from_dict("properties", False, _defs[_definition], [])
+            _temp_propr = self.find_key_from_dict(
+                "properties", False, _defs[_definition], [])
             if _temp_propr is None:
                 self.external_ref.append(_definition)
             else:
@@ -492,12 +528,14 @@ class Schema_interpreter:
                     for item in entry_dict[_key]:
                         if type(item) is dict:
                             maybe_append = _key
-                            temp_res = self.find_key_from_dict(target_key, delete, item, path)
+                            temp_res = self.find_key_from_dict(
+                                target_key, delete, item, path)
                             if temp_res is not None:
                                 path.append(maybe_append)
                                 return temp_res
                 elif type(temp) is dict:
-                    temp_res = self.find_key_from_dict(target_key, delete, temp, path)
+                    temp_res = self.find_key_from_dict(
+                        target_key, delete, temp, path)
                     if temp_res is not None:
                         path.append(_key)
                         return temp_res
@@ -556,7 +594,8 @@ class Schema_interpreter:
             _path = []
             _common_schema = ""
             if _iterator <= 0:
-                print(f"Ref {_ref} is not defined. Please check if it's referred in another extra schema.")
+                print(
+                    f"Ref {_ref} is not defined. Please check if it's referred in another extra schema.")
                 self.schema_details += f"\t- Ref {_ref} is not a recognizable reference\n"
                 return False
             while _iterator > 0:
@@ -592,14 +631,16 @@ class Schema_interpreter:
                 if re.findall("schema", _part):
                     if _part in self.schemas_commons:
                         return True
-        self.errors.append(f"- Error: {_ref} not belongs to definition schemas.")
+        self.errors.append(
+            f"- Error: {_ref} not belongs to definition schemas.")
         return False
 
     def _analyze_attribute(self, attribute, attribute_name):
         if self._is_attribute(attribute, attribute_name):
             if type(attribute) is dict:
                 self.schema_details += "-> Attribute: \t" + attribute_name + "\n"
-                _eventually_constraint = self._check_constraint(attribute.keys())
+                _eventually_constraint = self._check_constraint(
+                    attribute.keys())
                 if "type" in attribute.keys():
                     _attr_type = attribute["type"]
                     if "description" in attribute.keys():
@@ -631,7 +672,8 @@ class Schema_interpreter:
                 elif _eventually_constraint:
                     self._manage_object(attribute, attribute_name, True)
                 else:
-                    self.errors.append(f"- Error: unrecognized attribute. Name: '{attribute_name}'")
+                    self.errors.append(
+                        f"- Error: unrecognized attribute. Name: '{attribute_name}'")
             elif type(attribute) is list:
                 self.errors.append(
                     f"- Error: something went wrong in attribute '{attribute_name} - This attribute is a 'list'.")
@@ -639,7 +681,8 @@ class Schema_interpreter:
                 self.errors.append(
                     f"- Error: something went wrong in attribute '{attribute_name} - This attribute is '{type(attribute)}'")
         else:
-            self.errors.append(f"- Error: '{attribute_name}' is not an attribute.")
+            self.errors.append(
+                f"- Error: '{attribute_name}' is not an attribute.")
 
     def _check_constraint(self, _list):
         for item in _list:
@@ -649,7 +692,8 @@ class Schema_interpreter:
 
     def _save_details(self):
         self._calculate_errors()
-        _dir = self.result_folder + self.domain + "/dataModel." + self.subdomain + "/" + self.model
+        _dir = self.result_folder + self.domain + \
+            "/dataModel." + self.subdomain + "/" + self.model
         self.schema_details += "\n\n~~~ Error messages ~~~\n\n"
         for error in self.errors:
             self.schema_details += f"\t{error}\n"
@@ -682,7 +726,8 @@ class Schema_interpreter:
         _temp_log = []
         if "items" in attribute.keys():
             if type(attribute["items"]) is dict:
-                _eventually_constraint = self._check_constraint(attribute["items"].keys())
+                _eventually_constraint = self._check_constraint(
+                    attribute["items"].keys())
                 if _eventually_constraint is None:
                     if type(attribute["items"]) is dict:
                         if "type" in attribute["items"].keys():
@@ -738,7 +783,8 @@ class Schema_interpreter:
                     self.schema_details += f"\tItems have to be of type {attribute['items']['type']}\n"
                 elif "$ref" in attribute["items"].keys():
                     self.schema_details += "\tThis array can contain types referred in this link: "
-                    if self._is_known_ref(attribute["items"]["$ref"]):  # in self.known_ref:
+                    # in self.known_ref:
+                    if self._is_known_ref(attribute["items"]["$ref"]):
                         self.schema_details += f"{attribute['items']['$ref']} (This ref is a known one).\n"
                     else:
                         self.schema_details += f"{attribute['items']['$ref']} (Unknown ref).\n"
@@ -764,7 +810,8 @@ class Schema_interpreter:
             _min = attribute["minimum"]
             _max = attribute["maximum"]
             if _min == 0 and _max == 1:
-                self.errors.append(f"- Attention: '{attribute_name}' could be a percentage.")
+                self.errors.append(
+                    f"- Attention: '{attribute_name}' could be a percentage.")
                 _temp_log.append("This attribute can be a percentage")
                 _value_type = "percentage[0,1]"
 
@@ -858,7 +905,7 @@ class Schema_interpreter:
                 pass
             elif "type" in attribute.keys():
                 # self._analyze_attribute(attribute, attribute_name)
-                pass # already added at the start of this method
+                pass  # already added at the start of this method
 
     def _manage_ref(self, attribute, attribute_name):
         _temp_log = []
@@ -882,7 +929,8 @@ class Schema_interpreter:
         _data_type = "string"
         _temp_log = []
         if "format" in attribute.keys():
-            _temp_log.append(f"Found 'format': {attribute['format']}. It will be default value_type.")
+            _temp_log.append(
+                f"Found 'format': {attribute['format']}. It will be default value_type.")
             _value_type = attribute['format']
             if _value_type == "date-time":
                 _value_unit = "datetime"

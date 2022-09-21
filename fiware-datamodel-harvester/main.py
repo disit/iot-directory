@@ -1,18 +1,19 @@
 #!/usr/bin/env python
- #Snap4City: IoT-Directory
- # Copyright (C) 2017 DISIT Lab https://www.disit.org - University of Florence
+#Snap4City: IoT-Directory
+# Copyright (C) 2017 DISIT Lab https://www.disit.org - University of Florence
 
-  #This program is free software; you can redistribute it and/or
-  #modify it under the terms of the GNU General Public License
-  #as published by the Free Software Foundation; either version 2
-  #of the License, or (at your option) any later version.
-  #This program is distributed in the hope that it will be useful,
-  #but WITHOUT ANY WARRANTY; without even the implied warranty of
-  #MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-  #GNU General Public License for more details.
-  #You should have received a copy of the GNU General Public License
-  #along with this program; if not, write to the Free Software
-  #Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+# This program is free software; you can redistribute it and/or
+# modify it under the terms of the GNU General Public License
+# as published by the Free Software Foundation; either version 2
+# of the License, or (at your option) any later version.
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+
 import harvester as hv
 import dbschemahelper as db
 import payloadsingestor as ingstr
@@ -36,13 +37,12 @@ if __name__ == "__main__":
     _db_helper = db.DbSchemaHelper(dbconfig)
 
     _hv = hv.SmartDataModelsHarvester(
-                base_link=base_link,
-                domains=domains,
-                download_folder=download_folder,
-                result_folder=result_folder,
-                database=_db_helper
-            )
-
+        base_link=base_link,
+        domains=domains,
+        download_folder=download_folder,
+        result_folder=result_folder,
+        database=_db_helper
+    )
 
     if _harvest_models:
         _overwrite = _config["overwrite_database_models"]

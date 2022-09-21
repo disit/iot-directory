@@ -1,18 +1,17 @@
- #Snap4City: IoT-Directory
- # Copyright (C) 2017 DISIT Lab https://www.disit.org - University of Florence
+#Snap4City: IoT-Directory
+# Copyright (C) 2017 DISIT Lab https://www.disit.org - University of Florence
+# This program is free software; you can redistribute it and/or
+# modify it under the terms of the GNU General Public License
+# as published by the Free Software Foundation; either version 2
+# of the License, or (at your option) any later version.
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
-  #This program is free software; you can redistribute it and/or
-  #modify it under the terms of the GNU General Public License
-  #as published by the Free Software Foundation; either version 2
-  #of the License, or (at your option) any later version.
-  #This program is distributed in the hope that it will be useful,
-  #but WITHOUT ANY WARRANTY; without even the implied warranty of
-  #MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-  #GNU General Public License for more details.
-  #You should have received a copy of the GNU General Public License
-  #along with this program; if not, write to the Free Software
-  #Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
-  
 from git import Repo
 import re
 import os
@@ -32,7 +31,8 @@ class Loader:
 
     def get_tools(self):
         if not os.path.isdir("tools/"):
-            Repo.clone_from("https://github.com/smart-data-models/tools.git", "tools/")
+            Repo.clone_from(
+                "https://github.com/smart-data-models/tools.git", "tools/")
 
     def get_repo(self, link, folder_name=""):
         name = folder_name
@@ -88,13 +88,15 @@ class Loader:
                 for subdomain in os.listdir(working_root):
                     if subdomain.startswith("dataModel."):
                         subdomain_name = subdomain[10:]
-                        schemas = self._find_schemas_subdomain(subdomain_name, working_root)
+                        schemas = self._find_schemas_subdomain(
+                            subdomain_name, working_root)
                         schemas_per_subdomain[subdomain_name] = schemas
         else:
             for subdomain in dataModels:
                 if os.path.isdir(os.path.join(working_root, subdomain)):
                     print("IS DIR")
-                schemas_per_subdomain[subdomain] = self._find_schemas_subdomain(subdomain, working_root)
+                schemas_per_subdomain[subdomain] = self._find_schemas_subdomain(
+                    subdomain, working_root)
 
         return schemas_per_subdomain
 
@@ -117,9 +119,11 @@ class Loader:
 
         if subdomain != "data-models":
             for schema_path in out:
-                result[os.path.basename(os.path.dirname(schema_path))] = schema_path
+                result[os.path.basename(
+                    os.path.dirname(schema_path))] = schema_path
             for _def in defs:
-                self.definition_schemas[os.path.basename(os.path.dirname(_def))] = _def
+                self.definition_schemas[os.path.basename(
+                    os.path.dirname(_def))] = _def
         return result
 
     def _find_extra_schema(self, folder):
@@ -145,7 +149,6 @@ class Loader:
                 out.extend(_res[0])
                 def_schemas.extend(_res[1])
 
-
         return out, def_schemas
 
     def _load_repository(self, link, repo_name="Repo"):
@@ -158,9 +161,13 @@ class Loader:
                 if len(found) > 0:
                     end_of_link = found[0]
                 else:
-                    print("\tThis "+link+" is a non-common link. Maybe it's duplicated, check it by yourself.")
-                    end_of_link = "NNFF-" + re.sub('https://github.com/smart-data-models/', "", link)
-                Repo.clone_from(link, self.repo_base + repo_name + "/" + end_of_link[0:len(end_of_link) - 1])  # Se non metti -1 resta il punto finale
+                    print(
+                        "\tThis "+link+" is a non-common link. Maybe it's duplicated, check it by yourself.")
+                    end_of_link = "NNFF-" + \
+                        re.sub('https://github.com/smart-data-models/', "", link)
+                # Se non metti -1 resta il punto finale
+                Repo.clone_from(link, self.repo_base + repo_name +
+                                "/" + end_of_link[0:len(end_of_link) - 1])
 
     def _search_gitmodule(self, base_folder):
         for root, dirs, files in os.walk(base_folder):

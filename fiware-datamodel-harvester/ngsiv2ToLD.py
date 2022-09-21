@@ -1,20 +1,20 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
- #Snap4City: IoT-Directory
- # Copyright (C) 2017 DISIT Lab https://www.disit.org - University of Florence
+#Snap4City: IoT-Directory
+# Copyright (C) 2017 DISIT Lab https://www.disit.org - University of Florence
 
-  #This program is free software; you can redistribute it and/or
-  #modify it under the terms of the GNU General Public License
-  #as published by the Free Software Foundation; either version 2
-  #of the License, or (at your option) any later version.
-  #This program is distributed in the hope that it will be useful,
-  #but WITHOUT ANY WARRANTY; without even the implied warranty of
-  #MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-  #GNU General Public License for more details.
-  #You should have received a copy of the GNU General Public License
-  #along with this program; if not, write to the Free Software
-  #Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
-  
+# This program is free software; you can redistribute it and/or
+# modify it under the terms of the GNU General Public License
+# as published by the Free Software Foundation; either version 2
+# of the License, or (at your option) any later version.
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+
 """
 
 Converts an NGSI v2 Normalized Representation
@@ -99,7 +99,7 @@ def normalized_2_LD(entity, ld_context_uri):
         out[key] = {}
         ld_attr = out[key]
 
-        if not('type' in attr) or attr['type'] != 'Relationship':
+        if not ('type' in attr) or attr['type'] != 'Relationship':
             ld_attr['type'] = 'Property'
             ld_attr['value'] = attr['value']
         else:
@@ -129,7 +129,8 @@ def normalized_2_LD(entity, ld_context_uri):
 
             for mkey in metadata:
                 if mkey == 'timestamp':
-                    ld_attr['observedAt'] = normalize_date(metadata[mkey]['value'])
+                    ld_attr['observedAt'] = normalize_date(
+                        metadata[mkey]['value'])
                 elif mkey == 'unitCode':
                     ld_attr['unitCode'] = metadata[mkey]['value']
                 else:
@@ -171,7 +172,8 @@ def main(args):
 
 if __name__ == '__main__':
     if len(sys.argv) != 4:
-        print("Usage: normalized2LD [input file] [output file] [target ld_context]")
+        print(
+            "Usage: normalized2LD [input file] [output file] [target ld_context]")
         exit(-1)
 
     main(sys.argv)

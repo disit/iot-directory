@@ -28,6 +28,8 @@ ATTRIBUTE_MASK = {
 FONT_TUPLE = ("times", 11)
 
 # Log should be a file
+
+
 def add_to_log(message, log):
     log += message + "\n"
 
@@ -96,6 +98,7 @@ def window_read_json(json_value, name, title="Json visualizer"):
     text.config(state=tk.DISABLED, tabs="3")
     app.mainloop()
 
+
 def ask_open_file(type, title=""):
     import tkinter as tk
     from tkinter import filedialog
@@ -105,7 +108,8 @@ def ask_open_file(type, title=""):
         _temp = []
 
         def openFileJson(_temp):
-            res = filedialog.askopenfile(title=title, filetypes=[("Json files", "*.json")])
+            res = filedialog.askopenfile(title=title, filetypes=[
+                                         ("Json files", "*.json")])
             _temp.append(res)
 
         tk.Button(root, text="Select a json file", command=openFileJson(_temp))
@@ -140,6 +144,7 @@ def window_edit_json(json_value, name, title="attribute_name"):
     app.mainloop()
     #submit = Button(window, text='Submit', command=check).grid(row=3, column=1)
 
+
 def window_edit_attribute(attribute, attribute_name, title, model, subdomain, domain, version, db, text=""):
     import tkinter as tk
     from tkinter import messagebox
@@ -165,9 +170,11 @@ def window_edit_attribute(attribute, attribute_name, title, model, subdomain, do
                 print(f"Can't create this attribute. Key '{_k}' is missing...")
                 return
         if not db.attribute_exists(attribute_name, model, subdomain, domain, version):
-            db.create_attribute_if_not_exists(attribute_name, model, subdomain, domain, version)
+            db.create_attribute_if_not_exists(
+                attribute_name, model, subdomain, domain, version)
         else:
-            _ans = messagebox.askyesno("Attribute already exists", "If you continue, you'll overwrite old definition")
+            _ans = messagebox.askyesno(
+                "Attribute already exists", "If you continue, you'll overwrite old definition")
             #window_read_json(db.get_attribute(attribute_name, model, subdomain, domain, version)[0][4], f"Old attribute '{attribute_name}'")
             if _ans == 0:
                 return
@@ -175,7 +182,8 @@ def window_edit_attribute(attribute, attribute_name, title, model, subdomain, do
             _value_to_set = new_attribute[_k]
             if isinstance(new_attribute[_k], dict):
                 _value_to_set = json.dumps(new_attribute[_k])
-            db.update_attribute_field(model, subdomain, domain, version, attribute_name, field=_k, value_to_set=_value_to_set)
+            db.update_attribute_field(
+                model, subdomain, domain, version, attribute_name, field=_k, value_to_set=_value_to_set)
         app.destroy()
 
     def reset():
@@ -187,10 +195,12 @@ def window_edit_attribute(attribute, attribute_name, title, model, subdomain, do
 
     app.mainloop()
 
+
 def load_db_config(file_location):
     import json
     with open(file_location) as dbconfig:
         return json.load(dbconfig)
+
 
 def ask_choose_folder(title):
     import tkinter as tk
@@ -204,8 +214,8 @@ def ask_choose_folder(title):
     else:
         return
 
+
 def load_config(config_location):
     import json
     with open(config_location) as dbconfig:
         return json.load(dbconfig)
-

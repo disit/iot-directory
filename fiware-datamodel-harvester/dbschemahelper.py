@@ -1,27 +1,26 @@
+#Snap4City: IoT-Directory
+# Copyright (C) 2017 DISIT Lab https://www.disit.org - University of Florence
+# This program is free software; you can redistribute it and/or
+# modify it under the terms of the GNU General Public License
+# as published by the Free Software Foundation; either version 2
+# of the License, or (at your option) any later version.
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 import ast
 import mysql.connector
 import json
 import statics
 
- """Snap4City: IoT-Directory
- Copyright (C) 2017 DISIT Lab https://www.disit.org - University of Florence
-
-  This program is free software; you can redistribute it and/or
-  modify it under the terms of the GNU General Public License
-  as published by the Free Software Foundation; either version 2
-  of the License, or (at your option) any later version.
-  This program is distributed in the hope that it will be useful,
-  but WITHOUT ANY WARRANTY; without even the implied warranty of
-  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-  GNU General Public License for more details.
-  You should have received a copy of the GNU General Public License
-  along with this program; if not, write to the Free Software
-  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA. """
 
 class DbSchemaHelper:
     def __init__(self, connection_details):
-        if connection_details["ssl_disabled"]==1:
+        if connection_details["ssl_disabled"] == 1:
             temp_bool = True
         else:
             temp_bool = False
@@ -31,8 +30,8 @@ class DbSchemaHelper:
             user=connection_details["user"],
             password=connection_details["password"],
             database=connection_details["database"],
-            ssl_disabled= temp_bool
-            )
+            ssl_disabled=temp_bool
+        )
         self.prepared_cursor_mysql = self.connector_mysql.cursor(prepared=True)
         self.cursor_mysql = self.connector_mysql.cursor(buffered=True)
 
@@ -71,7 +70,6 @@ class DbSchemaHelper:
                     version VARCHAR(10) NOT NULL DEFAULT "0.0.0",
                     PRIMARY KEY (model_id)
                 );"""
-
 
         _table_rules = """
                 CREATE TABLE IF NOT EXISTS `EXT_values_rules` (
@@ -225,7 +223,8 @@ class DbSchemaHelper:
             _subdomain = _t[1]
             _model = _t[2]
             _version = _t[3]
-            self._default_version_procedure(_model, _subdomain, _domain, _version)
+            self._default_version_procedure(
+                _model, _subdomain, _domain, _version)
             self._procedure_add_id(_model, _subdomain, _domain, _version)
             _overwrite = "INSERT"
             _end = f'ON DUPLICATE KEY UPDATE timestamp=NOW()'
@@ -277,7 +276,8 @@ class DbSchemaHelper:
                 else:
                     return None
             elif len(query_res) > 1 and version is None:
-                _default_version = self.get_default_version(model, subdomain, domain)
+                _default_version = self.get_default_version(
+                    model, subdomain, domain)
                 if _default_version is None:
                     return None
                 print(
@@ -288,7 +288,8 @@ class DbSchemaHelper:
                         if _temp_res is None:
                             _temp_res = item[1]
                         elif not statics.json_is_equals(_temp_res, item[1]):
-                            print("Ambiguous.. Specify other parameters, like subdomain or domain.")
+                            print(
+                                "Ambiguous.. Specify other parameters, like subdomain or domain.")
                             return None
                         else:
                             print(
@@ -323,17 +324,20 @@ class DbSchemaHelper:
                         print(_str)
                     return res
                 elif len(a) > 1 and version is None:
-                    _def_version = self.get_default_version(model, subdomain, domain)
+                    _def_version = self.get_default_version(
+                        model, subdomain, domain)
                     if _def_version is None:
                         return None
-                    print(f"Getting errors of default version (version {_def_version})")
+                    print(
+                        f"Getting errors of default version (version {_def_version})")
                     _temp_res = None
                     for item in a:
                         if item[0] == _def_version:
                             if _temp_res is None:
                                 _temp_res = item[1]
                             else:
-                                print("Ambiguous.. Specify other parameters, like subdomain or domain.")
+                                print(
+                                    "Ambiguous.. Specify other parameters, like subdomain or domain.")
                                 return None
                     return None
             else:
@@ -441,7 +445,8 @@ class DbSchemaHelper:
                 if len(q_res) == 1:
                     return ast.literal_eval(q_res[0][4])
                 elif len(q_res) > 1:
-                    _def_version = self.get_default_version(model, subdomain, domain)
+                    _def_version = self.get_default_version(
+                        model, subdomain, domain)
                     if _def_version is None:
                         return None
                     _temp_res = None
@@ -512,19 +517,22 @@ class DbSchemaHelper:
             while _itr < len(_versions) - 1:
                 # Each tuple is (version, subdomain, domain)
                 _sch_outside = _versions[_itr]
-                _current_schema = self.get_model_schema(model, _sch_outside[1], _sch_outside[2], _sch_outside[0])
+                _current_schema = self.get_model_schema(
+                    model, _sch_outside[1], _sch_outside[2], _sch_outside[0])
                 _iterator = _itr
                 _itr += 1
                 while _iterator < len(_versions):
                     _sch_inside = _versions[_iterator]
-                    _schema = self.get_model_schema(model, _sch_inside[1], _sch_inside[2], _sch_inside[0])
+                    _schema = self.get_model_schema(
+                        model, _sch_inside[1], _sch_inside[2], _sch_inside[0])
                     if not statics.json_is_equals(_current_schema, _schema):
                         _same_schemas = False
                     _iterator += 1
             if _same_schemas:
                 print(f"All of this schemas are equals. Model: '{model}'")
             else:
-                print(f"Different schemas with same model name. Model: '{model}'")
+                print(
+                    f"Different schemas with same model name. Model: '{model}'")
         return _same_schemas
 
     def update_attribute_field(self, model, subdomain, domain, version, attribute_name, field="checked",
@@ -566,7 +574,7 @@ class DbSchemaHelper:
         _org = rule[3]
         _cb = rule[4]
         _device = rule[5]
-        _t = (_name, _ifs, _thens, _org, _cb ) #, _device)
+        _t = (_name, _ifs, _thens, _org, _cb)  # , _device)
         if multitenancy:
             _srv = rule[5]
             _service_path = rule[6]
@@ -655,7 +663,7 @@ class DbSchemaHelper:
     def add_rule_problem(self, model, subdomain, domain, version, error):
         try:
             self.prepared_cursor_mysql.execute(f'UPDATE raw_schema_model SET unvalidAttributes=JSON_ARRAY_APPEND(unvalidAttributes, "$", %s) '
-                                       f'WHERE model="{model}" AND subdomain="{subdomain}" AND domain="{domain}" AND version="{version}"', (error, ))
+                                               f'WHERE model="{model}" AND subdomain="{subdomain}" AND domain="{domain}" AND version="{version}"', (error, ))
             self.connector_mysql.commit()
             self.prepared_cursor_mysql.reset()
         except mysql.connector.Error as err:
@@ -669,7 +677,8 @@ class DbSchemaHelper:
 
     def set_attribute(self, model, subdomain, domain, version, attribute_name, attribute_dict):
         for attr_key in attribute_dict:
-            self.update_attribute_field(model, subdomain, domain, version, attribute_name, attr_key, attribute_dict[attr_key])
+            self.update_attribute_field(
+                model, subdomain, domain, version, attribute_name, attr_key, attribute_dict[attr_key])
 
     def update_attributes_log(self, model, subdomain, domain, version, attribute_name, new_log):
         _query = f'UPDATE raw_schema_model SET attributesLog=JSON_SET(attributesLog, "$.{attribute_name}", JSON_ARRAY()) ' \
@@ -681,7 +690,8 @@ class DbSchemaHelper:
             self.generic_query(_query, False)
 
     def append_to_logs(self, model, subdomain, domain, version, attribute_name, row):
-        self.create_attribute_if_not_exists(attribute_name, model, subdomain, domain, version)
+        self.create_attribute_if_not_exists(
+            attribute_name, model, subdomain, domain, version)
         try:
             self.prepared_cursor_mysql.execute(f'UPDATE raw_schema_model '
                                                f'SET attributesLog=JSON_ARRAY_APPEND(attributesLog, "$.{attribute_name}", "{row}") '

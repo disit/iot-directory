@@ -18,6 +18,7 @@ import requests
 import ast
 import rule_generator
 
+
 class PayloadsIngestor():
     def __init__(self, database, dict_link):
         self.database = database
@@ -50,7 +51,7 @@ class PayloadsIngestor():
         _triple = self.model_parser.get_results()
         return _triple
 
-    def analize_results(self, triple, context_broker, multitenancy, service, servicePath, organization, prefix:str):
+    def analize_results(self, triple, context_broker, multitenancy, service, servicePath, organization, prefix: str):
         _correct_payloads = triple[0]
         _uncorrect_payloads = triple[1]
         _error_thrown = triple[2]
@@ -65,13 +66,13 @@ class PayloadsIngestor():
             _itr += 1
         #_messages = "Payload Analysis results\n"
         #_iterator = len(_uncorrect_payloads) - 1
-        #while _iterator >= 0:
+        # while _iterator >= 0:
         #    _err = _error_thrown[_iterator]
         #    _messages += "ID: " + _err.instance["id"] + "\tMessage: '"
         #    _messages += _err.message + "'\n"
         #    _iterator -= 1
         #statics.create_folders([self.results_folder + "Payload-Ingestor/"])
-        #with open(self.results_folder + "Payload-Ingestor/results.txt", "w", encoding="utf8") as results:
+        # with open(self.results_folder + "Payload-Ingestor/results.txt", "w", encoding="utf8") as results:
         #    results.write(_messages)
 
     def clean_payloads(self):
