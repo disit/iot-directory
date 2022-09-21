@@ -47,7 +47,7 @@ class DbSchemaHelper:
                     json_schema JSON,
                     timestamp TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
                     unvalidAttributes JSON NULL DEFAULT NULL,
-                    subnature VARCHAR(50) NOT NULL DEFAULT "Unset",
+                    subnature VARCHAR(50) DEFAULT NULL,
                     PRIMARY KEY (domain, subdomain, model, version)
                 );"""
 
