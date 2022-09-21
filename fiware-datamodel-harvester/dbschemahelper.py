@@ -114,7 +114,6 @@ class DbSchemaHelper:
             _table_default_versions,
             _table_map_id,
             _table_rules,
-
             _table_context_brokers
             # _function_delete_checked
         ]
@@ -232,7 +231,7 @@ class DbSchemaHelper:
                 _overwrite = "REPLACE"
                 _end = ""
             self.prepared_cursor_mysql.execute(
-                f'{_overwrite} INTO raw_schema_model VALUES (?,?,?,?,?,?,?,?,NOW(),JSON_ARRAY()) {_end}', _t)
+                f'{_overwrite} INTO raw_schema_model  (`domain`, `subdomain`, `model`, `version`, `attributes`, `warnings`, `attributesLog`, `json_schema`, `timestamp`, `unvalidAttributes`, `subnature`) VALUES (?,?,?,?,?,?,?,?,NOW(),JSON_ARRAY(), NULL) {_end}', _t)
             self.connector_mysql.commit()
             self.prepared_cursor_mysql.reset()
             return True, ""
