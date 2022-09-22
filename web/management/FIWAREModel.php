@@ -29,7 +29,7 @@ if (isset($_REQUEST['showFrame'])) {
 //// SHOW FRAME PARAMETER  ////
 
 if (!isset($_GET['pageTitle'])) {
-    $default_title = "FIWIRE Models";
+    $default_title = "FIWARE Models";
 } else {
     $default_title = "";
 }
@@ -165,7 +165,7 @@ $accessToken = "";
         </script>
 
         <!-- Custom scripts -->
-        <script src="js/FiwireModel_script.js"></script>
+        <script src="js/FIWAREModel_script.js"></script>
         <script src="js/common.js"></script>
         <script src="js/associationRules.js"></script>
         <script src="js/modelEditManagement.js"></script>

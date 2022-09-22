@@ -131,6 +131,8 @@ $(document).ready(function () {
     var modelDomain;
     var modelSubDomain;
     var Mversion;
+    var flag_modify_exist_rule = false;
+    var make_rule = false;
 //EDIT FIWIRE MODEL
 
     function get_ready_form_edit_view(This, mode) {
@@ -196,15 +198,11 @@ $(document).ready(function () {
         }
 
 
-
-
-
-
-
         version = Mversion;
 
         //Call for values
         $('a[data-toggle="tab"]').off('shown.bs.tab').on('shown.bs.tab', function (e) {
+            make_rule = true;
 
             var target = $(e.target).attr("href");
             if ((target == '#editSchemaTabModel')) {
@@ -238,11 +236,19 @@ $(document).ready(function () {
 
                         content = "";
                         k = 0;
+                        z = 0;
                         indexValues = 0;
                         while (k < keys.length)
                         {
 
+
+
                             if (myattributes[keys[k]].value_name != 'type') {
+                                if (myattributes[keys[k]].checked == 'True') {
+                                    z++;
+                                }
+
+                                descr = JSON.parse(myattributes[keys[k]].raw_attribute).description;
                                 content = drawAttributeMenu(myattributes[keys[k]].value_name, //attrName
                                         myattributes[keys[k]].data_type, //data_type
                                         myattributes[keys[k]].value_type, //value_type
@@ -252,10 +258,10 @@ $(document).ready(function () {
                                         myattributes[keys[k]].healthiness_value, // value_refresh_rate
                                         myattributes[keys[k]].value_name, //old_value_name
                                         'editlistAttributes', //parent
-                                        indexValues, temp);     //indice
+                                        indexValues, temp, descr);     //indice
 
                                 indexValues = indexValues + 1;
-                                                            $('#editlistAttributes').append(content);
+                                $('#editlistAttributes').append(content);
 
                             }
                             k++;
@@ -264,6 +270,9 @@ $(document).ready(function () {
                             $('.HIDE').hide();
 
 
+                        }
+                        if (z == (k - 1)) {
+                            flag_modify_exist_rule = true;
                         }
 
                         checkEditAtlistOneAttributeM();
@@ -306,6 +315,8 @@ $(document).ready(function () {
 
 
 //Update attributes
+    var num1 = 0;
+    var tot_attr = [];
 
 
 //Set the payload and information 
@@ -320,11 +331,12 @@ $(document).ready(function () {
         msg_whatiswrong = '';
         var regex = /[^a-z0-9_-]/gi;
         var someNameisWrong = false;
-        var num1 = document.querySelector("#editlistAttributes").childElementCount;
+        num1 = document.querySelector("#editlistAttributes").childElementCount;
 
         for (var m = 0; m < (num1); m++)
 
         {
+
             var attr = {};
             var value_name = document.querySelector("#value_name" + m + "").value;
 
@@ -333,6 +345,8 @@ $(document).ready(function () {
                 value_type: document.querySelector("#value_type" + m + "").value,
                 value_unit: document.querySelector("#value_unit" + m + "").value
             };
+
+            tot_attr.push(attr);
 
 
 
@@ -401,25 +415,70 @@ $(document).ready(function () {
 
                     } else if (data["status"] === 'ok')
                     {
-                        $.ajax({
-                            url: EndPointMakeRule,
-                            data: {},
-                            type: "GET",
-                            async: true,
-                            dataType: 'text',
-                            success: function (data)
-                            {
-                                if (data ) {
-                                  
-                                } else {
-  ErrorConfirmEdit(' Error about rule generation.');
-                                }
-                            },
-                            error: function (data)
-                            {
-                                ErrorConfirmEdit(data);
+
+
+                        if (flag_modify_exist_rule && make_rule) {
+                           // ATTR=tot_attr;
+                            
+                              for (var k = 0; k < (num1); k++){
+                                  sel=tot_attr[k];
+                               NAME = domain + "_" + subdomain + "_" + id + "_" + Object.keys(sel)[0] + Math.round(Math.random() * 100);
+                                var attributesIfValues = getIfRules_basic(Object.keys(tot_attr[k])[0]);
+                                var attributesThenValues = getThenRules_basic(tot_attr[k][Object.keys(tot_attr[k])[0]].value_type, tot_attr[k][Object.keys(tot_attr[k])[0]].value_unit, tot_attr[k][Object.keys(tot_attr[k])[0]].data_type);
+
+                                $.ajax({
+                                    url: "../api/bulkDeviceUpdate.php",
+                                    data: {
+                                        action: "Save_device_rules",
+                                        attributesIf: JSON.stringify(attributesIfValues),
+                                        attributesThen: JSON.stringify(attributesThenValues),
+                                        name: NAME,
+                                        mode: '0',
+                                       // update: true,
+                                        token: sessionToken
+                                    },
+                                    dataType: 'json',
+                                    type: "POST",
+                                    async: false,
+                                    success: function (myData) {
+                                        if (myData['status'] == 'ok') {
+
+                                        } else if (myData['status'] == 'ko') {
+                                            ErrorConfirmEdit(' Error about rule generation.');
+
+                                        }
+                                    },
+                                    error: function (myData) {
+
+
+                                    }
+                                }); 
                             }
-                        });
+                            tot_attr=[];
+
+
+                        } else if (!flag_modify_exist_rule && make_rule) {
+                            $.ajax({
+                                url: EndPointMakeRule,
+                                data: {},
+                                type: "GET",
+                                async: true,
+                                dataType: 'text',
+                                success: function (data)
+                                {
+                                    if (data) {
+
+                                    } else {
+                                        ErrorConfirmEdit(' Error about rule generation.');
+                                    }
+                                },
+                                error: function (data)
+                                {
+                                    ErrorConfirmEdit(data);
+                                }
+                            });
+                        }
+
 
                         $('#editModelLoadingMsg').hide();
                         $('#editModelLoadingIcon').hide();

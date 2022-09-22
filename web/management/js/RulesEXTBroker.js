@@ -204,11 +204,7 @@ $(document).ready(function () {
     $("#deleteRuleConfirmBtn").click(function () {
 
        var id = document.querySelector("#deleteRuleModal > div > div > div.modal-body > div > span").dataset.id ;//$(this).attr('data-id');
-//        var dev_organization = $(this).attr('data-organization');
-//        var if_st = $(this).attr("data-if");
-//        var then_st = $(this).attr('data-then');
-//        var mode = $(this).attr('data-mode');
-        
+       
         
         $("#deleteRuleModal div.modal-body").html("");
         $("#deleteRuleOkBtn").hide();

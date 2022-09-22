@@ -179,6 +179,8 @@ function removeElementAt(parent, child) {
                 }
                 subnatureChanged(false, JSON.parse(static_attributes));
                 $('#inputTypeDevice').val(type);
+                $('#selectSubnature').val(subnature);
+            $('#selectSubnature').trigger('change');
             } else {
                 var myattributes = JSON.parse(data.content.attributes);
                 Object.keys(myattributes).forEach(function (k) {
@@ -189,8 +191,8 @@ function removeElementAt(parent, child) {
                         indexValues = indexValues + 1;
                     }
 
-
                 });
+               
             }
 
 
@@ -204,8 +206,7 @@ function removeElementAt(parent, child) {
             $('#selectProtocolDevice').val(protocol);
             $('#selectFormatDevice').val(format);
             $('#selectEdgeGatewayType').val(edgegateway_type);
-            $('#selectSubnature').val(subnature);
-            $('#selectSubnature').trigger('change');
+            
             addDeviceConditionsArray['contextbroker'] = true;
             addDeviceConditionsArray['kind'] = true;
             addDeviceConditionsArray['format'] = true;
@@ -2033,6 +2034,9 @@ $(document).ready(function ()
             var version = nameOpt[selectednameOpt].attributes['data-version'].value;
             var domain = nameOpt[selectednameOpt].attributes['data-domain'].value;
             var subdomain = nameOpt[selectednameOpt].attributes['data-modelsubdomain'].value;
+            var subnature = nameOpt[selectednameOpt].attributes['data_subnature'].value;
+            $('#selectSubnature').val(subnature);
+            $('#selectSubnature').trigger('change');
             $('#inputTypeDevice').val(nameOptValue);
             LoadAttr('FIWIRE', nameOpt, selectednameOpt, nameOptValue, version, domain, subdomain);
             $('#addlistAttributesMsg').hide();

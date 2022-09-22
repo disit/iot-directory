@@ -20,6 +20,7 @@ function getIfRules2(num1) {
     return attributesIfValues;
 }
 
+
 function getThenRules2(num2) {
     var attributesThenValues = [];
 
@@ -41,6 +42,20 @@ function getThenRules2(num2) {
     return attributesThenValues;
 }
 
+function getIfRules_basic(value_name) {
+    var attributesIfValues = [{"field": "value_name", "operator": "IsEqual", "value": value_name}];
+
+    return attributesIfValues;
+}
+
+
+function getThenRules_basic(value_type,value_unit, data_type ) {
+    var attributesThenValues = [{"field": "value_type", "valueThen": value_type}, {"field": "value_unit", "valueThen": value_unit}, {"field": "data_type", "valueThen": data_type}];
+
+   
+    return attributesThenValues;
+    
+}
 
 
 
@@ -981,26 +996,26 @@ function addModel2(element, data, kind) {
         $.each(data, function () {
             label = "FIWIRE RULED";
             $.each(JSON.parse(this.attributes), function () {
-                if (this.checked == 'False') {
+                if (this.checked == 'False' && this.value_name != 'type') {
                     label = "FIWARE UNRULED";
                     return false;
                 }
             });
 
-            element.append("<option data-version='" + this.version + "' data_kind='" + kind + "'data-modelSubDomain='" + this.subdomain + "'data-Domain='" + this.domain + "'value='" + this.model + "'>" + this.model + "&#160;&#160;&#160;<font size=\"2\">( " + label + " )</font>" + "</option>");
+            element.append("<option data_subnature='" + this.subnature + "' data-version='" + this.version + "' data_kind='" + kind + "'data-modelSubDomain='" + this.subdomain + "'data-Domain='" + this.domain + "'value='" + this.model + "'>" + this.model + "&#160;&#160;&#160;<font size=\"2\">( " + label + " )</font>" + "</option>");
         });
         element.select2(select2option);
     } else {
         $.each(data, function () {
             label = "FIWIRE RULED";
             $.each(JSON.parse(this.attributes), function () {
-                if (this.checked == 'False') {
+                if (this.checked == 'False' && this.value_name != 'type') {
                     label = "FIWARE UNRULED";
                     return false;
                 }
             });
             if (label != "FIWARE UNRULED") {
-                element.append("<option data_kindDEVICE= 'sensor'  data-version='" + this.version + "' data_kind='FIWIRE' data-modelSubDomain='" + this.subdomain + "'data-Domain='" + this.domain + "'value='" + this.model + "'>" + this.model + "&#160;&#160;&#160;<font size=\"2\">( " + label + " )</font>" + "</option>");
+                element.append("<option data_subnature='" + this.subnature + "' data_kindDEVICE= 'sensor'  data-version='" + this.version + "' data_kind='FIWIRE' data-modelSubDomain='" + this.subdomain + "'data-Domain='" + this.domain + "'value='" + this.model + "'>" + this.model + "&#160;&#160;&#160;<font size=\"2\">( " + label + " )</font>" + "</option>");
             }
         });
         element.select2(select2option);
@@ -1014,26 +1029,27 @@ function keepAttr_FIWIRE(full_attr_field) {
     var full_attr = JSON.parse(full_attr_field);
     var k = Object.keys(full_attr);
     var element = [];
- 
+
 
     for (var i = 0; i < k.length; i++) {
-        
-         chiave = k[i];
-         if(full_attr[chiave].value_name!='type'){
+
+        chiave = k[i];
+        if (full_attr[chiave].value_name != 'type') {
 
 
-        element.push({
-            "value_name": full_attr[chiave].value_name,
-            "data_type": full_attr[chiave].data_type,
-            "value_type": full_attr[chiave].value_type,
-            "editable": full_attr[chiave].editable,
-            "value_unit": full_attr[chiave].value_unit,
-            "healthiness_criteria": full_attr[chiave].healthiness_criteria,
-            "healthiness_value": full_attr[chiave].healthiness_value
-        });}
+            element.push({
+                "value_name": full_attr[chiave].value_name,
+                "data_type": full_attr[chiave].data_type,
+                "value_type": full_attr[chiave].value_type,
+                "editable": full_attr[chiave].editable,
+                "value_unit": full_attr[chiave].value_unit,
+                "healthiness_criteria": full_attr[chiave].healthiness_criteria,
+                "healthiness_value": full_attr[chiave].healthiness_value
+            });
+        }
     }
 
- 
+
     return JSON.stringify(element);
 }
 // end

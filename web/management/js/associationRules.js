@@ -4873,7 +4873,7 @@ function insertValidParams() {
 }
 
 function drawAttributeMenu
-        (attrName, data_type, value_type, editable, value_unit, healthiness_criteria, value_refresh_rate, old_value_name, parent, indice, disabled_field) {
+        (attrName, data_type, value_type, editable, value_unit, healthiness_criteria, value_refresh_rate, old_value_name, parent, indice, disabled_field, descr) {
 
     if (attrName == "") {
         msg = "<div style=\"color:red;\" class=\"modalFieldMsgCnt\"></div>";
@@ -4985,6 +4985,11 @@ function drawAttributeMenu
             "<div class=\"col-xs-6 col-md-3 modalCell\"><div class=\"modalFieldCnt\">" +
             "<input type=\"text\" class=\"modalInputTxt\" name=\"" + value_refresh_rate +
             "\" value=\"" + value_refresh_rate + "\" "+disabled_field +"></div><div class=\"modalFieldLabelCnt\">Healthiness value</div></div>" +
+            
+            "<div class=\"col-xs-12 col-md-6 modalCell\"><div class=\"modalFieldCnt\">" +
+            "<input type=\"text\" class=\"modalInputTxt\" value=\"" + descr + "\" id=\"descr" + indice + "\""+
+            "\"  disabled></div><div class=\"modalFieldLabelCnt\">Description</div></div>" +
+            
             "<div class=\"col-xs-6 col-md-3 modalCell\">" + "<div   class=\"modalFieldCnt HIDE\" ><input type=\"text\" class=\"modalInputTxt \"" +
             "id=\"Value" + attrName + "\"  \"name=\"Value" + attrName + "\" readonly=\"readonly\"  >" +
             "</div><div  \"id=\"ValueLabel" + attrName + "\"  class=\"modalFieldLabelCnt HIDE \">Loading data</div> </div>" +
