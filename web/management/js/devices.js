@@ -147,93 +147,95 @@ function removeElementAt(parent, child) {
 
 //LOAD attr of model 
 
-    function SuccessOfLoadAttr(data, kindModel, version, domain, subdomain) {
-        if (data["status"] === 'ko') {
-            alert("An error occured when reading the data. <br/> Get in touch with the Snap4City Administrator<br/>" + data["msg"]);
-        } else if (data["status"] === 'ok') {
-            var k = 0;
-            var content = "";
-            if (kindModel == 'NATIVE') {
-                var model = data.content.name;
-                var type = data.content.devicetype;
-                var kind = data.content.kind;
-                var producer = data.content.producer;
-                var frequency = data.content.frequency;
-                var contextbroker = data.content.contextbroker;
-                var protocol = data.content.protocol;
-                var format = data.content.format;
-                var myattributes = JSON.parse(data.content.attributes);
-                var subnature = data.content.subnature;
-                var edgegateway_type = data.content.edgegateway_type;
-                var static_attributes = data.content.static_attributes;
-                var service = data.content.service;
-                var servicePath = data.content.servicePath;
-                var valOrg = data.content.cb_organization;
-                // population of the value tab with the values taken from the db						
-                while (k < myattributes.length) {
+function SuccessOfLoadAttr(data, kindModel, version, domain, subdomain) {
+    if (data["status"] === 'ko') {
+        alert("An error occured when reading the data. <br/> Get in touch with the Snap4City Administrator<br/>" + data["msg"]);
+    } else if (data["status"] === 'ok') {
+        var k = 0;
+        var content = "";
+        if (kindModel == 'NATIVE') {
+            var model = data.content.name;
+            var type = data.content.devicetype;
+            var kind = data.content.kind;
+            var producer = data.content.producer;
+            var frequency = data.content.frequency;
+            var contextbroker = data.content.contextbroker;
+            var protocol = data.content.protocol;
+            var format = data.content.format;
+            var myattributes = JSON.parse(data.content.attributes);
+            var subnature = data.content.subnature;
+            var edgegateway_type = data.content.edgegateway_type;
+            var static_attributes = data.content.static_attributes;
+            var service = data.content.service;
+            var servicePath = data.content.servicePath;
+            var valOrg = data.content.cb_organization;
+            // population of the value tab with the values taken from the db						
+            while (k < myattributes.length) {
+                content += drawAttributeMenu(myattributes[k].value_name,
+                        myattributes[k].data_type, myattributes[k].value_type, myattributes[k].editable, myattributes[k].value_unit, myattributes[k].healthiness_criteria,
+                        myattributes[k].healthiness_value, myattributes[k].old_value_name, 'addlistAttributes', indexValues);
+                indexValues = indexValues + 1;
+                k++;
+            }
+            subnatureChanged(false, JSON.parse(static_attributes));
+            $('#inputTypeDevice').val(type);
+            $('#selectSubnature').val(subnature);
+            $('#selectSubnature').trigger('change');
+            if(subnature){
+             $("#addNewStaticBtn").show();}
+        } else {
+            var myattributes = JSON.parse(data.content.attributes);
+            Object.keys(myattributes).forEach(function (k) {
+                if (myattributes[k].value_name != 'type') {
                     content += drawAttributeMenu(myattributes[k].value_name,
                             myattributes[k].data_type, myattributes[k].value_type, myattributes[k].editable, myattributes[k].value_unit, myattributes[k].healthiness_criteria,
-                            myattributes[k].healthiness_value, myattributes[k].old_value_name, 'addlistAttributes', indexValues);
+                            myattributes[k].healthiness_value, '', 'addlistAttributes', indexValues);
                     indexValues = indexValues + 1;
-                    k++;
                 }
-                subnatureChanged(false, JSON.parse(static_attributes));
-                $('#inputTypeDevice').val(type);
-                $('#selectSubnature').val(subnature);
-            $('#selectSubnature').trigger('change');
-            } else {
-                var myattributes = JSON.parse(data.content.attributes);
-                Object.keys(myattributes).forEach(function (k) {
-                    if (myattributes[k].value_name != 'type') {
-                        content += drawAttributeMenu(myattributes[k].value_name,
-                                myattributes[k].data_type, myattributes[k].value_type, myattributes[k].editable, myattributes[k].value_unit, myattributes[k].healthiness_criteria,
-                                myattributes[k].healthiness_value, '', 'addlistAttributes', indexValues);
-                        indexValues = indexValues + 1;
-                    }
 
-                });
-               
-            }
+            });
 
-
-            $('#addlistAttributes').html(content);
-
-            $('#selectKindDevice').val(kind);
-            $('#inputProducerDevice').val(producer);
-            $('#inputFrequencyDevice').val(frequency);
-            //$('#inputMacDevice').val(data.content.mac);
-            $('#selectContextBroker').val(contextbroker);
-            $('#selectProtocolDevice').val(protocol);
-            $('#selectFormatDevice').val(format);
-            $('#selectEdgeGatewayType').val(edgegateway_type);
-            
-            addDeviceConditionsArray['contextbroker'] = true;
-            addDeviceConditionsArray['kind'] = true;
-            addDeviceConditionsArray['format'] = true;
-            addDeviceConditionsArray['protocol'] = true;
-            checkSelectionCB();
-            checkSelectionKind();
-            checkSelectionProtocol();
-            checkSelectionFormat();
-            addDeviceConditionsArray['inputTypeDevice'] = true;
-            checkDeviceType(); // checkAddDeviceConditions();
-            addDeviceConditionsArray['inputFrequencyDevice'] = true;
-            checkFrequencyType(); // checkAddDeviceConditions();
-            addDeviceConditionsArray['inputMacDevice'] = true;
-            checkMAC();
-            checkAtlistOneAttribute();
-            checkAddDeviceConditions();
-            getServicesByCBName($('#selectContextBroker').val(), 'add', service);
-            checkProtocol($('#selectProtocolDevice').val(), 'add', 'device');
-            $('#inputServicePathDevice').val(servicePath);
-            checkServicePath($('#inputServicePathDevice').val(), 'add', 'device');
-            checkAddDeviceConditions();
-            if (valOrg)
-                $("#selectContextBrokerMsg").html($("#selectContextBrokerMsg").html() + " - Organization:" + valOrg);
         }
-    }
 
-    
+
+        $('#addlistAttributes').html(content);
+
+        $('#selectKindDevice').val(kind);
+        $('#inputProducerDevice').val(producer);
+        $('#inputFrequencyDevice').val(frequency);
+        //$('#inputMacDevice').val(data.content.mac);
+        $('#selectContextBroker').val(contextbroker);
+        $('#selectProtocolDevice').val(protocol);
+        $('#selectFormatDevice').val(format);
+        $('#selectEdgeGatewayType').val(edgegateway_type);
+
+        addDeviceConditionsArray['contextbroker'] = true;
+        addDeviceConditionsArray['kind'] = true;
+        addDeviceConditionsArray['format'] = true;
+        addDeviceConditionsArray['protocol'] = true;
+        checkSelectionCB();
+        checkSelectionKind();
+        checkSelectionProtocol();
+        checkSelectionFormat();
+        addDeviceConditionsArray['inputTypeDevice'] = true;
+        checkDeviceType(); // checkAddDeviceConditions();
+        addDeviceConditionsArray['inputFrequencyDevice'] = true;
+        checkFrequencyType(); // checkAddDeviceConditions();
+        addDeviceConditionsArray['inputMacDevice'] = true;
+        checkMAC();
+        checkAtlistOneAttribute();
+        checkAddDeviceConditions();
+        getServicesByCBName($('#selectContextBroker').val(), 'add', service);
+        checkProtocol($('#selectProtocolDevice').val(), 'add', 'device');
+        $('#inputServicePathDevice').val(servicePath);
+        checkServicePath($('#inputServicePathDevice').val(), 'add', 'device');
+        checkAddDeviceConditions();
+        if (valOrg)
+            $("#selectContextBrokerMsg").html($("#selectContextBrokerMsg").html() + " - Organization:" + valOrg);
+    }
+}
+
+
 
 function drawAttributeMenu(attrName, data_type, value_type, editable, value_unit, healthiness_criteria, value_refresh_rate, old_value_name, parent, indice)
 {
@@ -1152,10 +1154,10 @@ $(document).ready(function ()
 
 //Start Related to Add Device 
 
-    $("#selectModelDevice").append("<option value='custom'>" + 'Custom' + "&#160;&#160;&#160;<font size=\"2\"></font>" + "</option>");
+    $("#selectModelDevice").append("<option value='custom' selected>" + 'Custom' + "&#160;&#160;&#160;<font size=\"2\"></font>" + "</option>");
     $("#selectModelDevice").select2(select2option);
 
-    $("selectModelDevice").val('').change();
+   // $("selectModelDevice").val('').change();
 
 
 
@@ -1192,6 +1194,8 @@ $(document).ready(function ()
         $("#addNewDeviceGenerateKeyBtn").show();
         showAddDeviceModal();
         $("#selectContextBroker").change();
+        
+        
     });
     // Add lines related to attributes			
     $("#addAttrBtn").off("click");
@@ -1412,7 +1416,7 @@ $(document).ready(function ()
                             indexValues = indexValues + 1;
                             k++;
                             $('#editlistAttributes').append(content);
-                            
+
                         }
 
                         $("#editSchemaTabDevice #editlistAttributes .row input:even").each(function () {
@@ -1626,8 +1630,8 @@ $(document).ready(function ()
                                 myattributes[k].data_type, myattributes[k].value_type, myattributes[k].editable, myattributes[k].value_unit, myattributes[k].healthiness_criteria,
                                 myattributes[k].healthiness_value, myattributes[k].value_name, 'editlistAttributes', indexValues);
                         indexValues = indexValues + 1;
-                      
-                            
+
+
                         k++;
                         $('#editlistAttributes').append(content);
                     }
@@ -2017,19 +2021,27 @@ $(document).ready(function ()
         //var ownerOpt = document.getElementById('selectVisibilityDevice').selectedIndex;
         checkModel();
         //Fatima3
-        if (nameOpt[selectednameOpt].attributes.data_kind.value=='NATIVE') {
-            var nameOptValue = nameOpt[selectednameOpt].value;
-
-            LoadAttr('NATIVE', nameOpt, selectednameOpt, nameOptValue, '', '', '');
-            $('#addlistAttributesMsg').hide();
-        } else if (nameOpt[selectednameOpt].value == 'custom') {
+        if (nameOpt[selectednameOpt].value == 'custom') {
             $("#selectModelDevice").val('custom');
             document.getElementById('addlistAttributes').innerHTML = "";
+            $('#selectSubnature').val('');
+            $('#selectSubnature').trigger('change');
+            $('#addNewStaticBtn').hide();
+            
+    removeStaticAttributes();
+                       
 
             document.getElementById('addlistAttributesMsg').innerHTML = "At least a value needs to be specified";
             $('#addlistAttributesMsg').show();
-        } else if (typeof nameOpt[selectednameOpt].attributes['data-version'] !== 'undefined') {
+        } else if (nameOpt[selectednameOpt].attributes.data_kind.value == 'NATIVE') {
+            
+            var nameOptValue = nameOpt[selectednameOpt].value;
 
+            LoadAttr('NATIVE', nameOpt, selectednameOpt, nameOptValue, '', '', '');
+           // $('#addlistAttributesMsg').hide();
+            
+        } else if (typeof nameOpt[selectednameOpt].attributes['data-version'] !== 'undefined') {
+           
             var nameOptValue = nameOpt[selectednameOpt].value.replace('( FIWIRE )', '').trim();
             var version = nameOpt[selectednameOpt].attributes['data-version'].value;
             var domain = nameOpt[selectednameOpt].attributes['data-domain'].value;
@@ -2041,6 +2053,7 @@ $(document).ready(function ()
             LoadAttr('FIWIRE', nameOpt, selectednameOpt, nameOptValue, version, domain, subdomain);
             $('#addlistAttributesMsg').hide();
         } else {
+           
             $("#selectModelDevice").val('');
             document.getElementById('addlistAttributes').innerHTML = "";
             document.getElementById('addlistAttributesMsg').innerHTML = "At least a value needs to be specified";
@@ -2192,6 +2205,7 @@ $(document).ready(function ()
                             $("#addDeviceKoModalInnerDiv1").html('<h5>An error occurred, operation failed.</h5>');
                     } else if (mydata["status"] === 'ok')
                     {
+                        
                         //console.log("Success adding Device");
                         //console.log(JSON.stringify(mydata));
                         $('#addDeviceLoadingMsg').hide();

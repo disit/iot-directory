@@ -49,12 +49,12 @@ function getIfRules_basic(value_name) {
 }
 
 
-function getThenRules_basic(value_type,value_unit, data_type ) {
+function getThenRules_basic(value_type, value_unit, data_type) {
     var attributesThenValues = [{"field": "value_type", "valueThen": value_type}, {"field": "value_unit", "valueThen": value_unit}, {"field": "data_type", "valueThen": data_type}];
 
-   
+
     return attributesThenValues;
-    
+
 }
 
 
@@ -832,6 +832,11 @@ function addModel(element, data) {
 
 
 function LoadAttr(kindModel, nameOpt, selectednameOpt, nameOptValue, version, domain, subdomain) {
+    $('#selectSubnature').val("");
+    $('#selectSubnature').trigger("change");
+    $("#addNewStaticBtn").hide();
+    removeStaticAttributes();
+
     if ((nameOptValue != "custom") && (nameOptValue != ""))
             //if (nameOpt[selectednameOpt].value !="custom") 
             {

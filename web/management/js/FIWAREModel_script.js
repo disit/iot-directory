@@ -1,8 +1,10 @@
 $.fn.modal.Constructor.prototype.enforceFocus = function () { };
 
 var data;
+var proposal_value;
 
 //--------to get the datatypes items----------
+
 $.ajax({url: "../api/device.php",
     data: {
         action: 'get_param_values',
@@ -25,6 +27,7 @@ $.ajax({url: "../api/device.php",
         alert("Network errors. <br/> Get in touch with the Snap4City Administrator<br/>" + JSON.stringify(mydata));
     }
 });
+
 
 
 if ((loggedRole == 'RootAdmin') || (loggedRole == 'ToolAdmin')) {
@@ -137,6 +140,7 @@ $(document).ready(function () {
 
     function get_ready_form_edit_view(This, mode) {
 
+
         if (mode) {
             temp = 'disabled';
         } else {
@@ -199,13 +203,18 @@ $(document).ready(function () {
 
 
         version = Mversion;
-        
+
         //make LINK
-        
-        var linkGIT= 'https://github.com/smart-data-models/dataModel.'+modelSubDomain+'/blob/master/'+modelName+'/README.md';
-        
-       $('#editInfoTabModel').append(" <div class=\"col-xs-6 col-md-3 modalCell\"><div class=\"modalFieldCnt\">" +
-            "<button id=\"GotoSchema\" class=\"btn btn-primary\" onclick=\"window.open('"+linkGIT + " ' )\">Go to Git Reference</button></div></div>");
+
+
+
+        if (!document.getElementById("GotoSchema")) {
+            var linkGIT = 'https://github.com/smart-data-models/dataModel.' + modelSubDomain + '/blob/master/' + modelName + '/README.md';
+            $('#editInfoTabModel').append(" <div class=\"col-xs-6 col-md-3 modalCell\"><div class=\"modalFieldCnt\">" +
+                    "<button id=\"GotoSchema\" class=\"btn btn-primary\" onclick=\"window.open('" + linkGIT + " ' )\">Go to Git Reference</button></div></div>");
+        }
+
+
 
         //Call for values
         $('a[data-toggle="tab"]').off('shown.bs.tab').on('shown.bs.tab', function (e) {
@@ -247,23 +256,44 @@ $(document).ready(function () {
                         indexValues = 0;
                         while (k < keys.length)
                         {
+                            D_type = "";
+                            V_type = "";
+                            V_unit = '';
+                            value_name = myattributes[keys[k]].value_name;
 
 
 
                             if (myattributes[keys[k]].value_name != 'type') {
-                                if (myattributes[keys[k]].checked == 'True') {
+                                if (myattributes[keys[k]].checked == 'False') {
+
+                                    descr = (myattributes[keys[k]].raw_attribute).description;
+
+
+                                } else {
                                     z++;
-                                     descr = JSON.parse(myattributes[keys[k]].raw_attribute).description;
-                                }else{
-                                     descr = (myattributes[keys[k]].raw_attribute).description;
+                                    descr = JSON.parse(myattributes[keys[k]].raw_attribute).description;
+
                                 }
 
-                               
-                                content = drawAttributeMenu(myattributes[keys[k]].value_name, //attrName
-                                        myattributes[keys[k]].data_type, //data_type
-                                        myattributes[keys[k]].value_type, //value_type
+
+
+                                if (value_name == 'dateObserved') {
+                                    D_type = 'string';
+                                    V_type = 'timestamp';
+                                    V_unit = 'timestamp';
+                                } else {
+                                    D_type = myattributes[keys[k]].data_type;
+                                    V_type = myattributes[keys[k]].value_type;
+                                    V_unit = myattributes[keys[k]].value_unit;
+                                }
+
+
+
+                                content = drawAttributeMenu(value_name, //attrName
+                                        D_type, //data_type
+                                        V_type, //value_type
                                         myattributes[keys[k]].editable, // editable
-                                        myattributes[keys[k]].value_unit, //value_unit 
+                                        V_unit, //value_unit 
                                         myattributes[keys[k]].healthiness_criteria, // healthiness_criteria
                                         myattributes[keys[k]].healthiness_value, // value_refresh_rate
                                         myattributes[keys[k]].value_name, //old_value_name
@@ -322,6 +352,7 @@ $(document).ready(function () {
         get_ready_form_edit_view($(this), true);
 
     });
+
 
 
 //Update attributes
@@ -428,13 +459,13 @@ $(document).ready(function () {
 
 
                         if (flag_modify_exist_rule && make_rule) {
-                           // ATTR=tot_attr;
-                            
-                              for (var k = 0; k < (num1); k++){
-                                  sel=tot_attr[k];
-                               NAME = domain + "_" + subdomain + "_" + id + "_" + Object.keys(sel)[0] + Math.round(Math.random() * 100);
-                                var attributesIfValues = getIfRules_basic(Object.keys(tot_attr[k])[0]);
-                                var attributesThenValues = getThenRules_basic(tot_attr[k][Object.keys(tot_attr[k])[0]].value_type, tot_attr[k][Object.keys(tot_attr[k])[0]].value_unit, tot_attr[k][Object.keys(tot_attr[k])[0]].data_type);
+                            // ATTR=tot_attr;
+
+                            for (var k = 0; k < (num1); k++) {
+                                sel = tot_attr[k];
+                                NAME = domain + "_" + subdomain + "_" + id + "_" + Object.keys(sel)[0] + Math.round(Math.random() * 100);
+                                var attributesIfValues = getIfRules_basic(Object.keys(sel)[0]);
+                                var attributesThenValues = getThenRules_basic(sel[Object.keys(sel)[0]].value_type, sel[Object.keys(sel)[0]].value_unit, sel[Object.keys(sel)[0]].data_type);
 
                                 $.ajax({
                                     url: "../api/bulkDeviceUpdate.php",
@@ -444,7 +475,7 @@ $(document).ready(function () {
                                         attributesThen: JSON.stringify(attributesThenValues),
                                         name: NAME,
                                         mode: '0',
-                                       // update: true,
+                                        // update: true,
                                         token: sessionToken
                                     },
                                     dataType: 'json',
@@ -462,9 +493,9 @@ $(document).ready(function () {
 
 
                                     }
-                                }); 
+                                });
                             }
-                            tot_attr=[];
+                            tot_attr = [];
 
 
                         } else if (!flag_modify_exist_rule && make_rule) {

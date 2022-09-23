@@ -4948,14 +4948,7 @@ function drawAttributeMenu
         editable_empty = "selected";
     }
     
-    //description
-     var urlRegex =/(\b(https?|ftp|file):\/\/[-A-Z0-9+&@#\/%?=~_|!:,.;]*[-A-Z0-9+&@#\/%=~_|])/ig;
-     var urlToOpen;
-     descr.replace(urlRegex, function(url) {
-         urlToOpen=url;
-        
-    });
-    console.log(urlToOpen) ;
+
 
     console.log(data_type + "," + value_type + "," + editable + "," + value_unit + "," + healthiness_criteria + "," + value_refresh_rate + "," + parent);
     
@@ -4996,8 +4989,7 @@ function drawAttributeMenu
             "<input type=\"text\" class=\"modalInputTxt\" name=\"" + value_refresh_rate +
             "\" value=\"" + value_refresh_rate + "\" "+disabled_field +"></div><div class=\"modalFieldLabelCnt\">Healthiness value</div></div>";
     
-    var b= "<div class=\"col-xs-6 col-md-3 modalCell\"><div class=\"modalFieldCnt\">" +
-            "<button id=\"GotoSchema\" class=\"btn btn-primary\" onclick=\"window.open('"+urlToOpen + " ' )\">Go to Schema Reference</button></div></div>";
+    
     
     var c=  "<div class=\"col-xs-12 col-md-12 modalCell\"><div class=\"modalFieldCnt\">" +
             "<input type=\"text\" class=\"modalInputTxt\" value=\"" + descr + "\" id=\"descr" + indice + "\""+
@@ -5013,11 +5005,9 @@ function drawAttributeMenu
             "<div class=\"col-xs-6 col-md-3 modalCell delValueButton\"><div class=\"modalFieldCnt\">" +
             "<button class=\"btn btn-danger HIDE\" onclick=\"removeElementAt('" + parent + "',this); return true;\">Remove Value</button></div></div></div>";
     
-    if(urlToOpen == undefined ){
+    
          return a+c;
-    }else{
-        return a+b+c;
-    }
+   
     
     
 }
