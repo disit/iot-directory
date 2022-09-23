@@ -199,6 +199,13 @@ $(document).ready(function () {
 
 
         version = Mversion;
+        
+        //make LINK
+        
+        var linkGIT= 'https://github.com/smart-data-models/dataModel.'+modelSubDomain+'/blob/master/'+modelName+'/README.md';
+        
+       $('#editInfoTabModel').append(" <div class=\"col-xs-6 col-md-3 modalCell\"><div class=\"modalFieldCnt\">" +
+            "<button id=\"GotoSchema\" class=\"btn btn-primary\" onclick=\"window.open('"+linkGIT + " ' )\">Go to Git Reference</button></div></div>");
 
         //Call for values
         $('a[data-toggle="tab"]').off('shown.bs.tab').on('shown.bs.tab', function (e) {
@@ -246,9 +253,12 @@ $(document).ready(function () {
                             if (myattributes[keys[k]].value_name != 'type') {
                                 if (myattributes[keys[k]].checked == 'True') {
                                     z++;
+                                     descr = JSON.parse(myattributes[keys[k]].raw_attribute).description;
+                                }else{
+                                     descr = (myattributes[keys[k]].raw_attribute).description;
                                 }
 
-                                descr = JSON.parse(myattributes[keys[k]].raw_attribute).description;
+                               
                                 content = drawAttributeMenu(myattributes[keys[k]].value_name, //attrName
                                         myattributes[keys[k]].data_type, //data_type
                                         myattributes[keys[k]].value_type, //value_type
