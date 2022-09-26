@@ -831,7 +831,7 @@ function addModel(element, data) {
 }
 
 
-function LoadAttr(kindModel, nameOpt, selectednameOpt, nameOptValue, version, domain, subdomain) {
+function LoadAttr(kindModel, nameOpt, selectednameOpt, nameOptValue, version, domain, subdomain, subnature) {
     $('#selectSubnature').val("");
     $('#selectSubnature').trigger("change");
     $("#addNewStaticBtn").hide();
@@ -894,6 +894,7 @@ function LoadAttr(kindModel, nameOpt, selectednameOpt, nameOptValue, version, do
                             version: version,
                             domain: domain,
                             subdomain: subdomain,
+                            proposal: true,
                             token: sessionToken
                         },
                         type: "POST",
@@ -901,7 +902,13 @@ function LoadAttr(kindModel, nameOpt, selectednameOpt, nameOptValue, version, do
                         datatype: 'json',
                         success: function (data)
                         {
+
                             SuccessOfLoadAttr(data, kindModel, version, domain, subdomain);
+                            if (subnature) {
+                                $('#selectSubnature').val(subnature).trigger('change');
+
+                                subnatureChanged(false, '');
+                            }
                         },
                         error: function (data)
                         {

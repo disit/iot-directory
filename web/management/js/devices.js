@@ -148,6 +148,11 @@ function removeElementAt(parent, child) {
 //LOAD attr of model 
 
 function SuccessOfLoadAttr(data, kindModel, version, domain, subdomain) {
+    $('#selectSubnature').val("");
+    $('#selectSubnature').trigger("change");
+    $("#addNewStaticBtn").hide();
+    removeStaticAttributes();
+    var myprop = (data.proposal);
     if (data["status"] === 'ko') {
         alert("An error occured when reading the data. <br/> Get in touch with the Snap4City Administrator<br/>" + data["msg"]);
     } else if (data["status"] === 'ok') {
@@ -177,23 +182,52 @@ function SuccessOfLoadAttr(data, kindModel, version, domain, subdomain) {
                 indexValues = indexValues + 1;
                 k++;
             }
-            subnatureChanged(false, JSON.parse(static_attributes));
+
             $('#inputTypeDevice').val(type);
             $('#selectSubnature').val(subnature);
             $('#selectSubnature').trigger('change');
-            if(subnature){
-             $("#addNewStaticBtn").show();}
+            if (subnature) {
+                $("#addNewStaticBtn").show();
+                subnatureChanged(false, JSON.parse(static_attributes));
+            }
         } else {
             var myattributes = JSON.parse(data.content.attributes);
             Object.keys(myattributes).forEach(function (k) {
                 if (myattributes[k].value_name != 'type') {
+                    D_type = "";
+                    V_type = "";
+                    V_unit = '';
+                    value_name = myattributes[k].value_name;
+
+                    if (myattributes[k].checked == 'False') {
+
+
+                        for (i = 0; i < myprop.length; i++) {
+
+                            if (myprop[i].value_name == value_name) {
+
+                                D_type = myprop[i].data_type;
+                                V_type = myprop[i].value_type;
+                                V_unit = myprop[i].value_unit;
+                                break;
+                            }
+                        }
+                    } else {
+                        D_type = myattributes[k].data_type;
+                        V_type = myattributes[k].value_type;
+                        V_unit = myattributes[k].value_unit;
+                    }
+
+
                     content += drawAttributeMenu(myattributes[k].value_name,
-                            myattributes[k].data_type, myattributes[k].value_type, myattributes[k].editable, myattributes[k].value_unit, myattributes[k].healthiness_criteria,
+                            D_type, V_type, myattributes[k].editable, V_unit, myattributes[k].healthiness_criteria,
                             myattributes[k].healthiness_value, '', 'addlistAttributes', indexValues);
                     indexValues = indexValues + 1;
                 }
 
             });
+
+
 
         }
 
@@ -1157,7 +1191,7 @@ $(document).ready(function ()
     $("#selectModelDevice").append("<option value='custom' selected>" + 'Custom' + "&#160;&#160;&#160;<font size=\"2\"></font>" + "</option>");
     $("#selectModelDevice").select2(select2option);
 
-   // $("selectModelDevice").val('').change();
+    // $("selectModelDevice").val('').change();
 
 
 
@@ -1194,8 +1228,8 @@ $(document).ready(function ()
         $("#addNewDeviceGenerateKeyBtn").show();
         showAddDeviceModal();
         $("#selectContextBroker").change();
-        
-        
+
+
     });
     // Add lines related to attributes			
     $("#addAttrBtn").off("click");
@@ -2027,33 +2061,34 @@ $(document).ready(function ()
             $('#selectSubnature').val('');
             $('#selectSubnature').trigger('change');
             $('#addNewStaticBtn').hide();
-            
-    removeStaticAttributes();
-                       
+
+            removeStaticAttributes();
+
 
             document.getElementById('addlistAttributesMsg').innerHTML = "At least a value needs to be specified";
             $('#addlistAttributesMsg').show();
         } else if (nameOpt[selectednameOpt].attributes.data_kind.value == 'NATIVE') {
-            
+
             var nameOptValue = nameOpt[selectednameOpt].value;
 
-            LoadAttr('NATIVE', nameOpt, selectednameOpt, nameOptValue, '', '', '');
-           // $('#addlistAttributesMsg').hide();
-            
+            LoadAttr('NATIVE', nameOpt, selectednameOpt, nameOptValue, '', '', '', '');
+            // $('#addlistAttributesMsg').hide();
+
         } else if (typeof nameOpt[selectednameOpt].attributes['data-version'] !== 'undefined') {
-           
+
             var nameOptValue = nameOpt[selectednameOpt].value.replace('( FIWIRE )', '').trim();
             var version = nameOpt[selectednameOpt].attributes['data-version'].value;
             var domain = nameOpt[selectednameOpt].attributes['data-domain'].value;
             var subdomain = nameOpt[selectednameOpt].attributes['data-modelsubdomain'].value;
             var subnature = nameOpt[selectednameOpt].attributes['data_subnature'].value;
-            $('#selectSubnature').val(subnature);
-            $('#selectSubnature').trigger('change');
             $('#inputTypeDevice').val(nameOptValue);
-            LoadAttr('FIWIRE', nameOpt, selectednameOpt, nameOptValue, version, domain, subdomain);
+            LoadAttr('FIWIRE', nameOpt, selectednameOpt, nameOptValue, version, domain, subdomain,subnature );
             $('#addlistAttributesMsg').hide();
+            
+            
+
         } else {
-           
+
             $("#selectModelDevice").val('');
             document.getElementById('addlistAttributes').innerHTML = "";
             document.getElementById('addlistAttributesMsg').innerHTML = "At least a value needs to be specified";
@@ -2205,7 +2240,7 @@ $(document).ready(function ()
                             $("#addDeviceKoModalInnerDiv1").html('<h5>An error occurred, operation failed.</h5>');
                     } else if (mydata["status"] === 'ok')
                     {
-                        
+
                         //console.log("Success adding Device");
                         //console.log(JSON.stringify(mydata));
                         $('#addDeviceLoadingMsg').hide();
