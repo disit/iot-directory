@@ -145,14 +145,14 @@ if ($action == "get_Fiwire_model") {
         $version = mysqli_real_escape_string($link, $_REQUEST['version']);
         $domain = mysqli_real_escape_string($link, $_REQUEST['domain']);
         $subdomain = mysqli_real_escape_string($link, $_REQUEST['subdomain']);
-         $q = "SELECT * from iotdb.raw_schema_model where model='$id' and domain='$domain'and subdomain='$subdomain' and version ='$version' ;";
-    }else{
-         $q = "SELECT domain, subdomain,model,version,attributes, subnature from iotdb.raw_schema_model;";
+        $q = "SELECT * from iotdb.raw_schema_model where model='$id' and domain='$domain'and subdomain='$subdomain' and version ='$version' ;";
+    } else {
+        $q = "SELECT domain, subdomain,model,version,attributes, subnature from iotdb.raw_schema_model;";
     }
 
 
 
-   
+
     $r = mysqli_query($link, $q);
     if ($r) {
         $data = array();
@@ -713,9 +713,7 @@ if ($action == "delete") {
         $domain = mysqli_real_escape_string($link, $_REQUEST['domain']);
         $subdomain = mysqli_real_escape_string($link, $_REQUEST['subdomain']);
         $subNat = mysqli_real_escape_string($link, $_REQUEST['subNat']);
-
         $change = mysqli_real_escape_string($link, $_REQUEST['change']);
-
         $change = stripslashes($change);
         $change = json_decode($change, true);
 
@@ -735,22 +733,51 @@ if ($action == "delete") {
             $arrtibLog = $row["attributesLog"];
             $arrtib = $row["attributes"];
             $arrtib = json_decode($arrtib, true);
-
             $arrtibLog = json_decode($arrtibLog, true);
 
             foreach ($arrtib as $key => $val) {
                 if ($key != 'type') {
-                    $val["value_type"] = $change[$key]["value_type"];
-                    $val["data_type"] = $change[$key]["data_type"];
-                    $val["value_unit"] = $change[$key]["value_unit"];
+                    if (isset($_REQUEST['make_rule'])) {
+                        $num = rand(10, 100);
+                        $namerule = " " . $domain . "_" . $subdomain . "_" . $id . "_" . $key . $num . " ";
+                        $IF_st = array("field" => "value_name", "operator" => "IsEqual", "value" => $key);
+                        $THEN_st = array(array("field" => "value_type", "valueThen" => $change[$key]["value_type"]),
+                            array("field" => "value_unit", "valueThen" => $change[$key]["value_unit"]),
+                            array("field" => "data_type", "valueThen" => $change[$key]["data_type"]));
 
-                    array_push($arrtibLog[$key], " s4c_rule value_type " . $change[$key]["value_type"] . " data_type " . $change[$key]["data_type"] . " value_unit " . $change[$key]["value_unit"] . "");
+                        $q2 = "INSERT INTO `iotdb`.`EXT_values_rules` (`Name`,`If_statement`, `Then_statement`, `Organization`, `Timestamp`,`mode`, `contextbroker`, `service`, `servicePath` )"
+                                . " VALUES ('$namerule','" . mysqli_real_escape_string($link, json_encode($IF_st)) . "', '" . mysqli_real_escape_string($link, json_encode($THEN_st)) . "', '$organization', NOW(), '0', '', '', '');";
+
+                        $r = mysqli_query($link, $q2);
+
+                        if (!$r) {
+
+                            $result['status'] = 'ko';
+                            $result['msg'] = 'Error: errors in reading data about attributes of the model. <br/>' . generateErrorMessage($link);
+                            $result["log"] = "action=$action of model " . $id . " error " . mysqli_error($link) . "\r\n";
+                            $result["query"] = $q2;
+                        } else {
+
+                            $result["status"] = "ok";
+                            $result['msg'] = "ok - rule done";
+                            $result["log"] = "action=$action of model " . $id . "domain='$domain', subdomain='$subdomain', version='$version' \r\n";
+                        }
+                        $arrtib[$key]["value_type"] = $change[$key]["value_type"];
+                        $arrtib[$key]["data_type"] = $change[$key]["data_type"];
+                        $arrtib[$key]["value_unit"] = $change[$key]["value_unit"];
+                        $arrtib[$key]["checked"] = 'True';
+                    } else {
+
+                        $val["value_type"] = $change[$key]["value_type"];
+                        $val["data_type"] = $change[$key]["data_type"];
+                        $val["value_unit"] = $change[$key]["value_unit"];
+
+                        array_push($arrtibLog[$key], " s4c_rule value_type " . $change[$key]["value_type"] . " data_type " . $change[$key]["data_type"] . " value_unit " . $change[$key]["value_unit"] . "");
+                    }
                 }
             }
 
-
-            $queryUpdate = "UPDATE raw_schema_model SET  subnature='$subNat', attributesLog='" . mysqli_real_escape_string($link, json_encode($arrtibLog)) . "' WHERE domain='$domain' AND subdomain='$subdomain' AND version='$version' and model='$id' ";
-
+            $queryUpdate = "UPDATE raw_schema_model SET  subnature='$subNat', attributes='" . mysqli_real_escape_string($link, json_encode($arrtib)) . "' WHERE domain='$domain' AND subdomain='$subdomain' AND version='$version' and model='$id' ";
             $r = mysqli_query($link, $queryUpdate);
             if (!$r) {
 
@@ -763,6 +790,24 @@ if ($action == "delete") {
                 $result["status"] = "ok";
                 $result['msg'] = "ok - second query done";
                 $result["log"] = "action=$action of model " . $id . "domain='$domain', subdomain='$subdomain', version='$version' \r\n";
+            }
+
+            if (!isset($_REQUEST['make_rule'])) {
+                $queryUpdate = "UPDATE raw_schema_model SET  subnature='$subNat', attributesLog='" . mysqli_real_escape_string($link, json_encode($arrtibLog)) . "' WHERE domain='$domain' AND subdomain='$subdomain' AND version='$version' and model='$id' ";
+
+                $r = mysqli_query($link, $queryUpdate);
+                if (!$r) {
+
+                    $result['status'] = 'ko';
+                    $result['msg'] = 'Error: errors in reading data about attributes of the model. <br/>' . generateErrorMessage($link);
+                    $result["log"] = "action=$action of model " . $id . " error " . mysqli_error($link) . "\r\n";
+                    $result["query"] = $queryUpdate;
+                } else {
+
+                    $result["status"] = "ok";
+                    $result['msg'] = "ok - second query done";
+                    $result["log"] = "action=$action of model " . $id . "domain='$domain', subdomain='$subdomain', version='$version' \r\n";
+                }
             }
         }
     }
@@ -792,7 +837,16 @@ if ($action == "delete") {
 
             $row = mysqli_fetch_assoc($r);
             $result["status"] = "ok";
-            $result["content"] = $row;
+
+            if (isset($_REQUEST['proposal'])) {
+                $TOTatr = json_decode($row['attributes']);
+                $result["proposal"] = MAke_PROP($TOTatr, $link);
+
+                $result["content"] = $row;
+            } else {
+                $result["content"] = $row;
+            }
+
 
             $result["log"] = "action=$action of model " . $id . " \r\n";
         }
@@ -806,3 +860,5 @@ if ($action == "delete") {
     $result["log"] = "action=unknown \r\n";
     echo json_encode($result);
 }
+
+    

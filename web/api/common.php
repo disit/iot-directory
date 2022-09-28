@@ -1,5 +1,38 @@
 <?php
 
+function MAke_PROP($TOTatr, $link) {
+    $attributes = array();
+    foreach ($TOTatr as $key => $val) {       
+
+        if ($key != 'type') {
+            $SingleAttr = json_encode($val);
+            if ($SingleAttr["checked"] != 'True') {
+
+                $q = ' SELECT data_type, value_type, value_unit FROM iotdb.event_values where value_name = "' . $key . '" ';
+                $r = mysqli_query($link, $q);
+                
+                
+                if (!$r) {
+                    $result['status'] = 'ko';
+                    $result['msg'] = 'Error: errors in reading data about proposal value of model\'s attributes. <br/>' . generateErrorMessage($link);
+                    $result["log"] = "action=$action of model " . $id . " error " . mysqli_error($link) . "\r\n";
+                } else {
+                    $SecondRow = mysqli_fetch_assoc($r);                    
+                    while (mysqli_fetch_assoc($r)) {
+                        $rec = array();
+                        $rec["value_name"] = $key;
+                        $rec["value_type"] = $SecondRow["value_type"];
+                        $rec["data_type"] = $SecondRow["data_type"];
+                        $rec["value_unit"] = $SecondRow["value_unit"];
+                        array_push($attributes, $rec);
+                    }
+                }
+            }
+        }
+    }
+    return $attributes;
+}
+
 function checkRegisterOwnerShipObject($token, $object, &$result) {
     try {
         $url = $GLOBALS["ownershipURI"] . "ownership-api/v1/limits/?type=" . $object . "&accessToken=" . $token;
@@ -362,7 +395,7 @@ function create_datatable_data($link, $request, $query, $where) {
 
     // echo $query;
     $result = mysqli_query($link, $query);
-    $GLOBALS['DataTableQuery']=$query;
+    $GLOBALS['DataTableQuery'] = $query;
     return $result;
 }
 
@@ -676,7 +709,7 @@ function registerOwnerShipObject($msg, $token, $object, &$result) {
     }
 }
 
-function delegateDeviceValue($elementId, $contextbroker, $value_name, $user, $userdelegated, $groupdelegated, $token, $k1, $k2, &$result, $kind="READ_ACCESS") {
+function delegateDeviceValue($elementId, $contextbroker, $value_name, $user, $userdelegated, $groupdelegated, $token, $k1, $k2, &$result, $kind = "READ_ACCESS") {
     $msg["elementId"] = $elementId;
     if ($value_name !== NULL) {//delegate a sensor scenario
         $msg["variableName"] = $value_name;
@@ -843,7 +876,7 @@ function getUserDelegatedDevice($token, $user, $type, &$result) {
             if (isset($lists[$i]->elementType) && ($lists[$i]->elementType == "ServiceURI" || $lists[$i]->elementType == "IOTID")) {
                 $a = $lists[$i]->elementId;
                 if (isset($mykeys[$a])) {
-                    switch($mykeys[$a]["delegationKind"]) {
+                    switch ($mykeys[$a]["delegationKind"]) {
                         case "READ_ACCESS":
                             if ($lists[$i]->kind == "READ_WRITE" || $lists[$i]->kind == "MODIFY") {
                                 if (isset($lists[$i]->delegationDetails)) {
@@ -888,12 +921,12 @@ function getUserDelegatedDevice($token, $user, $type, &$result) {
 }
 
 function getDelegatedDevice($token, $user, &$result) {
-    if (isset($GLOBALS['Cached_config']) && $GLOBALS['Cached_config']) { 
+    if (isset($GLOBALS['Cached_config']) && $GLOBALS['Cached_config']) {
         $GLOBALS['m'] = new Memcached();
         $GLOBALS['m']->addServer($GLOBALS['Cached_host'], $GLOBALS['Cached_port']);
         $IoT_Anonymus_id = $GLOBALS['m']->get('ANONYMOUS_IOTID');
-         unset($IoT_Anonymus_id['log']);
-         
+        unset($IoT_Anonymus_id['log']);
+
         if (!($IoT_Anonymus_id)) {
             getUserDelegatedDevice($token, "ANONYMOUS", "IOTID", $result);
             if ($result['status'] == 'ko') {
@@ -903,12 +936,12 @@ function getDelegatedDevice($token, $user, &$result) {
             if ($result['status'] == 'ko') {
                 return;
             }
-            $result['log']='...omissis...';
+            $result['log'] = '...omissis...';
             $r = $GLOBALS['m']->set('ANONYMOUS_IOTID', $result['delegation'], $GLOBALS['expTimeCache']);
-            $result['cache']='SAVED ' . $r . ' -- ' . $GLOBALS['m']->getResultCode();
+            $result['cache'] = 'SAVED ' . $r . ' -- ' . $GLOBALS['m']->getResultCode();
         } else {
             $result['delegation'] = $IoT_Anonymus_id;
-            $result['cache']='READ';
+            $result['cache'] = 'READ';
         }
     } else {
         getUserDelegatedDevice($token, "ANONYMOUS", "IOTID", $result);
@@ -919,7 +952,7 @@ function getDelegatedDevice($token, $user, &$result) {
         if ($result['status'] == 'ko') {
             return;
         }
-        $result['cache']='NO';
+        $result['cache'] = 'NO';
     }
     getUserDelegatedDevice($token, $user, "IOTID", $result);
     if ($result['status'] == 'ko') {
@@ -929,7 +962,6 @@ function getDelegatedDevice($token, $user, &$result) {
     if ($result['status'] == 'ko') {
         return;
     }
-   
 }
 
 function ServerCacheManage($token, $action) {
@@ -1027,7 +1059,7 @@ function getDelegatedObject($token, $user, $object, &$result) {
             if (isset($lists[$i]->elementType) && $lists[$i]->elementType == $object) {
                 $a = $lists[$i]->elementId;
                 if (isset($mykeys[$a])) {
-                    switch($mykeys[$a]["delegationKind"]) {
+                    switch ($mykeys[$a]["delegationKind"]) {
                         case "READ_ACCESS":
                             if ($lists[$i]->kind == "READ_WRITE" || $lists[$i]->kind == "MODIFY") {
                                 $mykeys[$a] = array("usernameDelegator" => $lists[$i]->usernameDelegator, "delegationId" => $lists[$i]->id, "kind" => 'specific', "delegationKind" => $lists[$i]->kind);
@@ -1053,7 +1085,7 @@ function getDelegatedObject($token, $user, $object, &$result) {
                     if (isset($lists[$i]->elementType) && $lists[$i]->elementType == $object) {
                         $a = $lists[$i]->elementId;
                         if (isset($mykeys[$a])) {
-                            switch($mykeys[$a]["delegationKind"]) {
+                            switch ($mykeys[$a]["delegationKind"]) {
                                 case "READ_ACCESS":
                                     if ($lists[$i]->kind == "READ_WRITE" || $lists[$i]->kind == "MODIFY") {
                                         $mykeys[$a] = array("usernameDelegator" => $lists[$i]->usernameDelegator, "delegationId" => $lists[$i]->id, "kind" => 'anonymous', "delegationKind" => $lists[$i]->kind);
@@ -2663,7 +2695,7 @@ function nificallback_create($ip, $port, $name, $urlnificallback, $protocol, $se
 
             $url = $IP_PORT . "/v2/subscriptions";
 
-           // echo $IP_PORT;
+            // echo $IP_PORT;
 
             $result["log"] .= "\n Payload to send is:" . $msg;
             $result["log"] .= "\n Post url is:" . $url;

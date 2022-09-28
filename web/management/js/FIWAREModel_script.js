@@ -1,8 +1,6 @@
 $.fn.modal.Constructor.prototype.enforceFocus = function () { };
-
 var data;
-var proposal_value;
-
+var Data_call;
 //--------to get the datatypes items----------
 
 $.ajax({url: "../api/device.php",
@@ -17,7 +15,6 @@ $.ajax({url: "../api/device.php",
         if (mydata["status"] === 'ok') {
 
             addSubnature($("#selectSubnature"), mydata["subnature"]);
-
         } else {
             console.log("error getting the data types " + data);
         }
@@ -27,9 +24,6 @@ $.ajax({url: "../api/device.php",
         alert("Network errors. <br/> Get in touch with the Snap4City Administrator<br/>" + JSON.stringify(mydata));
     }
 });
-
-
-
 if ((loggedRole == 'RootAdmin') || (loggedRole == 'ToolAdmin')) {
     ColNameEditView = 'Edit';
 } else {
@@ -37,14 +31,10 @@ if ((loggedRole == 'RootAdmin') || (loggedRole == 'ToolAdmin')) {
 }
 $(document).ready(function () {
 
-    // DATI
+// DATI
     data = {action: "get_Fiwire_model", token: sessionToken, should_be_registered: "no", no_columns: ["" + ColNameEditView + ", delete"]};
-
-
-
-
     dataTable3 = $('#FIWAREModelTable').DataTable({
-        // dom: 'Plfrtip',
+// dom: 'Plfrtip',
         "processing": true,
         "paging": true,
         "ajax": {
@@ -57,7 +47,6 @@ $(document).ready(function () {
             return: true
         },
         select: true,
-
         "columns": [{
                 "name": "Name",
                 "orderable": true,
@@ -68,8 +57,6 @@ $(document).ready(function () {
                 "name": "Subdomain",
                 "data": function (row, type, val, meta) {
                     return row.subdomain;
-
-
                 }
             },
             {
@@ -129,7 +116,6 @@ $(document).ready(function () {
         ],
         "order": []
     });
-
     var modelName;
     var modelDomain;
     var modelSubDomain;
@@ -154,7 +140,6 @@ $(document).ready(function () {
         $("#editModelModalFooter").show();
         $("#editModelCancelBtn").show();
         $("#editModelConfirmBtn").show();
-
         $("#editModelModal").modal('show');
         $('#editModelLoadingMsg').hide();
         $('#editModelLoadingIcon').hide();
@@ -166,7 +151,6 @@ $(document).ready(function () {
         $('#editModelModal div.modalCell').show();
         $("#addAttrMBtn").show();
         $('#editlistAttributes').html("");
-
         //Set Data
         $("#editModelModalLabel").html("Edit Model - " + This.attr("data-modelName"));
         modelName = This.attr('data-modelName');
@@ -174,18 +158,15 @@ $(document).ready(function () {
         modelSubDomain = This.attr('data-modelSubDomain');
         Mversion = This.attr('data-version');
         SubNat = This.attr('data-subnature');
-
         //Insert Data in the field
         $('#inputNameModel').val(modelName);
         $('#inputDomaninModel').val(modelDomain);
         $('#inputSubdomaninModel').val(modelSubDomain);
         $('#inputVersionModel').val(Mversion);
-
         $('#inputNameModel').attr('readonly', mode);
         $('#inputDomaninModel').attr('readonly', mode);
         $('#inputSubdomaninModel').attr('readonly', mode);
         $('#inputVersionModel').attr('readonly', mode);
-
         //subnature
 
 
@@ -203,7 +184,6 @@ $(document).ready(function () {
 
 
         version = Mversion;
-
         //make LINK
 
 
@@ -219,13 +199,10 @@ $(document).ready(function () {
         //Call for values
         $('a[data-toggle="tab"]').off('shown.bs.tab').on('shown.bs.tab', function (e) {
             make_rule = true;
-
             var target = $(e.target).attr("href");
             if ((target == '#editSchemaTabModel')) {
 
                 document.getElementById('editlistAttributes').innerHTML = "";
-
-
                 $('#editModelLoadingIcon').show();
                 $.ajax({
                     url: "../api/model.php",
@@ -235,6 +212,7 @@ $(document).ready(function () {
                         version: version,
                         domain: modelDomain,
                         subdomain: modelSubDomain,
+                        proposal: true,
                         token: sessionToken
                     },
                     type: "POST",
@@ -247,9 +225,8 @@ $(document).ready(function () {
                         $("#editUserPoolsTable tbody").empty();
                         $('#editModelLoadingIcon').hide();
                         var myattributes = JSON.parse(mydata.content.attributes); //
+                        var myprop = (mydata.proposal);
                         var keys = Object.keys(myattributes);
-
-
                         content = "";
                         k = 0;
                         z = 0;
@@ -260,31 +237,43 @@ $(document).ready(function () {
                             V_type = "";
                             V_unit = '';
                             value_name = myattributes[keys[k]].value_name;
-
-
-
                             if (myattributes[keys[k]].value_name != 'type') {
                                 if (myattributes[keys[k]].checked == 'False') {
 
                                     descr = (myattributes[keys[k]].raw_attribute).description;
+                                    if ((loggedRole == 'RootAdmin') || (loggedRole == 'ToolAdmin')) {
+                                        for (i = 0; i < myprop.length; i++) {
 
+                                            if (myprop[i].value_name == value_name) {
+
+                                                D_type = myprop[i].data_type;
+                                                V_type = myprop[i].value_type;
+                                                V_unit = myprop[i].value_unit;
+                                                break;
+                                            }
+                                        }
+                                    } else {
+                                        D_type = myattributes[keys[k]].data_type;
+                                        V_type = myattributes[keys[k]].value_type;
+                                        V_unit = myattributes[keys[k]].value_unit;
+                                    }
 
                                 } else {
                                     z++;
-                                    descr = JSON.parse(myattributes[keys[k]].raw_attribute).description;
+                                    if (typeof (myattributes[keys[k]].raw_attribute).description != 'undefined') {
+                                        descr = (myattributes[keys[k]].raw_attribute).description;
+                                    } else {
+                                        descr = JSON.parse(myattributes[keys[k]].raw_attribute).description;
+                                    }
 
+                                    D_type = myattributes[keys[k]].data_type;
+                                    V_type = myattributes[keys[k]].value_type;
+                                    V_unit = myattributes[keys[k]].value_unit;
                                 }
-
-
-
                                 if (value_name == 'dateObserved') {
                                     D_type = 'string';
                                     V_type = 'timestamp';
                                     V_unit = 'timestamp';
-                                } else {
-                                    D_type = myattributes[keys[k]].data_type;
-                                    V_type = myattributes[keys[k]].value_type;
-                                    V_unit = myattributes[keys[k]].value_unit;
                                 }
 
 
@@ -298,22 +287,19 @@ $(document).ready(function () {
                                         myattributes[keys[k]].healthiness_value, // value_refresh_rate
                                         myattributes[keys[k]].value_name, //old_value_name
                                         'editlistAttributes', //parent
-                                        indexValues, temp, descr);     //indice
+                                        indexValues, temp, descr); //indice
 
                                 indexValues = indexValues + 1;
                                 $('#editlistAttributes').append(content);
-
                             }
                             k++;
-
-
                             $('.HIDE').hide();
-
-
                         }
                         if (z == (k - 1)) {
                             flag_modify_exist_rule = true;
                         }
+                        
+                        
 
                         checkEditAtlistOneAttributeM();
                         checkAddModelConditions();
@@ -321,91 +307,62 @@ $(document).ready(function () {
                         $('.Input_readoonly').attr('readonly', true);
                         $('.Select_readoonly').prop('disabled', true);
                         $('#editModelLoadingIcon').hide();
-
-
-
                     },
                     error: function (data)
                     {
                         alert("Error in reading data from the database<br/> Please get in touch with the Snap4city Administrator");
-
                         $('#editlistAttributes').html("");
-
-
                     }
                 });
-
             }
         });
-
-
-
     }
     $('#FIWAREModelTable tbody').on('click', 'button.editDashBtn', function () {
 
         get_ready_form_edit_view($(this), false);
-
     });
-
     $('#FIWAREModelTable tbody').on('click', 'button.viewDashBtn', function () {
 
         get_ready_form_edit_view($(this), true);
-
     });
-
-
-
 //Update attributes
     var num1 = 0;
     var tot_attr = [];
-
-
 //Set the payload and information 
     $("#editModelConfirmBtn").off("click").click(function () {
         var change = {};
-
         var id = modelName;
         var version = Mversion;
         var domain = modelDomain;
         var subdomain = modelSubDomain;
-
         msg_whatiswrong = '';
         var regex = /[^a-z0-9_-]/gi;
         var someNameisWrong = false;
         num1 = document.querySelector("#editlistAttributes").childElementCount;
-
         for (var m = 0; m < (num1); m++)
 
         {
 
             var attr = {};
             var value_name = document.querySelector("#value_name" + m + "").value;
-
             attr[value_name] = {
                 data_type: document.querySelector("#data_type" + m + "").value,
                 value_type: document.querySelector("#value_type" + m + "").value,
                 value_unit: document.querySelector("#value_unit" + m + "").value
             };
-
             tot_attr.push(attr);
-
-
-
             if (attr.data_type != "" && attr.value_type != "" && attr.editable != ""
                     && attr.value_unit != "" && attr.healthiness_criteria != "" && attr.healthiness_value != "")
                 Object.assign(change, attr);
-
             else
                 someNameisWrong = true;
         }
 
 
 
-        //API to update
+//API to update
         if (!someNameisWrong) {
             document.getElementById('editlistAttributes').innerHTML = "";
-
-
             $("#editModelModalTabs").hide();
             $('#editModelModal div.modalCell').hide();
             $('#editModelLoadingMsg').show();
@@ -413,25 +370,28 @@ $(document).ready(function () {
             $("#editModelCancelBtn").hide();
             $("#editModelConfirmBtn").hide();
             $("#editModelModalBody").hide();
-
             if (!$('#selectSubnature').val()) {
                 var subNat = null;
             } else {
                 var subNat = $('#selectSubnature').val();
+
             }
+
+            Data_call = {
+                action: "Update_values_attributes_FIWIRE",
+                token: sessionToken,
+                id: id,
+                version: version,
+                domain: domain,
+                subdomain: subdomain,
+                change: JSON.stringify(change),
+                subNat: subNat,
+                make_rule: true
+            };
 
             $.ajax({
                 url: "../api/model.php",
-                data: {
-                    action: "Update_values_attributes_FIWIRE",
-                    token: sessionToken,
-                    id: id,
-                    version: version,
-                    domain: domain,
-                    subdomain: subdomain,
-                    change: JSON.stringify(change),
-                    subNat: subNat
-                },
+                data: Data_call,
                 type: "POST",
                 async: false,
                 dataType: 'json',
@@ -450,76 +410,8 @@ $(document).ready(function () {
                         $('#editModelKoIcon').show();
                         $('#editModelOkBtn').show();
                         ///////////
-
-
-
-
                     } else if (data["status"] === 'ok')
                     {
-
-
-                        if (flag_modify_exist_rule && make_rule) {
-                            // ATTR=tot_attr;
-
-                            for (var k = 0; k < (num1); k++) {
-                                sel = tot_attr[k];
-                                NAME = domain + "_" + subdomain + "_" + id + "_" + Object.keys(sel)[0] + Math.round(Math.random() * 100);
-                                var attributesIfValues = getIfRules_basic(Object.keys(sel)[0]);
-                                var attributesThenValues = getThenRules_basic(sel[Object.keys(sel)[0]].value_type, sel[Object.keys(sel)[0]].value_unit, sel[Object.keys(sel)[0]].data_type);
-
-                                $.ajax({
-                                    url: "../api/bulkDeviceUpdate.php",
-                                    data: {
-                                        action: "Save_device_rules",
-                                        attributesIf: JSON.stringify(attributesIfValues),
-                                        attributesThen: JSON.stringify(attributesThenValues),
-                                        name: NAME,
-                                        mode: '0',
-                                        // update: true,
-                                        token: sessionToken
-                                    },
-                                    dataType: 'json',
-                                    type: "POST",
-                                    async: false,
-                                    success: function (myData) {
-                                        if (myData['status'] == 'ok') {
-
-                                        } else if (myData['status'] == 'ko') {
-                                            ErrorConfirmEdit(' Error about rule generation.');
-
-                                        }
-                                    },
-                                    error: function (myData) {
-
-
-                                    }
-                                });
-                            }
-                            tot_attr = [];
-
-
-                        } else if (!flag_modify_exist_rule && make_rule) {
-                            $.ajax({
-                                url: EndPointMakeRule,
-                                data: {},
-                                type: "GET",
-                                async: true,
-                                dataType: 'text',
-                                success: function (data)
-                                {
-                                    if (data) {
-
-                                    } else {
-                                        ErrorConfirmEdit(' Error about rule generation.');
-                                    }
-                                },
-                                error: function (data)
-                                {
-                                    ErrorConfirmEdit(data);
-                                }
-                            });
-                        }
-
 
                         $('#editModelLoadingMsg').hide();
                         $('#editModelLoadingIcon').hide();
@@ -528,7 +420,6 @@ $(document).ready(function () {
                         $('#editModelKoMsg').hide();
                         $('#editModelKoIcon').hide();
                         $('#editModelOkBtn').show();
-
                     } else {
                         console.log(data);
                     }
@@ -539,7 +430,6 @@ $(document).ready(function () {
                 error: function (data)
                 {
                     ErrorConfirmEdit(data);
-
                 }
             });
         } else {
@@ -547,12 +437,8 @@ $(document).ready(function () {
         }
 
     });
-
-
     function ErrorConfirmEdit(data) {
         console.log("Ko result: " + JSON.stringify(data));
-
-
         $('#editModelLoadingMsg').hide();
         $('#editModelLoadingIcon').hide();
         $('#editModelOkMsg').hide();
@@ -560,16 +446,9 @@ $(document).ready(function () {
         $('#editModelKoMsg').show();
         $('#editModelKoIcon').show();
         $('#editModelOkBtn').show();
-
-
-
         $('#editlistAttributes').html("");
-
-
         $('#modelTable').DataTable().destroy();
         fetch_data(true);
-
-
     }
 
 
@@ -586,22 +465,20 @@ $(document).ready(function () {
         alert('You need to log in with the right credentials before to access to this page!');
     }
 
-    ///// SHOW FRAME PARAMETER USE/////
+///// SHOW FRAME PARAMETER USE/////
     if (nascondi == 'hide') {
         $('#mainMenuCnt').hide();
         $('#title_row').hide();
         $('#mainCnt').removeClass('col-md-10');
         $('#mainCnt').addClass('col-md-12');
     }
-    //// SHOW FRAME PARAMETER  ////
+//// SHOW FRAME PARAMETER  ////
 
     $('#sessionExpiringPopup').css("top", parseInt($('body').height() - $('#sessionExpiringPopup').height()) + "px");
     $('#sessionExpiringPopup').css("left", parseInt($('body').width() - $('#sessionExpiringPopup').width()) + "px");
-
     setInterval(function () {
         var now = parseInt(new Date().getTime() / 1000);
         var difference = sessionEndTime - now;
-
         if (difference === 300) {
             $('#sessionExpiringPopupTime').html("5 minutes");
             $('#sessionExpiringPopup').show();
@@ -636,11 +513,8 @@ $(document).ready(function () {
             location.href = "logout.php?sessionExpired=true";
         }
     }, 1000);
-
     $('#mainContentCnt').height($('#mainMenuCnt').height() - $('#headerTitleCnt').height());
-
     $(window).resize(function () {
         $('#mainContentCnt').height($('#mainMenuCnt').height() - $('#headerTitleCnt').height());
     });
-
 });

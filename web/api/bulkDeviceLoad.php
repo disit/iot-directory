@@ -685,7 +685,6 @@ else if ($action == "get_count_temporary_devices") {
 
     if ($r) {
 
-
         $rules = array();
         $option = array();
         $total = array();
@@ -695,8 +694,6 @@ else if ($action == "get_count_temporary_devices") {
         $result["log"] = "\r\n action=get_rules_ext \r\n";
 
         while ($row = mysqli_fetch_assoc($r)) {
-
-
 
             If ($row["mode"] == '0') {
                 $count_0++;
