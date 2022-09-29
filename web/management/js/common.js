@@ -238,6 +238,13 @@ function RulesLoad(name, if_st, then_st, mode, modalif, modalthen) {
     valueNamesArray['then'] = 0;
     var idCounterThen = 0;
     var idCounterIf = 0;
+    
+    //parse in array JSON
+    
+    if(!Array.isArray(If_st)){
+        If_st = [If_st];
+    }
+    
 
     // create a number of row equal a number of If_st    
     for (let i = 0; i < Object.keys((If_st)).length; i++) {
