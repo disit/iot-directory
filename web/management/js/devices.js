@@ -2125,12 +2125,10 @@ $(document).ready(function () {
             var domain = nameOpt[selectednameOpt].attributes['data-domain'].value;
             var subdomain = nameOpt[selectednameOpt].attributes['data-modelsubdomain'].value;
             var subnature = nameOpt[selectednameOpt].attributes['data_subnature'].value;
-            $('#selectSubnature').val(subnature);
-            $('#selectSubnature').trigger('change');
             $('#inputTypeDevice').val(nameOptValue);
-            LoadAttr('FIWARE', nameOpt, selectednameOpt, nameOptValue, version, domain, subdomain);
+            LoadAttr('FIWARE', nameOpt, selectednameOpt, nameOptValue, version, domain, subdomain, subnature);
             $('#addlistAttributesMsg').hide();
-        } else {     
+        } else {
             $("#selectModelDevice").val('');
             document.getElementById('addlistAttributes').innerHTML = "";
             document.getElementById('addlistAttributesMsg').innerHTML = "At least a value needs to be specified";
@@ -2201,8 +2199,6 @@ $(document).ready(function () {
             } else {
                 var TempModel = $('#selectModelDevice').val();
             }
-
-
 
             $.ajax({
                 url: "../api/device.php",
@@ -4160,30 +4156,21 @@ function drawMapAll(data, divName) {
                         controlUI.href = '#';
                         return controlDiv;
                     }
-
-
                 });
         var removeAllControl = new L.Control.RemoveAll();
         map_all.addControl(removeAllControl);
         /******************Fatima-end***************************/
 
-
         for (var i = 0; i < data.length; i++) {
-
-
             var mylat = data[i].latitude;
             var mylong = data[i].longitude;
             var myname = data[i].name;
             if (mylat != null && mylong != null) {
-
-
-
                 if (data[i].visibility == "public") {
                     m = L.marker([mylat, mylong], {icon: blueIcon}).addTo(map_all).bindPopup(myname);
                 } else {
                     m = L.marker([mylat, mylong], {icon: redIcon}).addTo(map_all).bindPopup(myname);
                 }
-
                 //console.log("Before My Marker: " + mylat);
             }
         }
