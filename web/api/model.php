@@ -705,8 +705,8 @@ if ($action == "delete") {
     if (!empty($missingParams)) {
         $result["status"] = "ko";
         $result['msg'] = "Missing Parameters";
-        $result["error_msg"] .= "Problem in getting model value attributes (Missing parameters: " . implode(", ", $missingParams) . " )";
-        $result["log"] = "action=get_value_attributes - error Missing Parameters: " . implode(", ", $missingParams) . " \r\n";
+        $result["error_msg"] .= "Problem in updating model value attributes (Missing parameters: " . implode(", ", $missingParams) . " )";
+        $result["log"] = "action=update_values_attributes_fiware - error Missing Parameters: " . implode(", ", $missingParams) . " \r\n";
     } else {
         $id = mysqli_real_escape_string($link, $_REQUEST['id']);
         $version = mysqli_real_escape_string($link, $_REQUEST['version']);
@@ -721,12 +721,10 @@ if ($action == "delete") {
         $r = mysqli_query($link, $q);
 
         if (!$r) {
-
             $result['status'] = 'ko';
             $result['msg'] = 'Error: errors in reading data about attributes of the model. <br/>' . generateErrorMessage($link);
             $result["log"] = "action=$action of model " . $id . " error " . mysqli_error($link) . "\r\n";
         } else {
-
             $result["status"] = "ok - first query done";
 
             $row = mysqli_fetch_assoc($r);
@@ -821,15 +819,15 @@ if ($action == "delete") {
     if (!empty($missingParams)) {
         $result["status"] = "ko";
         $result['msg'] = "Missing Parameters";
-        $result["error_msg"] .= "Problem in getting model value attributes (Missing parameters: " . implode(", ", $missingParams) . " )";
-        $result["log"] = "action=get_value_attributes - error Missing Parameters: " . implode(", ", $missingParams) . " \r\n";
+        $result["error_msg"] .= "Problem in getting model value attributes fiware (Missing parameters: " . implode(", ", $missingParams) . " )";
+        $result["log"] = "action=get_value_attributes_fiware - error Missing Parameters: " . implode(", ", $missingParams) . " \r\n";
     } else {
         $id = mysqli_real_escape_string($link, $_REQUEST['id']);
         $version = mysqli_real_escape_string($link, $_REQUEST['version']);
         $domain = mysqli_real_escape_string($link, $_REQUEST['domain']);
         $subdomain = mysqli_real_escape_string($link, $_REQUEST['subdomain']);
 
-        $q = "SELECT attributes FROM raw_schema_model WHERE model = '$id' AND version= '$version' AND domain='$domain' AND subdomain='$subdomain'";
+        $q = "SELECT attributes,subnature FROM raw_schema_model WHERE model = '$id' AND version= '$version' AND domain='$domain' AND subdomain='$subdomain'";
         $r = mysqli_query($link, $q);
         if (!$r) {
             $result['status'] = 'ko';
