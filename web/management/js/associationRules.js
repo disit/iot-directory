@@ -706,10 +706,10 @@ function fetch_data(destroyOld, selected = null) {
                     // }
                     // var toVerify = { "contextbroker": row.contextbroker, "name": row.name, "devicetype": row.devicetype, "model": row.model, "macaddress": row.macaddress, "frequency": row.frequency, "kind": row.kind, "protocol": row.protocol, "format": row.format, "service": row.service, "servicepath": row.servicePath, "latitude": row.latitude, "longitude": row.longitude, "visibility": row.visibility, "k1": row.k1, "k2": row.k2, "subnature": row.subnature, "static_attributes": row.static_attributes, "producer": row.producer, "edge_gateway_type": row.edge_gateway_type, "edge_gateway_uri": row.edge_gateway_uri, "deviceValues": myattributes };
                     // var status = verifyDevice(toVerify);
-                    if (row.status == 'invalid') {
-                        return '<button type="button" id="invalid" class="btn btn-warning" onclick="showValidityMsg(\'' + row.status + '\',\'' + row.validity_msg + '\')\">Invalid</button>';
+                    if (row.status != 'valid') {
+                        return '<button type="button" id="invalid" class="btn btn-warning" onclick="showValidityMsg(\'invalid\',\'' + row.validity_msg + '\')\">Invalid</button>';
                     } else if (row.status == 'valid') {
-                        return '<button type="button" id="valid"  class="btn btn-success"  data-id = "' + row.name + '"  onclick="showValidityMsg(\'' + row.status + '\',\'' + row.validity_msg + '\')\">Valid</button>';
+                        return '<button type="button" id="valid"  class="btn btn-success"  data-id = "' + row.name + '"  onclick="showValidityMsg(\'valid\',\'' + row.validity_msg + '\')\">Valid</button>';
                     }
                     // if (!status.isvalid) {
                     // 	row.status = 'invalid'
@@ -2640,18 +2640,21 @@ $(document).ready(function () {
                 while (k < myattributes.length)
                 {
                     // console.log(k); 
+                     if (  !myattributes[k].value_name.includes('type')    ) {
                     content = drawAttributeMenu(myattributes[k].value_name,
                             myattributes[k].data_type, myattributes[k].value_type, myattributes[k].editable, myattributes[k].value_unit, myattributes[k].healthiness_criteria,
                             myattributes[k].healthiness_value, myattributes[k].value_name, 'editlistAttributes', indexValues,'');
 
-                    str = "#Value" + myattributes[k].value_name;
+                    
 
 
                     indexValues = indexValues + 1;
-                    k++;
+                    
                     $('#editlistAttributes').append(content);
+                }
+                str = "#Value" + myattributes[k].value_name;
 
-
+k++;
 
 
                     //checkEditDeviceConditions();
@@ -3593,6 +3596,69 @@ $(document).ready(function () {
             }, 1000);
         }, 100);
     });
+    
+    
+     //*************UPDATE VALUES ********************/
+        
+$("#ApplyRulesBtn").off("click");
+	$("#ApplyRulesBtn").click(function () {
+		
+		$('#ApplyRulesModal1').modal('show');
+                $("#addDeviceOkModalInnerDiv2").modal('hide');
+                
+                $('#ApplyRulesModal1QuestMsg').show();
+                $('#ApplyRulesModal1OkMsg').hide();
+                 $('#ApplyRulesModal1KoMsg').hide();
+		
+
+	});
+        
+               
+$("#ApplyRulesOkBtn").off("click");
+	$("#ApplyRulesOkBtn").click(function () {
+             $.ajax({
+                url: "../api/bulkDeviceUpdate.php",
+                data: {
+                    action: "update_all_values",                                 
+                    total: true,
+                    cb:'kk',
+                    token: sessionToken
+                },
+                dataType: 'json',
+                type: "POST",
+                async: true,
+                success: function (myData) {
+                    if (myData['status'] == 'ok') {
+                       
+                        $('#ApplyRulesModal1OkMsg').hide();
+                        $('#ApplyRulesModal1OkMsg').show();
+                 $('#ApplyRulesModal1KoMsg').hide();
+                        
+                        $("#addDeviceOkModalInnerDiv2").modal('show');
+                    } else if (myData['status'] == 'ko') {
+                        let mex = "There are some problems. \n "+ myData['msg'];
+                        $('#ApplyRulesModal1OkModalInnerDiv1').html(mex);
+                        $('#ApplyRulesModal1OkMsg').hide();
+                        $('#ApplyRulesModal1OKtMsg').hide();
+                 $('#ApplyRulesModal1KoMsg').show();
+                    }
+                },
+                error: function (myData) {
+                    let mex = "There are some problems. \n "+ myData['msg'];
+                        $('#ApplyRulesModal1OkModalInnerDiv1').html(mex);
+
+                }
+            });
+            
+            
+            
+		
+		$('#ApplyRulesModal1').modal('hide');
+		
+
+	});
+        
+        
 
 
     //*************UPDATE VALUES ********************/

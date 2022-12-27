@@ -41,6 +41,7 @@ if (!$link->set_charset("utf8")) {
 
 if (isset($_REQUEST['action']) && !empty($_REQUEST['action'])) {
     $action = $_REQUEST['action'];
+    $action_lwr = strtolower($action);
 } else {
     $result['status'] = 'ko';
     $result['msg'] = 'action not present';
@@ -100,12 +101,12 @@ if ($result["status"] != "ok") {
     exit();
 }
 
-if ($action == "get_Fiwire_model") {
+if ($action_lwr == "get_fiware_model" || $action_lwr == "get_fiwire_model") {
     if (!($GLOBALS['FIWAREon'])) {
         $result = array(
             "data" => [],
             "msg" => '',
-            "log" => "\r\n action=get_Fiwire_model is disabled\r\n",
+            "log" => "\r\n action=get_fiware_model is disabled\r\n",
             "status" => 'ok'
         );
 
@@ -171,12 +172,12 @@ if ($action == "get_Fiwire_model") {
             }
         }
 
-        $result = format_result($draw, $selectedrows + 1, $selectedrows + 1, $data, "", "\r\n action=get_Fiwire_model \r\n", 'ok');
+        $result = format_result($draw, $selectedrows + 1, $selectedrows + 1, $data, "", "\r\n action=get_fiware_model \r\n", 'ok');
 
-        logAction($link, $username, 'FIWIRE Model', 'get_Fiwire_model', '', $organization, '', 'success');
+        logAction($link, $username, 'FIWARE Model', 'get_fiware_model', '', $organization, '', 'success');
     } else {
-        logAction($link, $username, 'FIWIRE Model', 'get_Fiwire_model', '', $organization, 'Error: errors in reading data about Fiwire models.', 'faliure');
-        $result = format_result($draw, 0, 0, $data, 'Error: errors in reading data about Fiwire models. <br/>' . generateErrorMessage($link), '\n\r Error: errors in reading data about Fiwire models.' . generateErrorMessage($link), 'ko');
+        logAction($link, $username, 'FIWARE Model', 'get_fiware_model', '', $organization, 'Error: errors in reading data about fiware models.', 'faliure');
+        $result = format_result($draw, 0, 0, $data, 'Error: errors in reading data about fiware models. <br/>' . generateErrorMessage($link), '\n\r Error: errors in reading data about fiware models.' . generateErrorMessage($link), 'ko');
     }
 
     my_log($result);
@@ -699,7 +700,7 @@ if ($action == "delete") {
 
     my_log($result);
     mysqli_close($link);
-} else if ($action == 'Update_values_attributes_FIWIRE') {
+} else if ($action_lwr == 'update_values_attributes_fiware' || $action == 'Update_values_attributes_FIWIRE') {
     $missingParams = missingParameters(array('id', 'version', 'domain', 'subdomain', 'change'));
     if (!empty($missingParams)) {
         $result["status"] = "ko";
@@ -707,7 +708,6 @@ if ($action == "delete") {
         $result["error_msg"] .= "Problem in getting model value attributes (Missing parameters: " . implode(", ", $missingParams) . " )";
         $result["log"] = "action=get_value_attributes - error Missing Parameters: " . implode(", ", $missingParams) . " \r\n";
     } else {
-
         $id = mysqli_real_escape_string($link, $_REQUEST['id']);
         $version = mysqli_real_escape_string($link, $_REQUEST['version']);
         $domain = mysqli_real_escape_string($link, $_REQUEST['domain']);
@@ -746,7 +746,7 @@ if ($action == "delete") {
                             array("field" => "data_type", "valueThen" => $change[$key]["data_type"]));
 
                         $q2 = "INSERT INTO `iotdb`.`EXT_values_rules` (`Name`,`If_statement`, `Then_statement`, `Organization`, `Timestamp`,`mode`, `contextbroker`, `service`, `servicePath` )"
-                                . " VALUES ('$namerule','" . mysqli_real_escape_string($link, json_encode($IF_st)) . "', '" . mysqli_real_escape_string($link, json_encode($THEN_st)) . "', '$organization', NOW(), '0', '', '', '');";
+                                . " VALUES ('$namerule','" . mysqli_real_escape_string($link, json_encode($IF_st)) . "', '" . mysqli_real_escape_string($link, json_encode($THEN_st)) . "', '$organization', NOW(), '1', '', '', '');";
 
                         $r = mysqli_query($link, $q2);
 
@@ -756,6 +756,8 @@ if ($action == "delete") {
                             $result['msg'] = 'Error: errors in reading data about attributes of the model. <br/>' . generateErrorMessage($link);
                             $result["log"] = "action=$action of model " . $id . " error " . mysqli_error($link) . "\r\n";
                             $result["query"] = $q2;
+                             my_log($result);
+                            exit;
                         } else {
 
                             $result["status"] = "ok";
@@ -813,7 +815,7 @@ if ($action == "delete") {
     }
     my_log($result);
     mysqli_close($link);
-} else if ($action == 'get_value_attributes_FIWIRE') {
+} else if ($action_lwr == 'get_value_attributes_fiware' || $action == 'get_value_attributes_FIWIRE') {
     $missingParams = missingParameters(array('id', 'version', 'domain', 'subdomain'));
 
     if (!empty($missingParams)) {

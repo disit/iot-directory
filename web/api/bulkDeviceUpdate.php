@@ -33,7 +33,7 @@ include('../config.php');
 include('common.php');
 $link = mysqli_connect($host, $username, $password) or die("failed to connect to server !!");
 mysqli_select_db($link, $dbname);
-error_reporting(E_ERROR  );
+error_reporting(E_ERROR);
 
 if (!$link->set_charset("utf8")) {
     exit();
@@ -202,7 +202,7 @@ if ($action == "Save_device_rules") {
 
             $device = array();
             $option = array();
-            $total=array();
+            $total = array();
 //        $dev2=array();
 
             $result["log"] = "\r\n action=get_temporary_devices \r\n";
@@ -210,11 +210,9 @@ if ($action == "Save_device_rules") {
             while ($row = mysqli_fetch_assoc($r)) {
 
                 $selectedrows++;
-                
-                
-                 array_push($total, $row["contextBroker"]);
-                
-                
+
+                array_push($total, $row["contextBroker"]);
+
                 if (!$tobelimited || ($tobelimited && $selectedrows >= $start && $selectedrows < ($start + $offset))) {
                     $rec = array();
                     if (strpos($row["validity_msg"], "For ") == false) {
@@ -253,16 +251,13 @@ if ($action == "Save_device_rules") {
                     $rec["servicePath"] = $row["servicePath"];
 
                     array_push($device, $rec);
-
                 }
             }
 
 
 
             $output = format_result_serverside($_REQUEST["draw"], $selectedrows + 1, $selectedrows + 1, $device, "", "\r\n action=get_temporary_devices \r\n", 'ok', $option, $searchPanes = get_searchPanes_CB($device, 'contextbroker', $total));
-      
-            
-                    } else {
+        } else {
             $output = format_result($_REQUEST["draw"], 0, 0, null, 'Error: errors in reading data about devices. <br/>' .
                     generateErrorMessage($link), '\n\r Error: errors in reading data about devices.' . generateErrorMessage($link), 'ko');
         }
@@ -283,7 +278,8 @@ if ($action == "Save_device_rules") {
         $id = mysqli_real_escape_string($link, $_REQUEST['id']);
         $cb = mysqli_real_escape_string($link, $_REQUEST['contextbroker']);
 
-        $q1 = "SELECT * FROM temporary_event_values WHERE device = '$id' AND cb = '$cb' AND (toDelete IS NULL OR toDelete != 'yes')";
+        $q1 = "SELECT * FROM temporary_event_values WHERE device = '$id' AND cb = '$cb'";
+//         AND (toDelete IS NULL OR toDelete != 'yes')
 
         $r1 = mysqli_query($link, $q1);
 
@@ -701,7 +697,7 @@ else if ($action == "get_affected_devices_count") {
                 if ($contextbroker == "") {
                     $contextbroker = $row1["contextBroker"];
                 }
-                $q2 = 'SELECT * FROM temporary_event_values WHERE device="' . $row1["id"] . '" AND cb = "' . $contextbroker . '" AND (toDelete IS NULL OR toDelete != "yes")';
+                $q2 = 'SELECT * FROM temporary_event_values WHERE device="' . $row1["id"] . '" AND cb = "' . $contextbroker . '" '; //AND (toDelete IS NULL OR toDelete != "yes")';
 
                 $r2 = mysqli_query($link, $q2);
                 if ($r2) {
@@ -760,7 +756,7 @@ else if ($action == "get_affected_devices_count") {
                 if ($verification["isvalid"] == 0) {
                     $validity = "invalid";
                 }
-                $sql = 'UPDATE temporary_devices SET validity_msg =\'' . trim($verification["message"]) . '\', status = "' . $validity . '" WHERE contextbroker = "' . $device["contextbroker"] . '" AND id ="' . $device["name"] . '";';
+                $sql = 'UPDATE temporary_devices SET validity_msg ="' . trim($verification["message"]) . '", status = "' . $validity . '" WHERE contextbroker = "' . $device["contextbroker"] . '" AND id ="' . $device["name"] . '";';
 
                 $r = mysqli_query($link, $sql);
                 if ($r) {
@@ -883,8 +879,8 @@ else if ($action == "get_affected_devices_count") {
     my_log($result);
     mysqli_close($link);
 } else if ($action == "update_all_values") {
-    
-    $startTime= microtime(true);
+
+    $startTime = microtime(true);
 
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     if ($_REQUEST['attributesThen'] || $_REQUEST['attributesIf']) {
@@ -895,27 +891,36 @@ else if ($action == "get_affected_devices_count") {
 
 
 
-    if (isset($_REQUEST['cb'])) {
 
+
+
+    if (isset($_REQUEST['cb'])) {
+        $queryModel = "SELECT  contextbroker FROM EXT_values_rules";
+        $resModel = mysqli_query($link, $queryModel);
 
         $attributesThen1 = array();
         $attributesIf1 = array();
         $attributesThen = array();
         $attributesIf = array();
+
         $loop = true;
+
         $count_attributes = 0;
+        if (!$resModel) {
 
-        // gli passo cb, serv e servPath
-        $cb = $_REQUEST['cb'];
-        if (isset($_REQUEST['service']) && isset($_REQUEST['service_path'])) {
-            $service = $_REQUEST['service'];
-            $service_path = $_REQUEST['service_path'];
+            $cb = $_REQUEST['cb'];
+            if (isset($_REQUEST['service']) && isset($_REQUEST['service_path'])) {
+                $service = $_REQUEST['service'];
+                $service_path = $_REQUEST['service_path'];
 
-            $q = "SELECT * FROM EXT_values_rules where contextbroker='$cb' AND mode='1' AND service = '$service' AND servicePath = '$service_path' AND organization = '$organization';";
-            //AND service = '$service' AND servicePath = '$service_path' AND organization = '$organization' 
+                $q = "SELECT * FROM EXT_values_rules where contextbroker='$cb' AND mode='1' AND service = '$service' AND servicePath = '$service_path' AND organization = '$organization';";
+                //AND service = '$service' AND servicePath = '$service_path' AND organization = '$organization' 
+            } else {
+                $q = "SELECT * FROM EXT_values_rules where contextbroker='$cb' AND mode='1'  AND organization = '$organization';";
+                //AND service = '$service' AND servicePath = '$service_path' AND organization = '$organization'   
+            }
         } else {
-            $q = "SELECT * FROM EXT_values_rules where contextbroker='$cb' AND mode='1'  AND organization = '$organization';";
-            //AND service = '$service' AND servicePath = '$service_path' AND organization = '$organization'   
+            $q = "SELECT * FROM EXT_values_rules where mode='1'  AND organization = '$organization';";
         }
 
         $res_newStat = mysqli_query($link, $q);
@@ -923,12 +928,10 @@ else if ($action == "get_affected_devices_count") {
         if ($res_newStat) {
 
             while ($row = mysqli_fetch_assoc($res_newStat)) {
-                //controlla se conti il numero giusto di iterazioni
+
                 $count_attributes++;
                 $rec_if = array();
                 $rec_then = array();
-                // $rec_if["Name"]=($row["Name"]);
-                // $rec_then["Name"]=($row["Name"]);
                 $rec_if["If_statement"] = json_decode($row["If_statement"]);
                 $rec_then ["Then_statement"] = json_decode($row["Then_statement"]);
 
@@ -937,7 +940,6 @@ else if ($action == "get_affected_devices_count") {
             }
         }
     }
-
     $usernameNotHashed = $username;
     $username = md5($username);
 
@@ -975,40 +977,53 @@ else if ($action == "get_affected_devices_count") {
         array_push($valueunits, $array[$i]->value);
     }
 /////////////
+    
 
     if ($loop) {
+        
+       
 
+        $TIME_DE = array();
+        $tot;
 
         $count_if = 0;
-        $rules=array();
-        while ($count_if < $count_attributes ) {
+        $rules = array();
+        while ($count_if < $count_attributes) {
 
-            $result = query_if_then($attributesIf1[$count_if], $attributesThen1[$count_if], $organization, $username, $link, $datatypes, $valuetypes, $valueunits );
-               array_push($rules,$result['rows']. "  *****RULE applies: ".json_encode($attributesIf1[$count_if]). "  " . json_encode($attributesThen1[$count_if]));
+            $TIME_DE_1 = microtime(true);
+            $diff = $count_attributes - ($count_if + 1);
+
+            $result = query_if_then([$attributesIf1[$count_if]], $attributesThen1[$count_if], $organization, $username, $link, $datatypes, $valuetypes, $valueunits, $loop, $diff);
+            array_push($rules, $result['rows'] . "  *****RULE applies: " . json_encode($attributesIf1[$count_if]) . "  " . json_encode($attributesThen1[$count_if]));
+            $TIME_DE_2 = microtime(true);
+
+            array_push($TIME_DE, ($TIME_DE_2 - $TIME_DE_1));
+            $tot += ($TIME_DE_2 - $TIME_DE_1);
 
             $count_if++;
-                if($result["status"]=='ko'){
-                    break;
-                }
+            if ($result["status"] == 'ko') {
+                break;
+            }
+            //echo json_encode($result);
         }
+        $result["TIME_fi"] = ($TIME_DE);
+        $result["TIME_finale_query"] = $tot;
     } else {
-         
-        $result = query_if_then($attributesIf, $attributesThen, $organization, $username, $link, $datatypes, $valuetypes, $valueunits );
+
+        $result = query_if_then($attributesIf1, $attributesThen1, $organization, $username, $link, $datatypes, $valuetypes, $valueunits, $loop, 0);
     }
-    
- //$result["rules"]=$rules;
- 
- $endTime= microtime(true);
- $result["timeLaps"]=$endTime-$startTime;
- 
-   if($loop){
-       unset($result["validity_message"] );
-       unset($result["valid"]);
-       unset($result["content"]);
-       unset($result["msg"]);
-       
-            
-        }
+
+    //$result["rules"]=$rules;
+
+    $endTime = microtime(true);
+    $result["timeLaps"] = $endTime - $startTime;
+
+    if ($loop) {
+        unset($result["validity_message"]);
+        unset($result["valid"]);
+        unset($result["content"]);
+        unset($result["msg"]);
+    }
 
 
     my_log($result);
@@ -1037,10 +1052,10 @@ else if ($action == "get_affected_devices_count") {
     }
 
     $a = 0;
-   // $query = "te.cb = td.contextbroker AND te.device = td.id AND deleted IS null AND username = '$username' AND organization='$organization' AND (te.toDelete IS NULL OR te.toDelete != 'yes')";
-   
+    // $query = "te.cb = td.contextbroker AND te.device = td.id AND deleted IS null AND username = '$username' AND organization='$organization' AND (te.toDelete IS NULL OR te.toDelete != 'yes')";
+
     $query = "SELECT * FROM temporary_devices td INNER JOIN temporary_event_values te WHERE te.cb = td.contextbroker AND username = '$username' AND organization='$organization'  ";
-    
+
     while ($a < count($attributesIf)) {
         $attIf = $attributesIf[$a];
         if ($attIf->field == "empty") {
@@ -1074,10 +1089,10 @@ else if ($action == "get_affected_devices_count") {
         $a++;
     }
     if (count($attributesIf) > 0) {
-        
+
 
         //$q2 = "SELECT * FROM temporary_devices td INNER JOIN temporary_event_values te limit 300";
-        $query=$query.' limit 500';
+        $query = $query . ' limit 500';
 
         $r = create_datatable_data($link, $_REQUEST, $query, '');
 
@@ -1118,11 +1133,11 @@ else if ($action == "get_affected_devices_count") {
                 }
             }
             $output = format_result($_REQUEST["draw"], $selectedrows + 1, $selectedrows + 1, $value, "", "\r\n action=get_preview \r\n", 'ok');
-            $output['query']=  $GLOBALS['DataTableQuery'];
+            $output['query'] = $GLOBALS['DataTableQuery'];
         } else {
             $output = format_result($_REQUEST["draw"], 0, 0, null, 'Error: errors in reading data about devices. <br/>' .
                     generateErrorMessage($link), '\n\r Error: errors in reading data about devices.' . generateErrorMessage($link), 'ko');
-            $output['query']=  $GLOBALS['DataTableQuery'];
+            $output['query'] = $GLOBALS['DataTableQuery'];
         }
         $result = $output;
     }
@@ -1131,7 +1146,7 @@ else if ($action == "get_affected_devices_count") {
     mysqli_close($link);
 } else if ($action == "get_fields") {
     $fieldIf = mysqli_real_escape_string($link, $_REQUEST['fieldIf']);
-    $IfThenFieldValue=mysqli_real_escape_string($link, $_REQUEST['IfThenFieldValue']);
+    $IfThenFieldValue = mysqli_real_escape_string($link, $_REQUEST['IfThenFieldValue']);
 
     $sql = 'SELECT * FROM fieldType WHERE fieldName ="' . $fieldIf . '";';
 
@@ -1146,13 +1161,11 @@ else if ($action == "get_affected_devices_count") {
                 // $array = array();
                 $array = $result_value_types["content"];
                 for ($i = 0; $i < count($array); $i++) {
-                    if($IfThenFieldValue==$array[$i]->value){
-                         $htmlstring .= "<option value=" . $array[$i]->value . " selected >" . $array[$i]->label . "</option>";
-                    }else{
+                    if ($IfThenFieldValue == $array[$i]->value) {
+                        $htmlstring .= "<option value=" . $array[$i]->value . " selected >" . $array[$i]->label . "</option>";
+                    } else {
                         $htmlstring .= "<option value=" . $array[$i]->value . ">" . $array[$i]->label . "</option>";
                     }
-                            
-                    
                 }
                 $rec["fieldsHtml"] = $htmlstring . "</select>";
                 $rec["query"] = $row["query"];
@@ -1165,12 +1178,11 @@ else if ($action == "get_affected_devices_count") {
                 // $array = array();
                 $array = $result_value_units["content"];
                 for ($i = 0; $i < count($array); $i++) {
-                    if($IfThenFieldValue==$array[$i]->value){
-                         $htmlstring .= "<option value=" . $array[$i]->value . " selected >" . $array[$i]->label . "</option>";
-                    }else{
+                    if ($IfThenFieldValue == $array[$i]->value) {
+                        $htmlstring .= "<option value=" . $array[$i]->value . " selected >" . $array[$i]->label . "</option>";
+                    } else {
                         $htmlstring .= "<option value=" . $array[$i]->value . ">" . $array[$i]->label . "</option>";
                     }
-                    
                 }
 
                 $rec["fieldsHtml"] = $htmlstring . "</select>";
@@ -1183,75 +1195,68 @@ else if ($action == "get_affected_devices_count") {
                     $rec["fieldName"] = $row["fieldName"];
                     $rec["menuType"] = $row["menuType"];
                     //ADD value  $IfThenFieldValue
-                    if($IfThenFieldValue){
-                         $rec["fieldsHtml"] =str_replace("Empty",$IfThenFieldValue , $row["fieldsHtml"]); 
-                    }else{
-                        $rec["fieldsHtml"] = $row["fieldsHtml"]; 
+                    if ($IfThenFieldValue) {
+                        $rec["fieldsHtml"] = str_replace("Empty", $IfThenFieldValue, $row["fieldsHtml"]);
+                    } else {
+                        $rec["fieldsHtml"] = $row["fieldsHtml"];
                     }
-                   
-                   
-                } else if($row["fieldName"] == "model"){
+                } else if ($row["fieldName"] == "model") {
                     $r1 = mysqli_query($link, $row["query"]);
                     $htmlstring = "<select class= \"fieldSelectIf\" >";
                     while ($row1 = mysqli_fetch_assoc($r1)) {
-                        if ($row["menuType"] == "select") {     
-                         if($IfThenFieldValue== $row1["name"]){
-                          $htmlstring .= "<option value=" . $row1["name"] . " selected >" . $row1["name"] . "</option>";
-                    }else{
-                         $htmlstring .= "<option value=" . $row1["name"] . ">" . $row1["name"] . "</option>";
-                    }
-                    
+                        if ($row["menuType"] == "select") {
+                            if ($IfThenFieldValue == $row1["name"]) {
+                                $htmlstring .= "<option value=" . $row1["name"] . " selected >" . $row1["name"] . "</option>";
+                            } else {
+                                $htmlstring .= "<option value=" . $row1["name"] . ">" . $row1["name"] . "</option>";
+                            }
                         }
                     }
-                    if($IfThenFieldValue== "custom"){
-                           $htmlstring .= "<option value=\"custom\" selected >custom</option>";
-                    }else{
-                          $htmlstring .= "<option value=\"custom\">custom</option>";
+                    if ($IfThenFieldValue == "custom") {
+                        $htmlstring .= "<option value=\"custom\" selected >custom</option>";
+                    } else {
+                        $htmlstring .= "<option value=\"custom\">custom</option>";
                     }
-                    
-                    $rec["fieldsHtml"] = $htmlstring . "</select>";                    
+
+                    $rec["fieldsHtml"] = $htmlstring . "</select>";
                     $rec["query"] = $row["query"];
                     $rec["fieldName"] = $row["fieldName"];
                     $rec["menuType"] = $row["menuType"];
-                } else if($row["fieldName"] == "data_type"){
+                } else if ($row["fieldName"] == "data_type") {
                     $r1 = mysqli_query($link, $row["query"]);
                     $htmlstring = "<select class= \"fieldSelectIf\" >";
                     while ($row1 = mysqli_fetch_assoc($r1)) {
                         // echo json_encode($row1);
                         if ($row["menuType"] == "select") {
-                            if($IfThenFieldValue== $row1["name"]){
-                          $htmlstring .= "<option value=" . $row1["name"] . " selected >" . $row1["name"] . "</option>";
-                    }else{
-                         $htmlstring .= "<option value=" . $row1["name"] . ">" . $row1["name"] . "</option>";
-                    }
-                            
+                            if ($IfThenFieldValue == $row1["name"]) {
+                                $htmlstring .= "<option value=" . $row1["name"] . " selected >" . $row1["name"] . "</option>";
+                            } else {
+                                $htmlstring .= "<option value=" . $row1["name"] . ">" . $row1["name"] . "</option>";
+                            }
                         }
                     }
-                    
-                    $rec["fieldsHtml"] = $htmlstring . "</select>";                    
+
+                    $rec["fieldsHtml"] = $htmlstring . "</select>";
                     $rec["query"] = $row["query"];
                     $rec["fieldName"] = $row["fieldName"];
                     $rec["menuType"] = $row["menuType"];
-                }              
-                else{
+                } else {
                     $r1 = mysqli_query($link, $row["query"]);
                     $htmlstring = "<select class= \"fieldSelectIf\" >";
                     while ($row1 = mysqli_fetch_assoc($r1)) {
-                        
+
                         // echo json_encode($row1);
                         if ($row["menuType"] == "select") {
-                            if($IfThenFieldValue== $row1["contextBroker"] ){
-                          $htmlstring .= "<option value=" .$row1["contextBroker"]  . " selected >" . $row1["contextBroker"] . "</option>";
-                    }else{
-                         $htmlstring .= "<option value=" . $row1["contextBroker"]  . ">" .$row1["contextBroker"]  . "</option>";
-                    }
-                            
-                            
+                            if ($IfThenFieldValue == $row1["contextBroker"]) {
+                                $htmlstring .= "<option value=" . $row1["contextBroker"] . " selected >" . $row1["contextBroker"] . "</option>";
+                            } else {
+                                $htmlstring .= "<option value=" . $row1["contextBroker"] . ">" . $row1["contextBroker"] . "</option>";
+                            }
                         }
                     }
-                   
-                    
-                    $rec["fieldsHtml"] = $htmlstring . "</select>";                    
+
+
+                    $rec["fieldsHtml"] = $htmlstring . "</select>";
                     $rec["query"] = $row["query"];
                     $rec["fieldName"] = $row["fieldName"];
                     $rec["menuType"] = $row["menuType"];
@@ -1289,7 +1294,9 @@ else if ($action == "get_affected_devices_count") {
     my_log($result);
 }
 
-function query_if_then($attributesIf, $attributesThen, $organization, $username, $link, $datatypes, $valuetypes, $valueunits ) {
+function query_if_then($attributesIf, $attributesThen, $organization, $username, $link, $datatypes, $valuetypes, $valueunits, $loop, $diff) {
+
+
 
     $hv = 0;
     $hcriteriaIf = "";
@@ -1325,26 +1332,31 @@ function query_if_then($attributesIf, $attributesThen, $organization, $username,
         }
         $hv++;
     }
+    $startTime1 = microtime(true);
 
     //$query = "UPDATE temporary_event_values te JOIN temporary_devices td ON te.cb = td.contextbroker AND te.device = td.id ";
     $query = "UPDATE temporary_event_values ";
-    
 
-    $a = 0;
+    $c = 0;
     $set = 0;
     $logFields = "";
-    while ($a < count($attributesThen)) {
-        $attThen = $attributesThen[$a];
+    while ($c < count($attributesThen)) {
+
+        $attThen = $attributesThen[$c];
         $logFields .= $attThen->field . ", ";
 
         if ($set == 0) {
             $query .= " SET ";
             if ($attThen->field == "healthiness_value") {
+                //if ($attThen[$c]->field == "healthiness_value") {
                 $query .= $hcriteriaThen . " = '" . $attThen->valueThen . "'";
             } else {
+
                 if (strtoupper($attThen->valueThen) == "NULL") {
+
                     $query .= $attThen->field . " = NULL";
                 } else {
+
                     $query .= $attThen->field . " = '" . $attThen->valueThen . "'";
                 }
             }
@@ -1356,8 +1368,10 @@ function query_if_then($attributesIf, $attributesThen, $organization, $username,
                 $query .= ", " . $attThen->field . " = '" . $attThen->valueThen . "'";
             }
         }
-        $a++;
+
+        $c++;
     }
+
     $b = 0;
     $where = 0;
     while ($b < count($attributesIf)) {
@@ -1389,86 +1403,69 @@ function query_if_then($attributesIf, $attributesThen, $organization, $username,
         $b++;
     }
 
+    $query .= " and (cb,device) in (select contextbroker,id from temporary_devices where username =  '$username' AND organization = '$organization' and status='new');";
 
-   // $query .= " AND username =  '$username' AND organization = '$organization' AND (te.toDelete IS NULL OR te.toDelete != 'yes');";
-    
-     $query .="and (cb,device) in (select contextbroker,id from temporary_devices where username =  '$username' AND organization = '$organization') 
-AND (toDelete IS NULL OR toDelete != 'yes')";
-
-     
-   // echo $query; 
-   // console.log("query:".$query);
+    echo $query . " \n ";
+    // console.log("query:".$query);
     $logFields = substr($logFields, 0, strlen($logFields) - 2);
     $r = mysqli_query($link, $query);
 
+    $endTime1 = microtime(true);
+
+    echo " \n TIME: " . ($endTime1 - $startTime1) . " \n ";
+    $result["timeLaps1"] = $endTime1 - $startTime1;
+    $result["query1"] = $query;
 
     if ($r) { {
-           $result['rows']= mysqli_affected_rows($link);
+           
+            $result['rows'] = mysqli_affected_rows($link);
+            
 
             logAction($link, $usernameNotHashed, 'bulk_update', 'update_all_values', '', $organization, 'updated ' . $logFields . " fields", 'success');
-
-          //  $q1 = "SELECT * FROM temporary_devices";
-            $q1="SELECT * from  temporary_devices td  JOIN temporary_event_values te ON te.cb=td.contextbroker AND te.device=td.id"; 
-           
-            $a1 = 0;
-            $where = 0;
-            //acquisition of data for validate device function and color hilight
-            while ($a1 < count($attributesIf)) {
-                $attIf = $attributesIf[$a1];
-                if ($where == 0) {
-                    $q1 .= " WHERE ";
-                    if ($attIf->field == 'device') {
-                        $q1 .= ' id ';
-                    } else if ($attIf->field == 'cb') {
-                        $q1 .= ' contextBroker ';
-                    } else {
-                        $q1 .= $attIf->field;
-                    }
-                    $where = 1;
-                } else {
-                    $q1 .= " AND ";
-                    if ($attIf->field == 'device') {
-                        $q1 .= ' id ';
-                    } else {
-                        $q1 .= $attIf->field;
-                    }
-                    //$q1 .=  $attIf->field;
-                }
-                if ($attIf->operator == "IsNull") {
-                    $q1 .= " IS NULL";
-                } else {
-                    if ($attIf->operator == "IsEqual") {
-                        $q1 .= "=  '" . $attIf->value . "'";
-                    } else if ($attIf->operator == "IsNotEqual") {
-                        $q1 .= "<> '" . $attIf->value . "'";
-                    } else if ($attIf->operator == "Contains") {
-                        $q1 .= " LIKE '%" . $attIf->value . "%'";
-                    }
-                }
-
-                $a1++;
+            
+             if ($diff != 0) { // validation only last time of loop
+                return $result;
             }
+            $startTime2 = microtime(true);
+            
 
-            $q1 .= " AND username =  '$username' AND organization = '$organization';";
-            // $q1 .= " ;";
+            $query_new = "SELECT * from temporary_devices WHERE  status='new 'AND username =  '$username' AND organization = '$organization';";
+            $r1 = mysqli_query($link, $query_new);
 
-            $r1 = mysqli_query($link, $q1);
+            $endTime2 = microtime(true);
+            $result["timeLaps2"] = $endTime2 - $startTime2;
+            $result["query2"] = $query_new;
 
             $resultDevices = array();
             if ($r1) {
 
                 while ($row1 = mysqli_fetch_assoc($r1)) {
-                    $q2 = 'SELECT * FROM temporary_event_values WHERE device="' . $row1["id"] . '" AND cb = "' . $row1["contextBroker"] . '" AND (toDelete IS NULL OR toDelete != "yes")';
 
-                    $r2 = mysqli_query($link, $q2);
+
+                    $startTime3 = microtime(true);
+
+                    $query_attr = "SELECT * FROM temporary_event_values WHERE device= '" . $row1["id"] . "' AND cb ='" . $row1["contextBroker"] . "' ;";
+
+                    $r_attr = mysqli_query($link, $query_attr);
+
+                    $endTime3 = microtime(true);
+                    $result["timeLaps3"] = $endTime3 - $startTime3;
+                    $result["query3"] = $query_attr;
+
                     $updatedDevice = array();
 
-                    if ($r2) {
+                    if ($r_attr) {
+
+
+                        $startTime3mezzo = microtime(true);
+
                         $devValues = array();
                         $values = array();
 
-                        while ($row2 = mysqli_fetch_assoc($r2)) {
-                            $hvalue;
+                        while ($row2 = mysqli_fetch_assoc($r_attr)) {
+
+                            //echo "\n Query attrib ";
+                            $hvalue = '';
                             if ($row2["healthiness_criteria"] == "refresh_rate")
                                 $hvalue = $row2["value_refresh_rate"];
                             if ($row2["healthiness_criteria"] == "different_values")
@@ -1512,26 +1509,52 @@ AND (toDelete IS NULL OR toDelete != 'yes')";
                     }
                 }
 
+
+                $result["Num. last query"] = count($resultDevices);
+                $time = 0;
+                $time2 = 0;
+
                 while (count($resultDevices) > 0) {
+
                     $device = array_pop($resultDevices);
+
+                   // var_dump($device);
+
+                    $startTime5 = microtime(true);
                     $verification = verifyDevice($device, $modelsdata, $datatypes, $valuetypes, $valueunits);
-                    $validity = "valid";
+                    $endTime5 = microtime(true);
+                    $time2 += ($endTime5 - $startTime5);
+
+                    $validity = "valid"; //2 = valid and processed
                     if ($verification["isvalid"] == 0) {
-                        $validity = "invalid";
+                        $validity = "invalid";  // 1= invalid and processed
+                       // var_dump($device);
+                        echo " \n " .  $device["name"] . " \n " . $verification["message"];
                     }
                     $result["validity_message"] .= trim($verification["message"]);
+
+                    //echo " \n " . $validity . " \n " . $verification["message"];
+
                     $result["valid"] .= $validity;
-                    $sql = 'UPDATE temporary_devices SET validity_msg =\'' . trim($verification["message"]) . '\', status = "' . $validity . '" WHERE contextbroker = "' . $device["contextbroker"] . '" AND id ="' . $device["name"] . '";';
+                    $startTime4 = microtime(true);
+                    $sql = 'UPDATE temporary_devices SET validity_msg =\'' . trim($verification["message"]) . '\', status = "' . $validity . '" WHERE contextbroker = "' . $device["contextbroker"] . '" AND id ="' . $device["name"] . '"';
+
                     $r = mysqli_query($link, $sql);
                     if ($r) {
                         $result['status'] = 'ok';
                         $result["msg"] .= "Update correctly executed";
+                        $endTime4 = microtime(true);
+                        $time += ($endTime4 - $startTime4);
                     } else {
                         $result['status'] = 'ko';
                         $result["msg"] .= "Error during the update 1" . generateErrorMessage($link);
                         $result["log"] .= "\r\n Error during update";
                     }
                 }
+
+
+                $result['TimeLapsLastQuery'] = ($time);
+                $result['TimeLapsLasVerify'] = ($time2);
             } else {
                 $result["msg"] .= "Empty Result";
                 $result["log"] .= "\r\n No data";
@@ -1545,7 +1568,7 @@ AND (toDelete IS NULL OR toDelete != 'yes')";
         $result['status'] = 'ko';
         $result["msg"] .= "Error during the update 2" . generateErrorMessage($link);
         $result["log"] .= "\r\n Error during update";
-        $result["query"] .= $query ;
+        $result["query"] .= $query;
     }
 
     return $result;

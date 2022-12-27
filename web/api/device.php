@@ -1526,7 +1526,8 @@ else if ($action == 'change_visibility') {
         }
     }
     my_log($result);
-} else if ($action == "get_all_device") {
+}  else if ($action == "get_all_device") {
+    
     if (isset($_REQUEST['length']))
         $length = mysqli_real_escape_string($link, $_REQUEST['length']);
     else
@@ -1546,6 +1547,13 @@ else if ($action == 'change_visibility') {
         $selection = array();
 
     $Sel_Time = ( (isset($_REQUEST['start_time'])) || (isset($_REQUEST['end_time'])) );
+    
+      $flag_mod=(isset($_REQUEST['model']));
+       if(isset($_REQUEST['model'])){
+       $target_model= mysqli_real_escape_string($link, $_REQUEST['model']);
+       $flag_mod=true;
+   }   
+
 
     $ownDevices = getOwnerShipDevice($accessToken, $result);
     getDelegatedDevice($accessToken, $username, $result);
@@ -1561,6 +1569,14 @@ else if ($action == 'change_visibility') {
         $start_int = mysqli_real_escape_string($link, $_REQUEST['start_time']);
         $end_int = mysqli_real_escape_string($link, $_REQUEST['end_time']);
         $q .= " WHERE d.created BETWEEN CAST('$start_int' AS DATETIME) AND CAST('$end_int' AS DATETIME)";
+    }
+    
+
+
+if($flag_mod && !$Sel_Time){ // no where clause yet
+        $q .= " WHERE d.model = '$target_model' ";        
+    }else if ($flag_mod && $Sel_Time){
+        $q .= "AND  d.model = '$target_model' ";
     }
 
     if (count($selection) != 0) {
@@ -1707,6 +1723,9 @@ else if ($action == 'change_visibility') {
                     array_push($data, $rec);
                 }
             }
+            
+            
+            
         }
 
         $output = format_result($draw, $selectedrows + 1, $selectedrows + 1, $data, "", "\r\n action=get_all_device \r\n", 'ok');
@@ -1759,12 +1778,38 @@ else if ($action == "get_all_device_admin") {
     } else {
         $tobelimited = false;
     }
+    
+    if (isset($_REQUEST['delegated']) || isset($_REQUEST['public']) || isset($_REQUEST['own'])) {
+        $subset = true;
+    } else {
+        $subset = false;
+    }
+    
 
     if ($r) {
         $data = array();
         logAction($link, $username, 'device', 'get_all_device_admin', '', $organization, '', 'success');
 
         while ($row = mysqli_fetch_assoc($r)) {
+            
+             $SelPub = ($row["organization"] == $organization) && ($row["visibility"] == 'public' || ( isset($result["delegation"][$eid]) && $result["delegation"][$eid]["kind"] == "anonymous") );
+            $SelDel = (isset($result["delegation"][$eid]) && ($result["delegation"][$eid]["kind"] != "anonymous") && $row["visibility"] != "public");
+
+            $SelOwn = (isset($result["keys"][$eid]) && $result["keys"][$eid]["owner"] == $username );
+
+            if (!$subset) {
+                $COND = $SelPub || $SelDel || $SelOwn || $role === 'RootAdmin';
+            } else {
+                if (isset($_REQUEST['delegated'])) {
+                    $COND = $SelDel;
+                } else if (isset($_REQUEST['public'])) {
+                    $COND = $SelPub;
+                } else if (isset($_REQUEST['own'])) {
+                    $COND = $SelOwn;
+                }
+            }
+
+            if ($COND) {
             $selectedrows++;
             if (!$tobelimited || ($tobelimited && $selectedrows >= $start && $selectedrows < ($start + $offset))) {
                 $rec = array();
@@ -1833,102 +1878,18 @@ else if ($action == "get_all_device_admin") {
                 }
                 array_push($data, $rec);
             }
+            }
         }
+        
         $output = format_result($_REQUEST["draw"], $selectedrows + 1, $selectedrows + 1, $data, "", "\r\n action=get_all_device_admin \r\n", 'ok');
+        $output['query'] = $q;
     } else {
         logAction($link, $username, 'device', 'get_all_device_admin', '', $organization, '', 'faliure');
         $output = format_result($_REQUEST["draw"], 0, 0, null, 'Error: errors in reading data about devices. <br/>' . generateErrorMessage($link), '\n\r Error: errors in reading data about devices.' . generateErrorMessage($link), 'ko');
     }
     my_log($output);
     mysqli_close($link);
-}/* never used? removed temporarly
-  else if($action == "get_all_private_device")
-  {
-  $ownDevices= "";
-  if (!empty($accessToken))
-  {
-  $ownDevices = getOwnerShipDevice($accessToken, $result);
-  }
-
-
-  if ($ownDevices!="")
-  {
-  $q = "SELECT d.`contextBroker`, d.`id`, d.`uri`, d.`devicetype`, d.`kind`,
-  CASE WHEN mandatoryproperties AND mandatoryvalues THEN \"active\" ELSE \"idle\" END AS status1,
-  d.`macaddress`, d.`model`, d.`producer`, d.`longitude`, d.`latitude`, d.`protocol`, d.`format`, d.`visibility`,
-  d.`frequency`, d.`created`, d.`privatekey`, d.`certificate`, cb.`accesslink`, cb.`accessport`,cb.`sha`,  d.`subnature`, d.`static_attributes` , d.`service`, d.`servicePath`
-  FROM `devices` d JOIN `contextbroker` cb ON (d.contextBroker=cb.name)"; //  WHERE visibility =\"public\"";
-
-
-  $r=create_datatable_data($link,$_REQUEST,$q, "deleted IS null and visibility=\"private\" and $ownDevices ");
-
-  $selectedrows=-1;
-  if($_REQUEST["length"] != -1)
-  {
-  $start= $_REQUEST['start'];
-  $offset=$_REQUEST['length'];
-  $tobelimited=true;
-  }
-  else
-  {
-  $tobelimited=false;
-  }
-
-  if ($r)
-  {
-  $data = array();
-
-  while($row = mysqli_fetch_assoc($r))
-  {
-  $selectedrows++;
-  if (!$tobelimited || ($tobelimited && $selectedrows >= $start && $selectedrows < ($start+$offset)))
-  {
-
-  $rec= array();
-  $rec["contextBroker"]= $row["contextBroker"];
-  $rec["id"]= $row["id"];
-  $rec["uri"]= $row["uri"];
-  $rec["devicetype"]= $row["devicetype"];
-  $rec["kind"]= $row["kind"];
-  $rec["status1"]= $row["status1"];
-  $rec["macaddress"]= $row["macaddress"];
-  $rec["model"]= $row["model"];
-  $rec["producer"]= $row["producer"];
-  $rec["longitude"]= $row["longitude"];
-  $rec["latitude"]= $row["latitude"];
-  $rec["protocol"]= $row["protocol"];
-  $rec["format"]= $row["format"];
-  $rec["visibility"]= "MyOwnPrivate";
-  $rec["frequency"]= $row["frequency"];
-  $rec["created"]= $row["created"];
-  $rec["k1"]=$result["keys"][$rec["id"]]["k1"];
-  $rec["k2"]=$result["keys"][$rec["id"]]["k2"];
-  $rec["accesslink"]= $row["accesslink"];
-  $rec["accessport"]= $row["accessport"];
-  $rec["sha"]= $row["sha"];
-  $rec["privatekey"]= $row["privatekey"];
-  $rec["certificate"]= $row["certificate"];
-  $rec["edgegateway_type"]= $result["keys"][$rec["id"]]["edgegateway_type"];
-  $rec["edgegateway_uri"]= $result["keys"][$rec["id"]]["edgegateway_uri"];
-  $rec["subnature"]=($row["subnature"]==null)?"":$row["subnature"];
-  $rec["staticAttributes"]=($row["static_attributes"]==null)?"[]":$row["static_attributes"];
-  $rec["service"] = $row["service"];
-  $rec["servicePath"] = $row["servicePath"];
-
-  array_push($data, $rec);
-  }
-
-  $output= format_result($_REQUEST["draw"], $selectedrows+1, $selectedrows+1, $data, "", "\r\n action=get_all_private_device \r\n", 'ok');
-  }
-  }
-  else{
-
-  $output= format_result($_REQUEST["draw"], 0, 0, null, 'Error: errors in reading data about devices. <br/>' . generateErrorMessage($link), '\n\r Error: errors in reading data about devices.' . generateErrorMessage($link), 'ko');
-  }
-  }
-  my_log($output);
-  mysqli_close($link);
-  } */ else if ($action == "get_all_device_latlong") {
+} else if ($action == "get_all_device_latlong") {
     $ownDevices = "";
     if (!empty($accessToken)) {
         getOwnerShipDevice($accessToken, $result);
@@ -1966,117 +1927,7 @@ else if ($action == "get_all_device_admin") {
     }
     my_log($result);
     mysqli_close($link);
-}
-/* NEVEER USED
-  else if ($action=="exist_device")
-  {
-  $missingParams=missingParameters(array('id', 'contextbroker');
-
-  if (!empty($missingParams))
-  {
-  $result["status"]="ko";
-  $result['msg'] = "Missing Parameters";
-  $result["error_msg"] .= "Problem in exist device (Missing parameters: ".implode(", ",$missingParams)." )";
-  $result["log"]= "action=exist_device  - error Missing Parameters: ".implode(", ",$missingParams)." \r\n";
-  }
-  else
-  {
-  $id = mysqli_real_escape_string($link, $_REQUEST['id']);
-  $cb = mysqli_real_escape_string($link, $_REQUEST['contextbroker']);
-
-  $result = array();
-  $q1 = "SELECT * FROM devices WHERE deleted is null and contextbroker = '$cb' AND id = '$id'";
-  $r = mysqli_query($link, $q1);
-
-  if($r)
-  {
-  $result['status'] = 'ok';
-  $result["log"]= "\r\n action=exist_device " . $q1;
-  $row = mysqli_fetch_assoc($r);
-  if ($row)
-  {
-  $result['content']=1;
-  }
-  else
-  {
-  $result['content']=0;
-  }
-  }
-  else
-  {
-  $result['status'] = 'ko';
-  $result['msg'] = 'The following errors occurred:' . generateErrorMessage($link);
-  $result["log"]= "\r\n action=exist_device " . $q1 . 'The following errors occurred:' . generateErrorMessage($link);
-  }
-  }
-  my_log($result);
-  mysqli_close($link);
-  }
- */
-//NEVER USED FROM FRONTEND... MAYBE SOME APIs ARE STILL USING?
-//LONG TIME NOT MANTAINED (NO DELEGATION INVOLVED)... COMMENTING OUT
-/* else if($action == "get_device_with_attributes")
-  { // Elf: this function is NOT to be included in the API
-  //Fatima: since it's not included, I will not update anyway
-
-  $q = "SELECT d.id, d.devicetype, d.protocol, d.format,
-  d.latitude AS dlat, d.longitude AS dlong, c.name,  c.ip, c.port, c.latitude, c.longitude FROM
-  devices d JOIN contextbroker c ON (d.contextbroker=c.name) WHERE deleted is null and mandatoryproperties=1 and mandatoryvalues=1 order by d.id";
-  $r = mysqli_query($link, $q);
-
-  $count = "SELECT max(c) AS max FROM (SELECT d.id, count(*) as c
-  FROM event_values ev JOIN devices d ON ev.cb = d.contextBroker AND ev.device = d.id
-  GROUP BY ev.cb, ev.device) AS t";
-
-  $r = mysqli_query($link, $q);
-  $val = mysqli_query($link, $count);
-  $max = 0;
-  if($val){
-  $row = mysqli_fetch_assoc($val);
-  $max = $row['max'];
-  }
-
-  echo "devicetype\t protocol\t format\t dlat\t dlong\t ip\t port\t latitude\t longitude\t";
-  for ($i=1; $i<= $max; $i++)
-  {
-  if($i == $max)
-  echo "value_name$i\t data_type$i";
-  else
-  echo "value_name$i\t data_type$i\t";
-
-  }
-  echo "\n";
-  while($row = mysqli_fetch_assoc($r))
-  {
-  echo $row["devicetype"] . "\t" . $row["protocol"] . "\t" . $row["format"] . "\t" . $row["dlat"] . "\t" . $row["dlong"] . "\t" . $row["ip"] . "\t" . $row["port"] . "\t" . $row["latitude"] . "\t" . $row["longitude"] . "\t";
-
-
-  $q1 = "SELECT v.value_name, v.data_type FROM event_values v WHERE device='$row[id]' and cb='$row[name]' order by value_name;";
-  $r1 = mysqli_query($link, $q1);
-  $i=0;
-  while($row1 = mysqli_fetch_assoc($r1))
-  {
-  if($row1["value_name"] == "PM2,5"){
-  echo "PM2.5". "\t" . $row1["data_type"] . "\t";
-  $i++;
-
-  }
-  else{
-  echo $row1["value_name"] . "\t" . $row1["data_type"] . "\t";
-  $i++;
-  }
-  }
-  for ($k=$i; $k < $max; $k++)
-  {
-  if($k == $max-1)
-  echo "null\t null";
-  else
-  echo "null\t null\t";
-  }
-  echo "\n";
-  }
-  mysqli_close($link);
-  } */ else if ($action == 'download') {
+} else if ($action == 'download') {
     $missingParams = missingParameters(array('id', 'contextbroker', 'filename'));
 
     if (!empty($missingParams)) {

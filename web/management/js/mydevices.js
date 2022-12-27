@@ -15,7 +15,7 @@ var tableFirstLoad = true;
 $.ajax(
         {url: "../api/model.php",
             data: {
-                action: 'get_Fiwire_model',
+                action: 'get_fiware_model',
                 token: sessionToken
             },
             type: "POST",
@@ -712,13 +712,7 @@ $(document).ready(function ()
             }
         });
     });
-
-
-
-
 //End of Edit Button 	
-
-
 
 //Related to Delete button  - need to be updated
 
@@ -726,14 +720,11 @@ $(document).ready(function ()
     $('#devicesTable button.delDashBtn').hover(function () {
         $(this).css('background', '#ffcc00');
         $(this).parents('tr').find('td').eq(1).css('background', '#ffcc00');
-    },
-            function () {
-                $(this).css('background', '#e37777');
-                $(this).parents('tr').find('td').eq(1).css('background', $(this).parents('td').css('background'));
-            });
-
-
-
+      },
+      function () {
+          $(this).css('background', '#e37777');
+          $(this).parents('tr').find('td').eq(1).css('background', $(this).parents('td').css('background'));
+      });
     $('#devicesTable tbody').on('click', 'button.delDashBtn', function () {
         //console.log($(this));
         //console.log("Deleted ID" + $(this).attr('data-device'));
@@ -754,16 +745,12 @@ $(document).ready(function ()
         $("#deleteDeviceConfirmBtn").show();
         $("#deleteDeviceModal").modal('show');
     });
-
-
 //End of Delete Button 		
 
 // Device dataTable table Style 
-
     $('#devicesTable thead').css("background", "rgba(0, 162, 211, 1)");
     $('#devicesTable thead').css("color", "white");
     $('#devicesTable thead').css("font-size", "1em");
-
 
     $('#devicesTable tbody tr').each(function () {
         if ((dataTable.row(this).index()) % 2 !== 0)
@@ -778,8 +765,6 @@ $(document).ready(function ()
             $(this).find('td').eq(0).css("border-top", "none");
         }
     });
-
-
 
     $('#displayDevicesMap').off('click');
     $('#displayDevicesMap').click(function () {
@@ -803,7 +788,6 @@ $(document).ready(function ()
             datatype: 'json',
             success: function (data)
             {
-
                 if (data["status"] === 'ko')
                 {
                     alert("An error occured when reading the data. <br/> Get in touch with the Snap4City Administrator<br/>" + data["msg"]);
@@ -821,7 +805,6 @@ $(document).ready(function ()
                         $("#addMap1").modal('show');
                         drawMapAll(dataloc, 'searchDeviceMapModalBody');
                     }
-
                 }
             },
             error: function (data)
@@ -829,13 +812,8 @@ $(document).ready(function ()
                 console.log("Ko result: " + data);
                 alert("Network errors. <br/> Get in touch with the Snap4City Administrator<br/>" + JSON.stringify(data));
             }
-
         });
-
-
     });
-
-
 
     $("#addMyNewDeviceConfirmBtn").off("click");
     $("#addMyNewDeviceConfirmBtn").click(function () {
@@ -862,25 +840,18 @@ $(document).ready(function ()
         gb_subnature = document.getElementById('selectSubnature').value;
         gb_staticAttributes = JSON.stringify(retrieveStaticAttributes("addlistStaticAttributes", false, "isMobileTick"));                //not use model, but use overriding	
 
-
         if (nameOpt[selectednameOpt].attributes.data_kind.value != 'NATIVE') {
             var version = nameOpt[selectednameOpt].attributes['data-version'].value;
             var domain = nameOpt[selectednameOpt].attributes['data-domain'].value;
             var subdomain = nameOpt[selectednameOpt].attributes['data-modelsubdomain'].value;
-            
-
-
             var act = {
-                action: "get_value_attributes_FIWIRE",
-
+                action: "get_value_attributes_fiware",
                 id: mod,
                 version: version,
                 domain: domain,
                 subdomain: subdomain,
                 token: sessionToken
             };
-
-            ;
         } else {
             var act = {
                 action: 'get_model',
@@ -888,8 +859,6 @@ $(document).ready(function ()
                 token: sessionToken
             };
         }
-
-
 
         $.ajax({
             url: "../api/model.php",
@@ -922,7 +891,7 @@ $(document).ready(function ()
                         //var mac = data.content.mac;
                         var frequency = '600';
 
-                        var attrJSON = keepAttr_FIWIRE(data.content.attributes); // JSON.parse(data.data[0].attributes)
+                        var attrJSON = keepAttr_FIWARE(data.content.attributes); // JSON.parse(data.data[0].attributes)
 
                         var edgegateway_type = '';
 
@@ -935,10 +904,6 @@ $(document).ready(function ()
                     var contextbroker = $('#selectContextBroker').val(); // data.content.contextbroker;
                     var protocol = $('#selectProtocolDevice').val(); //data.content.protocol;
                     var format = $('#selectFormatDevice').val(); // data.content.format;
-
-
-
-
                     $.ajax({
                         url: "../api/device.php",
                         data: {
@@ -1016,9 +981,6 @@ $(document).ready(function ()
 
                         }
                     });
-
-
-
                 }
             },
             error: function (data)
@@ -1026,7 +988,6 @@ $(document).ready(function ()
                 console.log("Ko result: " + JSON.stringify(data));
                 alert("Network errors. <br/> Get in touch with the Snap4City Administrator<br/>" + JSON.stringify(data));
             }
-
         });
         /* 	
          
@@ -1041,10 +1002,7 @@ $(document).ready(function ()
          $("#addDeviceKoIcon").hide();
          */
 
-
     });
-
-
 // This is loading validation when the cursor is on 
 
     $("#addDeviceBtn").off("click");
@@ -1062,10 +1020,6 @@ $(document).ready(function ()
         // showAddMyDeviceModal();
     });
 
-
-
-
-
 // add lines related to attributes USER 			
     $("#addAttrBtnUser").off("click");
     $("#addAttrBtnUser").click(function () {
@@ -1080,7 +1034,6 @@ $(document).ready(function ()
         $(this).parent('tr').remove();
     });
 
-
     $('a[data-toggle="tab"]').on('shown.bs.tab', function (e) {
         var target = $(e.target).attr("href");
         if ((target == '#addGeoPositionTabDevice')) {
@@ -1093,7 +1046,6 @@ $(document).ready(function ()
         }
     });
 
-
     $('a[data-toggle="tab"]').on('shown.bs.tab', function (e) {
         var target = $(e.target).attr("href");
         if ((target == '#editGeoPositionTabDevice')) {
@@ -1105,7 +1057,6 @@ $(document).ready(function ()
         } else {//nothing
         }
     });
-
 
     $('a[data-toggle="tab"]').on('shown.bs.tab', function (e) {
         var target = $(e.target).attr("href");
@@ -1186,17 +1137,13 @@ $(document).ready(function ()
                     "<tr><td>Overall Status</td><td>" + statusNote + "</td></tr>" +
                     "</tbody></table></div>");
             inputPropertiesDeviceMMsg.appendChild(div);
-
         }
-
     });
-
 
 // DELETE DEVICE (DELETE FROM DB) 			
 
     $('#deleteDeviceConfirmBtn').off("click");
     $("#deleteDeviceConfirmBtn").click(function () {
-
         var device = $("#deleteDeviceModal span").attr("data-device");
         var contextbroker = $("#deleteDeviceModal span").attr("data-cb");
         var value_name = $("#deleteDeviceModal span").attr("data-value_name");
@@ -1209,9 +1156,6 @@ $(document).ready(function ()
         $("#deleteDeviceConfirmBtn").hide();
         $("#deleteDeviceModalInnerDiv1").show();
         $("#deleteDeviceModalInnerDiv2").show();
-
-
-
         $.ajax({
             url: "../api/value.php",
             data: {
@@ -1243,7 +1187,6 @@ $(document).ready(function ()
                     $("#deleteDeviceModalInnerDiv1").html('Device &nbsp; <b>' + device + '</b> &nbsp;deleted successfully');
                     $("#deleteDeviceModalInnerDiv1").show();
                     $("#deleteDeviceModalInnerDiv2").html('<i class="fa fa-check" style="font-size:42px"></i>');
-
 
                     $('#dashboardTotNumberCnt .pageSingleDataCnt').html(parseInt($('#dashboardTotNumberCnt .pageSingleDataCnt').html()) - 1);
                     if (data["active"])
@@ -1418,7 +1361,7 @@ $(document).ready(function ()
             $("#addStaticTabModel").hide();
         } else
         {
-            if (nameOpt[selectednameOpt].attributes.data_kind.value != "FIWIRE") {
+            if (nameOpt[selectednameOpt].attributes.data_kind.value != "FIWARE") {
                 $("#selectContextBroker").val(nameOpt[selectednameOpt].attributes.data_contextbroker.value);
                 $('#selectContextBroker').prop('disabled', true);
 
@@ -1436,7 +1379,7 @@ $(document).ready(function ()
                 checkAddMyDeviceConditions();
             }
 
-            if (nameOpt[selectednameOpt].attributes.data_kind.value != 'FIWIRE') {
+            if (nameOpt[selectednameOpt].attributes.data_kind.value != 'FIWARE') {
                 if (nameOpt[selectednameOpt].attributes.data_key.value != "special") {
                     $("#sigFoxDeviceUserMsg").val("");
                     $("#KeyOneDeviceUserMsg").html("");
@@ -1539,11 +1482,7 @@ $(document).ready(function ()
         checkElement($("#selectContextBroker"), $("#selectContextBrokerMsg"), 'Context Broker', 'contextbroker');
         checkElement($("#selectProtocolDevice"), $("#selectProtocolDeviceMsg"), 'Device protocol', 'protocol');
         checkElement($("#selectFormatDevice"), $("#selectFormatDeviceMsg"), 'Device format ', 'format');
-
-
         checkAddMyDeviceConditions();
-
-
     }
 
 //--------------------- static attribute ADD start
@@ -1558,17 +1497,13 @@ $(document).ready(function ()
     $('#selectSubnature').on('select2:selecting', function (e) {
         checkSubnatureChanged($('#selectSubnature'), e.target.value, e.params.args.data.id, e);
     });
-
     $('#selectSubnature').on('select2:clearing', function (e) {
         checkSubnatureChanged($('#selectSubnature'), e.params.args.data.id, "", e);
     });
 
-
-
 //Validation of the name of the new owner during typing
     $('#newOwner').on('input', function (e)
     {
-
         if ($(this).val().trim() === '')
         {
             $('#newOwnerMsg').css('color', '#f3cf58');
@@ -1755,13 +1690,7 @@ $(document).ready(function ()
         $(this).removeData();
     });
 
-
-
-
-
 });  // end of ready-state
-
-
 
 function generateUUID() { // Public Domain/MIT
     var d = new Date().getTime();
@@ -1792,11 +1721,8 @@ function editGenerateKeysCLicked() {
     showEditDeviceModal();
 }
 
-
-
 $("#addNewDeviceCancelBtn").off("click");
 $("#addNewDeviceCancelBtn").on('click', function () {
-
     $('#inputNameDevice').val("");
     $('#inputTypeDevice').val("");
     $('#selectContextBroker').val("");
@@ -1843,9 +1769,7 @@ $("#editDeviceKoConfirmBtn").on('click', function () {
     $("#editDeviceForm").trigger("reset");
 });
 
-
 $("#selectContextBroker").change(function () {
-
     var index = document.getElementById("selectContextBroker").selectedIndex;
     var opt = document.getElementById("selectContextBroker").options;
     var valCB = opt[index].getAttribute("my_data");
@@ -1868,18 +1792,9 @@ $("#selectContextBroker").change(function () {
         //alert("This is a new contextBroker");
         console.log("an error occurred");
     }
-
-
 });
 
-
-
-
 /* Related to the Map */
-
-
-
-
 
 function drawMap1(latitude, longitude, flag, divname) {
     var marker;
@@ -1894,8 +1809,6 @@ function drawMap1(latitude, longitude, flag, divname) {
                 attribution: '&copy; <a href="https://openstreetmap.org/copyright">OpenStreetMap</a> contributors'
             }).addTo(map1);
             window.node_input_map = map1;
-
-
             setTimeout(function () {
                 map1.invalidateSize()
             }, 400);
@@ -1918,13 +1831,8 @@ function drawMap1(latitude, longitude, flag, divname) {
                     map1.removeLayer(marker);
                 }
                 marker = new L.marker([lat, lng]).addTo(map1).bindPopup(lat + ',' + lng);
-
             });
-
-
-
         } else if (flag == 1) {
-
             map1 = L.map(divname).setView([latitude, longitude], 10);
             L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
                 attribution: '&copy; <a href="https://openstreetmap.org/copyright">OpenStreetMap</a> contributors'
@@ -1954,9 +1862,7 @@ function drawMap1(latitude, longitude, flag, divname) {
                     map1.removeLayer(marker);
                 }
                 marker = new L.marker([lat, lng]).addTo(map1).bindPopup(lat + ',' + lng);
-
             });
-
         }
     }
 }
@@ -1982,8 +1888,6 @@ function drawMap(latitude, longitude, id, devicetype, kind, divName) {
         map.invalidateSize()
     }, 400);
 }
-
-
 
 function drawMapUser(latitude, longitude) {
     var marker;
@@ -2022,16 +1926,10 @@ function drawMapUser(latitude, longitude) {
             map.removeLayer(marker);
         }
         marker = new L.marker([lat, lng]).addTo(map).bindPopup(lat + ',' + lng);
-
     });
-
 }
 
-
-
-
 function drawMapAll(data, divName) {
-
     if (typeof map_all === 'undefined' || !map_all) {
         //map_all = L.map(divName).setView([latitude,longitude], 10);
         var centerMapArr = gpsCentreLatLng.split(",", 2);
@@ -2155,8 +2053,6 @@ function drawMapAll(data, divName) {
                 else
                     fetch_data(true, null, JSON.stringify(resultsOut));
             });
-
-
         });
 
         L.Control.RemoveAll = L.Control.extend(
@@ -2191,29 +2087,19 @@ function drawMapAll(data, divName) {
                         controlUI.href = '#';
                         return controlDiv;
                     }
-
-
                 });
         var removeAllControl = new L.Control.RemoveAll();
         map_all.addControl(removeAllControl);
-
-
         for (var i = 0; i < data.length; i++) {
-
-
             var mylat = data[i].latitude;
             var mylong = data[i].longitude;
             var myname = data[i].name;
             if (mylat != null && mylong != null) {
-
-
-
                 if (data[i].visibility == "public") {
                     m = L.marker([mylat, mylong], {icon: blueIcon}).addTo(map_all).bindPopup(myname);
                 } else {
                     m = L.marker([mylat, mylong], {icon: redIcon}).addTo(map_all).bindPopup(myname);
                 }
-
             }
         }
         setTimeout(function () {
@@ -2222,9 +2108,7 @@ function drawMapAll(data, divName) {
     }
 }
 
-
 function drawMapAll_delegated(data, divName) {
-
     if (typeof map_all_delegated === 'undefined' || !map_all_delegated) {
         //map_all_delegated = L.map(divName).setView([latitude,longitude], 10);
         var centerMapArr = gpsCentreLatLng.split(",", 2);
@@ -2365,13 +2249,9 @@ function drawMapAll_delegated(data, divName) {
                         controlUI_d.href = '#';
                         return controlDiv_d;
                     }
-
-
                 });
         var removeAllControl_d = new L.Control.RemoveAll();
         map_all_delegated.addControl(removeAllControl_d);
-
-
         for (var i = 0; i < data.length; i++) {
 
 
@@ -2395,7 +2275,6 @@ function drawMapAll_delegated(data, divName) {
 }
 
 /**********************Fatima2-start*****************************/
-
 
 function colorSelectedMarkers(selections, greenIcon) {
     green_marker_array = [];
@@ -2458,26 +2337,16 @@ function drawSelection(layer, type, drawnItems, data) {
                 circles[layer.nodeID].properties.radius = Math.round(layer.getRadius()) / 1000;
             });
 
-
             var lat_map = (circles[layer.nodeID].geometry.coordinates[1]);
             var long_map = (circles[layer.nodeID].geometry.coordinates[0]);
             var center_latlong = new L.LatLng(lat_map, long_map);
             var rad_map = (circles[layer.nodeID].properties.radius);
-
-
             for (var deviceTocheck in data) {
-
-
                 var deviceLatLng = new L.LatLng(Number(data[deviceTocheck]["latitude"]), Number(data[deviceTocheck]["longitude"]));
-
-
                 if (Math.abs(center_latlong.distanceTo(deviceLatLng) / 1000) <= rad_map) {
-
                     resultsOut.push(data[deviceTocheck]);
-
                 }
             }
-
             break;
         case 'polygon':
 
@@ -2544,8 +2413,6 @@ function drawSelection(layer, type, drawnItems, data) {
                 }
             }
             break;
-
-
     }
 
     return resultsOut;
@@ -2561,7 +2428,6 @@ function changeVisibility(id, contextbroker, valueName, visibility, uri, k1, k2)
     $("#delegationsModal").modal('show');
     $("#delegationHeadModalLabel").html('Device: ' + id + ' Value Name - ' + valueName);
 
-
     if (visibility == 'MyOwnPrivate') {
         newVisibility = 'public';
         $('#visID').css('color', '#f3cf58');
@@ -2573,11 +2439,8 @@ function changeVisibility(id, contextbroker, valueName, visibility, uri, k1, k2)
         //console.log("I am here "+ visibility);			
         //$('#newVisibilityPrivateBtn').addClass('disabled');
         //$('#newVisibilityPublicBtn').removeClass('disabled');
-
-
         //$("#delegationsModal").modal('show');
         document.getElementById("delegationsCntGroup").style.visibility = 'show';
-
     } else // if (visibility=='MyOwnPublic'){
     {
         newVisibility = 'private';
@@ -2739,13 +2602,8 @@ function changeVisibility(id, contextbroker, valueName, visibility, uri, k1, k2)
             }
         });
     });
-
     //      } // end of visibilityCnt Tab
-
-
-
     //      else if((target == '#delegationsCnt')) {
-
     $.ajax({
         url: "../api/value.php", //Checking the delegation table
         data:
@@ -2886,17 +2744,11 @@ function changeVisibility(id, contextbroker, valueName, visibility, uri, k1, k2)
                         }
                     });
                 });
-
-
-
-
             } else
             {
                 // hangling situation of error
                 console.log(json_encode(data));
-
             }
-
         },
         error: function (errorData)
         {
@@ -3070,9 +2922,6 @@ function changeVisibility(id, contextbroker, valueName, visibility, uri, k1, k2)
             }
         });
     });     //group delegation -end
-
-
-
 }
 
 $(document).on("click", "#delegationsCancelBtn", function (event) {

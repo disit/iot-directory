@@ -1,4 +1,4 @@
-#Snap4City: IoT-Directory
+# Snap4City: IoT-Directory
 # Copyright (C) 2017 DISIT Lab https://www.disit.org - University of Florence
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -48,23 +48,26 @@ class RuleGenerator():
         return True
 
    # def create_rule(self, payload: dict, context_brocker, multitenancy, service, servicePath, organization, prefix):
-    def create_general_rules(self, _domain, _subdomain, _model, _attr):
-        if _attr["checked"] == "True":
-            _rule_name = _domain + "_" + _subdomain + "_" + _model + "_" + \
-                _attr["value_name"] + str((100*random.random()).__round__())
-        else:
-            _rule_name = _domain + "_" + _subdomain + \
-                "_" + _model + "_" + _attr["value_name"]
-        _ifs = []
-        _thens = []
-        _ifs.append(self._gen_if("value_name", "IsEqual", _attr["value_name"]))
-        _thens.append(self._gen_then("value_type", _attr["value_type"]))
-        _thens.append(self._gen_then("value_unit", _attr["value_unit"]))
-        _thens.append(self._gen_then("data_type", _attr["data_type"]))
-        print(f"Generated rule with ifs  {_ifs}\n and  {_thens}\n ")
-        _rule = [_rule_name, _ifs, _thens, '', '', '']
-        print(f"Generated rule for value_type of {_attr['value_name']}\n")
-        return _rule
+    def create_general_rules(self, _domain, _subdomain, _model, _attr, debug_mode):
+        if (attr["value_name"] != 'type'):
+            if _attr["checked"] == "True":
+                _rule_name = _domain + "_" + _subdomain + "_" + _model + "_" + \
+                    _attr["value_name"] + \
+                        str((100*random.random()).__round__())
+            else:
+                _rule_name = _domain + "_" + _subdomain + \
+                        "_" + _model + "_" + _attr["value_name"]
+            _ifs = []
+            _thens = []
+            _ifs.append(self._gen_if("value_name", "IsEqual", _attr["value_name"]))
+            _thens.append(self._gen_then("value_type", _attr["value_type"]))
+            _thens.append(self._gen_then("value_unit", _attr["value_unit"]))
+            _thens.append(self._gen_then("data_type", _attr["data_type"]))
+            if (debug_mode):
+                 print(f"Generated rule with ifs  {_ifs}\n and  {_thens}\n ")
+            _rule = [_rule_name, _ifs, _thens, '', '', '']
+            print(f"Generated rule for {_attr['value_name']}\n")
+            return _rule
 
     def create_rule(self, payload: dict, context_brocker, multitenancy, service, servicePath, organization, prefix):
         _payload = payload[0][0]

@@ -22,8 +22,9 @@
   "overwrite_rules": false,
   "prefix_rules": "",
   "harvest_smartdatamodels": false,
-  "overwrite_database_models": false,
+  "overwrite_database_models": true,
   "save_wrong_models": false,
   "all_organizations": true,
-  "organization": "DISIT"
+  "organization": "DISIT",
+  "debug_mode" : true
 }

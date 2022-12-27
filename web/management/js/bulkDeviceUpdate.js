@@ -2345,7 +2345,8 @@ $(document).ready(function () {
 			}, 1000);
 		}, 100);
 	});
-
+        
+       
 
 	//*************UPDATE VALUES ********************/
 	$("#updateMultipleValueBtn").off("click");
@@ -2365,6 +2366,11 @@ $(document).ready(function () {
 		checkUpdateButtonValue();
 
 	});
+        
+        
+        
+        
+        
 
 
 	$('#addifBlockBtnValue').off("click");

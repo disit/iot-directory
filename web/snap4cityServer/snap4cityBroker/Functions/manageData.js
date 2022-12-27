@@ -256,18 +256,6 @@ function verifyDevice(deviceToverify, modelsdata, gb_datatypes, gb_value_types, 
 				}
 			}
 
-			/* console.log("modelsdata[i].edge_gateway_type");
-				  console.log(modelsdata[i].edge_gateway_type);
-				  console.log("deviceToverify.edge_gateway_type");
-				  console.log(deviceToverify.edge_gateway_type);
-				 */
-			// var h3 = (modelsdata[i].edge_gateway_type == deviceToverify.edge_gateway_type) ||
-			// 	(
-			// 		(modelsdata[i].edge_gateway_type == undefined || modelsdata[i].edge_gateway_type == "" || modelsdata[i].edge_gateway_type == null) &&
-			// 		(deviceToverify.edge_gateway_type == undefined || deviceToverify.edge_gateway_type == "" || deviceToverify.edge_gateway_type == null)
-
-			// 	);
-
 
 			if (modelsdata[i].contextbroker != deviceToverify.contextbroker) {
 				answer.isvalid = false;
@@ -321,6 +309,8 @@ function verifyDevice(deviceToverify, modelsdata, gb_datatypes, gb_value_types, 
 		var healthiness_criteria_options = ["refresh_rate", "different_values", "within_bounds"];
 
 		for (var i = 0; i < deviceToverify.deviceValues.length; i++) {
+
+			if(!v.value_name.includes('type')   ) {
 			var v = deviceToverify.deviceValues[i];
 
 
@@ -373,6 +363,7 @@ function verifyDevice(deviceToverify, modelsdata, gb_datatypes, gb_value_types, 
 					all_attr_msg += "For the attribute: " + v.value_name + ", error in: " + attr_msg + '; ';
 				}
 			}
+		}
 
 		}
 

@@ -147,13 +147,18 @@ function checkModelName()
     $("#inputNameModelMsg").html(message);
 }
 
-function checkModelValueName(current)
+function checkModelValueName(current, FF=false)
 {
     var message = null;
     var regex=/[^a-z0-9_-]/gi;
      var regex2=/\bid\b/;
     var regex3= /\btype\b/;
-    value=current.val();
+    if(FF){
+         value=current.value;
+    }else{
+        value=current.val(); 
+    }
+   
     element=current.parent().siblings().last();
 
     //console.log("valore identificato " + $(this).val());

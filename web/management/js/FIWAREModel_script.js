@@ -32,9 +32,8 @@ if ((loggedRole == 'RootAdmin') || (loggedRole == 'ToolAdmin')) {
 $(document).ready(function () {
 
 // DATI
-    data = {action: "get_Fiwire_model", token: sessionToken, should_be_registered: "no", no_columns: ["" + ColNameEditView + ", delete"]};
+    data = {action: "get_fiware_model", token: sessionToken, should_be_registered: "no", no_columns: ["" + ColNameEditView + ", delete"]};
     dataTable3 = $('#FIWAREModelTable').DataTable({
-// dom: 'Plfrtip',
         "processing": true,
         "paging": true,
         "ajax": {
@@ -67,9 +66,6 @@ $(document).ready(function () {
 
                     return row.domain;
                 }
-
-
-
             }, {
                 "name": "Version",
                 "orderable": false,
@@ -78,9 +74,6 @@ $(document).ready(function () {
 
                     return row.version;
                 }
-
-
-
             },
             {
                 "name": ColNameEditView,
@@ -108,9 +101,6 @@ $(document).ready(function () {
                                 '"">View</button>';
                     }
                 }
-
-
-
             }
 
         ],
@@ -122,11 +112,9 @@ $(document).ready(function () {
     var Mversion;
     var flag_modify_exist_rule = false;
     var make_rule = false;
-//EDIT FIWIRE MODEL
+    //EDIT FIWARE MODEL
 
     function get_ready_form_edit_view(This, mode) {
-
-
         if (mode) {
             temp = 'disabled';
         } else {
@@ -168,8 +156,6 @@ $(document).ready(function () {
         $('#inputSubdomaninModel').attr('readonly', mode);
         $('#inputVersionModel').attr('readonly', mode);
         //subnature
-
-
         if (SubNat) {
             $('#selectSubnature').val(SubNat); // Select the option with a value of '1'
             $('#selectSubnature').trigger('change'); // Notify any JS components that the value changed
@@ -181,21 +167,13 @@ $(document).ready(function () {
 
             });
         }
-
-
         version = Mversion;
         //make LINK
-
-
-
         if (!document.getElementById("GotoSchema")) {
             var linkGIT = 'https://github.com/smart-data-models/dataModel.' + modelSubDomain + '/blob/master/' + modelName + '/README.md';
             $('#editInfoTabModel').append(" <div class=\"col-xs-6 col-md-3 modalCell\"><div class=\"modalFieldCnt\">" +
                     "<button id=\"GotoSchema\" class=\"btn btn-primary\" onclick=\"window.open('" + linkGIT + " ' )\">Go to Git Reference</button></div></div>");
         }
-
-
-
         //Call for values
         $('a[data-toggle="tab"]').off('shown.bs.tab').on('shown.bs.tab', function (e) {
             make_rule = true;
@@ -207,7 +185,7 @@ $(document).ready(function () {
                 $.ajax({
                     url: "../api/model.php",
                     data: {
-                        action: "get_value_attributes_FIWIRE",
+                        action: "get_value_attributes_fiware",
                         id: modelName,
                         version: version,
                         domain: modelDomain,
@@ -220,7 +198,6 @@ $(document).ready(function () {
                     dataType: 'json',
                     success: function (mydata)
                     {
-
                         var row = null;
                         $("#editUserPoolsTable tbody").empty();
                         $('#editModelLoadingIcon').hide();
@@ -239,13 +216,10 @@ $(document).ready(function () {
                             value_name = myattributes[keys[k]].value_name;
                             if (myattributes[keys[k]].value_name != 'type') {
                                 if (myattributes[keys[k]].checked == 'False') {
-
                                     descr = (myattributes[keys[k]].raw_attribute).description;
                                     if ((loggedRole == 'RootAdmin') || (loggedRole == 'ToolAdmin')) {
                                         for (i = 0; i < myprop.length; i++) {
-
                                             if (myprop[i].value_name == value_name) {
-
                                                 D_type = myprop[i].data_type;
                                                 V_type = myprop[i].value_type;
                                                 V_unit = myprop[i].value_unit;
@@ -257,7 +231,6 @@ $(document).ready(function () {
                                         V_type = myattributes[keys[k]].value_type;
                                         V_unit = myattributes[keys[k]].value_unit;
                                     }
-
                                 } else {
                                     z++;
                                     if (typeof (myattributes[keys[k]].raw_attribute).description != 'undefined') {
@@ -265,7 +238,6 @@ $(document).ready(function () {
                                     } else {
                                         descr = JSON.parse(myattributes[keys[k]].raw_attribute).description;
                                     }
-
                                     D_type = myattributes[keys[k]].data_type;
                                     V_type = myattributes[keys[k]].value_type;
                                     V_unit = myattributes[keys[k]].value_unit;
@@ -275,9 +247,6 @@ $(document).ready(function () {
                                     V_type = 'timestamp';
                                     V_unit = 'timestamp';
                                 }
-
-
-
                                 content = drawAttributeMenu(value_name, //attrName
                                         D_type, //data_type
                                         V_type, //value_type
@@ -288,7 +257,6 @@ $(document).ready(function () {
                                         myattributes[keys[k]].value_name, //old_value_name
                                         'editlistAttributes', //parent
                                         indexValues, temp, descr); //indice
-
                                 indexValues = indexValues + 1;
                                 $('#editlistAttributes').append(content);
                             }
@@ -298,8 +266,6 @@ $(document).ready(function () {
                         if (z == (k - 1)) {
                             flag_modify_exist_rule = true;
                         }
-                        
-                        
 
                         checkEditAtlistOneAttributeM();
                         checkAddModelConditions();
@@ -318,11 +284,9 @@ $(document).ready(function () {
         });
     }
     $('#FIWAREModelTable tbody').on('click', 'button.editDashBtn', function () {
-
         get_ready_form_edit_view($(this), false);
     });
     $('#FIWAREModelTable tbody').on('click', 'button.viewDashBtn', function () {
-
         get_ready_form_edit_view($(this), true);
     });
 //Update attributes
@@ -339,10 +303,7 @@ $(document).ready(function () {
         var regex = /[^a-z0-9_-]/gi;
         var someNameisWrong = false;
         num1 = document.querySelector("#editlistAttributes").childElementCount;
-        for (var m = 0; m < (num1); m++)
-
-        {
-
+        for (var m = 0; m < (num1); m++) {
             var attr = {};
             var value_name = document.querySelector("#value_name" + m + "").value;
             attr[value_name] = {
@@ -357,9 +318,6 @@ $(document).ready(function () {
             else
                 someNameisWrong = true;
         }
-
-
-
 //API to update
         if (!someNameisWrong) {
             document.getElementById('editlistAttributes').innerHTML = "";
@@ -378,7 +336,7 @@ $(document).ready(function () {
             }
 
             Data_call = {
-                action: "Update_values_attributes_FIWIRE",
+                action: "update_values_attributes_fiware",
                 token: sessionToken,
                 id: id,
                 version: version,
@@ -450,17 +408,12 @@ $(document).ready(function () {
         $('#modelTable').DataTable().destroy();
         fetch_data(true);
     }
-
-
-
 //END EDIT MODEL 
-
 
 //Titolo Default
     if (titolo_default != "") {
         $('#headerTitleCnt').text(titolo_default);
     }
-
     if (access_denied != "") {
         alert('You need to log in with the right credentials before to access to this page!');
     }

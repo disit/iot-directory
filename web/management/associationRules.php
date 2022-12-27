@@ -419,6 +419,7 @@ else
                                     <button type="text" id="deleteAllBtn" name="myDevice" class="btn btn-primary">Delete All</button>
                                     <button type="text" id="updateMultipleModalBtn" name="updateMultipleModalBtn" class="btn btn-info">Update Devices</button>
                                     <button type="text" id="updateMultipleValueBtn" name="updateMultipleValueBtn" class="btn btn-info">Update Values</button>
+                                    <button type="text" id="ApplyRulesBtn" name="ApplyRulesBtn" class="btn btn-info">Apply rules</button>
                                     <!--Sara2210 start -->
                                     <button type="text" id="insertValidBtn" name="myDevice" class="btn btn-primary pull-right">Register Valid Devices</button>
                                     <!--Sara2210 end -->
@@ -1060,6 +1061,44 @@ else
 
 
     <!-- Update -->
+    
+     <div class="modal fade" id="ApplyRulesModal1" tabindex="-1" role="dialog" aria-hidden="true">
+            <div class="modal-dialog" role="document">
+                <div class="modal-content">
+                    <div class="modalHeader centerWithFlex">
+                        Update device
+                    </div>
+                    
+                    <div id="ApplyRulesModal1Body" class="modal-body modalBody">
+                        <div class="row">
+                            
+                            <div class="row" id="ApplyRulesModal1QuestMsg">
+                        <div class="col-xs-12 centerWithFlex">Are you sure to apply the Rules? </div>
+                    </div>
+                            
+                            <div class="col-xs-12 modalCell">
+                              
+                                <div class="modalDelObjName col-xs-12 centerWithFlex" id="addDeviceOkModalInnerDiv2" style='display:none'><i class="fa fa-check" style="font-size:36px"></i></div> 
+                            </div>
+                              <div class="row" id="ApplyRulesModal1OkMsg">
+                        <div class="col-xs-12 centerWithFlex">Devices are updated! </div>
+                    </div>
+                           <div class="row" id="ApplyRulesModal1KoMsg">
+                        <div class="col-xs-12 centerWithFlex">There are some problems </div>
+                    </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" id="ApplyRulesCnBtn" class="btn cancelBtn"  data-dismiss="modal">Cancel</button>
+                        <button type="button" id="ApplyRulesOkBtn" class="btn confirmBtn" >Ok</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    
+    
+    
+    
     <!-- the edit window, when you click on "edit" from a device row-->
     <div class="modal fade" id="editDeviceModal" tabindex="-1" role="dialog" aria-hidden="true">
         <div class="modal-dialog  modal-lg" role="document">

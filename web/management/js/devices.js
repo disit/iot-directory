@@ -27,7 +27,7 @@ var tableFirstLoad = true;
 $.ajax(
         {url: "../api/model.php",
             data: {
-                action: 'get_Fiwire_model',
+                action: 'get_fiware_model',
                 token: sessionToken
             },
             type: "POST",
@@ -116,6 +116,7 @@ $.ajax({
         alert("Network errors. <br/> Get in touch with the Snap4City Administrator<br/>" + JSON.stringify(data));
     }
 });
+
 function ajaxRequest() {
     var request = false;
     try {
@@ -144,15 +145,9 @@ function removeElementAt(parent, child) {
     checkEditAtlistOneAttribute();
 }
 
-
 //LOAD attr of model 
 
 function SuccessOfLoadAttr(data, kindModel, version, domain, subdomain) {
-    $('#selectSubnature').val("");
-    $('#selectSubnature').trigger("change");
-    $("#addNewStaticBtn").hide();
-    removeStaticAttributes();
-    var myprop = (data.proposal);
     if (data["status"] === 'ko') {
         alert("An error occured when reading the data. <br/> Get in touch with the Snap4City Administrator<br/>" + data["msg"]);
     } else if (data["status"] === 'ok') {
@@ -182,55 +177,25 @@ function SuccessOfLoadAttr(data, kindModel, version, domain, subdomain) {
                 indexValues = indexValues + 1;
                 k++;
             }
-
+            subnatureChanged(false, JSON.parse(static_attributes));
             $('#inputTypeDevice').val(type);
             $('#selectSubnature').val(subnature);
             $('#selectSubnature').trigger('change');
-            if (subnature) {
-                $("#addNewStaticBtn").show();
-                subnatureChanged(false, JSON.parse(static_attributes));
-            }
+            if(subnature){
+             $("#addNewStaticBtn").show();}
         } else {
             var myattributes = JSON.parse(data.content.attributes);
             Object.keys(myattributes).forEach(function (k) {
                 if (myattributes[k].value_name != 'type') {
-                    D_type = "";
-                    V_type = "";
-                    V_unit = '';
-                    value_name = myattributes[k].value_name;
-
-                    if (myattributes[k].checked == 'False') {
-
-
-                        for (i = 0; i < myprop.length; i++) {
-
-                            if (myprop[i].value_name == value_name) {
-
-                                D_type = myprop[i].data_type;
-                                V_type = myprop[i].value_type;
-                                V_unit = myprop[i].value_unit;
-                                break;
-                            }
-                        }
-                    } else {
-                        D_type = myattributes[k].data_type;
-                        V_type = myattributes[k].value_type;
-                        V_unit = myattributes[k].value_unit;
-                    }
-
-
                     content += drawAttributeMenu(myattributes[k].value_name,
-                            D_type, V_type, myattributes[k].editable, V_unit, myattributes[k].healthiness_criteria,
+                            myattributes[k].data_type, myattributes[k].value_type, myattributes[k].editable, myattributes[k].value_unit, myattributes[k].healthiness_criteria,
                             myattributes[k].healthiness_value, '', 'addlistAttributes', indexValues);
                     indexValues = indexValues + 1;
                 }
 
             });
 
-
-
         }
-
 
         $('#addlistAttributes').html(content);
 
@@ -269,8 +234,6 @@ function SuccessOfLoadAttr(data, kindModel, version, domain, subdomain) {
     }
 }
 
-
-
 function drawAttributeMenu(attrName, data_type, value_type, editable, value_unit, healthiness_criteria, value_refresh_rate, old_value_name, parent, indice)
 {
     if (attrName == "") {
@@ -287,7 +250,6 @@ function drawAttributeMenu(attrName, data_type, value_type, editable, value_unit
     } else {
         msg_value_type = "<div style=\"color:#337ab7;\" class=\"modalFieldMsgCnt\">Ok</div>";
     }
-
 
     for (var n = 0; n < gb_value_types.length; n++)
     {
@@ -391,11 +353,11 @@ function format(d) {
     } else
         showKey = "";
     var showPayload = '<div class="row">' +
-            '<div class="col-xs-6 col-sm-6" style="background-color:#E6E6FA;"><button class="btn btn-info my-small-button" onclick="datainspect(\'' +
+            '<div class="col-xs-6 col-sm-6" style="background-color:#D6CADD;"><button class="btn btn-info my-small-button" onclick="datainspect(\'' +
             d.id + '\',\'' + d.devicetype + '\',\'' + d.contextBroker + '\',\'' + d.service + '\',\'' + d.servicePath + '\',\'v1\');return true;"><b>PAYLOAD NGSI v1</b></button></div>' +
             '<div class="clearfix visible-xs"></div>';
     // if (d.version=='v2')
-    showPayload = showPayload + '<div class="col-xs-6 col-sm-6" style="background-color:#E6E6FA;"><button class="btn btn-info my-small-button" title ="Read from IoT broker to be use to feed the device" onclick="datainspect(\'' +
+    showPayload = showPayload + '<div class="col-xs-6 col-sm-6" style="background-color:#D6CADD;"><button class="btn btn-info my-small-button" title ="Read from IoT broker to be use to feed the device" onclick="datainspect(\'' +
             d.id + '\',\'' + d.devicetype + '\',\'' + d.contextBroker + '\',\'' + d.service + '\',\'' + d.servicePath + '\',\'v2\');return true;"><b>PAYLOAD NGSI v2</b></button></div>';
     showPayload = showPayload + '</div>';
     //console.log(d);
@@ -434,7 +396,8 @@ function format(d) {
             '<div class="col-xs-12 col-sm-12" style="background-color:#E6E6FA;" data-toggle="tooltip" title="Go to the log LD"><b>Device Uri:</b><a href="' + d.url + '" target="_blank"> ' + d.uri + '</a> <a class="btn btn-info my-small-button pull-right" href="' + d.m_url + '" target="_blank"><b>VIEW IN SERVICE MAP</b></a></div>' +
             '</div>' +
             '<div class="row">' +
-            '<div class="col-xs-12 col-sm-12" style="background-color:#D6CADD;"><b>Organization:</b>' + "  " + d.organization;
+            '<div class="col-xs-12 col-sm-12" style="background-color:#D6CADD;"><b>Organization:</b>' + "  " + d.organization ;
+    
     var b = ' <button type="button"class="btn btn-info my-small-button pull-right" ' +
             'data-id="' + d.id + '" ' +
             'data-contextbroker="' + d.contextBroker + '" ' +
@@ -442,7 +405,12 @@ function format(d) {
             'data-servicePath="' + d.servicePath + '" ' +
             'data-devicetype="' + d.devicetype + '" ' +
             'data-latitude="' + d.latitude + '" ' +
-            'data-longitude="' + d.longitude + '"  id="' + d.id + '_NewValuesInput" onclick="NewValuesOnDevice(id);"><b>NEW DATA IN</b> ' + d.id + '</button>';
+            'data-longitude="' + d.longitude + '"  id="' + d.id + '_NewValuesInput" onclick="NewValuesOnDevice(id);"><b>NEW DATA IN</b> ' + d.id + '</button>'+'</div>' ;
+    
+    var aa=  '<div class="row">' +
+            '<div class="col-xs-12 col-sm-12" style="background-color:#E6E6FA;"><b>Owner:</b>' + "  " + d.owner+
+            '</div>'  ;
+    
     var c = '</div>' + '</div>' +
             '<div class="clearfix visible-xs"></div>' +
             '</div>' +
@@ -454,67 +422,45 @@ function format(d) {
             '</div>';
     if (d.protocol == "ngsi" || d.protocol == "ngsi w/MultiService") {
         if ((loggedRole == "RootAdmin") || (loggedRole == "ToolAdmin") || d.visibility.substring(0, 5) == "MyOwn") {
-            return a + b + c;
+            return a +b+ aa + c;
         }
         if (d.delegationKind === 'READ_WRITE' || d.delegationKind === 'MODIFY') {
             return a + b + c;
         }
     }
 
-    return a + c;
+    return a +  c;
 }
 
-
-
-
 //DataTable fetch_data function 
-function fetch_data(destroyOld, selected = null)
-{
+function fetch_data(destroyOld, selected = null) {
     //console.log("Enter:" + selected);
     if (destroyOld)
     {
         $('#devicesTable').DataTable().clear().destroy();
         tableFirstLoad = true;
     }
-
-    if (selected == null)//TODO uniform these below calls
-    {
-        mydata = {action: "get_all_device", token: sessionToken, no_columns: ["position", "d.visibility", "status1", "edit", "delete", "map", "check"]};
-    } else if (selected == 'delegated') {
-        mydata = {action: "get_all_device", delegated: true, token: sessionToken, no_columns: ["position", "d.visibility", "status1", "edit", "delete", "map", "check"]};
-    } else if (selected == 'public') {
-        mydata = {action: "get_all_device", public: true, token: sessionToken, no_columns: ["position", "d.visibility", "status1", "edit", "delete", "map", "check"]};
-    } else if (selected == 'own') {
-        mydata = {action: "get_all_device", own: true, token: sessionToken, no_columns: ["position", "d.visibility", "status1", "edit", "delete", "map", "check"]};
-    } else
-    {
-        mydata = {action: "get_all_device", own: true, token: sessionToken, select: selected, no_columns: ["position", "d.visibility", "status1", "edit", "delete", "map", "check"]};
-    }
-
     var page_length = 10;
     if (loggedRole == "ToolAdmin") {
-        page_length = 5;
+        page_length = 5;   
     }
-
-    dataTable = $('#devicesTable').DataTable({
-
-        "processing": true,
-        "search": {
-            return: true
-        },
-        "serverSide": true,
-        "lengthMenu": [[5, 25, 50, 100, -1], [5, 25, 50, 100, "All"]],
-        "pageLength": page_length,
-        "scrollX": true,
-        "paging": true,
-        "ajax": {
-            url: "../api/device.php",
-            data: mydata,
-            datatype: 'json',
-            type: "POST"
-
-        },
-        "columns": [
+    
+    if(loggedRole == "ToolAdmin" || loggedRole == "RootAdmin" ){     
+        if (selected == null)//TODO uniform these below calls
+        {
+            mydata = {action: "get_all_device_admin", token: sessionToken, no_columns: ["position", "d.visibility", "status1", "edit", "delete", "map", "check"]};
+        } else if (selected == 'delegated') {
+            mydata = {action: "get_all_device_admin", delegated: true, token: sessionToken, no_columns: ["position", "d.visibility", "status1", "edit", "delete", "map", "check"]};
+        } else if (selected == 'public') {
+            mydata = {action: "get_all_device_admin", public: true, token: sessionToken, no_columns: ["position", "d.visibility", "status1", "edit", "delete", "map", "check"]};
+        } else if (selected == 'own') {
+            mydata = {action: "get_all_device_admin", own: true, token: sessionToken, no_columns: ["position", "d.visibility", "status1", "edit", "delete", "map", "check"]};
+        } else
+        {
+            mydata = {action: "get_all_device_admin", own: true, token: sessionToken, select: selected, no_columns: ["position", "d.visibility", "status1", "edit", "delete", "map", "check"]};
+        }
+        
+        var COL_CAST=[
             {
                 "class": "details-control",
                 "name": "position",
@@ -665,15 +611,196 @@ function fetch_data(destroyOld, selected = null)
                             'data-status1="' + d.status1 + '">View</button>';
                 }
             }
-        ],
+        ];    
+    } else {
+        if (selected == null)//TODO uniform these below calls
+        {
+            mydata = {action: "get_all_device", token: sessionToken, no_columns: ["position", "d.visibility", "status1", "edit", "delete", "map", "check"]};
+        } else if (selected == 'delegated') {
+            mydata = {action: "get_all_device", delegated: true, token: sessionToken, no_columns: ["position", "d.visibility", "status1", "edit", "delete", "map", "check"]};
+        } else if (selected == 'public') {
+            mydata = {action: "get_all_device", public: true, token: sessionToken, no_columns: ["position", "d.visibility", "status1", "edit", "delete", "map", "check"]};
+        } else if (selected == 'own') {
+            mydata = {action: "get_all_device", own: true, token: sessionToken, no_columns: ["position", "d.visibility", "status1", "edit", "delete", "map", "check"]};
+        } else
+        {
+            mydata = {action: "get_all_device", own: true, token: sessionToken, select: selected, no_columns: ["position", "d.visibility", "status1", "edit", "delete", "map", "check"]};
+        }
+          
+        var COL_CAST=[
+            {
+                "class": "details-control",
+                "name": "position",
+                "orderable": false,
+                "data": null,
+                "defaultContent": "",
+                "render": function () {
+                    return '<i class="fa fa-plus-square" aria-hidden="true"></i>';
+                },
+                width: "15px"
+            },
+            {"name": "d.id", "data": function (row, type, val, meta) {
+
+                    return row.id;
+                }},
+            {"name": "d.contextBroker", "data": function (row, type, val, meta) {
+                    return row.contextBroker;
+                }},
+            {"name": "d.devicetype", "data": function (row, type, val, meta) {
+
+                    return row.devicetype;
+                }},
+            {"name": "d.model", "data": function (row, type, val, meta) {
+
+                    return row.model;
+                }},
+            {"name": "d.visibility", "data": function (row, type, val, meta) {
+                    if (row.visibility == 'MyOwnPrivate') {
+                        return '<button type="button"  class=\"myOwnPrivateBtn\" onclick="changeVisibility(\'' + row.id + '\',\'' + row.contextBroker + '\',\'' + row.organization + '\',\'' + row.visibility + '\',\'' + row.uri + '\',\'' + row.k1 + '\',\'' + row.k2 + '\',\'' + row.model + '\',\'' + row.protocol + '\',\'' + row.service + '\',\'' + row.servicePath + '\')">' + row.visibility + '</button>';
+                    } else if (row.visibility == 'MyOwnPublic') {
+                        return '<button type="button"  class=\"myOwnPublicBtn\" onclick="changeVisibility(\'' + row.id + '\',\'' + row.contextBroker + '\',\'' + row.organization + '\',\'' + row.visibility + '\',\'' + row.uri + '\',\'' + row.k1 + '\',\'' + row.k2 + '\',\'' + row.model + '\',\'' + row.protocol + '\',\'' + row.service + '\',\'' + row.servicePath + '\')">' + row.visibility + '</button>';
+                    } else if (row.visibility == 'public')
+                    {
+                        return '<button type="button"  class=\"publicBtn\" >' + row.visibility + '</button>';
+                    } else // value is private
+                    {
+                        return "<div class=\"delegatedBtn\">" + row.visibility + "</div>";
+                    }
+                }},
+            {"name": "status1", "data": function (row, type, val, meta) {
+
+                    return row.status1;
+                }},
+            {
+                data: null,
+                "name": "edit",
+                "orderable": false,
+                className: "center",
+                render: function (d) {
+                    //defaultContent: '<button type="button" id="edit" class="editDashBtn data-id="'+ row.name +'"">Edit</button>'
+
+                    if (loggedRole == 'RootAdmin' || d.visibility == 'MyOwnPublic' || d.visibility == 'MyOwnPrivate' || d.delegationKind === 'MODIFY') {
+                        return '<button type="button" class="editDashBtn" ' +
+                                'data-id="' + d.id + '" ' +
+                                'data-contextBroker="' + d.contextBroker + '" ' +
+                                'data-organization="' + d.organization + '" ' +
+                                'data-kind="' + d.kind + '" ' +
+                                'data-model="' + d.model + '" ' +
+                                'data-devicetype="' + d.devicetype + '" ' +
+                                'data-uri="' + d.uri + '" ' +
+                                'data-visibility="' + d.visibility + '" ' +
+                                'data-frequency="' + d.frequency + '" ' +
+                                'data-format="' + d.format + '" ' +
+                                'data-ownership="' + d.ownership + '" ' +
+                                'data-protocol="' + d.protocol + '" ' +
+                                'data-macaddress="' + d.macaddress + '" ' +
+                                'data-producer="' + d.producer + '" ' +
+                                'data-longitude="' + d.longitude + '" ' +
+                                'data-latitude="' + d.latitude + '" ' +
+                                'data-edgegateway_type="' + d.edgegateway_type + '" ' +
+                                'data-edgegateway_uri="' + d.edgegateway_uri + '" ' +
+                                'data-k1="' + d.k1 + '" ' +
+                                'data-k2="' + d.k2 + '" ' +
+                                'data-subnature="' + d.subnature + '" ' +
+                                'data-service="' + d.service + '" ' +
+                                'data-servicePath="' + d.servicePath + '" ' +
+                                'data-static-attributes="' + btoa(unescape(encodeURIComponent(d.staticAttributes))) + '" ' +
+                                'data-status1="' + d.status1 + '">Edit</button>';
+                    } else {
+                        return '';
+                    }
+
+                }
+            },
+            {
+                data: null,
+                "name": "delete",
+                "orderable": false,
+                className: "center",
+                //defaultContent: '<button type="button" id="delete" class="delDashBtn delete">Delete</button>'
+                render: function (d) {
+                    if (loggedRole == 'RootAdmin' || d.visibility == 'MyOwnPublic' || d.visibility == 'MyOwnPrivate') {
+                        return '<button type="button" class="delDashBtn" ' +
+                                'data-id="' + d.id + '" ' +
+                                'data-contextBroker="' + d.contextBroker + '" ' +
+                                'data-organization="' + d.organization + '" ' +
+                                'data-protocol="' + d.protocol + '" ' +
+                                'data-service="' + d.service + '" ' +
+                                'data-servicePath="' + d.servicePath + '" ' +
+                                'data-uri="' + d.uri + '">Delete</button>';
+                    } else {
+                        return '';
+                    }
+                }
+            }, {
+                data: null,
+                "name": "map",
+                "orderable": false,
+                className: "center",
+                //defaultContent: '<button type="button" id="map" class="delDashBtn delete">Location</button>'
+                render: function (d) {
+                    return '<div class="addMapBtn"><i  data-toggle="modal" data-target="#addMapShow" onclick="drawMap(\'' + d.latitude + '\',\'' + d.longitude + '\', \'' + d.id + '\', \'' + d.devicetype + '\', \'' + d.kind + '\', \'' + 'addDeviceMapModalBodyShow' + '\')\" class="fa fa-globe"  style=\"font-size:36px; color: #0000ff\"></i></div>';
+                }
+            }, {
+                data: null,
+                "name": "check",
+                "orderable": false,
+                render: function (d) {
+                    return '<button type="button" class="viewDashBtn" ' +
+                            'data-id="' + d.id + '" ' +
+                            'data-contextBroker="' + d.contextBroker + '" ' +
+                            'data-organization="' + d.organization + '" ' +
+                            'data-kind="' + d.kind + '" ' +
+                            'data-model="' + d.model + '" ' +
+                            'data-devicetype="' + d.devicetype + '" ' +
+                            'data-uri="' + d.uri + '" ' +
+                            'data-visibility="' + d.visibility + '" ' +
+                            'data-frequency="' + d.frequency + '" ' +
+                            'data-format="' + d.format + '" ' +
+                            'data-ownership="' + d.ownership + '" ' +
+                            'data-protocol="' + d.protocol + '" ' +
+                            'data-macaddress="' + d.macaddress + '" ' +
+                            'data-producer="' + d.producer + '" ' +
+                            'data-longitude="' + d.longitude + '" ' +
+                            'data-latitude="' + d.latitude + '" ' +
+                            'data-edgegateway_type="' + d.edgegateway_type + '" ' +
+                            'data-edgegateway_uri="' + d.edgegateway_uri + '" ' +
+                            'data-k1="' + d.k1 + '" ' +
+                            'data-k2="' + d.k2 + '" ' +
+                            'data-subnature="' + d.subnature + '" ' +
+                            'data-service="' + d.service + '" ' +
+                            'data-servicePath="' + d.servicePath + '" ' +
+                            'data-static-attributes="' + btoa(unescape(encodeURIComponent(d.staticAttributes))) + '" ' +
+                            'data-status1="' + d.status1 + '">View</button>';
+                }
+            }
+        ];
+    }
+
+    dataTable = $('#devicesTable').DataTable({
+
+        "processing": true,
+        "search": {
+            return: true
+        },
+        "serverSide": true,
+        "lengthMenu": [[5, 25, 50, 100, -1], [5, 25, 50, 100, "All"]],
+        "pageLength": page_length,
+        "scrollX": true,
+        "paging": true,
+        "ajax": {
+            url: "../api/device.php",
+            data: mydata,
+            datatype: 'json',
+            type: "POST"
+
+        },
+        "columns": COL_CAST,
         "order": []
 
 
     });
 }
-
-
-
 
 function NewValuesOnDevice(strID) {
     document.getElementById('editLatLongValue').innerHTML = "";
@@ -713,7 +840,6 @@ function NewValuesOnDevice(strID) {
         dataType: 'json',
         success: function (mydata)
         {
-
             var old_value = mydata['content'];
             $('a[data-toggle="tab"]').off('shown.bs.tab').on('shown.bs.tab', function (e) {
                 //   $('#InsertDataDeviceLoadingIcon').show();
@@ -830,20 +956,15 @@ function NewValuesOnDevice(strID) {
                                     $("#" + str_checkBox).hide();
                                     $("#Span" + str_checkBox).hide();
                                 }
-
-
                                 input.addEventListener('keyup', function (e) {
-
                                     var a = (e.target.value);
                                     const okButton = document.getElementById('NewValuesInputConfirmButton');
                                     t = e.currentTarget.id.substring(5, e.currentTarget.id.length);
                                     str1 = "#access-code-error" + t;
                                     str2 = ".InputDataType" + t;
                                     switch (DT[t].type) {
-
                                         case "float" :
                                         case "integer" :
-
                                             {
                                                 if (/\s/.test(a) || a == "" || isNaN(a) || /[!@#$%^&*()_+\-=\[\]{};':"\\|<>\/?]+/.test(a)) {
                                                     $(str1).show();
@@ -854,10 +975,8 @@ function NewValuesOnDevice(strID) {
                                                     okButton.disabled = false;
                                                 }
                                             }
-
                                             break;
                                         case "binary":
-
                                             {
                                                 if (/\s/.test(a) || a == "" || isNaN(a) || /[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]+/.test(a)) {
                                                     $(str1).show();
@@ -961,9 +1080,6 @@ function NewValuesOnDevice(strID) {
                                     $('#NewValuesInputConfirmButton').hide();
                                     //  }
                                 } else {
-
-
-
                                     var pay_new_data = CreateJsonNewValue(mydata['content'], NameAttrUp, old_value);
                                     $("#NoMobile").hide();
                                     $('#ValuesINPUT').hide();
@@ -1008,8 +1124,6 @@ function NewValuesOnDevice(strID) {
                                             $("#InsertModalStatus").html(data.responseText);
                                             $("#InsertModalStatus").show();
                                         }
-
-
                                     });
                                 }
                             });
@@ -1024,8 +1138,6 @@ function NewValuesOnDevice(strID) {
                             console.log(JSON.stringify(data));
                             alert("Error in reading data from the database<br/> Please get in touch with the Snap4city Administrator");
                         }
-
-
                     });
                 }
             });
@@ -1035,7 +1147,6 @@ function NewValuesOnDevice(strID) {
         },
         error: function (data)
         {
-
             $('#InsertDataDeviceLoadingIcon').hide();
             console.log("Insert values pool KO");
             console.log((data));
@@ -1052,17 +1163,9 @@ function NewValuesOnDevice(strID) {
             $('#Itab').hide();
             document.getElementById('NewValuesInputConfirmButton').style.display = 'none';
         }
-
-
     });
 }
-
-
-
-
-
 //end of fetch function 
-
 
 function disableInput(id) {
     InputToDisable = "Value" + id.substring(9, id.length);
@@ -1078,23 +1181,19 @@ function disableInput(id) {
             document.getElementById('NewValuesInputConfirmButton').disabled = true;
         }
     }
-
 }
-
 
 function CreateJsonNewValue(someData, NameAttrUp, old) {
 //console.log(new_co);
     var attr = {};
     var a = "";
     for (var i in someData) {
-
         if (document.getElementById(NameAttrUp[i]).checked == true) {
             a = document.getElementById('Value' + NameAttrUp[i].substring(9, NameAttrUp[i].length)).value;
         } else {
             a = old[NameAttrUp[i].substring(9, NameAttrUp[i].length)];
         }
         switch (someData[i].data_type) {
-
             case "float" || "integer" :
                 a = parseFloat(a);
                 break;
@@ -1136,16 +1235,9 @@ function CreateJsonNewValue(someData, NameAttrUp, old) {
     return attr;
 }
 
-
-
-
 ///END 
 
-
-
-$(document).ready(function ()
-{
-
+$(document).ready(function () {
     $("#ShowOnlyDelegated").click(function () {
         fetch_data(true, 'delegated');
     });
@@ -1180,21 +1272,12 @@ $(document).ready(function ()
             tdi.first().addClass('fa-minus-square');
         }
 
-    }
-    );
-//end of detail control for device dataTable 
+    });
+    //end of detail control for device dataTable 
 
-
-
-//Start Related to Add Device 
-
+    //Start Related to Add Device 
     $("#selectModelDevice").append("<option value='custom' selected>" + 'Custom' + "&#160;&#160;&#160;<font size=\"2\"></font>" + "</option>");
     $("#selectModelDevice").select2(select2option);
-
-    // $("selectModelDevice").val('').change();
-
-
-
 
     //Add Device Button 
     $("#addDeviceBtn").off("click");
@@ -1227,15 +1310,12 @@ $(document).ready(function ()
         $("#addDeviceModalFooter").show();
         $("#addNewDeviceGenerateKeyBtn").show();
         showAddDeviceModal();
-        $("#selectContextBroker").change();
-
-
+        $("#selectContextBroker").change();    
     });
     // Add lines related to attributes			
     $("#addAttrBtn").off("click");
     $("#addAttrBtn").click(function () {
         //console.log("#addAttrBtn");									
-
         content = drawAttributeMenu("", "", "", "", "", "", "300", "", 'addlistAttributes', indexValues);
         indexValues = indexValues + 1;
         $('#addlistAttributes').append(content);
@@ -1257,10 +1337,7 @@ $(document).ready(function ()
     });
 //End Related to Add Device
 
-
-
 // Start Related to Edit Device
-
     // Add lines related to attributes in case of edit
     $("#addAttrMBtn").off("click");
     $("#addAttrMBtn").click(function () {
@@ -1340,9 +1417,7 @@ $(document).ready(function ()
         else
             $("#positionMsgHintM").hide();
     }
-
-
-
+    
 //view details of device
     $('#devicesTable tbody').on('click', 'button.viewDashBtn', function () {
         get_form(true);
@@ -1377,7 +1452,6 @@ $(document).ready(function ()
         var servP = $(this).attr('data-servicePath');
         //console.log(key1 + key2);
 
-
         $("#editDeviceGenerateKeyBtn").hide();
         $('#inputNameDeviceM').val($(this).attr('data-id'));
         $('#inputOrganizationDeviceM').val($(this).attr('data-organization'));
@@ -1403,14 +1477,12 @@ $(document).ready(function ()
         subnatureChanged("view", JSON.parse(atob($(this).attr("data-static-attributes"))));
         //$('#removeCBServiceBtn').hide();
 
-
         $('#addNewStaticBtnM').hide();
         $('#EStatus').hide();
         $('a[data-toggle="tab"]').off('shown.bs.tab').on('shown.bs.tab', function (e) {
             var target = $(e.target).attr("href");
             if ((target == '#editGeoPositionTabDevice')) {
                 //console.log("Elf : EditDeviceMap");
-
                 drawMap1(latitude, longitude, 3);
             } else if ((target == '#editSchemaTabDevice')) {
                 document.getElementById('editlistAttributes').innerHTML = "";
@@ -1433,8 +1505,6 @@ $(document).ready(function ()
                     dataType: 'json',
                     success: function (mydata)
                     {
-
-
                         var row = null;
                         $("#editUserPoolsTable tbody").empty();
                         myattributes = mydata['content'];
@@ -1475,14 +1545,8 @@ $(document).ready(function ()
             }
 
         });
-    }
-
-
-    );
+    });
 //////////////////////////////  //
-
-
-
     //Edit button in dataTable 
     $('#devicesTable tbody').on('click', 'button.editDashBtn', function () {
         mydata = {action: "get_all_device", strat_time: '2022-04-13 2012:15:18', end_time: '2022-04-13 2012:25:18', token: sessionToken, no_columns: ["position", "d.visibility", "status1", "edit", "delete", "map", "check"]};
@@ -1523,7 +1587,6 @@ $(document).ready(function ()
             var subnature = $(this).attr('data-subnature');
             fillMultiTenancyFormSection($(this).attr('data-service'), $(this).attr('data-servicePath'), contextbroker, 'device');
             //console.log(key1 + key2);
-
 
             $("#editDeviceGenerateKeyBtn").show();
             $('#inputNameDeviceM').val($(this).attr('data-id'));
@@ -1765,7 +1828,6 @@ $(document).ready(function ()
             });
 //End Related to Delete Device
 
-
 //--------------------- static attribute ADD start
 
     $("#addNewStaticBtn").off("click");
@@ -1816,7 +1878,6 @@ $(document).ready(function ()
      alert( 'Row index: '+dataTable.row( this ).index() );
      });*/
 
-
 //Display devices on the map 
     $('#displayDevicesMap').off('click');
     $('#displayDevicesMap').click(function () {
@@ -1849,7 +1910,6 @@ $(document).ready(function ()
                 console.log("Ko result: " + data);
                 alert("Network errors. <br/> Get in touch with the Snap4City Administrator<br/>" + JSON.stringify(data));
             }
-
         });
     });
 //Default Title 
@@ -1890,7 +1950,6 @@ $(document).ready(function ()
                 }, 1000);
             }, 4000);
         }
-
         if (difference === 120)
         {
             $('#sessionExpiringPopupTime').html("2 minutes");
@@ -1931,7 +1990,6 @@ $(document).ready(function ()
             //$('#devicesTable').bootstrapTable('hideColumn', 'visibility');
             //$('#devicesTable').bootstrapTable('hideColumn', 'status1');	
             //$('#devicesTable').bootstrapTable('hideColumn', 'type');
-
         } else
         {
             //$('#devicesTable').bootstrapTable('showColumn', 'id');
@@ -1944,7 +2002,6 @@ $(document).ready(function ()
             //$('#devicesTable').bootstrapTable('showColumn', 'protocol');
             //$('#devicesTable').bootstrapTable('showColumn', 'format');
             //$('#devicesTable').bootstrapTable('showColumn', 'type');
-
         }
     });
     $("#addMyNewDeviceRow").hide();
@@ -1964,8 +2021,6 @@ $(document).ready(function ()
             }
         }
     }
-
-
     $('#devicesLink .mainMenuItemCnt').addClass("mainMenuItemCntActive");
     $('#mobMainMenuPortraitCnt #devicesLink .mobMainMenuItemCnt').addClass("mainMenuItemCntActive");
     $('#mobMainMenuLandCnt #devicesLink .mobMainMenuItemCnt').addClass("mainMenuItemCntActive");
@@ -2009,8 +2064,6 @@ $(document).ready(function ()
                 var flag = 2;
                 drawMap1(latitude, longitude, flag);
             }
-
-
         } else {//nothing
         }
     });
@@ -2046,8 +2099,6 @@ $(document).ready(function ()
         //$('#selectFormatDevice').val("");
         alert("An error occured when reading the information about model. <br/> Try again or get in touch with the Snap4City Administrator<br/>");
     }
-
-
     $("#selectModelDevice").change(function () {
         var nameOpt = document.getElementById('selectModelDevice').options;
         var selectednameOpt = document.getElementById('selectModelDevice').selectedIndex;
@@ -2060,41 +2111,31 @@ $(document).ready(function ()
             document.getElementById('addlistAttributes').innerHTML = "";
             $('#selectSubnature').val('');
             $('#selectSubnature').trigger('change');
-            $('#addNewStaticBtn').hide();
-
+            $('#addNewStaticBtn').hide();            
             removeStaticAttributes();
-
-
             document.getElementById('addlistAttributesMsg').innerHTML = "At least a value needs to be specified";
             $('#addlistAttributesMsg').show();
         } else if (nameOpt[selectednameOpt].attributes.data_kind.value == 'NATIVE') {
-
             var nameOptValue = nameOpt[selectednameOpt].value;
 
-            LoadAttr('NATIVE', nameOpt, selectednameOpt, nameOptValue, '', '', '', '');
-            // $('#addlistAttributesMsg').hide();
-
-        } else if (typeof nameOpt[selectednameOpt].attributes['data-version'] !== 'undefined') {
-
-            var nameOptValue = nameOpt[selectednameOpt].value.replace('( FIWIRE )', '').trim();
+            LoadAttr('NATIVE', nameOpt, selectednameOpt, nameOptValue, '', '', '');           
+        } else if (typeof nameOpt[selectednameOpt].attributes['data-version'] !== 'undefined') {           
+            var nameOptValue = nameOpt[selectednameOpt].value.replace('( FIWARE )', '').trim();
             var version = nameOpt[selectednameOpt].attributes['data-version'].value;
             var domain = nameOpt[selectednameOpt].attributes['data-domain'].value;
             var subdomain = nameOpt[selectednameOpt].attributes['data-modelsubdomain'].value;
             var subnature = nameOpt[selectednameOpt].attributes['data_subnature'].value;
+            $('#selectSubnature').val(subnature);
+            $('#selectSubnature').trigger('change');
             $('#inputTypeDevice').val(nameOptValue);
-            LoadAttr('FIWIRE', nameOpt, selectednameOpt, nameOptValue, version, domain, subdomain,subnature );
+            LoadAttr('FIWARE', nameOpt, selectednameOpt, nameOptValue, version, domain, subdomain);
             $('#addlistAttributesMsg').hide();
-            
-            
-
-        } else {
-
+        } else {     
             $("#selectModelDevice").val('');
             document.getElementById('addlistAttributes').innerHTML = "";
             document.getElementById('addlistAttributesMsg').innerHTML = "At least a value needs to be specified";
             $('#addlistAttributesMsg').show();
         }
-
     });
 // ADD NEW DEVICE  (INSERT INTO DB) 
 
@@ -2240,7 +2281,7 @@ $(document).ready(function ()
                             $("#addDeviceKoModalInnerDiv1").html('<h5>An error occurred, operation failed.</h5>');
                     } else if (mydata["status"] === 'ok')
                     {
-
+                        
                         //console.log("Success adding Device");
                         //console.log(JSON.stringify(mydata));
                         $('#addDeviceLoadingMsg').hide();
@@ -2331,8 +2372,6 @@ $(document).ready(function ()
     });
 //END ADD NEW DEVICE  (INSERT INTO DB) 
 
-
-
     $('#selectModel').val('').trigger('change');
 //DELETE DEVICE (DELETE FROM DB) 			
     $('#deleteDeviceConfirmBtn').off("click");
@@ -2392,8 +2431,6 @@ $(document).ready(function ()
                     fetch_data(true);
                     // $('#dashboardTotNumberCnt .pageSingleDataCnt').html(parseInt($('#dashboardTotNumberCnt .pageSingleDataCnt').html()) - 1);
                     // $('#dashboardTotActiveCnt .pageSingleDataCnt').html(parseInt($('#dashboardTotActiveCnt .pageSingleDataCnt').html()) - 1);
-
-
                 }
             },
             error: function (data)

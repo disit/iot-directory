@@ -908,7 +908,8 @@ else if ($action == "bulkload") {
         $row = mysqli_fetch_assoc($rcount);
         $totalValid = $row["count(*)"];
     }
-
+    
+$result["TimeSTART"] =new DateTime() ;
     try {
         //---update the bulk_status table that the bulk is processing----------
         $qupdate = "INSERT INTO bulkload_status (username, is_bulk_processing, number_processed,totale, is_finished ) 
@@ -998,6 +999,7 @@ else if ($action == "bulkload") {
                         if ($result["status"] == "ok") { // whenver the previous insert succeded
                             logAction($link, $usernameNotHashed, 'device', 'bulkload', $row["id"] . " " . $row["contextBroker"], $organization, $result["msg"], 'success');
                             $rec["inserted"] = "ok";
+                            
 
                             $qdelete = "DELETE FROM temporary_devices  WHERE username = '$username' AND 
 								id = '" . $row["id"] . "' AND contextBroker = '" . $row["contextBroker"] . "'
@@ -1057,6 +1059,7 @@ else if ($action == "bulkload") {
             $result['msg'] = 'Error: errors in retrieving the devices from temporary_devices`. <br/>' . generateErrorMessage($link);
             $result['log'] = '\n\r errors in retrieving the devices from temporary_devices.' . generateErrorMessage($link);
         }
+        $result["TimeEnd"] =new DateTime() ;
         my_log($result);
 
         //---update the bulk_status table----------

@@ -118,7 +118,7 @@ $(document).ready(function () {
                 data: null,
 
                 render: function (d) {
-                     if (loggedRole == 'RootAdmin' ) {
+                     if (loggedRole == 'RootAdmin' || loggedRole == 'ToolAdmin' ) {
                         
                         return '<button type="button" class="delDashBtn" ' +
                             'data-id="' + d.Name + '" ' +
@@ -315,6 +315,7 @@ $(document).ready(function () {
             });
 
         }
+        location.reload();
     });
 
 

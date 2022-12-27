@@ -6,9 +6,9 @@ function getIfRules2(num1) {
     for (var m = 0; m < num1; m++) {
         //var attribute= document.getElementById('ifBlockTable').rows[m].cells[1].selectedIndex;
 
-        var fieldIf = document.getElementById('ifBlockTable').tBodies[0].rows.item(m).cells.item(1).childNodes[0].value;
-        var operatorIf = document.getElementById('ifBlockTable').tBodies[0].rows.item(m).cells.item(2).childNodes[0].value;
-        var valueIf = document.getElementById('ifBlockTable').tBodies[0].childNodes[m].childNodes[3].childNodes[0].value;
+        var fieldIf = document.getElementById('ifBlockTableValue').tBodies[0].rows.item(m).cells.item(1).childNodes[0].value;
+        var operatorIf = document.getElementById('ifBlockTableValue').tBodies[0].rows.item(m).cells.item(2).childNodes[0].value;
+        var valueIf = document.getElementById('ifBlockTableValue').tBodies[0].childNodes[m].childNodes[3].childNodes[0].value;
 
         if (valueIf.localeCompare("Empty") == 0) {
             valueIf = "";
@@ -25,11 +25,11 @@ function getThenRules2(num2) {
     var attributesThenValues = [];
 
     for (var m = 0; m < num2; m++) {
-        var fieldsThen = document.getElementById('decisionBlockTable').tBodies[0].rows.item(m).cells.item(1).childNodes[0].value;
+        var fieldsThen = document.getElementById('decisionBlockTableValue').tBodies[0].rows.item(m).cells.item(1).childNodes[0].value;
 
         if (fieldsThen != "empty") {
 
-            var valueThen = document.getElementById('decisionBlockTable').tBodies[0].rows.item(m).cells.item(2).childNodes[0].value;
+            var valueThen = document.getElementById('decisionBlockTableValue').tBodies[0].rows.item(m).cells.item(2).childNodes[0].value;
 
 
             if (valueThen.localeCompare("Empty") == 0) {
@@ -553,6 +553,13 @@ function subnatureChanged(edit, staticAttributes) {
             $("#addNewStaticBtn").show();
         }
     }
+    var flag=false;
+    var LEN;
+    if(staticAttributes){
+        flag=true;
+        LEN = staticAttributes.length;
+        
+    }
 
 
     if (subnatureNew !== "") {
@@ -574,9 +581,9 @@ function subnatureChanged(edit, staticAttributes) {
                     //if called in edit, populate static attributes
                     if (edit) {
                         currentDictionaryStaticAttribEdit = JSON.parse(mydata["availibility"]);
-                        if (staticAttributes)
+                        if (flag)
                         {
-                            for (let i = 0; i < staticAttributes.length; i++) {
+                            for (let i = 0; i < LEN; i++) {
                                 createRowElem(staticAttributes[i][0], staticAttributes[i][1], currentDictionaryStaticAttribEdit, "editlistStaticAttributes");
                                 if (edit == "view") {
                                     $('.removeCBServiceBtnView').hide();
@@ -587,9 +594,9 @@ function subnatureChanged(edit, staticAttributes) {
                         }
                     } else {
                         currentDictionaryStaticAttribAdd = JSON.parse(mydata["availibility"]);
-                        if (staticAttributes)
+                        if (flag)
                         {
-                            for (let i = 0; i < staticAttributes.length; i++) {
+                            for (let i = 0; i < LEN; i++) {
                                 createRowElem(staticAttributes[i][0], staticAttributes[i][1], currentDictionaryStaticAttribAdd, "addlistStaticAttributes");
                                 if (edit == "view") {
                                     $('.removeCBServiceBtnView').hide();
@@ -657,7 +664,8 @@ function createRowElem(initialValueDictiornary, initialValue, currentDictionaryS
     var modalInputTxt0 = document.createElement("select");
     $(modalInputTxt0).attr('class', ' Select_onlyread');
     for (var i = 0; i < currentDictionaryStaticAttrib.length; i++) {
-        if (((currentDictionaryStaticAttrib[i].type === "http://www.w3.org/2001/XMLSchema#string") || (currentDictionaryStaticAttrib[i].type === "https://www.w3.org/2001/XMLSchema#integer")) &&
+        if (/*((currentDictionaryStaticAttrib[i].type === "http://www.w3.org/2001/XMLSchema#string") || 
+                (currentDictionaryStaticAttrib[i].type === "https://www.w3.org/2001/XMLSchema#integer")) &&*/
                 (checkNotInsert(alreadyInserted, currentDictionaryStaticAttrib[i].uri)) &&
                 (currentDictionaryStaticAttrib[i].uri !== "http://www.disit.org/km4city/schema#isMobile"))//isMobile management outside 
         {
@@ -896,7 +904,7 @@ function LoadAttr(kindModel, nameOpt, selectednameOpt, nameOptValue, version, do
                     $.ajax({
                         url: "../api/model.php",
                         data: {
-                            action: "get_value_attributes_FIWIRE",
+                            action: "get_value_attributes_fiware",
                             id: nameOptValue,
                             version: version,
                             domain: domain,
@@ -1013,7 +1021,7 @@ function addModel2(element, data, kind) {
 
 
         $.each(data, function () {
-            label = "FIWIRE RULED";
+            label = "FIWARE RULED";
             $.each(JSON.parse(this.attributes), function () {
                 if (this.checked == 'False' && this.value_name != 'type') {
                     label = "FIWARE UNRULED";
@@ -1026,7 +1034,7 @@ function addModel2(element, data, kind) {
         element.select2(select2option);
     } else {
         $.each(data, function () {
-            label = "FIWIRE RULED";
+            label = "FIWARE RULED";
             $.each(JSON.parse(this.attributes), function () {
                 if (this.checked == 'False' && this.value_name != 'type') {
                     label = "FIWARE UNRULED";
@@ -1034,28 +1042,21 @@ function addModel2(element, data, kind) {
                 }
             });
             if (label != "FIWARE UNRULED") {
-                element.append("<option data_subnature='" + this.subnature + "' data_kindDEVICE= 'sensor'  data-version='" + this.version + "' data_kind='FIWIRE' data-modelSubDomain='" + this.subdomain + "'data-Domain='" + this.domain + "'value='" + this.model + "'>" + this.model + "&#160;&#160;&#160;<font size=\"2\">( " + label + " )</font>" + "</option>");
+                element.append("<option data_subnature='" + this.subnature + "' data_kindDEVICE= 'sensor'  data-version='" + this.version + "' data_kind='FIWARE' data-modelSubDomain='" + this.subdomain + "'data-Domain='" + this.domain + "'value='" + this.model + "'>" + this.model + "&#160;&#160;&#160;<font size=\"2\">( " + label + " )</font>" + "</option>");
             }
         });
         element.select2(select2option);
     }
-
-
-
 }
-// format attribute for FIWIRE 
-function keepAttr_FIWIRE(full_attr_field) {
+// format attribute for FIWARE 
+function keepAttr_FIWARE(full_attr_field) {
     var full_attr = JSON.parse(full_attr_field);
     var k = Object.keys(full_attr);
     var element = [];
 
-
     for (var i = 0; i < k.length; i++) {
-
         chiave = k[i];
         if (full_attr[chiave].value_name != 'type') {
-
-
             element.push({
                 "value_name": full_attr[chiave].value_name,
                 "data_type": full_attr[chiave].data_type,
@@ -1067,8 +1068,6 @@ function keepAttr_FIWIRE(full_attr_field) {
             });
         }
     }
-
-
     return JSON.stringify(element);
 }
 // end

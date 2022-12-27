@@ -68,11 +68,12 @@ var cid = mysql.createConnection({
 
 cid.connect(function (err) {
     if (err) {
-        console.log('Error connecting to Db '+c_host+' '+c_port+' '+c_user+' '+c_password+' '+c_database);
+        console.log('Error connecting to Db ' + c_host + ' ' + c_port + ' ' + c_user + ' ' + c_password + ' ' + c_database);
         throw err;
     }
     console.log('Connection established to Db');
 });
+
 
 var limit = 1000;
 var offset2 = 500;
@@ -87,9 +88,9 @@ if (FREQUENCY_SEARCH.localeCompare("null") == 0 || FREQUENCY_SEARCH == undefined
 var req = new XMLHttpRequest();
 var link = apiLink + "device.php";
 req.open("POST", link + "?action=get_param_values", false);
-console.log(new Date().toISOString() +"  PRIMA CHIAMAMTA: "+link + "?action=get_param_values");
+console.log(new Date().toISOString() + "  PRIMA CHIAMAMTA action=get_param_values : " + link + "?action=get_param_values");
 req.onreadystatechange = function () {
-	  //console.log(new Date().toISOString() +"  CHIAMAMTA: "+link + "?action=get_param_values");
+    //console.log(new Date().toISOString() +"  CHIAMAMTA: "+link + "?action=get_param_values");
     if (this.readyState == 4 && this.status == 200) {
         let resp = JSON.parse(this.responseText);
         gb_datatypes = resp["data_type"];
@@ -106,13 +107,13 @@ req = new XMLHttpRequest();
 var connLink = apiLink + "deviceDiscoveryApi.php?action=getCBServiceTree&contextbroker=" + ORION_CB + "&token=" + TOKEN;
 req.open("POST", connLink, false);
 req.onreadystatechange = function () {
-	 console.log(new Date().toISOString() +"  SECONDA CHIAMAMTA: "+connLink);
+    console.log(new Date().toISOString() + "  SECONDA CHIAMAMTA action=getCBServiceTree&contextbroker :  " + connLink);
     if (this.readyState == 4 && this.status == 200) {
         schema = JSON.parse(this.responseText)["content"];
         if (schema.length > 0) {
-            console.log("tenants/paths structure retrieved "+JSON.stringify(schema));
-			inferImplicitPaths(schema);
-			} else {
+            console.log("tenants/paths structure retrieved " + JSON.stringify(schema));
+            inferImplicitPaths(schema);
+        } else {
             console.log("tenants/paths structure empty response!");
         }
     } else if (this.readyState == 4 && this.status != 200) {
@@ -190,12 +191,14 @@ function retrieveDataCaller(schema) {
         var xhttp = new XMLHttpRequest();
         retrieveData(xhttp, link, schema[i].service, schema[i].servicePath, limit, offset);
     }
-	
+
 }
 
 console.log(ORION_CB);
 
 function retrieveData(xhttp, link, service, servicePath, limit, offset) {
+
+
     var orionDevices = [];
     var orionDevicesType = {};
     var orionDevicesSchema = {};
@@ -206,220 +209,223 @@ function retrieveData(xhttp, link, service, servicePath, limit, offset) {
     var extractionRulesDev = new Object();
     var se = [];
     var sesc = [];
+    var Global_OBJ=new Object();
 
     Promise.all([
         makeRequestToCB(xhttp, link, service, servicePath, limit, offset),
         getRegisteredDevices(service, servicePath),
         getTemporaryDevices(service, servicePath)
     ]).then(function ([result1, result2, result3/*, result4*/]) {
-		getExtractionRules(service, servicePath).then(function (result4){
-			
-		
-		
-        var obj = JSON.parse(result1);
 
-        if (obj instanceof Array) {
-            for (i = 0; i < obj.length; i++) {
-              // if (obj[i].type != "LogEntry") {
+        getExtractionRules(service, servicePath).then(function (result4) {
+
+
+            var obj = JSON.parse(result1);
+            Global_OBJ = JSON.parse(result1);
+
+
+            if (obj instanceof Array) {
+                for (i = 0; i < obj.length; i++) {
+                    // if (obj[i].type != "LogEntry") {
                     let index = obj[i].id;
                     orionDevices.push(index);
                     orionDevicesSchema[index] = obj[i];
                     orionDevicesType[index] = obj[i].type;
-               // }
+                    // }
 
-            }
-        } else {
-          //  if (obj.type != "LogEntry") {
+                }
+            } else {
+                //  if (obj.type != "LogEntry") {
                 orionDevices.push(obj.id);
                 orionDevicesSchema[obj.id] = obj;
                 orionDevicesType[obj.id] = obj.type;
-            //}
+                //}
 
-        }
-        //console.log(JSON.stringify(orionDevicesType));
+            }
+            //console.log(JSON.stringify(orionDevicesType));
 
-        if (typeof modelsdata === undefined || MODEL.localeCompare("custom") == 0 || modelsdata.length <= 0)
-            modelsdata = getModels(cid, modelsdata);
+            if (typeof modelsdata === undefined || MODEL.localeCompare("custom") == 0 || modelsdata.length <= 0)
+                modelsdata = getModels(cid, modelsdata);
 
-        registeredDevices = result2.registeredDevices;
-        registeredDevicesWithPath = result2.registeredDevicesWithPath;
-        temporaryDevices = result3.temporaryDevices;
-       /* extractionRulesAtt = result4.extractionRulesAtt;*/
-        extractionRulesDev = result4.extractionRulesDev;
-		
+            registeredDevices = result2.registeredDevices;
+            registeredDevicesWithPath = result2.registeredDevicesWithPath;
+            temporaryDevices = result3.temporaryDevices;
+            /* extractionRulesAtt = result4.extractionRulesAtt;*/
+            extractionRulesDev = result4.extractionRulesDev;
 
 
-        findNewValues(cid, ORION_CB, orionDevices, orionDevicesSchema, registeredDevicesWithPath, temporaryDevices
+
+            findNewValues(cid, ORION_CB, orionDevices, orionDevicesSchema, registeredDevicesWithPath, temporaryDevices
 		/*, extractionRulesAtt*/);
 
-        allDevices = registeredDevices.concat(temporaryDevices);
-        newDevices = orionDevices.diff(allDevices);
-        newDevices = removeDuplicates(newDevices);
+            allDevices = registeredDevices.concat(temporaryDevices);
+            newDevices = orionDevices.diff(allDevices);
+            newDevices = removeDuplicates(newDevices);
 
-        console.log("There are " + newDevices.length + " new devices for the broker " + ORION_CB + " in tenant " + service + " in path " + servicePath + ".");
+            console.log("There are " + newDevices.length + " new devices for the broker " + ORION_CB + " in tenant " + service + " in path " + servicePath + ".");
 
 
 
-        for (var i = 0; i < newDevices.length; i++) {
-            var attProperty = [];
-            var devAttr = new Object();
-            var topic = newDevices[i];
+            for (var i = 0; i < newDevices.length; i++) {
+                var attProperty = [];
+                var devAttr = new Object();
+                var topic = newDevices[i];
 
-            if (orionDevicesSchema[topic] == undefined) {
-                //console.log("topic undefined " + topic);
-                continue;
+                if (orionDevicesSchema[topic] == undefined) {
+                    //console.log("topic undefined " + topic);
+                    continue;
+                }
+
+                //sesc, attProperty = manageExtractionRulesAtt(extractionRulesAtt, ORION_CB, topic, orionDevicesSchema[topic], sesc);
+                sesc, attProperty = manageOtherParameters(ORION_CB, topic, orionDevicesSchema[topic], sesc, attProperty)
+                devAttr = manageExtractionRulesDev(extractionRulesDev, orionDevicesSchema[topic], devAttr)
+
+                if (devAttr["mac"] == undefined)
+                    devAttr["mac"] = "";
+                if (devAttr["k1"] == undefined)
+                    devAttr["k1"] = uuidv4();
+                if (devAttr["k2"] == undefined)
+                    devAttr["k2"] = uuidv4();
+                if (devAttr["producer"] == undefined)
+                    devAttr["producer"] = "";
+                if (devAttr["latitude"] == undefined && devAttr["longitude"] == undefined) {
+                    var location = getLocation(orionDevicesSchema[topic]);
+                    devAttr["latitude"] = location[0]
+                    devAttr["longitude"] = location[1]
+                }
+
+                if (devAttr["subnature"] == undefined)
+                    devAttr["subnature"] = "";
+                if (devAttr["static_attributes"] == undefined)
+                    devAttr["static_attributes"] = "[]";
+                if (devAttr["devicetype"] == undefined)
+                    devAttr["devicetype"] = orionDevicesType[topic];
+
+
+                // var verify = verifyDevice(toVerify, modelsdata, gb_datatypes, gb_value_types, gb_value_units);
+                //var validity = '0';
+                /*     if (verify.isvalid)
+                         validity = "valid";*/
+
+                se.push([
+                    USER,
+                    topic,
+                    MODEL,
+                    KIND,
+                    devAttr["devicetype"],
+                    ORION_PROTOCOL,
+                    FREQUENCY,
+                    FORMAT,
+                    ORION_CB,
+                    devAttr["latitude"],
+                    devAttr["longitude"],
+                    devAttr["mac"],
+                    'new',
+               /* verify.message,*/ ' ',
+                    "no",
+                    ORGANIZATION,
+                    EDGE_GATEWAY_TYPE,
+                    EDGE_GATEWAY_URI,
+                    devAttr["k1"],
+                    devAttr["k2"],
+                    service,
+                    servicePath,
+                    devAttr["subnature"],
+                    devAttr["static_attributes"],
+                    devAttr["producer"]
+                ]);
+
             }
 
-            sesc, attProperty = manageExtractionRulesAtt(extractionRulesAtt, ORION_CB, topic, orionDevicesSchema[topic], sesc);
-            sesc, attProperty = manageOtherParameters(ORION_CB, topic, orionDevicesSchema[topic], sesc, attProperty)
-            devAttr = manageExtractionRulesDev(extractionRulesDev, orionDevicesSchema[topic], devAttr)
+            //end for i
+            if (se.length != 0) {
+                //if there are devices to be inserted
 
-            if (devAttr["mac"] == undefined)
-                devAttr["mac"] = "";
-            if (devAttr["k1"] == undefined)
-                devAttr["k1"] = uuidv4();
-            if (devAttr["k2"] == undefined)
-                devAttr["k2"] = uuidv4();
-            if (devAttr["producer"] == undefined)
-                devAttr["producer"] = "";
-            if (devAttr["latitude"] == undefined && devAttr["longitude"] == undefined) {
-                var location = getLocation(orionDevicesSchema[topic]);
-                devAttr["latitude"] = location[0]
-                devAttr["longitude"] = location[1]
-            }
 
-            if (devAttr["subnature"] == undefined)
-                devAttr["subnature"] = "";
-            if (devAttr["static_attributes"] == undefined)
-                devAttr["static_attributes"] = "[]";
-            if (devAttr["devicetype"] == undefined)
-                devAttr["devicetype"] = orionDevicesType[topic];
+                insertDevices(cid, se).then(function () {
+                    if (sesc.length != 0) {
+                        // console.log(" \n SECS "+sesc);
+                        //if there are attributes to be inserted
+                        insertValues(cid, sesc, "temporary_event_values").then(function () {
+                            console.log(new Date().toISOString() + " Time after insert value");
+                            /* chiamata a  update_all_values*/
+                            var req = new XMLHttpRequest();
+                            var link = apiLink + "bulkDeviceUpdate.php";
+                            req.open("POST", link + "?action=update_all_values&cb=" + ORION_CB + "&token=" + TOKEN + "&service_path=" + servicePath + "&service=" + service, false);
+                            req.onreadystatechange = function () {
+                                if (this.readyState == 4 && this.status == 200) {
 
-            var toVerify = {
-                "name": topic,
-                "username": USER,
-                "contextbroker": ORION_CB,
-                "id": topic,
-                "model": MODEL,
-                "producer": devAttr["producer"],
-                "devicetype": devAttr["devicetype"],
-                "protocol": ORION_PROTOCOL,
-                "format": FORMAT,
-                "frequency": FREQUENCY,
-                "kind": KIND,
-                "latitude": devAttr["latitude"],
-                "longitude": devAttr["longitude"],
-                "macaddress": devAttr["mac"],
-                "k1": devAttr["k1"],
-                "k2": devAttr["k2"],
-                "subnature": devAttr["subnature"],
-                "static_attributes": devAttr["static_attributes"],
-                "deviceValues": attProperty
-            };
+                                    console.log(new Date().toISOString() + "  update_all_values: rules apply " + link + "?action=update_all_values&cb=" + ORION_CB + "&token=" + TOKEN + "&service_path=" + servicePath + "&service=" + service);
+                                    console.log(" Result: " + req.responseText);
 
-           // var verify = verifyDevice(toVerify, modelsdata, gb_datatypes, gb_value_types, gb_value_units);
-            var validity = "invalid";
-       /*     if (verify.isvalid)
-                validity = "valid";*/
+                                   
+                                } else if (this.readyState == 4 && this.status != 200) {
+                                    console.log(new Date().toISOString() + " update_all_values error " + this.status);
+                                    reject({
+                                        status: this.status,
+                                        statusText: this.statusText
+                                    });
 
-            se.push([
-                USER,
-                topic,
-                MODEL,
-                KIND,
-                devAttr["devicetype"],
-                ORION_PROTOCOL,
-                FREQUENCY,
-                FORMAT,
-                ORION_CB,
-                devAttr["latitude"],
-                devAttr["longitude"],
-                devAttr["mac"],
-                validity,
-               /* verify.message,*/'',
-                "no",
-                ORGANIZATION,
-                EDGE_GATEWAY_TYPE,
-                EDGE_GATEWAY_URI,
-                devAttr["k1"],
-                devAttr["k2"],
-                service,
-                servicePath,
-                devAttr["subnature"],
-                devAttr["static_attributes"],
-                devAttr["producer"]
-            ]);
-
-        }
-		
-		//end for i
-        if (se.length != 0) {
-            //if there are devices to be inserted
-            insertDevices(cid, se).then(function () {
-                if (sesc.length != 0) {
-                    //if there are attributes to be inserted
-                    insertValues(cid, sesc, "temporary_event_values")
-					console.log(new Date().toISOString() + " Time after insert value");
-					
-                    // .then(function () {
-                    //     if (!smallSearch) {
-                    //         offset2 = offset2 + 100;
-
-                    //         xhttp = new XMLHttpRequest();
-                    //         retrieveData(xhttp, link, service, servicePath, 100, offset2);
+                                }
+                            }
+                            
+                            req.send();
+                            // resolve();
 
                             
-                            
-                    //         console.log("**UPDATE**");
-                    //     }
-                    //     else {
-                    //         offset2 = offset2 + 1;
-                    //         xhttp = new XMLHttpRequest();
-                    //         retrieveData(xhttp, link, service, servicePath, 1, offset2);
-                    //     }
-                    // })
-                } 
-                // else {
-                    // if (!smallSearch) {
-                    //     offset2 = offset2 + 100;
 
-                    //     xhttp = new XMLHttpRequest();
-                
-                    //     retrieveData(xhttp, link, service, servicePath, 100, offset2);
-                    //     console.log("**UPDATE**");
-                    // }
-                    // else {
-                    //     offset2 = offset2 + 1;
-                    //     xhttp = new XMLHttpRequest();
+                        }
+                        );
 
-                    //     retrieveData(xhttp, link, service, servicePath, 1, offset2);
-                    // }
-                // }
-            });
-        }
-        if(obj instanceof Array && obj.length > 1){
-			console.log("********* Lunghezza obj "+ obj.length );
-		
-            if (!smallSearch) {
-                offset2 = offset2 + obj.length;
-
-                xhttp = new XMLHttpRequest();
+                    }
+                    if (Global_OBJ instanceof Array && Global_OBJ.length > 1) {
+                        console.log("********* Lunghezza obj " + Global_OBJ.length);
         
-                retrieveData(xhttp, link, service, servicePath, obj.length, offset2);
-                console.log( new Date().toISOString() +"  **UPDATE**");
+                        if (!smallSearch) {
+                            offset2 = offset2 + Global_OBJ.length;
+        
+                            xhttp = new XMLHttpRequest();
+        
+                            retrieveData(xhttp, link, service, servicePath, Global_OBJ.length, offset2);
+                            console.log(new Date().toISOString() + "  **UPDATE**");
+                        }
+                        else {
+                            offset2 = offset2 + 1;
+                            xhttp = new XMLHttpRequest();
+        
+                            retrieveData(xhttp, link, service, servicePath, 1, offset2);
+                        }
+                   }
+
+
+                });
+
+
+
             }
-            else {
-                offset2 = offset2 + 1;
-                xhttp = new XMLHttpRequest();
+           /* if (obj instanceof Array && obj.length > 1) {
+                console.log("********* Lunghezza obj " + obj.length);
 
-                retrieveData(xhttp, link, service, servicePath, 1, offset2);
-            }
-        }
+                if (!smallSearch) {
+                    offset2 = offset2 + obj.length;
+
+                    xhttp = new XMLHttpRequest();
+
+                    retrieveData(xhttp, link, service, servicePath, obj.length, offset2);
+                    console.log(new Date().toISOString() + "  **UPDATE**");
+                }
+                else {
+                    offset2 = offset2 + 1;
+                    xhttp = new XMLHttpRequest();
+
+                    retrieveData(xhttp, link, service, servicePath, 1, offset2);
+                }
+            }*/
 
 
-		});
-   }).catch(function (err) {
-        console.log( new Date().toISOString() +" LINK: "+link+" ERRORE "+JSON.stringify(err));
+        });
+    }).catch(function (err) {
+        console.log(new Date().toISOString() + " LINK: " + link + " ERRORE " + JSON.stringify(err));
         if (!smallSearch) {
             smallSearch = 1;
             retrieveData(xhttp, link, service, servicePath, 1, offset2);
@@ -433,7 +439,7 @@ function retrieveData(xhttp, link, service, servicePath, limit, offset) {
 function makeRequestToCB(xhttp, link, service, servicePath, limit, offset) {
     return new Promise(function (resolve, reject) {
         xhttp = new XMLHttpRequest();
-        
+
         if (limit != undefined && offset != undefined) {
             link = link + "?limit=" + limit + "&offset=" + offset;
         }
@@ -443,8 +449,14 @@ function makeRequestToCB(xhttp, link, service, servicePath, limit, offset) {
         if (APIKEY !== null || APIKEY !== undefined) {
             xhttp.setRequestHeader("apikey", APIKEY);
         }
-        xhttp.setRequestHeader("Fiware-Service", service);
-        xhttp.setRequestHeader("Fiware-ServicePath", servicePath);
+        if (service != null) {
+            xhttp.setRequestHeader("Fiware-Service", service);
+        }
+
+        if (servicePath != '/') {
+            xhttp.setRequestHeader("Fiware-ServicePath", servicePath);
+        }
+
 
         xhttp.onreadystatechange = function () {
             if (this.readyState == 4 && this.status == 200) {
@@ -457,7 +469,7 @@ function makeRequestToCB(xhttp, link, service, servicePath, limit, offset) {
             }
         };
         xhttp.onerror = function (e) {
-			console.log("makeRequestToCB: "+JSON.stringify(e));
+            console.log("makeRequestToCB: " + JSON.stringify(e));
             reject({
                 status: this.status,
                 statusText: this.statusText
@@ -465,8 +477,8 @@ function makeRequestToCB(xhttp, link, service, servicePath, limit, offset) {
         };
         xhttp.send()
     }).catch((error) => {
-  console.error("SONO IO 1:  "+JSON.stringify(error));
-});
+        console.error("SONO IO 1:  " + JSON.stringify(error));
+    });
 }
 
 function getRegisteredDevices(service, servicePath) {
@@ -478,7 +490,7 @@ function getRegisteredDevices(service, servicePath) {
         cid.query(sql, function (error, result, fields) {
             if (error) {
                 reject(error)
-				return;
+                return;
             }
 
             for (i = 0; i < result.length; i++) {
@@ -494,8 +506,8 @@ function getRegisteredDevices(service, servicePath) {
             })
         })
     }).catch((error) => {
-  console.error("SONO IO 2:  "+JSON.stringify(error));
-});
+        console.error("SONO IO 2:  " + JSON.stringify(error));
+    });
 }
 
 function getTemporaryDevices(service, servicePath) {
@@ -507,7 +519,7 @@ function getTemporaryDevices(service, servicePath) {
         cid.query(sql, function (error, result, fields) {
             if (error) {
                 reject(error)
-				return;
+                return;
             }
 
             for (i = 0; i < result.length; i++) {
@@ -522,78 +534,51 @@ function getTemporaryDevices(service, servicePath) {
 
 
     }).catch((error) => {
-  console.error("SONO IO 3:  "+JSON.stringify(error));
-});
+        console.error("SONO IO 3:  " + JSON.stringify(error));
+    });
 }
 
-function writeFreqAndTimestampStatus(){
-	return new Promise(function (resolve, reject){
-	var query= "UPDATE `iotdb`.`contextbroker` SET `req_frequency`='"+ FREQUENCY_SEARCH +"', timestampstatus=NOW() WHERE `name`='" + ORION_CB + "';"; // query update rows with freq and Timestamp  Status
-	cid.query(query, function(error, result){
-		 console.log('result: '+JSON.stringify(result)+JSON.stringify(error))
+function writeFreqAndTimestampStatus() {
+    return new Promise(function (resolve, reject) {
+        var query = "UPDATE `iotdb`.`contextbroker` SET `req_frequency`='" + FREQUENCY_SEARCH + "', timestampstatus=NOW() WHERE `name`='" + ORION_CB + "';"; // query update rows with freq and Timestamp  Status
+        cid.query(query, function (error, result) {
+            console.log('result: ' + JSON.stringify(result) + JSON.stringify(error))
             if (error) {
                 reject(error);
                 return;
             }
-		resolve(result);
-	});
-	
-	});
+            resolve(result);
+        });
+
+    });
 }
 
 function getExtractionRules(service, servicePath) {
     return new Promise(function (resolve, reject) {
-		
-		/* chiamata a  update_all_values*/
 
-		var req = new XMLHttpRequest();
-		var link = apiLink + "bulkDeviceUpdate.php";
-		req.open("POST", link + "?action=update_all_values&cb=" + ORION_CB + "&token=" + TOKEN+ "&service_path=" + servicePath +"&service=" + service, false);
-		req.onreadystatechange = function () {
-			if (this.readyState == 4 && this.status == 200) {
-				
-				console.log( new Date().toISOString() +"  update_all_values: rules apply " +link + "?action=update_all_values&cb=" + ORION_CB + "&token=" + TOKEN+ "&service_path=" + servicePath +"&service=" + service);
-				console.log(" Result: "+ req.responseText);
-			
-					var extractionRulesDev = new Object();
-					// var extractionRulesAtt = new Object();
-						var query = "SELECT * FROM extractionRules where contextbroker='" + ORION_CB + "'AND service = '" + service + "' AND servicePath = '" + servicePath + "';";
-						cid.query(query, function (error, resultRules, fields) {
-							console.log('result: '+JSON.stringify(resultRules)+JSON.stringify(error))
-							if (error) {
-								reject(error);
-								return;
-							}
-							for (var x = 0; x < resultRules.length; x++) {
-								if (resultRules[x]["kind"].localeCompare("property") == 0) {
-									extractionRulesDev[resultRules[x]["id"]] = resultRules[x];
-								}/* else {
+        var extractionRulesDev = new Object();
+        // var extractionRulesAtt = new Object();
+        var query = "SELECT * FROM extractionRules where contextbroker='" + ORION_CB + "'AND service = '" + service + "' AND servicePath = '" + servicePath + "';";
+        cid.query(query, function (error, resultRules, fields) {
+            console.log('result: ' + JSON.stringify(resultRules) + JSON.stringify(error))
+            if (error) {
+                reject(error);
+                return;
+            }
+            for (var x = 0; x < resultRules.length; x++) {
+                if (resultRules[x]["kind"].localeCompare("property") == 0) {
+                    extractionRulesDev[resultRules[x]["id"]] = resultRules[x];
+                }/* else {
 									extractionRulesAtt[resultRules[x]["id"]] = resultRules[x];
 								}*/
-							}
-							resolve({
-								extractionRulesDev: extractionRulesDev
-							//   ,extractionRulesAtt: extractionRulesAtt
-							});
-						});
-			
-			
-			
-			} else if (this.readyState == 4 && this.status != 200) {
-						console.log(new Date().toISOString() +" update_all_values error " + this.status);
-						reject({
-								status: this.status,
-								statusText: this.statusText
-								});
-						
-			}
-		}
-		req.send();
-		
-		
-		
-		
-		
+            }
+            resolve({
+                extractionRulesDev: extractionRulesDev
+                //   ,extractionRulesAtt: extractionRulesAtt
+            });
+        });
+
+
 
     });
 }
@@ -615,13 +600,14 @@ Array.prototype.diff = function (arr) {
     });
 };
 var requestLoop = setInterval(function () {
-	var t=new Date();
-	console.log("*_*_*_*_*_*_*_***** " + t +" START time");
+    var t = new Date();
+    console.log("*_*_*_*_*_*_*_***** " + t + " START time");
     retrieveDataCaller(schema);
-	var t2=new Date();
-	console.log("*_*_*_*_*_*_*_***** " + (t-t2) +" after retrive data time");
-	writeFreqAndTimestampStatus().then(value=>{
-		var t3= new Date();
-			console.log("*_*_*_*_*_*_*_***** " + (t- t3) + " FINAL TIME");
-		console.log(value+" Update db with freq and timestamp")});
+    var t2 = new Date();
+    console.log("*_*_*_*_*_*_*_***** " + (t - t2) + " after retrive data time");
+    writeFreqAndTimestampStatus().then(value => {
+        var t3 = new Date();
+        console.log("*_*_*_*_*_*_*_***** " + (t - t3) + " FINAL TIME");
+        console.log(value + " Update db with freq and timestamp")
+    });
 }, FREQUENCY_SEARCH);

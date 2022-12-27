@@ -405,6 +405,7 @@ if (($hide_menu != "hide")) {
                                                     <th data-cellTitle="devicetype">Device Type</th>
                                                     <th data-cellTitle="model">Model</th>
                                                     <th data-cellTitle="ownership">Ownership</th>
+                                                    
                                                     <th data-cellTitle="status">Status</th>							
                                                     <th data-cellTitle="edit">Edit</th>
                                                     <th data-cellTitle="delete">Delete</th>		

@@ -32,6 +32,7 @@ def MakeRule():
     base_link = _config["repository_base_link"]
     dictionary_link = _config["s4c_dictionary_link"]
     db_config_file = _config["db_config_file"]
+    debug_mode = _config["debug_mode"]
 
     # EXECUTE CONFIG #
 
@@ -51,8 +52,10 @@ def MakeRule():
         _attrs = _log[4]
         _attrsLog = _log[5]
         _keys = list(_attrsLog.keys())
-        print(_keys, "------+" * 3)
+        if (debug_mode):
+            print(_keys, "------+" * 3)
         _new_attribute_keys = list(statics.ATTRIBUTE_MASK.keys())
+        _obj = []
         while len(_keys) > 0:
             _update_attr = False
             _attribute = _keys.pop()
@@ -75,7 +78,7 @@ def MakeRule():
                         _attr = _attrs[_attribute]
 
                     _rule = _ingestor.rule_generator.create_general_rules(
-                        _domain, _subdomain, _model, _attr)
+                        _domain, _subdomain, _model, _attr, debug_mode)
                     _ingestor.database.add_rule(_rule, False)
 
                     # attr ready - now update or set attributes field
@@ -96,6 +99,8 @@ def MakeRule():
                                                          _attribute, _attr)
                                 _delete_msg = True
                                 _update_attr = True
+                            
+
                         _message_word_iterator += 2
                     if _delete_msg:
                         _obj.pop(_messages_iterator)

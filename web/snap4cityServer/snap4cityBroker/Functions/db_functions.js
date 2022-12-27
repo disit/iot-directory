@@ -16,7 +16,7 @@ function insertDevices(cid, se) {
 		cid.query(sqlse, [se], function (errSens) {
 			if (errSens) {
 				console.log("devices insert error ");
-				//console.log(errSens);
+				console.log(errSens);
 				reject(errSens)
 				return;
 			}
