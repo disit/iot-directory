@@ -1565,15 +1565,12 @@ else if ($action == 'change_visibility') {
 				cb.`sha`, d.`subnature`, d.`static_attributes`,d.`service`, d.`servicePath` FROM `devices` d JOIN `contextbroker` cb ON (d.contextBroker=cb.name)";
 
     if ($Sel_Time) {
-
         $start_int = mysqli_real_escape_string($link, $_REQUEST['start_time']);
         $end_int = mysqli_real_escape_string($link, $_REQUEST['end_time']);
         $q .= " WHERE d.created BETWEEN CAST('$start_int' AS DATETIME) AND CAST('$end_int' AS DATETIME)";
     }
     
-
-
-if($flag_mod && !$Sel_Time){ // no where clause yet
+    if($flag_mod && !$Sel_Time){ // no where clause yet
         $q .= " WHERE d.model = '$target_model' ";        
     }else if ($flag_mod && $Sel_Time){
         $q .= "AND  d.model = '$target_model' ";
@@ -1602,15 +1599,13 @@ if($flag_mod && !$Sel_Time){ // no where clause yet
         $tobelimited = false;
     }
 
-
     if (isset($_REQUEST['delegated']) || isset($_REQUEST['public']) || isset($_REQUEST['own'])) {
         $subset = true;
     } else {
         $subset = false;
     }
-
+    
     $data = array();
-
     if ($r) {
         while ($row = mysqli_fetch_assoc($r)) {
             $eid = $row["organization"] . ":" . $row["contextBroker"] . ":" . $row["id"];
@@ -1633,7 +1628,6 @@ if($flag_mod && !$Sel_Time){ // no where clause yet
             }
 
             if ($COND) {
-
                 $selectedrows++;
                 if (!$tobelimited || ($tobelimited && $selectedrows >= $start && $selectedrows < ($start + $offset))) {
                     $rec = array();
@@ -1748,6 +1742,8 @@ else if ($action == "get_all_device_admin") {
         $selection = array();
 
     $ownDevices = getOwnerShipDevice($accessToken, $result);
+    if($role != 'RootAdmin')
+      getDelegatedDevice($accessToken, $username, $result);
 
     $q = "SELECT d.`contextBroker`, d.`id`, d.`uri`, d.`devicetype`, d.`kind`, 
 	    	  CASE WHEN mandatoryproperties AND mandatoryvalues THEN \"active\" ELSE \"idle\" END AS status1, 
@@ -1785,16 +1781,15 @@ else if ($action == "get_all_device_admin") {
         $subset = false;
     }
     
-
     if ($r) {
         $data = array();
         logAction($link, $username, 'device', 'get_all_device_admin', '', $organization, '', 'success');
 
-        while ($row = mysqli_fetch_assoc($r)) {
-            
-             $SelPub = ($row["organization"] == $organization) && ($row["visibility"] == 'public' || ( isset($result["delegation"][$eid]) && $result["delegation"][$eid]["kind"] == "anonymous") );
-            $SelDel = (isset($result["delegation"][$eid]) && ($result["delegation"][$eid]["kind"] != "anonymous") && $row["visibility"] != "public");
+        while ($row = mysqli_fetch_assoc($r)) {            
+            $eid = $row["organization"] . ":" . $row["contextBroker"] . ":" . $row["id"];
 
+            $SelPub = ($row["organization"] == $organization) && ($row["visibility"] == 'public' || ( isset($result["delegation"][$eid]) && $result["delegation"][$eid]["kind"] == "anonymous") );
+            $SelDel = (isset($result["delegation"][$eid]) && ($result["delegation"][$eid]["kind"] != "anonymous") && $row["visibility"] != "public");
             $SelOwn = (isset($result["keys"][$eid]) && $result["keys"][$eid]["owner"] == $username );
 
             if (!$subset) {
@@ -1810,74 +1805,74 @@ else if ($action == "get_all_device_admin") {
             }
 
             if ($COND) {
-            $selectedrows++;
-            if (!$tobelimited || ($tobelimited && $selectedrows >= $start && $selectedrows < ($start + $offset))) {
-                $rec = array();
-                $rec["contextBroker"] = $row["contextBroker"];
-                $rec["id"] = $row["id"];
-                $rec["uri"] = $row["uri"];
-                $rec["devicetype"] = $row["devicetype"];
-                $rec["kind"] = $row["kind"];
-                $rec["status1"] = $row["status1"];
-                $rec["macaddress"] = $row["macaddress"];
-                $rec["model"] = $row["model"];
-                $rec["producer"] = $row["producer"];
-                $rec["longitude"] = $row["longitude"];
-                $rec["organization"] = $row["organization"];
-                $rec["latitude"] = $row["latitude"];
-                $rec["protocol"] = $row["protocol"];
-                $rec["format"] = $row["format"];
-                $rec["frequency"] = $row["frequency"];
-                $rec["created"] = $row["created"];
-                $rec["accesslink"] = $row["accesslink"];
-                $rec["accessport"] = $row["accessport"];
-                $rec["sha"] = $row["sha"];
-                $rec["privatekey"] = "";
-                $rec["certificate"] = "";
-                $rec["edgegateway_type"] = "";
-                $rec["edgegateway_uri"] = "";
-                $rec["subnature"] = ($row["subnature"] == null) ? "" : $row["subnature"];
-                $rec["staticAttributes"] = ($row["static_attributes"] == null) ? "[]" : $row["static_attributes"];
-                $rec["service"] = $row["service"];
-                $rec["servicePath"] = $row["servicePath"];
-                $rec["url"] = get_LDgraph_link($logUriLD, $organizationApiURI, $row["organization"], $row["uri"]);
-                $rec["m_url"] = get_ServiceMap_link($row["uri"], $organizationApiURI, $row["organization"]);
+                $selectedrows++;
+                if (!$tobelimited || ($tobelimited && $selectedrows >= $start && $selectedrows < ($start + $offset))) {
+                    $rec = array();
+                    $rec["contextBroker"] = $row["contextBroker"];
+                    $rec["id"] = $row["id"];
+                    $rec["uri"] = $row["uri"];
+                    $rec["devicetype"] = $row["devicetype"];
+                    $rec["kind"] = $row["kind"];
+                    $rec["status1"] = $row["status1"];
+                    $rec["macaddress"] = $row["macaddress"];
+                    $rec["model"] = $row["model"];
+                    $rec["producer"] = $row["producer"];
+                    $rec["longitude"] = $row["longitude"];
+                    $rec["organization"] = $row["organization"];
+                    $rec["latitude"] = $row["latitude"];
+                    $rec["protocol"] = $row["protocol"];
+                    $rec["format"] = $row["format"];
+                    $rec["frequency"] = $row["frequency"];
+                    $rec["created"] = $row["created"];
+                    $rec["accesslink"] = $row["accesslink"];
+                    $rec["accessport"] = $row["accessport"];
+                    $rec["sha"] = $row["sha"];
+                    $rec["privatekey"] = "";
+                    $rec["certificate"] = "";
+                    $rec["edgegateway_type"] = "";
+                    $rec["edgegateway_uri"] = "";
+                    $rec["subnature"] = ($row["subnature"] == null) ? "" : $row["subnature"];
+                    $rec["staticAttributes"] = ($row["static_attributes"] == null) ? "[]" : $row["static_attributes"];
+                    $rec["service"] = $row["service"];
+                    $rec["servicePath"] = $row["servicePath"];
+                    $rec["url"] = get_LDgraph_link($logUriLD, $organizationApiURI, $row["organization"], $row["uri"]);
+                    $rec["m_url"] = get_ServiceMap_link($row["uri"], $organizationApiURI, $row["organization"]);
 
-                if ($row["protocol"] == "ngsi w/MultiService") {
-                    $rec["id"] = explode(".", $row["id"])[2];
+                    if ($row["protocol"] == "ngsi w/MultiService") {
+                        $rec["id"] = explode(".", $row["id"])[2];
+                    }
+
+                    $eid = $row["organization"] . ":" . $row["contextBroker"] . ":" . $row["id"];
+
+                    if (isset($result["keys"][$eid]) && $result["keys"][$eid]["owner"] == $username) {
+                        $rec["visibility"] = ($row["visibility"] == "public") ? "MyOwnPublic" : "MyOwnPrivate";
+                        $rec["k1"] = $result["keys"][$eid]["k1"];
+                        $rec["k2"] = $result["keys"][$eid]["k2"];
+                        $rec["edgegateway_type"] = $result["keys"][$eid]["edgegateway_type"];
+                        $rec["edgegateway_uri"] = $result["keys"][$eid]["edgegateway_uri"];
+                        $rec["owner"] = $result["keys"][$eid]["owner"];
+                        // the following two information should be shown only to the device owner				
+                        $rec["privatekey"] = $row["privatekey"];
+                        $rec["certificate"] = $row["certificate"];
+                    } else if (isset($result["keys"][$eid]) && $result["keys"][$eid]["owner"] != $username) {
+                        $rec["visibility"] = $row["visibility"]; // =="public")?"MyOwnPublic":"MyOwnPrivate";
+                        $rec["k1"] = $result["keys"][$eid]["k1"];
+                        $rec["k2"] = $result["keys"][$eid]["k2"];
+                        $rec["edgegateway_type"] = $result["keys"][$eid]["edgegateway_type"];
+                        $rec["edgegateway_uri"] = $result["keys"][$eid]["edgegateway_uri"];
+                        $rec["owner"] = $result["keys"][$eid]["owner"];
+                        // the following two information should be added, if we wish to give the chaance
+                        // to the administrator to see the privatekey and certificate of one of its user_error 
+                        // $rec["privatekey"]= $row["privatekey"];
+                        // $rec["certificate"]= $row["certificate"];
+                    } else {
+                        $rec["visibility"] = $row["visibility"]; // =="public")?"MyOwnPublic":"MyOwnPrivate";
+                        $rec["k1"] = "";
+                        $rec["k2"] = "";
+                        $rec["owner"] = "UnKnown";
+                    }
+                    array_push($data, $rec);
                 }
-
-                $eid = $row["organization"] . ":" . $row["contextBroker"] . ":" . $row["id"];
-
-                if (isset($result["keys"][$eid]) && $result["keys"][$eid]["owner"] == $username) {
-                    $rec["visibility"] = ($row["visibility"] == "public") ? "MyOwnPublic" : "MyOwnPrivate";
-                    $rec["k1"] = $result["keys"][$eid]["k1"];
-                    $rec["k2"] = $result["keys"][$eid]["k2"];
-                    $rec["edgegateway_type"] = $result["keys"][$eid]["edgegateway_type"];
-                    $rec["edgegateway_uri"] = $result["keys"][$eid]["edgegateway_uri"];
-                    $rec["owner"] = $result["keys"][$eid]["owner"];
-                    // the following two information should be shown only to the device owner				
-                    $rec["privatekey"] = $row["privatekey"];
-                    $rec["certificate"] = $row["certificate"];
-                } else if (isset($result["keys"][$eid]) && $result["keys"][$eid]["owner"] != $username) {
-                    $rec["visibility"] = $row["visibility"]; // =="public")?"MyOwnPublic":"MyOwnPrivate";
-                    $rec["k1"] = $result["keys"][$eid]["k1"];
-                    $rec["k2"] = $result["keys"][$eid]["k2"];
-                    $rec["edgegateway_type"] = $result["keys"][$eid]["edgegateway_type"];
-                    $rec["edgegateway_uri"] = $result["keys"][$eid]["edgegateway_uri"];
-                    $rec["owner"] = $result["keys"][$eid]["owner"];
-                    // the following two information should be added, if we wish to give the chaance
-                    // to the administrator to see the privatekey and certificate of one of its user_error 
-                    // $rec["privatekey"]= $row["privatekey"];
-                    // $rec["certificate"]= $row["certificate"];
-                } else {
-                    $rec["visibility"] = $row["visibility"]; // =="public")?"MyOwnPublic":"MyOwnPrivate";
-                    $rec["k1"] = "";
-                    $rec["k2"] = "";
-                    $rec["owner"] = "UnKnown";
-                }
-                array_push($data, $rec);
-            }
             }
         }
         
