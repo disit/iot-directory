@@ -656,7 +656,7 @@ function createRowElem(initialValueDictiornary, initialValue, currentDictionaryS
     var modalFieldCnt0 = document.createElement("div");
     $(modalFieldCnt0).attr('class', 'modalFieldCnt ');
 
-    //console.log("previously already addeed:"+retrieveStaticAttributes(element));
+    //console.log("previously already added:"+retrieveStaticAttributes(element));
     var alreadyInserted = retrieveStaticAttributes(element, true);
 
     var atLeastOneEntry = false;
@@ -776,10 +776,53 @@ function checkNotInsert(inserted, check) {
 }
 
 function addSubnature(element, data) {
-    $.each(data, function () {
-        element.append("<option value='" + this.value + "'>" + this.label + "&#160;&#160;&#160;<font size=\"2\">(" + this.parent_value[0] + ")</font>" + "</option>");
-    });
-    element.select2(select2option);
+  $.each(data, function () {
+    let label = decodeHtmlCharCodes(this.label);
+
+    if (isJson(label)) {
+      const lang = getCookie('lang') ? getCookie('lang').substring(0, getCookie('lang').indexOf('_')) : 'en';
+      label = JSON.parse(label);
+      if (label[lang]) {
+        label = label[lang];
+      } else {
+        label = label['en'];
+      }
+    }
+    element.append(
+      "<option value='" + this.value + "'>" + label + '&#160;&#160;&#160;<font size="2">(' + this.parent_value[0] + ')</font>' + '</option>'
+    );
+  });
+  element.select2(select2option);
+}
+
+function decodeHtmlCharCodes(str) {
+  return str.replace(/(&#(\d+);)/g, function (match, capture, charCode) {
+    return String.fromCharCode(charCode);
+  });
+}
+
+function isJson(str) {
+  try {
+    JSON.parse(str);
+  } catch (e) {
+    return false;
+  }
+  return true;
+}
+
+function getCookie(key) {
+  var name = key + '=';
+  var ca = document.cookie.split(';');
+  for (var i = 0; i < ca.length; i++) {
+    var c = ca[i];
+    while (c.charAt(0) == ' ') {
+      c = c.substring(1);
+    }
+    if (c.indexOf(name) == 0) {
+      return c.substring(name.length, c.length);
+    }
+  }
+  return '';
 }
 
 function verifySubnature(subnature, static_attributes) {

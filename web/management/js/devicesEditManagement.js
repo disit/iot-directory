@@ -375,17 +375,16 @@ function checkEditValueName(current)
 
     var message = null;
     var regex=/[^a-z0-9:._-]/gi;
-      var regex2=/\bid\b/;
-     var regex3= /\btype\b/;
+    var sensibleInputRegex=/\b(?:id|type|value)\b/i;
 
     if  (!value || value.length === 0)
     {
         element.css("color", "red");
         message = 'Value name is mandatory';
-    }else if(regex2.test(value) || regex3.test(value) )
+    }else if(sensibleInputRegex.test(value))
     {
-        element.css("color", "red");
-        message = 'No valid Value name: you can not use <b>id</b> or  <b>type</b>';
+         element.css("color", "red");
+         message = 'No valid Value name: you can not use <b>id</b>, <b>type</b> or <b>value</b>';
     }
     else if(value.length < 2)
     {

@@ -3667,7 +3667,7 @@ function logAction($link, $accessed_by, $target_entity_type, $access_type, $enti
         $result["msg"] = "correctly logged\n" . $accessed_by . " " . $target_entity_type . " " . $access_type . " " . $entity_name .
                 " " . $notes;
     } else {
-        $result["log"] .= " --- error in inserting log " . $query . "\n";
+        $result["log"] =$result["log"] . " --- error in inserting log " . $query . "\n";
     }
     return $result["msg"];
 }

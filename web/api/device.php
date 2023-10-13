@@ -281,7 +281,7 @@ if ($action == "insert") {
                     }
                 }
             } else {
-                logAction($link, $username, 'device', 'insert', $id . " " . $contextbroker, $organization, '', 'faliure');
+                logAction($link, $username, 'device', 'insert', $id . " " . $contextbroker, $organization, '', 'failure');
             }
         }
     }

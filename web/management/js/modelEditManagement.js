@@ -151,17 +151,23 @@ function checkModelValueNameM(current)
 {
     var message = null;
     var regex=/[^a-z0-9_-]/gi;
+    var sensibleInputRegex=/\b(?:id|type|value)\b/i;
     value=current.val();
     element=current.parent().siblings().last();
     
 //console.log("valore identificato " + $(this).val());
 //	console.log("elemento identificato " + $(this).parent().siblings().last().html());
-	
+
     if( !value || value.length === 0)
     {
         element.css("color", "red");
         message = 'Value name is mandatory';
         //editDeviceConditionsArray['inputNameValueM'] = false;
+    }
+    else if(sensibleInputRegex.test(value))
+    {
+        element.css("color", "red");
+        message = 'No valid Value name: you can not use <b>id</b>, <b>type</b> or <b>value</b>';
     }
     else if(value.length < 2)
     {
@@ -172,6 +178,7 @@ function checkModelValueNameM(current)
     else if(regex.test(value))
     {
         element.css("color", "red");
+
         message = 'No special characters are allowed in Value name';
         //editDeviceConditionsArray['inputNameValueM'] = false;
     }

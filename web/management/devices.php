@@ -391,8 +391,7 @@ if (($hide_menu != "hide")) {
                                             <div id="displayDevicesMap" class="pull-right"><button type="button" class="btn btn-primary btn-round"><span class="glyphicon glyphicon-globe" style="font-size:36px; color: #0000ff"></span></button></div>
                                         </div>
                                         <div class="col-xs-12 col-md-6 modalCell" style= "background-color: rgb(241, 245, 244);">
-                                            <div class="pull-right "><button id="addDeviceBtn"  class="btn btn-primary">Add new device</button></div>
-
+                                            <div class="pull-right "><button id="importDeviceBtn" class="btn btn-primary" style="margin-left:3px" >Import New Device</button></div><div><div class="pull-right "><button id="addDeviceBtn"  class="btn btn-primary">Add new device</button></div></div>
                                         </div>
                                     </div>
                                     <div >
@@ -471,17 +470,11 @@ if (($hide_menu != "hide")) {
                         <div class="tab-content">
                             <div class="tab-pane active" id="Itab" role="tabpanel" aria-labelledby="data-ex-tab1-tab">
                                 <div id="ValuesINPUT" class="tabcontent">
+                                    <div></div>
+                                </div>
+                                <p id="InsertModalStatus"></p>
 
-
-
-
-                                    <div> </div></div>
-
-                                <p id="InsertModalStatus"></p> 
-                                <button type="button" id="GETimeStamp" style="display:none" class="btn confirmBtn">Get Time stamp</button>
                                 <div id="NOMob" class="row">
-
-
                                     <div class="col-xs-12 col-md-6 modalCell">
                                         <div class="modalFieldCnt">
                                             <input type="text" class="modalInputTxt" name="inputLatitudeDeviceValue" id="inputLatitudeDeviceValue"> 
@@ -508,7 +501,7 @@ if (($hide_menu != "hide")) {
 
 
 
-                        <button type="button" class="btn cancelBtn" data-dismiss="modal">Close</button>
+                        <button type="button" id="newValuesInputCancelButton" class="btn cancelBtn" data-dismiss="modal" >Close</button>
                         <button type="button" id="NewValuesInputConfirmButton" class="btn confirmBtn">Confirm</button>
                     </div>
                 </div>
@@ -924,15 +917,22 @@ if (($hide_menu != "hide")) {
                     <div id="deleteDeviceModalBody" class="modal-body modalBody">
                         <div class="row">
                             <div class="col-xs-12 modalCell">
-                                <div id="addDeviceOkModalInnerDiv1" >
+                                <div id="addDeviceOkModalInnerDiv1" ></div>
+                                <div id="addDeviceOkModalInnerDiv3" hidden><h5 ><b>A \'Timestamp\' attribute called \'DateObserved\' has been added to the device because it was not previously present.</b></h5></div>
+                                    <script>
+                                        function removeTimestampDiv(){
+                                            console.log("entrato")
+                                            $("#addDeviceOkModalInnerDiv3").hide();
+                                         }
+                                    </script>
+                                <div class="modalDelObjName col-xs-12 centerWithFlex" id="addDeviceOkModalInnerDiv2"><i class="fa fa-check" style="font-size:36px"></i></div>
 
-                                </div>
-                                <div class="modalDelObjName col-xs-12 centerWithFlex" id="addDeviceOkModalInnerDiv2"><i class="fa fa-check" style="font-size:36px"></i></div> 
                             </div>
                         </div>
                     </div>
                     <div class="modal-footer">
-                        <button type="button" id="addDeviceOKDoneBtn" class="btn cancelBtn"  data-dismiss="modal">Done</button>
+                        <button type="button" id="addDeviceOKDoneBtn" class="btn cancelBtn"  data-dismiss="modal" onclick="removeTimestampDiv()">Done</button>
+
                     </div>
                 </div>
             </div>
@@ -1304,7 +1304,8 @@ if (($hide_menu != "hide")) {
                                 <div id="editlistAttributes"></div>
                                 <div id="addlistAttributesM"></div>
                                 <div id="deletedAttributes" style="display:none"></div>
-                                <div class="pull-left"><button id="addAttrMBtn" class="btn btn-primary">Add Value</button></div>
+                                <div class="row">
+                                <div class="pull-left"><button id="addAttrMBtn" class="btn btn-primary">Add Value</button></div></div>
                                 <div id="editlistAttributesMsg" class="modalFieldMsgCnt">&nbsp;</div>
                             </div>
 
@@ -1389,6 +1390,7 @@ if (($hide_menu != "hide")) {
                     </div>
 
                     <div id="editDeviceModalFooter" class="modal-footer">
+                        <button type="button" id="saveAsDeviceBtn" class="btn confirmBtn internalLink pull-left" style="background-color: rgb(255, 165, 0);">Save as</button>
                         <button type="button" id="editDeviceCancelBtn" class="btn cancelBtn" data-dismiss="modal">Cancel</button>
                         <button type="button" id="editDeviceConfirmBtn" class="btn confirmBtn internalLink" >Confirm</button>
                         <button type="button" id="editDeviceOkBtn" class="btn cancelBtn" data-dismiss="modal" style="display:none;" >Ok</button>
@@ -1396,6 +1398,79 @@ if (($hide_menu != "hide")) {
 
                     <!-- </form>--> 	
 
+                </div>
+            </div>
+        </div>
+<!--        Tab for device name change during save as function-->
+        <div class="modal fade" id="saveAsDeviceNameChange" tabindex="-1" role="dialog" hidden="true">
+            <div class="modal-dialog" role="document">
+                <div class="modal-content">
+                    <div class="modalHeader centerWithFlex">
+                        <label id='saveAsDeviceModalLabel'></label>
+                    </div>
+                    <div class="modal-body">
+                        <div class="row centerWithFlex">
+                            <div class="col-xs-12 col-md-6 modalCell">
+                                <div class="modalFieldCnt">
+                                    <input type="text" class="modalInputTxt" name="saveAsNameDevice" id="saveAsNameDevice" onkeyup="checkStrangeCharacters(this); validateSaveAsName()" required>
+                                </div>
+                                <script>
+                                    function validateSaveAsName(){
+                                        var nameInput= document.getElementById("saveAsNameDevice").value;
+                                        const name = String(nameInput);
+                                        if(name.length > 3){
+
+                                            $('#inputNameDeviceMsg p').replaceWith('<p style="color:cyan;">Ok</p>');
+                                            $("#saveAsDeviceConfirmBtn").prop("disabled",false);
+                                        }else{
+
+                                            $('#inputNameDeviceMsg p').replaceWith('<p style="color:red;">Device name must be at least 3 characters</p>');
+                                            $("#saveAsDeviceConfirmBtn").prop("disabled",true);
+
+                                        }
+                                    }
+                                </script>
+
+                                <div class="modalFieldLabelCnt pull-left">New Device name</div>
+                                <div>&nbsp;</div>
+
+                                <div id="inputNameDeviceMsg" class="modalFieldMsgCnt pull-left"><div></div><p style="color: red">Device name must be at least 3 characters</p></div>
+
+                                <!--                                    <div id="inputNameDeviceMsg" class="modalFieldMsgCnt pull-right"><p style="color: red">no</p></div>-->
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" id="saveAsDeviceCancelBtn" class="btn btn-secondary" data-dismiss="modal" style="background-color:rgb(243,207,88);color:white" onClick="window.location.reload();">Cancel</button>
+                            <button type="button" id="saveAsDeviceConfirmBtn" class="btn btn-primary" style="background-color:rgb(0,162,211);border:0px" disabled>Confirm</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+<!--tab to display result from save as function-->
+        <div class="modal fade" id="saveAsDeviceResult" tabindex="-1" role="dialog" hidden="true">
+            <div class="modal-dialog" role="document">
+                <div class="modal-content">
+                    <div class="modalHeader centerWithFlex">
+                        <label id='saveAsDeviceModalLabel'>Save As Result:</label>
+                    </div>
+                    <div class="modal-body">
+                        <div class="row centerWithFlex">
+                            <div class="col-xs-12 col-md-12 modalCell">
+                                <div class="modalFieldCnt">
+                                    <p hidden id="saveassuccessmessage" class="modalFieldLabelCnt">Device saved</p>
+                                    <p hidden id="saveasfailedmessage" class="modalFieldLabelCnt">Error adding device</p>
+                                    <p hidden id="saveaserrormessage" class="modalFieldLabelCnt"></p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="modal-footer pull-right">
+                                <button type="button" id="saveAsDeviceResult" class="btn btn-primary pull-right" style="background-color:rgb(0,162,211);border:0px" onClick="window.location.reload();">Ok</button>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>

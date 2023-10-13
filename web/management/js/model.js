@@ -70,56 +70,62 @@ $.ajax({
 });
 
 //export model for sensor
-function exporta(name, devicetype, frequency, kind, protocol, format, producer, attributes, subnature, staticAttributes, service, servicePath) {
-    var txt = "name,device type,mac,frequency,kind,protocol,format,producer,lat,long,value name,data_type,value_type,editable,value_unit,healthiness_criteria,healthiness_value,k1,k2,subnature,static_attributes,service,service_path\r\n";
+// function exporta(name, devicetype, frequency, kind, protocol, format, producer, attributes, subnature, staticAttributes, service, servicePath) {
+//     var txt = "name,device type,mac,frequency,kind,protocol,format,producer,lat,long,value name,data_type,value_type,editable,value_unit,healthiness_criteria,healthiness_value,k1,k2,subnature,static_attributes,service,service_path\r\n";
+//
+//     var arr = JSON.parse(atob(attributes));
+//     for (var i = 0; i < arr.length; i++) {
+//         var value = "<DEVICENAME>," + devicetype + ",\"\"," + frequency + "," + kind + "," + protocol + "," + format + "," + producer + ",<LAT>,<LONG>,";
+//         var obj = arr[i];
+//         for (var key in obj) {
+//             var attrName = key;
+//             var attrValue = obj[key];
+//             if ("editable" === attrName) {
+//                 if (attrValue == 0)
+//                     attrValue = "FALSE";
+//                 else
+//                     attrValue = "TRUE";
+//             }
+//             value = value + attrValue + ",";
+//         }
+//
+//         if (service === "null")
+//             service = "";
+//         if (servicePath === "bnVsbA==")
+//             var servicePa = "\"\"";
+//         else
+//             var servicePa = "\"" + atob(servicePath).replace(/"/g, "\"\"") + "\"";
+//
+//         //TODO: also other fields probably need to be escaped like above (for other special character, live COMMA, SEMICOLON, ...)
+//         var staticAtt = "\"" + atob(staticAttributes).replace(/"/g, "\"\"") + "\"";
+//
+//         var txt = txt + value + "\"\",\"\"," + subnature + "," + staticAtt + "," + service + "," + servicePa + "\r\n";
+//     }
+//
+//     var txt = txt + "\r\n";
+//
+//     var element = document.createElement('a');
+//     element.setAttribute('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent(txt.substring(0, txt.length - 1)));
+//     element.setAttribute('download', name + "-model.csv");
+//     element.style.display = 'none';
+//     document.body.appendChild(element);
+//     element.click();
+//     document.body.removeChild(element);
+// }
 
-    var arr = JSON.parse(atob(attributes));
-    for (var i = 0; i < arr.length; i++) {
-        var value = "<DEVICENAME>," + devicetype + ",\"\"," + frequency + "," + kind + "," + protocol + "," + format + "," + producer + ",<LAT>,<LONG>,";
-        var obj = arr[i];
-        for (var key in obj) {
-            var attrName = key;
-            var attrValue = obj[key];
-            if ("editable" === attrName) {
-                if (attrValue == 0)
-                    attrValue = "FALSE";
-                else
-                    attrValue = "TRUE";
-            }
-            value = value + attrValue + ",";
-        }
-
-        if (service === "null")
-            service = "";
-        if (servicePath === "bnVsbA==")
-            var servicePa = "\"\"";
-        else
-            var servicePa = "\"" + atob(servicePath).replace(/"/g, "\"\"") + "\"";
-
-        //TODO: also other fields probably need to be escaped like above (for other special character, live COMMA, SEMICOLON, ...)
-        var staticAtt = "\"" + atob(staticAttributes).replace(/"/g, "\"\"") + "\"";
-
-        var txt = txt + value + "\"\",\"\"," + subnature + "," + staticAtt + "," + service + "," + servicePa + "\r\n";
-    }
-
-    var txt = txt + "\r\n";
-
-    var element = document.createElement('a');
-    element.setAttribute('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent(txt.substring(0, txt.length - 1)));
-    element.setAttribute('download', name + "-model.csv");
-    element.style.display = 'none';
-    document.body.appendChild(element);
-    element.click();
-    document.body.removeChild(element);
-}
-function exportJson(name, devicetype, frequency, kind, protocol, format, producer, attributes, subnature, staticAttributes, service, servicePath) {
+function exportJson(name,description, devicetype, frequency, kind, contextbroker, protocol, format, healthiness_criteria, healthiness_value, kgenerator, producer, attributes, subnature, staticAttributes, service, servicePath) {
     var obj = {
         name: name,
+        description: description,
         device_type: devicetype,
         frequency: frequency,
         kind: kind,
+        contextbroker: contextbroker,
         protocol: protocol,
         format: format,
+        healthiness_criteria: healthiness_criteria,
+        healthiness_value: healthiness_value,
+        key_generator:kgenerator,
         producer: producer,
         subnature: subnature,
         static_attributes: atob(staticAttributes).replace(/"/g, "\"\""),
@@ -300,9 +306,8 @@ function format(d) {
             '<div class="clearfix visible-xs"></div>' +
             '<div class="col-xs-6 col-sm-6" style="background-color:#E6E6FA;"><b>Key Generator:</b>' + "  " + d.kgenerator + '</div>' +
             '</div>' + multitenancy +
-            '<div class="row">' +
-            '<div class="col-xs-4 col-sm-4" style="background-color:#D6CADD;"><button class="btn btn-info my-small-button" onclick="exporta(\'' + d.name + '\',\'' + d.devicetype + '\',\'' + d.frequency + '\',\'' + d.kind + '\',\'' + d.protocol + '\',\'' + d.format + '\',\'' + d.producer + '\',\'' + btoa(d.attributes) + '\',\'' + d.subnature + '\',\'' + btoa(d.static_attributes) + '\',\'' + d.service + '\',\'' + btoa(d.servicePath) + '\');return true;"><b>EXPORT CSV</b></button></div>' +
-            '<div class="col-xs-4 col-sm-4" style="background-color:#D6CADD;"><button class="btn btn-info my-small-button" onclick="exportJson(\'' + d.name + '\',\'' + d.devicetype + '\',\'' + d.frequency + '\',\'' + d.kind + '\',\'' + d.protocol + '\',\'' + d.format + '\',\'' + d.producer + '\',\'' + btoa(d.attributes) + '\',\'' + d.subnature + '\',\'' + btoa(d.static_attributes) + '\',\'' + d.service + '\',\'' + btoa(d.servicePath) + '\');return true;" class="icon-download"><b>EXPORT JSON</b></button></div>' +
+            '<div class="row">'+
+            '<div class="col-xs-12 col-sm-12" style="background-color:#D6CADD;"><button class="btn btn-info my-small-button" onclick="exportJson(\'' + d.name + '\' , \'' + d.description + '\',\'' + d.devicetype + '\',\'' + d.frequency + '\',\'' + d.kind + '\',\''+ d.contextbroker +'\',\'' + d.protocol + '\',\'' + d.format + '\',\'' + d.healthiness_criteria + '\',\'' + d.healthiness_value + '\',\'' + d.kgenerator + '\',\'' + d.producer + '\',\'' + btoa(d.attributes) + '\',\'' + d.subnature + '\',\'' + btoa(d.static_attributes) + '\',\'' + d.service + '\',\'' + btoa(d.servicePath) + '\');return true;" class="icon-download"><b>EXPORT JSON</b></button></div>' +
             '</div>' +
             '</div>';
 }
@@ -575,6 +580,13 @@ function fetch_data(destroyOld/*, selected=null*/)
             }],
         "order": []
     });
+    //function to search a model directly if "&model_name=..." is present in the URL
+    const deviceNameInUrl = window.location.search;
+    const urlParams = new URLSearchParams(deviceNameInUrl);
+    const deviceToSearch = urlParams.get("model_name");
+    if(deviceToSearch != null) {
+        dataTable.search(deviceToSearch, true, false).draw();
+    }
 
     //TODO can we use the get_functionalities here??
     if (loggedRole != 'RootAdmin') {
@@ -750,8 +762,393 @@ $(document).ready(function ()
 
 
 
+//Start import new model
+
+    const getJsonUpload = () =>
+        new Promise(resolve => {
+            const inputFileElement = document.createElement('input')
+            inputFileElement.setAttribute('type', 'file')
+            inputFileElement.setAttribute('accept', 'application/json')
+
+            inputFileElement.addEventListener(
+                'change',
+                async (event) => {
+                    const { files } = event.target
+                    if (!files || event.target.files[0].type !== "application/json") {
+                        mydata={error_msg:"Not a valid Json"};
+                        console.log(mydata['error_msg']);
+                        mydata["status"]="ko";
+                        alert("Not a valid JSON. Try Again")
+                        $('#addModelKoMsg').show();
+                        $('#addModelKoMsg div:first-child').html(mydata["error_msg"]);
+                        $('#addModelKoIcon').show();
+                        return
+                    }
+
+                    const filePromises = [...files].map(file => file.text())
+
+                    resolve(await Promise.all(filePromises))
+                },
+                false,
+            )
+            inputFileElement.click()
+        })
 
 
+    document.getElementById('importModelBtn').onclick = async () => {
+        let parsedJson;
+        const jsonFiles = await getJsonUpload()
+        try{
+            parsedJson = JSON.parse(jsonFiles);
+        }catch (e){
+            //devo gestire errore
+            console.log(e);
+        };
+        console.log(parsedJson);
+        if(jsonFiles != undefined){
+            importModel(parsedJson);
+        }
+        /*console.log({jsonFiles})*/
+    }
+    //$("#importModelBtn").off("click");
+
+    function importModel(parsedJson) {
+
+        $("#addModelModalTabs").show();
+        $("#addModelModalLabel").html("Import new model ");
+        const btn = document.getElementById('selectModel');
+        btn.style.display = 'none';
+        $("#selectModelDiv").html("");
+        $('.nav-tabs a[href="#addInfoTabModel"]').tab('show');
+        $('#addModelModalBody').show();
+        $('#addModelModal div.modalCell').show();
+        $('#addNewModelCancelBtn').show();
+        $('#addNewModelConfirmBtn').show();
+        $('#addNewModelOkBtn').hide();
+        $('#addModelOkMsg').hide();
+        $('#addModelOkIcon').hide();
+        $('#addModelKoMsg').hide();
+        $('#addModelKoIcon').hide();
+        $('#addModelLoadingMsg').hide();
+        $('#addModelLoadingIcon').hide();
+        showAddModelModal();
+        //load values from json
+
+        $('#inputNameModel').val(parsedJson.name);
+        $('#inputDescriptionModel').val(parsedJson.description);
+        $('#inputTypeModel').val(parsedJson.device_type);
+        $('#selectKindModel').val(parsedJson.kind);
+        $('#inputProducerModel').val(parsedJson.producer);
+        $('#inputFrequencyModel').val(parsedJson.frequency);
+        $('#selectHCModel').val(parsedJson.healthiness_criteria);
+        $('#inputHVModel').val(parsedJson.healthiness_value);
+        $('#selectKGeneratorModel').val(parsedJson.key_generator);
+        $('#selectEdgeGatewayType').val(parsedJson.edgegateway_type);
+
+        $('#selectContextBroker').val(parsedJson.contextbroker);
+        $('#selectProtocolModel').val(parsedJson.protocol);
+        $('#selectFormatModel').val(parsedJson.format);
+        $('#selectService').val(parsedJson.service);
+        $('#inputServicePathModel').val(parsedJson.service_path);
+
+
+        $('#selectSubnature').val(parsedJson.subnature);
+        $('#selectSubnature').trigger('change');
+        let static_attributes_from_json = parsedJson.static_attributes.replace(/[\\\[\]"]/g, '');
+        static_attributes_from_json = static_attributes_from_json.split(",");
+        console.log(static_attributes_from_json)
+        for(let i=0;i<= static_attributes_from_json.length;i++){
+            if (static_attributes_from_json[i]=="http://www.disit.org/km4city/schema#isMobile" ){
+                $('#isMobileTick').prop('checked', true);
+            };
+        };
+
+
+
+        //insert attributes
+        var i=0;
+        var j=0;
+        var rowCount = $("#addlistAttributes .row").length;
+
+        if(rowCount < parsedJson.d_attributes.length) {
+            while (i < parsedJson.d_attributes.length) {
+                $('#addAttrBtn').click();
+                i++;
+            }
+        }
+        rowCount = $("#addlistAttributes .row").length;
+
+        $("#addlistAttributes").find("[id^=\"InputVNM\"]").each(function() {
+            $(this).val(parsedJson.d_attributes[j].value_name);
+            j++
+        });
+
+        j=0;
+        $("#addlistAttributes").find("[id^=\"value_type\"]").each(function() {
+            $('option[value='+parsedJson.d_attributes[j].value_type+']',this).attr('selected','selected').change();
+            j++;
+        });
+        j=0
+        $("#addlistAttributes").find("[id^=\"value_unit\"]").each(function() {
+            $('option[value='+parsedJson.d_attributes[j].value_unit+']',this).attr('selected','selected').change();
+            j++
+        });
+        j=0
+        $("#addlistAttributes").find("[id^=\"data_type\"]").each(function() {
+            $(this).val(parsedJson.d_attributes[j].data_type).change();
+            j++
+        });
+
+        $("#addlistAttributes").find("#SELECTHealthCriteria").each(function() {
+            $(this).val(parsedJson.d_attributes[j].healthiness_criteria)
+            j++
+        });
+
+        $("#addlistAttributes").find("#device_refresh_value").each(function() {
+            $(this).val(parsedJson.d_attributes[j].healthiness_value)
+            j++
+        });
+        // $('#addlistAttributes').children('.row').each(function (){
+        //
+        //     $('#InputVNM',this).val(parsedJson.d_attributes[j].value_name).change();
+        //     $('#value_type'+j+' option[value='+parsedJson.d_attributes[j].value_type+']').attr('selected','selected').change();
+        //     $('#value_unit'+j+' option[value='+parsedJson.d_attributes[j].value_unit+']').attr('selected','selected').change();
+        //     $('#data_type'+j+' option[value='+parsedJson.d_attributes[j].data_type+']').attr('selected','selected').change();
+        //     $('#selectHC option[value='+parsedJson.d_attributes[j].healthiness_criteria+']',this).attr('selected','selected').change();
+        //     $('#InputHV',this).val(parsedJson.d_attributes[j].healthiness_value).change();
+        //     j++;
+        // })
+
+
+
+        $("#addSchemaTabModel #addlistAttributes .row input:even").each(function () {
+            checkModelValueName($(this));
+        });
+        checkModelName();
+        checkModelDeviceType();
+        checkSelectionCB();
+        checkSelectionProtocol();
+        checkSelectionFormat();
+        checkAddModelConditions();
+    };
+
+    /* add lines related to attributes*/
+    $("#addAttrBtn").off("click");
+    $("#addAttrBtn").click(function () {
+        content = drawAttributeMenu("", "", "", "", "", "", "300", 'addlistAttributes', indexValues);
+        indexValues = indexValues + 1;
+        // addDeviceConditionsArray['addlistAttributes'] = true;
+        $('#addlistAttributes').append(content);
+        checkAtlistOneAttribute();
+        $("#addSchemaTabModel #addlistAttributes .row input:even").each(function () {
+            checkModelValueName($(this));
+        });
+        checkAddModelConditions();
+    });
+    $("#addSchemaTabModel").off("click");
+    $("#addSchemaTabModel").on('click keyup', function () {
+
+        //checkAtlistOneAttribute();
+        $("#addSchemaTabModel #addlistAttributes .row input:even").each(function () {
+            checkModelValueName($(this));
+        });
+        checkAddModelConditions();
+    });
+    function checkIfDuplicateExists(arr) {
+        return new Set(arr).size !== arr.length;
+    }
+    $('#addNewModelConfirmBtn').off("click");
+    $('#addNewModelConfirmBtn').click(function () {
+        mynewAttributes = [];
+        var regex = /[^a-z0-9_-]/gi;
+        var someNameisWrong = false;
+        var msg_whatiswrong = "";
+        AttrName = [];
+        num1 = document.getElementById('addlistAttributes').childElementCount;
+        for (var m = 0; m < num1; m++)
+        {
+            AttrName.push(document.getElementById('addlistAttributes').childNodes[m].childNodes[0].childNodes[0].childNodes[0].value.trim());
+            var newatt = {value_name: document.getElementById('addlistAttributes').childNodes[m].childNodes[0].childNodes[0].childNodes[0].value.trim(),
+                data_type: document.getElementById('addlistAttributes').childNodes[m].childNodes[3].childNodes[0].childNodes[0].value.trim(),
+                value_type: document.getElementById('addlistAttributes').childNodes[m].childNodes[1].childNodes[0].childNodes[0].value.trim(),
+                editable: '0',
+                value_unit: document.getElementById('addlistAttributes').childNodes[m].childNodes[2].childNodes[0].childNodes[0].value.trim(),
+                healthiness_criteria: document.getElementById('addlistAttributes').childNodes[m].childNodes[5].childNodes[0].childNodes[0].value.trim(),
+                healthiness_value: document.getElementById('addlistAttributes').childNodes[m].childNodes[6].childNodes[0].childNodes[0].value.trim()};
+            if (newatt.value_name == "" || regex.test(newatt.value_name) || newatt.value_name.length < 2) {
+                someNameisWrong = true;
+                msg_whatiswrong += "The Value name must be at least 2 characters. No special characters are allowed. "
+            }
+            if (newatt.data_type == "") {
+                someNameisWrong = true;
+                msg_whatiswrong += "The data type cannot be empty. ";
+            }
+            if (newatt.value_type == "") {
+                someNameisWrong = true;
+                msg_whatiswrong += "The value type cannot be empty. ";
+            }
+//            if (newatt.editable == "") {
+//                someNameisWrong = true;
+//                msg_whatiswrong += "The field 'Editable' must be specified. ";
+//            }
+            if (newatt.value_unit == "") {
+                someNameisWrong = true;
+                msg_whatiswrong += "The field 'value unit' must be specified. ";
+            }
+            if (newatt.healthiness_criteria == "") {
+                someNameisWrong = true;
+                msg_whatiswrong += "The field 'healthiness criteria' must be specified. ";
+            }
+            if (newatt.healthiness_value == "") {
+                someNameisWrong = true;
+                msg_whatiswrong += "The field 'healthiness value' must be specified. ";
+            }
+            if (!someNameisWrong) {
+                mynewAttributes.push(newatt);
+            }
+        }
+
+        if (checkIfDuplicateExists(AttrName)) {
+            someNameisWrong = true;
+            msg_whatiswrong += "The value name must be unique. ";
+        }
+        if ($('#selectKindModel').val() == '') {
+            someNameisWrong = true;
+            msg_whatiswrong += "The kind must be specificated. ";
+        }
+
+        if (!someNameisWrong) {
+            //document.getElementById('addlistAttributes').innerHTML = "";
+
+            $("#addModelModalTabs").hide();
+            $('#addModelModalBody').hide();
+            $('#addModelModal div.modalCell').hide();
+            $('#addNewModelCancelBtn').hide();
+            $('#addNewModelConfirmBtn').hide();
+            $('#addNewModelOkBtn').hide();
+            $('#addModelOkMsg').hide();
+            $('#addModelOkIcon').hide();
+            $('#addModelKoMsg').hide();
+            $('#addModelKoIcon').hide();
+            $('#addModelLoadingMsg').show();
+            $('#addModelLoadingIcon').show();
+            var service = $('#selectService').val();
+            var servicePath = $('#inputServicePathModel').val();
+            if ($('#selectProtocolModel').val() === "ngsi w/MultiService") {
+                // servicePath value pre-processing
+                if (servicePath[0] !== "/" || servicePath === "")
+                    servicePath = "/" + servicePath;
+                if (servicePath[servicePath.length - 1] === "/" && servicePath.length > 1)
+                    servicePath = servicePath.substr(0, servicePath.length - 1);
+            }
+
+            $.ajax({
+                url: "../api/model.php",
+                data: {
+                    action: "insert",
+                    attributes: JSON.stringify(mynewAttributes),
+                    name: $('#inputNameModel').val(),
+                    description: $('#inputDescriptionModel').val(),
+                    type: $('#inputTypeModel').val(),
+                    kind: $('#selectKindModel').val(),
+                    producer: $('#inputProducerModel').val(),
+                    frequency: $('#inputFrequencyModel').val(),
+                    kgenerator: $('#selectKGeneratorModel').val(),
+                    edgegateway_type: $('#selectEdgeGatewayType').val(),
+                    contextbroker: $('#selectContextBroker').val(),
+                    protocol: $('#selectProtocolModel').val(),
+                    format: $('#selectFormatModel').val(),
+                    hc: $('#selectHCModel').val(),
+                    hv: $('#inputHVModel').val(),
+                    subnature: $('#selectSubnature').val(),
+                    static_attributes: JSON.stringify(retrieveStaticAttributes("addlistStaticAttributes", false, "isMobileTick", "isCertifiedTick")),
+                    service: service,
+                    servicePath: servicePath,
+                    token: sessionToken
+                },
+                type: "POST",
+                async: true,
+                dataType: "JSON",
+                timeout: 0,
+                success:  function (mydata) {
+                    if (mydata["status"] === 'ko') {
+                        console.log("Error adding Model");
+                        console.log(mydata);
+                        $('#addModelModalTabs').hide();
+                        $('#addModelModalBody').hide();
+                        $('#addModelModal div.modalCell').hide();
+                        //$('#addContextBrokerModalFooter').hide();
+                        $('#addNewModelCancelBtn').hide();
+                        $('#addNewModelConfirmBtn').hide();
+                        $('#addNewModelOkBtn').show();
+                        $('#addModelOkMsg').hide();
+                        $('#addModelOkIcon').hide();
+                        $('#addModelLoadingMsg').hide();
+                        $('#addModelLoadingIcon').hide();
+                        $('#addModelKoMsg').show();
+                        $('#addModelKoMsg div:first-child').html(mydata["error_msg"]);
+                        $('#addModelKoIcon').show();
+                    } else if (mydata["status"] === 'ok') {
+                        console.log("Added Model");
+                        //empty information
+                        $('#inputNameModel').val("");
+                        $('#inputDescriptionModel').val("");
+                        $('#inputTypeModel').val("");
+                        $('#selectKindModel').val("");
+                        $('#selectHCModel').val("");
+                        $('#inputHVModel').val("");
+                        $('#selectContextBroker').val("");
+                        $('#selectProtocolModel').val("");
+                        $('#selectFormatModel').val("");
+                        $('#inputProducerModel').val("");
+                        $('#inputFrequencyModel').val("");
+                        $('#selectKGeneratorModel').val("");
+                        $('#addlistAttributes').html("");
+                        $('#selectSubnature').val("");
+                        $('#selectSubnature').trigger("change");
+                        $("#addNewStaticBtn").hide();
+                        removeStaticAttributes();
+                        $('#addModelLoadingMsg').hide();
+                        $('#addModelLoadingIcon').hide();
+                        $('#addModelKoMsg').hide();
+                        $('#addModelKoIcon').hide();
+                        $('#addModelModalTabs').hide();
+                        $('#addModelModalBody').hide();
+                        $('#addModelModal div.modalCell').hide();
+                        //$('#addContextBrokerModalFooter').hide();
+                        $('#addNewModelCancelBtn').hide();
+                        $('#addNewModelConfirmBtn').hide();
+                        $('#addNewModelOkBtn').show();
+                        $('#addModelOkMsg').show();
+                        $('#addModelOkIcon').show();
+                        $('#dashboardTotNumberCnt .pageSingleDataCnt').html(parseInt($('#dashboardTotNumberCnt .pageSingleDataCnt').html()) + 1);
+                        $('#modelTable').DataTable().destroy();
+                        fetch_data(true);
+                    }
+                },
+                error: function (mydata) {
+                    console.log("Error insert model");
+                    console.log("Error status -- Ko result: " + JSON.stringify(mydata));
+                    $("#addModelModal").modal('hide');
+                    $('#addModelModalTabs').hide();
+                    $('#addModelModalBody').hide();
+                    $('#addModelModal div.modalCell').hide();
+                    $('#addModelModalFooter').hide();
+                    $('#addModelOkMsg').hide();
+                    $('#addModelOkIcon').hide();
+                    $('#addModelKoMsg').show();
+                    $('#addModelKoIcon').show();
+                    $('#addNewModelCancelBtn').hide();
+                    $('#addNewModelConfirmBtn').hide();
+                    $('#addNewModelOkBtn').show();
+                    $('#addModelLoadingMsg').hide();
+                    $('#addModelLoadingIcon').hide();
+                }
+            });
+        } else {
+            alert("Check the values of your device, make sure that data you entered are valid. " + msg_whatiswrong);
+        }
+    });
 
 
 
@@ -818,6 +1215,7 @@ $(document).ready(function ()
     $('#addNewModelConfirmBtn').click(function () {
         mynewAttributes = [];
         var regex = /[^a-z0-9_-]/gi;
+        var regexSensibleInputName= /\b(?:id|type|value)\b/i;
         var someNameisWrong = false;
         var msg_whatiswrong = "";
         AttrName = [];
@@ -835,6 +1233,10 @@ $(document).ready(function ()
             if (newatt.value_name == "" || regex.test(newatt.value_name) || newatt.value_name.length < 2) {
                 someNameisWrong = true;
                 msg_whatiswrong += "The Value name must be at least 2 characters. No special characters are allowed. "
+            }
+            if(regexSensibleInputName.test(newatt.value_name)){
+                someNameisWrong = true;
+                msg_whatiswrong += "No reserved names allowed for Attributes name"
             }
             if (newatt.data_type == "") {
                 someNameisWrong = true;
@@ -1256,8 +1658,13 @@ $(document).ready(function ()
     });
     $("#editSchemaTabModel").off("click");
     $("#editSchemaTabModel").on('click keyup', function () {
+
+     // check if an edit of a model's attribute name is acceptable
+        $("#editSchemaTabModel #editlistAttributes .row input:even").each(function () { //:even
+           checkModelValueName($(this));
+        })
         $("#editSchemaTabModel #addlistAttributesM .row input").each(function () { //:even
-            checkModelValueName($(this));
+            checkModelValueNameM($(this));
         });
         checkEditModelConditions();
     });
@@ -1340,7 +1747,7 @@ $(document).ready(function ()
                         }
                         checkEditAtlistOneAttributeM();
                         $("#editSchemaTabModel #editlistAttributes .row input:even").each(function () {
-                            checkModelValueName($(this));
+                            checkModelValueNameM($(this));
                         });
                         checkAddModelConditions();
                     },
@@ -1619,8 +2026,240 @@ $(document).ready(function ()
             alert("Check the values of your device, make sure that data you entered are valid" + msg_whatiswrong);
         }
     });
-//END EDIT MODEL 
+//END EDIT MODEL
+// START SAVE AS FUNCTION
 
+    $("#saveAsModelBtn").off("click");
+    $('#saveAsModelBtn').click(function () {
+
+        $('#editModelModal').modal('hide');
+        $('#saveAsModelNameChange').modal('show');
+        $("#saveAsModelModalLabel").html("Save as new model ");
+        $('#editModelModalTabs li > a[href="#editSchemaTabModel"]').click();
+
+    });
+
+    $("#saveAsModelCancelBtn").off("click");
+    $('#saveAsModelCancelBtn').click(function () {
+        $('#saveAsModelNameChange').hide();
+        $('#editModelModal').modal('hide');
+
+    });
+
+    //on confirm click on the Save as dialog box, recover data written in all the inputs emulating
+    //an "add new device" action behind the scenes
+    $("#saveAsModelConfirmBtn").off("click");
+    $('#saveAsModelConfirmBtn').click(function () {
+
+        $('#inputNameModel').val($('#saveAsNameModel').val());
+        $('#selectContextBroker').val($('#selectContextBrokerM').val());
+        $('#inputDescriptionModel').val($('#inputDescriptionModelM').val());
+        $('#inputTypeModel').val($('#inputTypeModelM').val());
+        $('#selectKindModel').val($('#selectKindModelM').val());
+        $('#inputProducerModel').val($('#inputProducerModelM').val());
+        $('#inputFrequencyModel').val($('#inputFrequencyModelM').val());
+        $('#selectKGeneratorModel').val($('#selectKGeneratorModelM').val());
+        $('#selectEdgeGatewayType').val($('#selectEdgeGatewayTypeM').val());
+        $('#selectProtocolModel').val($('#selectProtocolModelM').val());
+        $('#selectFormatModel').val($('#selectFormatModelM').val());
+        $('#selectHCModel').val($('#selectHCModelM').val());
+        $('#inputHVModel').val($('#inputHVModelM').val());
+        $('#selectSubnature').val($('#selectSubnatureM').val());
+        $('#selectService').val($('#editSelectService').val());
+        $('#inputServicePathModel').val($('#editInputServicePathModel').val());
+
+        //check if the model has "device in mobility" and "certified" checkboxes checked, same with the selection box for
+        //"subnatures"
+        // if($('#editStaticTabModel #isCertifiedTickM').is(":checked")){
+        //
+        //     $('#addStaticTabModel #isCertifiedTick').prop('checked', true);
+        //     $('#addStaticTabModel #isCertifiedTick').trigger('change');
+        //
+        // }
+        if($('#editStaticTabModel #isMobileTickM').is(":checked")){
+
+            $('#addStaticTabModel #isMobileTick').prop('checked', true);
+            $('#addStaticTabModel #isMobileTick').trigger('change');
+
+        }
+
+        const selectedSubnature= $('#selectSubnatureM option:selected').val();
+        $('#addStaticTabModel #selectSubnature').val(selectedSubnature).trigger('change');
+
+        // cycle through Attributes to count them, then count deleted attributes and added attributes by the user on the edit page before
+        //clicking the "Save As" button
+        var attributesCount=$('#editSchemaTabModel #editlistAttributes').find('.row').length;
+        var addedAttrCount=$('#editSchemaTabModel #addlistAttributesM').find('.row').length;
+        var deletedAttrCount=$('#editSchemaTabModel #deletedAttributes').find('.row').length;
+
+         //Click "Add value" button a number of times equal to total attribute in edit minus the deleted one plus the added one
+        var i=0;
+         while (i < attributesCount - deletedAttrCount + addedAttrCount){
+              $('#addSchemaTabModel #addAttrBtn').click();
+              i++;
+          }
+          var j=0;
+
+         // creates 6 arrays one for each parameter of an attribute, specifically: Value Name,value type,value unit,data type,Healthiness Criteria,Healthiness value.
+        //For each attribute, the 6 parameter for each attribute are on the same index (EX: first attribute has its parameters at index 0 of each array)
+         const AttributesArray= []
+        $("#editlistAttributes").find("#InputVNM").each(function() {
+            AttributesArray.push($(this).val());
+        });
+
+         const ValueUnitArray=[]
+        $("#editlistAttributes").find("[id^=\"value_unit\"]").each(function() {
+            ValueUnitArray.push($(this).val());
+        });
+
+
+        const ValueTypeArray=[]
+        $("#editlistAttributes").find("[id^=\"value_type\"]").each(function() {
+            ValueTypeArray.push($(this).val());
+        });
+
+
+        const DataTypeArray=[]
+        $("#editlistAttributes").find("[id^=\"data_type\"]").each(function() {
+            DataTypeArray.push($(this).val());
+        });
+
+
+         const HCArray = []
+        $("#editlistAttributes").find("#SelectHC").each(function() {
+            HCArray.push($(this).val());
+        });
+
+         const HVArray = []
+        $("#editlistAttributes").find("#InputHV").each(function() {
+            HVArray.push($(this).val());
+        });
+
+        //For each deleted attribute, search the name in the attributes array created before, get the index, and delete that index in all 6 arrays
+        //Now we have the attributes minus the deleted ones
+        $("#deletedAttributes").find("#InputVNM").each(function() {
+            const deletedIndex = findStringIndex(AttributesArray, $(this).val);
+            AttributesArray.splice(deletedIndex,1);
+            ValueUnitArray.splice(deletedIndex,1);
+            ValueTypeArray.splice(deletedIndex,1);
+            DataTypeArray.splice(deletedIndex,1);
+            HCArray.splice(deletedIndex,1);
+            HVArray.splice(deletedIndex,1);
+        });
+
+        function findStringIndex(arr, searchString) {
+            return arr.indexOf(searchString);
+        }
+
+        //For each attribute, add his parameters to the end of the arrays created before,now we have 6 arrays with the included
+        //addition or deletions made by the user on the edit page
+        $("#addlistAttributesM").find("#InputVNM").each(function() {
+            AttributesArray.push($(this).val());
+        });
+
+        $("#addlistAttributesM").find("[id^=\"value_unit\"]").each(function() {
+            ValueUnitArray.push($(this).val());
+        });
+
+        $("#addlistAttributesM").find("[id^=\"value_type\"]").each(function() {
+            ValueTypeArray.push($(this).val());
+        });
+
+        $("#addlistAttributesM").find("[id^=\"data_type\"]").each(function() {
+            DataTypeArray.push($(this).val());
+        });
+
+        $("#addlistAttributesM").find("#SelectHC").each(function() {
+            HCArray.push($(this).val());
+        });
+
+        $("#addlistAttributesM").find("#InputHV").each(function() {
+            HVArray.push($(this).val());
+        });
+
+        //Populate the attributes field using the values in the 6 arrays(EX: first attributes will have all the parameters saved at index 0 of each array)
+        mynewAttributesSaveas = []
+         $('#addlistAttributes').children('.row').each(function (){
+
+             $('#InputVNM',this).val(AttributesArray[j]);
+             $("#value_type"+ j +" option[value="+ValueTypeArray[j]+"]").attr('selected', 'selected').change();
+             $("#value_unit"+ j +" option[value="+ValueUnitArray[j]+"]").attr('selected', 'selected').change();
+             $("#data_type"+ j +" option[value="+DataTypeArray[j]+"]").attr('selected', 'selected').change();
+             $("#SelectHC option[value="+ HCArray[j] +"]").attr('selected', 'selected').change();
+             $('#InputHV',this).val(HVArray[j]);
+             j++;
+
+             var newattsaveas = {value_name: $("#InputVNM",this).val(),
+             value_type: $('#value_type'+j).val(),
+                 data_type:$('#data_type'+j).val(),
+                 editable: '0',
+                 value_unit: $('#value_unit'+j).val(),
+                 healthiness_criteria: $('#SelectHC',this).val(),
+                 healthiness_value: $('#InputHV',this).val()
+             };
+             mynewAttributesSaveas.push(newattsaveas)
+           })
+
+        //call to add a new model
+        $.ajax({
+            url: "../api/model.php",
+            data: {
+                action: "insert",
+                attributes: JSON.stringify(mynewAttributesSaveas),
+                name: $('#inputNameModel').val(),
+                description: $('#inputDescriptionModel').val(),
+                type: $('#inputTypeModel').val(),
+                kind: $('#selectKindModel').val(),
+                producer: $('#inputProducerModel').val(),
+                frequency: $('#inputFrequencyModel').val(),
+                kgenerator: $('#selectKGeneratorModel').val(),
+                edgegateway_type: $('#selectEdgeGatewayType').val(),
+                contextbroker: $('#selectContextBroker').val(),
+                protocol: $('#selectProtocolModel').val(),
+                format: $('#selectFormatModel').val(),
+                hc: $('#selectHCModel').val(),
+                hv: $('#inputHVModel').val(),
+                subnature: $('#selectSubnature').val(),
+                static_attributes: JSON.stringify(retrieveStaticAttributes("editlistStaticAttributes", false, "isMobileTick"/*,"isCertifiedTick"*/)),
+                service: $('#selectService').val(),
+                servicePath: $('#inputServicePathModel').val(),
+                token: sessionToken
+            },
+            type: "POST",
+            async: true,
+            dataType: "JSON",
+            timeout: 0,
+            success: function (mydata) {
+                if (mydata["status"] === 'ko') {
+                    //Error if the new name is duplicated
+                    console.log("Error adding Model");
+                    $('#saveAsModelNameChange').modal('hide');
+                    $('#saveAsModelResult').modal('show');
+                    $('#saveasfailedmessage').removeAttr('hidden');
+
+                } else if (mydata["status"] === 'ok') {
+                    //success message
+                    console.log("Added Model");
+                    $('#saveAsModelNameChange').modal('hide');
+                    $('#saveAsModelResult').modal('show');
+                    $('#saveassuccessmessage').removeAttr('hidden');
+
+                }
+            },
+            error: function (mydata) {
+                //Generic error, print the response from the ajax query
+                console.log("Error insert model");
+                console.log("Error status -- Ko result: " + JSON.stringify(mydata));
+                console.log(mydata.responseText);
+                $('#saveaserrormessage').html(mydata.responseText);
+                $('#saveAsModelNameChange').modal('hide');
+                $('#saveAsModelResult').modal('show');
+                $('#saveaserrormessage').removeAttr('hidden');
+
+            }
+        });
+});
+//END SAVE AS
 
     $("#editModelCancelBtn").off("click");
     $("#editModelCancelBtn").on('click', function () {

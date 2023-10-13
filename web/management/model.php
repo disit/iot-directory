@@ -251,14 +251,18 @@ if (($hide_menu != "hide")) {
                                 <div class="col-xs-12 mainContentCellCnt">
 
                                     <div class="row" style="background-color: rgb(241, 245, 244);">
-                                        <div class="col-xs-12 col-md-6 modalCell" style="background-color: rgb(241, 245, 244);">
-                                            <div class="pull-right"></div>
-                                        </div>
-                                        <div class="col-xs-12 col-md-6 modalCell" style="background-color: rgb(241, 245, 244);">
-<?php if ($_SESSION['loggedRole'] == 'RootAdmin' || $_SESSION['loggedRole'] == 'ToolAdmin' || $_SESSION['loggedRole'] == 'AreaManager') { ?>
-                                                <div class="pull-right"><button id="addModelBtn" class="btn btn-primary" style="margin:5px;">New Model</button></div>   
+                                        <div class="col-xs-6 col-md-6 modalCell" style="background-color: rgb(241, 245, 244);">
+                                            <div class="pull-left">
                                                 <div></div>
-                                                <div class="pull-right"><button id="CloneModelBtn" class="btn btn-primary" style="margin:5px;display:none;">Clone Model</button></div>
+                                            </div>
+                                        </div>
+                                        <div class="col-xs-6 col-md-6 modalCell" style="background-color: rgb(241, 245, 244);">
+<?php if ($_SESSION['loggedRole'] == 'RootAdmin' || $_SESSION['loggedRole'] == 'ToolAdmin' || $_SESSION['loggedRole'] == 'AreaManager') { ?>
+
+                                                <div class="pull-right"><button id="importModelBtn" class="btn btn-primary" style="margin:5px;">Import New Model</button></div>
+                                                <div></div>
+                                                <div class="pull-right"><button id="addModelBtn" class="btn btn-primary" style="margin:5px;">New Model</button></div>
+
 <?php } ?>
                                         </div>
                                     </div>
@@ -699,7 +703,7 @@ if (($hide_menu != "hide")) {
                                 <div class="row">
                                     <div class="col-xs-12 col-md-6 modalCell">
                                         <div class="modalFieldCnt">
-                                            <input type="text" class="modalInputTxt" name="inputNameModelM" id="inputNameModelM" onkeyup="checkStrangeCharacters(this)" required>
+                                            <input type="text" class="modalInputTxt" name="inputNameModelM" id="inputNameModelM" disabled>
                                         </div>
                                         <div class="modalFieldLabelCnt">Name</div>
                                         <div id="inputNameModelMMsg" class="modalFieldMsgCnt">&nbsp;</div>
@@ -716,7 +720,7 @@ if (($hide_menu != "hide")) {
                                 <div class="row">
                                     <div class="col-xs-12 col-md-6 modalCell">
                                         <div class="modalFieldCnt">
-                                            <input type="text" class="modalInputTxt" name="inputTypeModelM" id="inputTypeModelM">
+                                            <input type="text" class="modalInputTxt" name="inputTypeModelM" id="inputTypeModelM" disabled>
                                         </div>
                                         <div class="modalFieldLabelCnt">Device Type</div>
                                         <div id="inputTypeModelMMsg" class="modalFieldMsgCnt">&nbsp;</div>
@@ -904,7 +908,8 @@ if (($hide_menu != "hide")) {
                                 <div id="editlistAttributes"></div>
                                 <div id="addlistAttributesM"></div>
                                 <div id="deletedAttributes" style="display:none"></div>
-                                <div class="pull-left"><button id="addAttrMBtn" class="btn btn-primary">Add Value</button></div>
+                                <div class="row">
+                                <div class="pull-left"><button id="addAttrMBtn" class="btn btn-primary">Add Value</button></div></div>
                                 <div id="editlistAttributesMsg" class="modalFieldMsgCnt">&nbsp;</div>
                             </div>
 
@@ -968,6 +973,7 @@ if (($hide_menu != "hide")) {
 
 
                     <div id="editModelModalFooter" class="modal-footer">
+                        <button type="button" id="saveAsModelBtn" class="btn confirmBtn internalLink pull-left" style="background-color: rgb(255, 165, 0);">Save as</button>
                         <button type="button" id="editModelCancelBtn" class="btn cancelBtn" data-dismiss="modal">Cancel</button>
                         <button type="button" id="editModelConfirmBtn" class="btn confirmBtn internalLink">Confirm</button>
                         <button type="button" id="editModelOkBtn" class="btn cancelBtn" data-dismiss="modal" style="display:none;">Ok</button>
@@ -979,7 +985,78 @@ if (($hide_menu != "hide")) {
 
 
 
+        <div class="modal fade" id="saveAsModelNameChange" tabindex="-1" role="dialog" hidden="true">
+                <div class="modal-dialog" role="document">
+                    <div class="modal-content">
+                        <div class="modalHeader centerWithFlex">
+                            <label id='saveAsModelModalLabel'></label>
+                        </div>
+                        <div class="modal-body">
+                            <div class="row centerWithFlex">
+                                <div class="col-xs-12 col-md-6 modalCell">
+                                    <div class="modalFieldCnt">
+                                        <input type="text" class="modalInputTxt" name="saveAsNameModel" id="saveAsNameModel" onkeyup="checkStrangeCharacters(this); validateSaveAsName()" required>
+                                    </div>
+                                    <script>
+                                        function validateSaveAsName(){
+                                            var nameInput= document.getElementById("saveAsNameModel").value;
+                                            const name = String(nameInput);
+                                            if(name.length > 3){
 
+                                                $('#inputNameModelMsg p').replaceWith('<p style="color:cyan;">Ok</p>');
+                                                $("#saveAsModelConfirmBtn").prop("disabled",false);
+                                            }else{
+
+                                                $('#inputNameModelMsg p').replaceWith('<p style="color:red;">Model name must be at least 3 characters</p>');
+                                                $("#saveAsModelConfirmBtn").prop("disabled",true);
+
+                                            }
+                                        }
+                                    </script>
+
+                                    <div class="modalFieldLabelCnt pull-left">New model name</div>
+                                    <div>&nbsp;</div>
+
+                                    <div id="inputNameModelMsg" class="modalFieldMsgCnt pull-left"><div></div><p style="color: red">Model name must be at least 3 characters</p></div>
+
+<!--                                    <div id="inputNameModelMsg" class="modalFieldMsgCnt pull-right"><p style="color: red">no</p></div>-->
+                                </div>
+                        </div>
+                            <div class="modal-footer">
+                            <button type="button" id="saveAsModelCancelBtn" class="btn btn-secondary" data-dismiss="modal" style="background-color:rgb(243,207,88);color:white" onClick="window.location.reload();">Cancel</button>
+                            <button type="button" id="saveAsModelConfirmBtn" class="btn btn-primary" style="background-color:rgb(0,162,211);border:0px" disabled>Confirm</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+
+
+        <div class="modal fade" id="saveAsModelResult" tabindex="-1" role="dialog" hidden="true">
+            <div class="modal-dialog" role="document">
+                <div class="modal-content">
+                    <div class="modalHeader centerWithFlex">
+                        <label id='saveAsModelModalLabel'>Save As Result:</label>
+                    </div>
+                    <div class="modal-body">
+                        <div class="row centerWithFlex">
+                            <div class="col-xs-12 col-md-12 modalCell">
+                                <div class="modalFieldCnt">
+                                    <p hidden id="saveassuccessmessage" class="modalFieldLabelCnt">Model saved</p>
+                                    <p hidden id="saveasfailedmessage" class="modalFieldLabelCnt">Error adding model</p>
+                                    <p hidden id="saveaserrormessage" class="modalFieldLabelCnt"></p>
+                                </div>
+                        </div>
+                        </div>
+                            <div class="row">
+                        <div class="modal-footer pull-right">
+                            <button type="button" id="saveAsModelResult" class="btn btn-primary pull-right" style="background-color:rgb(0,162,211);border:0px" onClick="window.location.reload();">Ok</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
 
 
         <div class="modal fade" id="deleteModelModal" tabindex="-1" role="dialog" aria-labelledby="deleteModelModalLabel" aria-hidden="true">

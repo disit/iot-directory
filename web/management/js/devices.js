@@ -286,7 +286,7 @@ function drawAttributeMenu(attrName, data_type, value_type, editable, value_unit
 
     return "<div class=\"row\" style=\"border:2px solid blue; padding: 8px;\" id=\"value" + indice + "\">" +
             "<div class=\"col-xs-6 col-md-3 modalCell\">" +
-            "<div  class=\"modalFieldCnt \" title=\"Insert a name for the sensor/actuator\"><input type=\"text\" class=\"modalInputTxt Input_onlyread  valueName\"" +
+            "<div  class=\"modalFieldCnt \" title=\"Insert a name for the sensor/actuator\"><input id=\"value_name\" type=\"text\" class=\"modalInputTxt Input_onlyread  valueName\"" +
             "name=\"" + attrName + "\"  value=\"" + attrName + "\" onkeyup=\"checkStrangeCharacters(this)\">" +
             "</div><div class=\"modalFieldLabelCnt\">Value Name</div>" + msg + "</div>" +
             "<div class=\"col-xs-6 col-md-3 modalCell\"><div class=\"modalFieldCnt\">" +
@@ -314,7 +314,7 @@ function drawAttributeMenu(attrName, data_type, value_type, editable, value_unit
             "<option value=\"within_bounds\">Within bounds</option>" +
             "</select></div><div  class=\"modalFieldLabelCnt Hidden_insert\">Healthiness Criteria</div></div>" +
             "<div class=\"col-xs-6 col-md-3 modalCell\"><div class=\"modalFieldCnt\" title=\"Insert the limit value(s) to consider the sensor/actuator as healthy, according to the selected criterion \">" +
-            "<input type=\"text\"  class=\"modalInputTxt Input_onlyread Hidden_insert\" name=\"" + value_refresh_rate +
+            "<input id=\"device_refresh_value\" type=\"text\"  class=\"modalInputTxt Input_onlyread Hidden_insert\" name=\"" + value_refresh_rate +
             "\" value=\"" + value_refresh_rate + "\"></div><div   class=\"modalFieldLabelCnt Hidden_insert\">Healthiness Value</div></div>" +
             "<div class=\"col-xs-6 col-md-3 modalCell\">" + "<div style=\"display:none\"  class=\"modalFieldCnt INSERTValues\" title=\"Insert data in the sensor/actuator\"><input type=\"text\" class=\"modalInputTxt InputValue\"" +
             "id=\"Value" + attrName + "\" \"name=\"Value" + attrName + "\" >" +
@@ -408,8 +408,8 @@ function format(d) {
             'data-longitude="' + d.longitude + '"  id="' + d.id + '_NewValuesInput" onclick="NewValuesOnDevice(id);"><b>NEW DATA IN</b> ' + d.id + '</button>'+'</div>' ;
     
     var aa=  '<div class="row">' +
-            '<div class="col-xs-12 col-sm-12" style="background-color:#E6E6FA;"><b>Owner:</b>' + "  " + d.owner+
-            '</div>'  ;
+            '<div class="col-xs-6 col-sm-6" style="background-color:#E6E6FA;"><b>Owner:</b>' + "  " + d.owner+
+            '</div>' + '<div class="col-xs-6 col-sm-6" style="background-color:#E6E6FA;"><button class="btn btn-info my-small-button pull-right" onclick="exportJsonDevice(\'' + d.id + '\' , \'' + d.model + '\',\'' + d.devicetype + '\',\'' + d.frequency + '\',\'' + d.kind + '\',\''+ d.contextBroker +'\',\'' + d.protocol + '\',\'' + d.format + '\',\'' + d.latitude + '\',\'' + d.longitude + '\',\'' + d.macaddress + '\',\'' + d.producer + '\',\'' + d.subnature + '\',\'' + btoa(d.staticAttributes) + '\',\'' + d.service + '\',\'' + btoa(d.servicePath) + '\');return true;"><b>EXPORT JSON</b></button></div>';
     
     var c = '</div>' + '</div>' +
             '<div class="clearfix visible-xs"></div>' +
@@ -800,6 +800,15 @@ function fetch_data(destroyOld, selected = null) {
 
 
     });
+
+    //function to search a device directly if "&device_name=..." is present in the URL
+    const deviceNameInUrl = window.location.search;
+    const urlParams = new URLSearchParams(deviceNameInUrl);
+    const deviceToSearch = urlParams.get("device_name");
+    if(deviceToSearch != null) {
+        dataTable.search(deviceToSearch, true, false).draw();
+    }
+
 }
 
 function NewValuesOnDevice(strID) {
@@ -932,7 +941,7 @@ function NewValuesOnDevice(strID) {
                                 $(".INSERTValues").show();
                                 $(".Check_BOX").show();
                                 j = k - 1;
-                                $(str).val(old_value[myattributes[j].value_name]);
+                                //$(str).val(old_value[myattributes[j].value_name]);
                                 if ($(str).val() == "") {
                                     document.getElementById('NewValuesInputConfirmButton').disabled = true;
                                 } else {
@@ -941,119 +950,202 @@ function NewValuesOnDevice(strID) {
 
                                 const input = document.querySelector(str);
                                 var temp = {};
-                                temp['' + myattributes[j].value_name + ''] = {type: myattributes[j].data_type, value: old_value['' + myattributes[j].value_name + '' ]};
+                                temp['' + myattributes[j].value_name + ''] = {type: myattributes[j].data_type, value: old_value['' + myattributes[j].value_name + '' ],value_type: myattributes[j].value_type};
                                 $.extend(DT, temp);
                                 // console.log(DT);
 
                                 //$("#GETimeStamp").hide();
                                 strTIMEtemp = "#Value" + myattributes[j].value_name;
+
+                                //if a timestamp attribute is present show a "get timestamp button" under it
+
                                 if (myattributes[j].value_type == 'timestamp' || !strTIMEtemp) {
 
                                     strTIME = "#Value" + myattributes[j].value_name;
-                                    var checkTime;
-                                    checkTime = $(strTIME).val(old_value[myattributes[j].value_name]);
-                                    $("#GETimeStamp").show();
-                                    $("#" + str_checkBox).hide();
-                                    $("#Span" + str_checkBox).hide();
+
+
+                                    var valueIndexForRefresh = indexValues-1;
+
+                                    $('#ValuesINPUT, .row ').find('#value'+valueIndexForRefresh+'').append(' <div class="col-xs-6 col-md-3 modalCell"></div>');
+                                    $('#ValuesINPUT, .row ').find('#value'+valueIndexForRefresh+'').append(' <div class="col-xs-6 col-md-3 modalCell"><button type="button" id="GETimeStamp" style="" class="btn confirmBtn">Get Time stamp</button></div>')
+
+
+
+
                                 }
-                                input.addEventListener('keyup', function (e) {
+                                //if a date attribute is present, show a calendar on the input field
+
+                                 if (myattributes[j].value_type == 'date') {
+
+                                     if(j==0){
+
+                                        document.getElementById("Valuedata").type="date";
+                                        $('#Valuedata').attr('data-format', 'dd/MM/yy');
+
+                                     }else {
+
+                                         var valueDateSelector = j + 1;
+                                         valueDateSelector = "Valuedata" + valueDateSelector;
+                                         document.getElementById(valueDateSelector).type = "date";
+                                         $('#Valuedata').attr('data-format', 'dd/MM/yy');
+                                     }
+                                 }
+
+
+                                input.addEventListener('change', InputValuesCheck)
+                                input.addEventListener('keyup',InputValuesCheck)
+                                function InputValuesCheck(e) {
                                     var a = (e.target.value);
                                     const okButton = document.getElementById('NewValuesInputConfirmButton');
+                                    okButton.disabled=true;
                                     t = e.currentTarget.id.substring(5, e.currentTarget.id.length);
                                     str1 = "#access-code-error" + t;
                                     str2 = ".InputDataType" + t;
-                                    switch (DT[t].type) {
-                                        case "float" :
-                                        case "integer" :
+
+                                    //Check for input correctness against "value_type" instead of "data_type" if an attribute it's a date or a timestamp
+                                    //because both of it are string and you can't check them properly without some data manipulation.
+                                    //So the logic is if "Value_type= date" validate it as a date, if "Value_type= timestamp" validate it as a ISOstring,
+                                    // if it's any other type, enter the switch clause and validate the input against the corresponding type.
+                                    //N.B- The timestamp is accepted as yyyy-mm-ddThh:mm:ss:mmmZ and as yyyy-mm-dd
+
+                                    if(DT[t].value_type =="date"){
+                                        var parts = a.split("-");
+                                        var year = parseInt(parts[0], 10);
+                                        if (year > 1000 && year < 9999) {
+                                            okButton.disabled = false;
+                                            $(str1).hide()
+                                        }else{
+                                            okButton.disabled=true;
+                                            $(str1).show()
+                                        }
+                                    }else if(DT[t].value_type =="timestamp"){
+                                        const isoDatePattern = /^(\d{4})-(\d{2})-(\d{2})(T(\d{2}):(\d{2})(:\d{2}(\.\d{1,3})?)?(Z|([+-]\d{2}:\d{2})))?$/;
+
+
+                                        if (isoDatePattern.test(a)) {
+                                            okButton.disabled = false;
+                                            $(str1).hide()
+                                      } else {
+                                        okButton.disabled=true;
+                                        $(str1).show()
+                                      }
+                                    }else{
+
+                                        switch (DT[t].type) {
+                                            case "float" :
                                             {
-                                                if (/\s/.test(a) || a == "" || isNaN(a) || /[!@#$%^&*()_+\-=\[\]{};':"\\|<>\/?]+/.test(a)) {
+                                                if (/\s/.test(a) || a == "" || isNaN(a) || /[!@#$%^&*()_+\=\[\]{};':"\\|<>\/?]+/.test(a)) {
                                                     $(str1).show();
                                                     okButton.disabled = true;
                                                 } else {
+                                                    a = a.replace(/,/g, '.')
                                                     a = parseFloat(a);
                                                     $(str1).hide();
                                                     okButton.disabled = false;
                                                 }
                                             }
-                                            break;
-                                        case "binary":
-                                            {
-                                                if (/\s/.test(a) || a == "" || isNaN(a) || /[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]+/.test(a)) {
-                                                    $(str1).show();
-                                                    okButton.disabled = true;
-                                                } else {
-                                                    a = a.toString(2);
-                                                    $(str1).hide();
-                                                    okButton.disabled = false;
+                                               break;
+
+                                            case "integer" :
+                                                {
+                                                    if (/\s/.test(a) || a == "" || isNaN(a) || /[!@#$%^&*()_+\=\[\]{};':"\\|<>\/?]+/.test(a)) {
+                                                        $(str1).show();
+                                                        okButton.disabled = true;
+                                                    } else {
+                                                        a = parseFloat(a);
+                                                        $(str1).hide();
+                                                        okButton.disabled = false;
+                                                    }
                                                 }
-                                            }
-                                            break;
-                                        case "boolean" :
-                                        case "switch":
-                                        case "button":
-                                            {
-                                                if (/\s/.test(a) || a == "" || a !== false || a !== true || /[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]+/.test(a)) {
-                                                    $(str1).show();
-                                                    okButton.disabled = true;
-                                                } else {
-                                                    $(str1).hide();
-                                                    a = Boolean(a);
-                                                    okButton.disabled = false;
+                                                break;
+
+                                            case "binary":
+                                                {
+                                                    if (/\s/.test(a) || a == "" || isNaN(a) || /[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]+/.test(a)) {
+                                                        $(str1).show();
+                                                        okButton.disabled = true;
+                                                    } else {
+                                                        a = a.toString(2);
+                                                        $(str1).hide();
+                                                        okButton.disabled = false;
+                                                    }
                                                 }
-                                            }
-                                            break;
-                                        case "date" :
-                                        case "datatime":
-                                        case "time":
-                                        case "timestamp":
+                                                break;
+
+                                            case "boolean" :
+                                            case "switch":
+                                            case "button":
+                                                {
+                                                    if (/\s/.test(a) || a == "" || a !== false || a !== true || /[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]+/.test(a)) {
+                                                        $(str1).show();
+                                                        okButton.disabled = true;
+                                                    } else {
+                                                        $(str1).hide();
+                                                        a = Boolean(a);
+                                                        okButton.disabled = false;
+                                                    }
+                                                }
+                                                break;
+
+                                            case "date" :
+                                            case "datatime":
+                                            case "time":
+                                            case "timestamp":
+                                            case "json" :
                                             {
-                                                if (/\s/.test(a) || a == "" || /[!@#$%^&*()_+\-=\[\]{};'"\\|,.<>\/?]+/.test(a) || e.key == " ") {
+                                                var IS_JSON = true;
+                                                try {
+                                                    var json = $.parseJSON(a);
+                                                } catch (err) {
+                                                    IS_JSON = false;
+                                                }
+                                                if (!IS_JSON) {
                                                     $(str1).show();
                                                     okButton.disabled = true;
                                                 } else {
 
                                                     $(str1).hide();
-                                                    a = toISOString(a);
                                                     if (a != DT[t].value) {
                                                         okButton.disabled = false;
                                                     }
 
                                                 }
                                             }
+                                                break;
 
-                                            break;
-                                        case "json" :
-                                        case "collection":
-                                        case "set" :
-                                        case "vector" :
-                                        case "shape" :
-                                        case "wkt" :
-                                            {
-                                                if (/\s/.test(a) || a == "" || /[!@#$%^&*()_+\-=;'"\\|,.<>\/?]+/.test(a)) {
-                                                    $(str1).show();
-                                                    okButton.disabled = true;
-                                                } else {
-                                                    $(str1).hide();
-                                                    a = JSON.parse(a);
-                                                    okButton.disabled = false;
+                                            case "collection":
+                                            case "set" :
+                                            case "vector" :
+                                            case "shape" :
+                                            case "wkt" :
+                                                {
+                                                    if (/\s/.test(a) || a == "" || /[!@#$%^&*()_+\-=;'"\\|,.<>\/?]+/.test(a)) {
+                                                        $(str1).show();
+                                                        okButton.disabled = true;
+                                                    } else {
+                                                        $(str1).hide();
+                                                        a = JSON.parse(a);
+                                                        okButton.disabled = false;
+                                                    }
                                                 }
-                                            }
-                                            break;
-                                        case "xlm" :
-                                        case "string":
-                                            {
-                                                if (/\s/.test(a) || a == "" || /["'=;\(\)]/.test(a)) {
-                                                    $(str1).show();
-                                                    okButton.disabled = true;
-                                                } else {
-                                                    $(str1).hide();
-                                                    //a = parseFromString(a, "text/xml");
-                                                    okButton.disabled = false;
+                                                break;
+
+                                            case "xlm" :
+                                            case "string":
+                                                {
+                                                    if (/\s/.test(a) || a == "" || /["'=;\(\)]/.test(a)) {
+                                                        $(str1).show();
+                                                        okButton.disabled = true;
+                                                    } else {
+                                                        $(str1).hide();
+                                                        //a = parseFromString(a, "text/xml");
+                                                        okButton.disabled = false;
+                                                    }
                                                 }
-                                            }
-                                            break;
-                                    }
-                                });
+                                                break;
+
+                                        } }
+                                };
                             }
                             $("#editSchemaTabDevice #ValuesINPUT .row input:even").each(function () {
                                 checkEditValueName($(this));
@@ -1063,6 +1155,11 @@ function NewValuesOnDevice(strID) {
                                 $(strTIME).val(old_value[myattributes[j].value_name]);
                                 const currentTime = new Date().toISOString();
                                 $(strTIME).val(currentTime.toString());
+                                var timeStampInputSelector = strTIME.slice(1)
+                                const timeStampInput = document.getElementById(timeStampInputSelector)
+                                const changeEvent = new Event("change", { bubbles: true });
+                                timeStampInput.dispatchEvent(changeEvent);
+
                             });
                             checkEditDeviceConditions();
                             $(".RemoveAttrEdit").hide();
@@ -1105,7 +1202,7 @@ function NewValuesOnDevice(strID) {
                                             $('#ValuesINPUT').hide();
                                             $('#InsertDataDeviceLoadingIcon').hide();
                                             console.log(mydata);
-                                            console.log("Values update");
+                                            console.log("Values updated");
                                             $("#InsertModalStatus").html('<br><br>' + Nid + "'s value updates! ");
                                             $("#NOMob").hide();
                                             $("#editLatLongValue").hide();
@@ -1164,8 +1261,15 @@ function NewValuesOnDevice(strID) {
             document.getElementById('NewValuesInputConfirmButton').style.display = 'none';
         }
     });
+
+    //this should handle the bug about data persisting and not being cleared between insertions when the user doesn't reload the page
+    $("#newValuesInputCancelButton").click(function() {
+      $(".modalInputTxt").val("");
+    });
+
 }
-//end of fetch function 
+
+//end of fetch function
 
 function disableInput(id) {
     InputToDisable = "Value" + id.substring(9, id.length);
@@ -1235,7 +1339,78 @@ function CreateJsonNewValue(someData, NameAttrUp, old) {
     return attr;
 }
 
-///END 
+function exportJsonDevice(name,model, devicetype, frequency, kind, contextbroker, protocol, format,latitude,longitude, macaddress, producer, subnature, DeviceStaticAttributes, service, servicePath) {
+console.log(atob(DeviceStaticAttributes));
+var DeviceAttributes;
+    $.ajax({
+        url: "../api/device.php",
+        data: {
+            action: "get_device_attributes",
+            id: name,
+            contextbroker: contextbroker,
+            token: sessionToken,
+            service: service,
+            servicePath: servicePath
+        },
+        type: "POST",
+        async: false,
+        dataType: 'json',
+        success: function (mydata)
+        {
+            DeviceAttributes=mydata['content']
+        },
+        error: function (data)
+        {
+            console.log("Get values pool KO");
+            console.log(JSON.stringify(data));
+            alert("Error in reading data from the database<br/> Please get in touch with the Snap4city Administrator");
+        }
+    });
+
+    var obj = {
+        name: name,
+        model: model,
+        device_type: devicetype,
+        frequency: frequency,
+        kind: kind,
+        contextbroker: contextbroker,
+        protocol: protocol,
+        format: format,
+        latitude: latitude,
+        longitude: longitude,
+        mac_address: macaddress,
+        producer: producer,
+        subnature: subnature,
+        static_attributes: atob(DeviceStaticAttributes).replace(/"/g, "\"\""),
+        service: service,
+        service_path: servicePath,
+        deviceattributes: DeviceAttributes
+    };
+
+    if (servicePath === "bnVsbA==")
+        obj.service_path = "";
+    else
+        obj.service_path = "\"" + atob(servicePath).replace(/"/g, "\"\"") + "\"";
+
+    var element = document.createElement('a');
+    var data = "text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(obj));
+
+    element.setAttribute("href", "data:" + data);
+    element.setAttribute('download', name + "-device.json");
+    document.body.appendChild(element);
+    element.click();
+    document.body.removeChild(element);
+
+
+
+}
+
+
+
+
+
+
+///END
 
 $(document).ready(function () {
     $("#ShowOnlyDelegated").click(function () {
@@ -1336,6 +1511,200 @@ $(document).ready(function () {
         checkAddDeviceConditions();
     });
 //End Related to Add Device
+// start related to import device
+
+
+    const getJsonUpload = () =>
+        new Promise(resolve => {
+            const inputFileElement = document.createElement('input')
+            inputFileElement.setAttribute('type', 'file')
+            inputFileElement.setAttribute('accept', 'application/json')
+
+            inputFileElement.addEventListener(
+                'change',
+                async (event) => {
+                    const { files } = event.target
+                    if (!files || event.target.files[0].type !== "application/json") {
+                        mydata={error_msg:"Dammi un json"};
+                        console.log(mydata['error_msg']);
+                        mydata["status"]="ko";
+                        alert("dammi json")
+                        $('#addModelKoMsg').show();
+                        $('#addModelKoMsg div:first-child').html(mydata["error_msg"]);
+                        $('#addModelKoIcon').show();
+                        return
+                    }
+
+                    const filePromises = [...files].map(file => file.text())
+
+                    resolve(await Promise.all(filePromises))
+                },
+                false,
+            )
+            inputFileElement.click()
+        })
+
+
+    document.getElementById('importDeviceBtn').onclick = async () => {
+        let parsedJson;
+        const jsonFiles = await getJsonUpload()
+        try{
+            parsedJson = JSON.parse(jsonFiles);
+        }catch (e){
+            //devo gestire errore
+            console.log(e);
+        };
+        console.log(parsedJson);
+        if(jsonFiles != undefined){
+           await importDevice(parsedJson);
+        }
+        /*console.log({jsonFiles})*/
+    }
+    $("#importDeviceBtn").off("click");
+
+    function importDevice(parsedJson) {
+
+        document.getElementById('addlistAttributes').innerHTML = "";
+        $('.modalInputTxt').attr('readonly', false);
+        //select custom model
+        $("#selectModelDevice").prop('selectedIndex', 1);
+        $("#addDeviceModalTabs").show();
+        $('.nav-tabs a[href="#addInfoTabDevice"]').tab('show');
+        $("#addDeviceModalBody").show();
+        $('#addDeviceModal div.modalCell').show();
+        $("#addDeviceModalFooter").show();
+        $("#addAttrBtn").show();
+        $("#addDeviceOkMsg").hide();
+        $("#addDeviceOkIcon").hide();
+        $("#addDeviceKoMsg").hide();
+        $("#addDeviceKoIcon").hide();
+        $('#addDeviceLoadingMsg').hide();
+        $('#addDeviceLoadingIcon').hide();
+        $("#addDeviceLoadingMsg").hide();
+        $("#addDeviceLoadingIcon").hide();
+        $("#addDeviceOkMsg").hide();
+        $("#addDeviceOkIcon").hide();
+        $("#addDeviceKoMsg").hide();
+        $("#addDeviceKoIcon").hide();
+        $("#addNewDeviceGenerateKeyBtn").hide();
+        $("#addDeviceModalBody").show();
+        $("#addDeviceModalTabs").show();
+        $("#addDeviceModalFooter").show();
+        $("#addNewDeviceGenerateKeyBtn").show();
+        showAddDeviceModal();
+        //load values from json
+
+        $('#inputNameDevice').val(parsedJson.name).trigger("input");
+        //$('#selectModelDevice').val(parsedJson.model);
+        //$('#selectModelDevice').trigger('change');
+        $('#inputTypeDevice').val(parsedJson.device_type);
+        $('#selectKindDevice').val(parsedJson.kind);
+        $('#inputProducerDevice').val(parsedJson.producer);
+        $('#inputFrequencyDevice').val(parsedJson.frequency);
+        $('#inputMacDevice').val(parsedJson.mac_address);
+        $('#selectDeviceModel').val(parsedJson.model);
+        //$('#selectKGeneratorModel').val(parsedJson.key_generator);
+        $('#selectEdgeGatewayType').val(parsedJson.edgegateway_type);
+
+        $('#selectContextBroker').val(parsedJson.contextbroker);
+        $('#selectProtocolDevice').val(parsedJson.protocol);
+        $('#selectFormatDevice').val(parsedJson.format);
+        $('#selectService').val(parsedJson.service);
+        $('#inputServicePathDevice').val(parsedJson.service_path);
+
+        $('#inputLatitudeDevice').val(parsedJson.latitude).trigger("input");
+        $('#inputLongitudeDevice').val(parsedJson.longitude).trigger("input");
+
+        $('#selectSubnature').val(parsedJson.subnature);
+        $('#selectSubnature').trigger('change');
+        let static_attributes_from_json = parsedJson.static_attributes.replace(/[\\\[\]"]/g, '');
+        static_attributes_from_json = static_attributes_from_json.split(",");
+        console.log(static_attributes_from_json)
+        for(let i=0;i<= static_attributes_from_json.length;i++){
+                if(static_attributes_from_json[i]=="http://www.disit.org/km4city/schema#isMobile" ){
+                    $('#isMobileTick').prop('checked', true);
+                };
+        };
+
+
+
+        //insert attributes
+        var i=0;
+        var j=0;
+        var rowCount = $("#addlistAttributes .row").length;
+
+        if(rowCount < parsedJson.deviceattributes.length) {
+            while (i < parsedJson.deviceattributes.length) {
+                $('#addAttrBtn').click();
+                i++;
+            }
+        }
+        rowCount = $("#addlistAttributes .row").length;
+
+        $("#addlistAttributes").find("[id^=\"value_name\"]").each(function() {
+            $(this).val(parsedJson.deviceattributes[j].value_name).change();
+            j++
+        });
+
+        j=0;
+        $("#addlistAttributes").find("[id^=\"value_type\"]").each(function() {
+            $('option[value='+parsedJson.deviceattributes[j].value_type+']',this).attr('selected','selected').change();
+            j++;
+        });
+        j=0
+        $("#addlistAttributes").find("[id^=\"value_unit\"]").each(function() {
+            //$('option[value='+parsedJson.deviceattributes[j].value_unit+']',this).attr('selected','selected').change();
+            $(this).val(parsedJson.deviceattributes[j].value_unit).change()
+            j++
+        });
+        j=0
+        $("#addlistAttributes").find("[id^=\"data_type\"]").each(function() {
+            $('option[value='+parsedJson.deviceattributes[j].data_type+']',this).attr('selected','selected').change();
+            j++
+        });
+        j=0
+        $("#addlistAttributes").find("#SELECTHealthCriteria").each(function() {
+            $(this).val(parsedJson.deviceattributes[j].healthiness_criteria).change()
+            j++
+        });
+        j=0
+        $("#addlistAttributes").find("#device_refresh_value").each(function() {
+            $(this).val(parsedJson.deviceattributes[j].healthiness_value).change()
+            j++
+        });
+
+
+        // $('#addlistAttributes').children('.row').each(function (){
+        //
+        //     $('#value_name',this).val(parsedJson.deviceattributes[j].value_name).change();
+        //     $('#value_type'+j+' option[value='+parsedJson.deviceattributes[j].value_type+']').attr('selected','selected').change();
+        //     $('#value_unit'+j+' option[value='+parsedJson.deviceattributes[j].value_unit+']').attr('selected','selected').change();
+        //     $('#data_type'+j+' option[value='+parsedJson.deviceattributes[j].data_type+']').attr('selected','selected').change();
+        //     $('#SELECTHealthCriteria option[value='+parsedJson.deviceattributes[j].healthiness_criteria+']',this).attr('selected','selected').change();
+        //     $('#device_refresh_value',this).val(parsedJson.deviceattributes[j].healthiness_value).change();
+        //     j++;
+        // })
+
+
+
+        $("#addSchemaTabDevice #addlistAttributes .row input:even").each(function () {
+            checkValueName($(this));
+        });
+        checkDeviceName();
+        checkSelectionCB();
+        checkDeviceType();
+        checkFrequencyType();
+        checkSelectionKind();
+        checkSelectionProtocol();
+        checkSelectionFormat();
+        checkDeviceLatitude();
+        checkDeviceLongitude();
+        checkAddDeviceConditions();
+        checkAtlistOneAttribute();
+    };
+
+
+
 
 // Start Related to Edit Device
     // Add lines related to attributes in case of edit
@@ -1784,6 +2153,278 @@ $(document).ready(function () {
 //End Related to Edit Device
 
 
+
+
+
+
+    // START SAVE AS FUNCTION
+
+    $("#saveAsDeviceBtn").off("click");
+    $('#saveAsDeviceBtn').click(function () {
+
+        $('#editDeviceModal').modal('hide');
+        $('#saveAsDeviceNameChange').modal('show');
+        $("#saveAsDeviceModalLabel").html("Save as new model ");
+        $('#editDeviceModalTabs li > a[href="#editSchemaTabDevice"]').click();
+
+    });
+
+    $("#saveAsDeviceCancelBtn").off("click");
+    $('#saveAsDeviceCancelBtn').click(function () {
+        $('#saveAsDeviceNameChange').hide();
+        $('#editDeviceModal').modal('hide');
+
+    });
+
+    //on confirm click on the Save as dialog box, recover data written in all the inputs emulating
+    //an "add new device" action behind the scenes
+    $("#saveAsDeviceConfirmBtn").off("click");
+    $('#saveAsDeviceConfirmBtn').click(function () {
+
+        $('#inputNameDevice').val($('#saveAsNameDevice').val());
+        $('#selectContextBroker').val($('#selectContextBrokerM').val());
+        $('#selectModelDevice').val($('#selectModelDeviceM').val());
+        $('#inputTypeDevice').val($('#inputTypeDeviceM').val());
+        $('#selectKindDevice').val($('#selectKindDeviceM').val());
+        $('#inputProducerDevice').val($('#inputProducerDeviceM').val());
+        $('#inputFrequencyDevice').val($('#inputFrequencyDeviceM').val());
+        $('#inputMacDevice').val($('#inputMacDeviceM').val());
+        $('#selectEdgeGatewayType').val($('#selectEdgeGatewayTypeM').val());
+        $('#selectProtocolDevice').val($('#selectProtocolDeviceM').val());
+        $('#selectFormatDevice').val($('#selectFormatDeviceM').val());
+        $('#inputEdgeGatewayUri').val($('#inputEdgeGatewayUriM').val());
+        $('#inputFrequencyDevice').val($('#inputFrequencyDeviceM').val());
+        $('#selectSubnature').val($('#selectSubnatureM').val());
+        $('#selectService').val($('#editSelectService').val());
+        $('#inputServicePathModel').val($('#editInputServicePathDevice').val());
+        $('#inputLatitudeDevice').val($('#inputLatitudeDeviceM').val());
+        $('#inputLongitudeDevice').val($('#inputLongitudeDeviceM').val());
+        $('#KeyOneDeviceUser').val($('#KeyOneDeviceUserM').val());
+        $('#KeyTwoDeviceUser').val($('#KeyTwoDeviceUserM').val());
+
+        //check if the model has "device in mobility" and "certified" checkboxes checked, same with the selection box for
+        //"subnatures"
+        // if($('#editStaticTabModel #isCertifiedTickM').is(":checked")){
+        //
+        //     $('#addStaticTabModel #isCertifiedTick').prop('checked', true);
+        //     $('#addStaticTabModel #isCertifiedTick').trigger('change');
+        //
+        // }
+        if($('#editStaticTabModel #isMobileTickM').is(":checked")){
+
+            $('#addStaticTabModel #isMobileTick').prop('checked', true);
+            $('#addStaticTabModel #isMobileTick').trigger('change');
+
+        }
+
+        const selectedSubnature= $('#selectSubnatureM option:selected').val();
+        $('#addStaticTabModel #selectSubnature').val(selectedSubnature).trigger('change');
+
+        // cycle through Attributes to count them, then count deleted attributes and added attributes by the user on the edit page before
+        //clicking the "Save As" button
+        var attributesCount=$('#editSchemaTabDevice #editlistAttributes').find('.row').length;
+        var addedAttrCount=$('#editSchemaTabDevice #addlistAttributesM').find('.row').length;
+        //var deletedAttrCount=$('#editSchemaTabDevice #deletedAttributes').find('.row').length;
+
+        //Click "Add value" button a number of times equal to total attribute in edit minus the deleted one plus the added one
+        var i=0;
+        while (i < attributesCount  + addedAttrCount){
+            $('#addSchemaTabDevice #addAttrBtn').click();
+            i++;
+        }
+
+        // creates 6 arrays one for each parameter of an attribute, specifically: Value Name,value type,value unit,data type,Healthiness Criteria,Healthiness value.
+        //For each attribute, the 6 parameter for each attribute are on the same index (EX: first attribute has its parameters at index 0 of each array)
+        const AttributesArray= []
+        $("#editlistAttributes").find("[id^=\"value_name\"]").each(function() {
+            AttributesArray.push($(this).val());
+        });
+        const ValueUnitArray=[]
+        $("#editlistAttributes").find("[id^=\"value_unit\"]").each(function() {
+            ValueUnitArray.push($(this).val());
+        });
+
+        const ValueTypeArray=[]
+        $("#editlistAttributes").find("[id^=\"value_type\"]").each(function() {
+            ValueTypeArray.push($(this).val());
+        });
+
+        const DataTypeArray=[]
+        $("#editlistAttributes").find("[id^=\"data_type\"]").each(function() {
+            DataTypeArray.push($(this).val());
+        });
+
+        const HCArray = []
+        $("#editlistAttributes").find("#SELECTHealthCriteria").each(function() {
+            HCArray.push($(this).val());
+        });
+
+        const HVArray = []
+        $("#editlistAttributes").find("#device_refresh_value").each(function() {
+            HVArray.push($(this).val());
+        });
+
+        //For each deleted attribute, search the name in the attributes array created before, get the index, and delete that index in all 6 arrays
+        //Now we have the attributes minus the deleted ones
+        // $("#deletedAttributes").find("#value_name").each(function() {
+        //     console.log($(this).val())
+        //     const deletedIndex = findStringIndex(AttributesArray, $(this).val());
+        //     AttributesArray.splice(deletedIndex,1);
+        //     ValueUnitArray.splice(deletedIndex,1);
+        //     ValueTypeArray.splice(deletedIndex,1);
+        //     DataTypeArray.splice(deletedIndex,1);
+        //     HCArray.splice(deletedIndex,1);
+        //     HVArray.splice(deletedIndex,1);
+        // });
+
+        function findStringIndex(arr, searchString) {
+            return arr.indexOf(searchString);
+        }
+
+        //For each attribute, add his parameters to the end of the arrays created before,now we have 6 arrays with the included
+        //addition or deletions made by the user on the edit page
+        $("#addlistAttributesM").find("#value_name").each(function() {
+            AttributesArray.push($(this).val());
+        });
+
+        $("#addlistAttributesM").find("[id^=\"value_unit\"]").each(function() {
+            ValueUnitArray.push($(this).val());
+        });
+
+        $("#addlistAttributesM").find("[id^=\"value_type\"]").each(function() {
+            ValueTypeArray.push($(this).val());
+        });
+
+        $("#addlistAttributesM").find("[id^=\"data_type\"]").each(function() {
+            DataTypeArray.push($(this).val());
+        });
+
+        $("#addlistAttributesM").find("#SELECTHealthCriteria").each(function() {
+            HCArray.push($(this).val());
+        });
+
+        $("#addlistAttributesM").find("#device_refresh_value").each(function() {
+            HVArray.push($(this).val());
+        });
+
+        //Populate the attributes field using the values in the 6 arrays(EX: first attributes will have all the parameters saved at index 0 of each array)
+        mynewAttributesSaveas = []
+        var j=0;
+        $("#addlistAttributes").find("[id^=\"value_name\"]").each(function() {
+            $(this).val(AttributesArray[j]).change();
+            j++
+        });
+        j=0;
+        $("#addlistAttributes").find("[id^=\"value_type\"]").each(function() {
+            $('option[value='+ValueTypeArray[j]+']',this).attr('selected','selected').change();
+            j++;
+
+        });
+        j=0
+        $("#addlistAttributes").find("[id^=\"value_unit\"]").each(function() {
+            $(this).val(ValueUnitArray[j]).change()
+            j++
+        });
+        j=0
+        $("#addlistAttributes").find("[id^=\"data_type\"]").each(function() {
+            $(this).val(DataTypeArray[j]).change();
+            j++
+        });
+        j=0
+        $("#addlistAttributes").find("#SELECTHealthCriteria").each(function() {
+            $(this).val(HCArray[j]).change()
+            j++
+        });
+        j=0
+        $("#addlistAttributes").find("#device_refresh_value").each(function() {
+            $(this).val(HVArray[j]).change()
+            j++
+        });
+
+
+
+        j=0
+         $('#addlistAttributes').children('.row').each(function (){
+
+
+            var newattsaveas = {value_name: AttributesArray[j],
+                value_type: ValueTypeArray[j],
+                data_type: DataTypeArray[j],
+                editable: '0',
+                value_unit: ValueUnitArray[j],
+                healthiness_criteria: HCArray[j],
+                healthiness_value: HVArray[j]
+            };
+            mynewAttributesSaveas.push(newattsaveas)
+            j++;
+        })
+
+
+        //call to add a new model
+        $.ajax({
+            url: "../api/device.php",
+            data: {
+                action: "insert",
+                attributes: JSON.stringify(mynewAttributesSaveas),
+                id: $('#inputNameDevice').val(),
+                model: $('#selectModelDevice').val(),
+                mac: $('#inputMacDevice').val(),
+                edgegateway_uri: $('#inputEdgeGatewayUri').val(),
+                frequency: $('#inputFrequencyDevice').val(),
+                latitude: $('#inputLatitudeDevice').val(),
+                longitude: $('#inputLongitudeDevice').val(),
+                type: $('#inputTypeDevice').val(),
+                kind: $('#selectKindDevice').val(),
+                producer: $('#inputProducerDevice').val(),
+                frequency: $('#inputFrequencyDevice').val(),
+                edgegateway_type: $('#selectEdgeGatewayType').val(),
+                contextbroker: $('#selectContextBroker').val(),
+                protocol: $('#selectProtocolDevice').val(),
+                format: $('#selectFormatDevice').val(),
+                k1:  $('#KeyOneDeviceUser').val(),
+                k2: $('#KeyTwoDeviceUser').val(),
+                subnature: $('#selectSubnature').val(),
+                static_attributes: JSON.stringify(retrieveStaticAttributes("editlistStaticAttributes", false, "isMobileTick"/*,"isCertifiedTick"*/)),
+                service: $('#selectService').val(),
+                servicePath: $('#inputServicePathModel').val(),
+                token: sessionToken
+            },
+            type: "POST",
+            async: true,
+            dataType: "JSON",
+            timeout: 0,
+            success: function (mydata) {
+                if (mydata["status"] === 'ko') {
+                    //Error if the new name is duplicated
+                    console.log("Error adding Device");
+                    console.log(mydata)
+                    $('#saveAsDeviceNameChange').modal('hide');
+                    $('#saveAsDeviceResult').modal('show');
+                    $('#saveasfailedmessage').removeAttr('hidden');
+
+                } else if (mydata["status"] === 'ok') {
+                    //success message
+                    console.log("Device added");
+                    $('#saveAsDeviceNameChange').modal('hide');
+                    $('#saveAsDeviceResult').modal('show');
+                    $('#saveassuccessmessage').removeAttr('hidden');
+
+                }
+            },
+            error: function (mydata) {
+                //Generic error, print the response from the ajax query
+                console.log("Error insert device");
+                console.log("Error status -- Ko result: " + JSON.stringify(mydata));
+                console.log(mydata.responseText);
+                $('#saveaserrormessage').html(mydata.responseText);
+                $('#saveAsDeviceNameChange').modal('hide');
+                $('#saveAsDeviceResult').modal('show');
+                $('#saveaserrormessage').removeAttr('hidden');
+
+            }
+        });
+    });
+//END SAVE AS
 //Start Related to Delete Device
 
     // Delete lines related to attributes 
@@ -2142,6 +2783,7 @@ $(document).ready(function () {
 
         mynewAttributes = [];
         var regex = /[^a-z0-9:._-]/gi;
+        var timestampNumberCount = 0;
         var someNameisWrong = false;
         num1 = document.getElementById('addlistAttributes').childElementCount;
         for (var m = 0; m < num1; m++)
@@ -2154,14 +2796,36 @@ $(document).ready(function () {
                 healthiness_criteria: document.getElementById('addlistAttributes').childNodes[m].childNodes[5].childNodes[0].childNodes[0].value.trim(),
                 healthiness_value: document.getElementById('addlistAttributes').childNodes[m].childNodes[6].childNodes[0].childNodes[0].value.trim()};
             //console.log("new att:"+JSON.stringify(newatt));
+            if(newatt.value_type=='timestamp'){
+                timestampNumberCount +=1;
+            }
 
-            if (newatt.value_name != "" && !regex.test(newatt.value_name) && newatt.data_type != "" && newatt.value_type != "" && newatt.editable != "" && newatt.healthiness_criteria != "" && newatt.healthiness_value != "")
+            if (newatt.value_name != "" && !regex.test(newatt.value_name) && newatt.data_type != "" && newatt.value_type != "" && newatt.editable != "" && newatt.healthiness_criteria != "" && newatt.healthiness_value != "") {
                 mynewAttributes.push(newatt);
-            else
+            }
+            else{
                 someNameisWrong = true;
+            }
+
         }
 
-        if (mynewAttributes.length > 0 && !someNameisWrong) {
+      //Enter this condition only when only a timestamp is present
+        if (mynewAttributes.length > 0 && !someNameisWrong && timestampNumberCount <=1 ) {
+        //if a timestamp has not been inserted by the user, add a "dateObserved" brutally
+            if(timestampNumberCount===0){
+                newatt={
+                value_name: "dateObserved",
+                data_type: "string",
+                value_type: "timestamp",
+                editable: "0",
+                value_unit: "timestamp",
+                healthiness_criteria: "refresh_rate",
+                healthiness_value: "300"
+                }
+
+                mynewAttributes.push(newatt);
+
+            }
 
             document.getElementById('addlistAttributes').innerHTML = "";
             $("#addDeviceModalTabs").hide();
@@ -2308,7 +2972,13 @@ $(document).ready(function () {
                         removeStaticAttributes();
                         $("#addDeviceOkModal").modal('show');
                         $("#addDevicekoModal").hide();
-                        $("#addDeviceOkModalInnerDiv1").html('<h5>The device has been successfully registered. You can find further information on how to use and set up your device at the following page:</h5>' + "   " + '<h5>https://www.snap4city.org/drupal/node/76</h5>');
+                        if(timestampNumberCount===0){
+                            $("#addDeviceOkModalInnerDiv1").html('<h5>The device has been successfully registered. You can find further information on how to use and set up your device at the following page:</h5>' + "   " + '<h5>https://www.snap4city.org/drupal/node/76</h5><br>');
+                            $("#addDeviceOkModalInnerDiv3").html('<h5 ><b>A \'Timestamp\' attribute called \'DateObserved\' has been added to the device because it was not previously present.</b></h5>');
+                            $("#addDeviceOkModalInnerDiv3").show()
+                        }else {
+                            $("#addDeviceOkModalInnerDiv1").html('<h5>The device has been successfully registered. You can find further information on how to use and set up your device at the following page:</h5>' + "   " + '<h5>https://www.snap4city.org/drupal/node/76</h5>');
+                        }
                         $('#devicesTable').DataTable().destroy();
                         fetch_data(true);
                     }
@@ -2354,7 +3024,9 @@ $(document).ready(function () {
                         $("#addDeviceKoModalInnerDiv1").html('<h5>An error occurred, operation failed.</h5>');
                 }
             });
-        } else {
+        } else if(timestampNumberCount >1){
+            alert("Only one timestamp attribute can be accepted");
+        }else{
             alert("Check the values of your device, make sure that data you entered are valid");
         }
     });
@@ -2562,6 +3234,7 @@ $(document).ready(function () {
             $("#editDeviceModalBody").hide();
             $('#editDeviceLoadingMsg').show();
             $('#editDeviceLoadingIcon').show();
+            $('#saveAsDeviceBtn').hide();
             var service = $('#editSelectService').val();
             var servicePath = $('#editInputServicePathDevice').val();
             if ($('#selectProtocolDeviceM').val() === "ngsi w/MultiService") {

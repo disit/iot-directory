@@ -151,8 +151,7 @@ function checkModelValueName(current, FF=false)
 {
     var message = null;
     var regex=/[^a-z0-9_-]/gi;
-     var regex2=/\bid\b/;
-    var regex3= /\btype\b/;
+    var sensibleInputRegex=/\b(?:id|type|value)\b/i;
     if(FF){
          value=current.value;
     }else{
@@ -170,10 +169,10 @@ function checkModelValueName(current, FF=false)
         message = 'Value name is mandatory';
         //addDeviceConditionsArray['inputNameValue'] = false;
     }
-    else if(regex2.test(value) || regex3.test(value) )
+    else if(sensibleInputRegex.test(value))
     {
         element.css("color", "red");
-        message = 'No valid Value name: you can not use <b>id</b> or  <b>type</b>';
+        message = 'No valid Value name: you can not use <b>id</b>, <b>type</b> or <b>value</b>';
     }
     else if(value.length < 2)
     {
