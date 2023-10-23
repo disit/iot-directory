@@ -1057,6 +1057,7 @@ if (($hide_menu != "hide")) {
                 </div>
             </div>
         </div>
+        </div>
 
 
         <div class="modal fade" id="deleteModelModal" tabindex="-1" role="dialog" aria-labelledby="deleteModelModalLabel" aria-hidden="true">
