@@ -177,10 +177,12 @@ function SuccessOfLoadAttr(data, kindModel, version, domain, subdomain) {
                 indexValues = indexValues + 1;
                 k++;
             }
-            subnatureChanged(false, JSON.parse(static_attributes));
-            $('#inputTypeDevice').val(type);
             $('#selectSubnature').val(subnature);
             $('#selectSubnature').trigger('change');
+            if(subnature){
+                $("#addNewStaticBtn").show();}
+            subnatureChanged(false, JSON.parse(static_attributes));
+            $('#inputTypeDevice').val(type);
             if(subnature){
              $("#addNewStaticBtn").show();}
         } else {

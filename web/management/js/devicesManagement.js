@@ -385,38 +385,33 @@ function checkDeviceNameUser()
 function checkDeviceType()
 {
     var message = null;
-    
+    var regex=/[^a-z0-9_-]/gi;
+
     if ( !$("#addInfoTabDevice #inputTypeDevice").val() || $("#addInfoTabDevice #inputTypeDevice").val().length === 0)
     {
         $("#inputTypeDeviceMsg").css("color", "red");
         message = 'Device Type is mandatory';
         addDeviceConditionsArray['inputTypeDevice'] = false;
     }
-    
- var regex=/[^a-z0-9_-]/gi;
-    if ( regex.test($("#addInfoTabDevice #inputTypeDevice").val()) )
+    else if ( regex.test($("#addInfoTabDevice #inputTypeDevice").val()) )
     {
         $("#inputTypeDeviceMsg").css("color", "red");
         message = 'No special characters are allowed';
         editDeviceConditionsArray['inputTypeDeviceM'] = false;
     }
-
+    else if ($("#addInfoTabDevice #inputTypeDevice").val().indexOf(' ')>-1)
+    {
+        message = 'Device Type cannot contains blank space';
+        addDeviceConditionsArray['inputTypeDevice'] = false;
+        $("#inputTypeDeviceMsg").css("color", "red");
+    }
     else
     {
-       if ($("#addInfoTabDevice #inputTypeDevice").val().indexOf(' ')>-1)
-                {
-                        message = 'Device Type cannot contains blank space';
-                        addDeviceConditionsArray['inputTypeDevice'] = false;
-                        $("#inputTypeDeviceMsg").css("color", "red");
-                }
-                else
-                {
-                        message = 'Ok';
-                        addDeviceConditionsArray['inputTypeDevice'] = true;
-                        $("#inputTypeDeviceMsg").css("color", "#337ab7");
-                } 
+        message = 'Ok';
+        addDeviceConditionsArray['inputTypeDevice'] = true;
+        $("#inputTypeDeviceMsg").css("color", "#337ab7");
     }
-    
+
     $("#inputTypeDeviceMsg").html(message);
 }
 
