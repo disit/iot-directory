@@ -67,9 +67,9 @@ function format ( d ) {
 		if(d.k1!="" && d.k2!="")
 			showKey =  
 			'<div class="row">' +
-				'<div class="col-xs-6 col-sm-6" style="background-color:#E6E6FA;"><b>K1:</b>' + "  " + d.k1 + '</div>' +
+				'<div class="col-xs-6 col-sm-6 stripeSubtableDark"><b>K1:</b>' + "  " + d.k1 + '</div>' +
 				'<div class="clearfix visible-xs"></div>' +
-				'<div class="col-xs-6 col-sm-6" style="background-color:#E6E6FA;"><b>K2:</b>' + "  " + d.k2  + '</div>' +	
+				'<div class="col-xs-6 col-sm-6 stripeSubtableDark"><b>K2:</b>' + "  " + d.k2  + '</div>' +	
 			'</div>' ;	  
 	}	
 
@@ -85,27 +85,27 @@ function format ( d ) {
 	
 	return	'<div class="container-fluid">' +
 			'<div class="row">' +
-				'<div class="col-xs-6 col-sm-6" style="background-color:#D6CADD;"><b>Broker URI:</b>' + "  " + d.accesslink + '</div>' +
+				'<div class="col-xs-6 col-sm-6 stripeSubtableLight"><b>Broker URI:</b>' + "  " + d.accesslink + '</div>' +
 				'<div class="clearfix visible-xs"></div>' +
-				'<div class="col-xs-6 col-sm-6" style="background-color:#D6CADD;"><b>Broker Port:</b>' + "  " + d.accessport + '</div>' +
+				'<div class="col-xs-6 col-sm-6 stripeSubtableLight"><b>Broker Port:</b>' + "  " + d.accessport + '</div>' +
 			'</div>' +
 			'<div class="row">' +
-				'<div class="col-xs-6 col-sm-6" style="background-color:#E6E6FA;"><b>Device Type:</b>' + "  " + d.devicetype + '</div>' +
+				'<div class="col-xs-6 col-sm-6 stripeSubtableDark"><b>Device Type:</b>' + "  " + d.devicetype + '</div>' +
 				'<div class="clearfix visible-xs"></div>' +
-				'<div class="col-xs-6 col-sm-6" style="background-color:#E6E6FA;"><b>Organization:</b>' + "  " + d.organization + '</div>' +
+				'<div class="col-xs-6 col-sm-6 stripeSubtableDark"><b>Organization:</b>' + "  " + d.organization + '</div>' +
 			'</div>' +
 			'<div class="row">' +
-			'<div class="col-xs-6 col-sm-6" style="background-color:#D6CADD;"><b>Data Type:</b>' + "  " + d.data_type + '</div>' +
+			'<div class="col-xs-6 col-sm-6 stripeSubtableLight"><b>Data Type:</b>' + "  " + d.data_type + '</div>' +
 				'<div class="clearfix visible-xs"></div>' +
-				'<div class="col-xs-6 col-sm-6" style="background-color:#D6CADD;"><b>Editable:</b>' + "  " + d.editable + '</div>' +								
+				'<div class="col-xs-6 col-sm-6 stripeSubtableLight"><b>Editable:</b>' + "  " + d.editable + '</div>' +								
 			'</div>' +
 			'<div class="row">' +
-				'<div class="col-xs-6 col-sm-6" style="background-color:#E6E6FA;"><b>Healthiness criteria:</b>' + "  " + d.healthiness_criteria + '</div>' +
+				'<div class="col-xs-6 col-sm-6 stripeSubtableDark"><b>Healthiness criteria:</b>' + "  " + d.healthiness_criteria + '</div>' +
 				'<div class="clearfix visible-xs"></div>' +
-				'<div class="col-xs-6 col-sm-6" style="background-color:#E6E6FA;"><b>Healthiness value:</b>' + "  " + d.value_refresh_rate + '</div>' +
+				'<div class="col-xs-6 col-sm-6 stripeSubtableDark"><b>Healthiness value:</b>' + "  " + d.value_refresh_rate + '</div>' +
 			'</div>' + 
 			'<div class="row">' +
-				'<div class="col-xs-6 col-sm-6" style="background-color:#D6CADD;"><b>Kind:</b>' + "  " +  d.kind + '</div>' +
+				'<div class="col-xs-6 col-sm-6 stripeSubtableLight"><b>Kind:</b>' + "  " +  d.kind + '</div>' +
 				'<div class="clearfix visible-xs"></div>' +	
 			'</div>' + 	 
 			showKey +
@@ -163,7 +163,7 @@ function format ( d ) {
 			"data":           null,
 			"defaultContent": "",
 			"render": function () {
-					 return '<i class="fa fa-plus-square" aria-hidden="true"></i>';
+					 return '<i class="fa-solid fa-circle-plus" aria-hidden="true"></i>';
 				 },
 			width:"15px"
             }, 	
@@ -187,11 +187,11 @@ function format ( d ) {
 				  //return row.visibility;
 				  				  
 				if (row.visibility=='MyOwnPrivate'){   
-					return '<button type="button"  class=\"myOwnPrivateBtn\"  onclick="changeofvisibility(\''+ row.device + '\',\''+ row.cb + '\',\''+ row.value_name + '\',\''+ row.visibility + '\',\''+ row.uri + '\',\''+ row.k1 + '\',\''+ row.k2 +'\')">' + row.visibility + '</button>';
+					return '<button type="button"  class=\"myOwnPrivateBtn btn\"  onclick="changeofvisibility(\''+ row.device + '\',\''+ row.cb + '\',\''+ row.value_name + '\',\''+ row.visibility + '\',\''+ row.uri + '\',\''+ row.k1 + '\',\''+ row.k2 +'\')">' + row.visibility + '</button>';
 					
 					} 
 				else if (row.visibility=='MyOwnPublic'){
-					return '<button type="button"  class=\"myOwnPublicBtn\" onclick="changeofvisibility(\''+ row.device + '\',\''+ row.cb + '\',\''+ row.value_name + '\',\''+ row.visibility + '\',\''+ row.uri + '\',\''+ row.k1 + '\',\''+ row.k2 +'\')">' + row.visibility  + '</button>';
+					return '<button type="button"  class=\"myOwnPublicBtn btn\" onclick="changeofvisibility(\''+ row.device + '\',\''+ row.cb + '\',\''+ row.value_name + '\',\''+ row.visibility + '\',\''+ row.uri + '\',\''+ row.k1 + '\',\''+ row.k2 +'\')">' + row.visibility  + '</button>';
 					}
 				else if (row.visibility=='public') 
 				{

@@ -113,24 +113,10 @@ $accessToken = "";
         
         <!-- Filestyle -->
         <script  src="../js/filestyle/src/bootstrap-filestyle.min.js"></script>
-
-       <!-- Font awesome icons -->
-        <link rel="stylesheet" href="../js/fontAwesome/css/font-awesome.min.css">
-
-     <!--    <link href="https://fonts.googleapis.com/css?family=Cabin:400,500,600,700|Catamaran|Varela+Round" rel="stylesheet"> -->
         
         <!-- Custom CSS -->
-        <link href="../css/dashboard.css" rel="stylesheet">
-		<style> .btn-round { width: 30px; height:30px; border-radius: 50%; }
-        #mainMenuCnt
-		{
-			background-color: rgba(51, 64, 69, 1);
-			color: white;
-			height: 100vh;
-			<?php if ($hide_menu=="hide") echo "display:none"; //MM201218 ?>
-		}
-        
-        </style>
+        <?php include "theme-switcher.php"?>
+		
 	
 		<script>
 		 var loggedRole = "<?php echo $_SESSION['loggedRole']; ?>";
@@ -187,18 +173,12 @@ $accessToken = "";
 		<script  src="../js/leaflet.draw.js"></script>
 		<script  src="../js/jquery.fancytree-all.min.js"></script>
 		
-		
-		
-        
-        <!--<link href="https://fonts.googleapis.com/css?family=Cabin:400,500,600,700|Catamaran|Varela+Round" rel="stylesheet">
-        <link href="https://fonts.googleapis.com/css?family=Montserrat" rel="stylesheet">-->
 	</head>
-    <body class="guiPageBody">
+    <body class="guiPageBodyPload IOTdevices">
 		<div class="container-fluid">
            <?php include "sessionExpiringPopup.php" ?> 
             
              <div class="row mainRow"> 
-                <?php include "mainMenu.php" ?> 
                  <div 
                      <?php //MM201218
 				if (($hide_menu=="hide")) {?>
@@ -216,12 +196,12 @@ $accessToken = "";
 					if (($hide_menu!="hide")) {?>
                     <div class="row" id="title_row">
                         <div class="col-xs-10 col-md-12 centerWithFlex" id="headerTitleCnt">IoT Directory: Devices</div>
-                        <div class="col-xs-2 hidden-md hidden-lg centerWithFlex" id="headerMenuCnt"><?php include "mobMainMenu.php" ?></div> 
+                        <div class="col-xs-2 hidden-md hidden-lg centerWithFlex" id="headerMenuCnt"></div> 
                     </div>
 					<?php } //MM201218 FINE ?>
 							
                     <div class="row">
-                        <div class="col-xs-12" id="mainContentCnt">
+                        <div class="col-xs-12" id="mainContentCntIot">
 						
 						
 				             <div id="synthesis" class="row hidden-xs hidden-sm mainContentRow">
@@ -250,16 +230,16 @@ $accessToken = "";
                             <div id="displayAllDeviceRow" class="row mainContentRow">
                                 <div class="col-xs-12 mainContentRowDesc"></div>
                                 <div class="col-xs-12 mainContentCellCnt">
-								<div class="row" style= "background-color: rgb(241, 245, 244);">
-									<div class="col-xs-12 col-md-6 modalCell" style= "background-color: rgb(241, 245, 244);">
+								<div class="row">
+									<div class="col-xs-12 col-md-6 modalCell">
 									</div>
-									<div class="col-xs-12 col-md-6 modalCell" style= "background-color: rgb(241, 245, 244);">
+									<div class="col-xs-12 col-md-6 modalCell">
 										<div class="pull-right"><button id="deleteDanglingDeviceBtn"  class="btn btn-danger">Delete All</button></div>
 									</div>
 								</div>
 								<div>
-								<table id="devicesTable" class="table table-bordered table-striped" cellspacing="0" width="100%">
-									 <thead>
+								<table id="devicesTable" class="addWidgetWizardTable table table-striped dt-responsive nowrap dataTable no-footer dtr-inline collapsed" cellspacing="0" width="100%">
+									 <thead class="dataTableHeadColTitle">
 									  <tr>
 										<th></th>	
 									    <th data-cellTitle="name">Device Identifier</th>
@@ -345,7 +325,7 @@ $accessToken = "";
                   Add new device
                 </div>
                 <input type="hidden" id="deviceNameToDelete" />
-                <div id="deleteDeviceModalBody" class="modal-body modalBody">
+                <div id="deleteDeviceModalBody">
                     <div class="row">
                         <div class="col-xs-12 modalCell">
                             <div id="addDeviceOkModalInnerDiv1" class="modalDelMsg col-xs-12 centerWithFlex">
@@ -370,7 +350,7 @@ $accessToken = "";
                   Add new device
                 </div>
                 <input type="hidden" id="deviceNameToDelete" />
-                <div id="deleteDeviceModalBody" class="modal-body modalBody">
+                <div id="deleteDeviceModalBody">
                     <div class="row">
                         <div class="col-xs-12 modalCell">
                             <div id="addDeviceKoModalInnerDiv1" class="modalDelMsg col-xs-12 centerWithFlex">

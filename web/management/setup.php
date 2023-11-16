@@ -100,21 +100,10 @@ if (isset($_REQUEST['redirect'])){
         <!-- Filestyle -->
         <script  src="../js/filestyle/src/bootstrap-filestyle.min.js"></script>
 
-       <!-- Font awesome icons -->
-        <link rel="stylesheet" href="../js/fontAwesome/css/font-awesome.min.css">
-
-     <!--    <link href="https://fonts.googleapis.com/css?family=Cabin:400,500,600,700|Catamaran|Varela+Round" rel="stylesheet"> -->
-        
+               
         <!-- Custom CSS -->
-        <link href="../css/dashboard.css" rel="stylesheet">
+        <?php include "theme-switcher.php"?>
 		
-		<style>
-		.btn-round {
-			width: 30px;
-			height:30px;
-			border-radius: 50%;
-		}
-		</style>
  
 
 		<script>
@@ -165,19 +154,13 @@ if (isset($_REQUEST['redirect'])){
 		<script  src="../js/leaflet.js"></script>
 		<script  src="../js/leaflet.draw.js"></script>
 		<script  src="../js/jquery.fancytree-all.min.js"></script>
-		
-		
-		
-        
-        <!--<link href="https://fonts.googleapis.com/css?family=Cabin:400,500,600,700|Catamaran|Varela+Round" rel="stylesheet">
-        <link href="https://fonts.googleapis.com/css?family=Montserrat" rel="stylesheet">-->
+
 	</head>
-    <body class="guiPageBody">
+    <body class="guiPageBody IOTdevices">
 		<div class="container-fluid">
            <?php include "sessionExpiringPopup.php" ?> 
             
              <div class="row mainRow"> 
-                <?php include "mainMenu.php" ?> 
                 <div class="col-xs-12 col-md-10" id="mainCnt">
                     <div class="row hidden-md hidden-lg">
                         <div id="mobHeaderClaimCnt" class="col-xs-12 hidden-md hidden-lg centerWithFlex">
@@ -186,11 +169,11 @@ if (isset($_REQUEST['redirect'])){
                     </div>
                     <div class="row" id="title_row">
                         <div class="col-xs-10 col-md-12 centerWithFlex" id="headerTitleCnt">IoT Directory: Devices</div>
-                        <div class="col-xs-2 hidden-md hidden-lg centerWithFlex" id="headerMenuCnt"><?php include "mobMainMenu.php" ?></div> 
+                        <div class="col-xs-2 hidden-md hidden-lg centerWithFlex" id="headerMenuCnt"></div> 
                     </div>
 					
                     <div class="row">
-                        <div class="col-xs-12" id="mainContentCnt">
+                        <div class="col-xs-12" id="mainContentCntIot">
                    
                             <div class="row accountEditRow">
                               <div class="col-xs-12 col-md-3 accountEditFieldContainer">
@@ -231,8 +214,8 @@ if (isset($_REQUEST['redirect'])){
                              
                            </div> 
                            <div class="row accountEditRow" id="editAccountBtnRow">
-                              <button type="button" id="addPolicyConfirmBtn" class="btn pull-left internalLink" style="margin-right: 15px; background-color: rgba(0, 162, 211, 1); color: white; font-weight: bold">Apply policy</button>
-                              <button type="button" id="policyCancelBtn" class="btn pull-left" data-dismiss="modal" style="background-color: #f3cf58; color: white; font-weight: bold">Cancel</button>
+                              <button type="button" id="addPolicyConfirmBtn" class="btn pull-left internalLink" style="margin-right: 15px; font-weight: bold">Apply policy</button>
+                              <button type="button" id="policyCancelBtn" class="btn pull-left" data-dismiss="modal" style="font-weight: bold">Cancel</button>
                            </div>
                         </div>
                     </div>
@@ -328,10 +311,10 @@ if (isset($_REQUEST['redirect'])){
             }*/
         }, 1000);
         
-       $('#mainContentCnt').height($('#mainMenuCnt').height() - $('#headerTitleCnt').height());
+       $('#mainContentCntIot').height($('#mainMenuCnt').height() - $('#headerTitleCnt').height());
         
         $(window).resize(function(){
-            $('#mainContentCnt').height($('#mainMenuCnt').height() - $('#headerTitleCnt').height());
+            $('#mainContentCntIot').height($('#mainMenuCnt').height() - $('#headerTitleCnt').height());
         });
         
         $('#accountManagementLink .mainMenuItemCnt').addClass("mainMenuItemCntActive");

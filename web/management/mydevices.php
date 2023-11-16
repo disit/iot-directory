@@ -128,27 +128,16 @@ if (isset($_SESSION['refreshToken'])) {
         <!-- Filestyle -->
         <script  src="../js/filestyle/src/bootstrap-filestyle.min.js"></script>
 
-       <!-- Font awesome icons -->
-        <link rel="stylesheet" href="../js/fontAwesome/css/font-awesome.min.css">
+       
 
         <!-- select2 -->
         <link href="https://cdn.jsdelivr.net/npm/select2@4.0.13/dist/css/select2.min.css" rel="stylesheet" />
         <script src="https://cdn.jsdelivr.net/npm/select2@4.0.13/dist/js/select2.min.js"></script>
 
-     <!--    <link href="https://fonts.googleapis.com/css?family=Cabin:400,500,600,700|Catamaran|Varela+Round" rel="stylesheet"> -->
         
         <!-- Custom CSS -->
-        <link href="../css/dashboard.css" rel="stylesheet">	
-		<style> .btn-round { width: 30px; height:30px; border-radius: 50%; }
-        #mainMenuCnt
-		{
-			background-color: rgba(51, 64, 69, 1);
-			color: white;
-			height: 100vh;
-			<?php if ($hide_menu=="hide") echo "display:none"; //MM201218 ?>
-		}
-        
-        </style>
+        <?php include "theme-switcher.php"?>	
+		
 		
 		<script>
 		 var loggedRole = "<?php echo $_SESSION['loggedRole']; ?>";
@@ -209,18 +198,13 @@ if (isset($_SESSION['refreshToken'])) {
 		<script  src="../js/leaflet.js"></script>
 		<script  src="../js/leaflet.draw.js"></script>
 		<script  src="../js/jquery.fancytree-all.min.js"></script>
-		
-		
-		    
-        <!--<link href="https://fonts.googleapis.com/css?family=Cabin:400,500,600,700|Catamaran|Varela+Round" rel="stylesheet">
-        <link href="https://fonts.googleapis.com/css?family=Montserrat" rel="stylesheet">-->
+
 	</head>
-    <body class="guiPageBody">
+    <body class="guiPageBody IOTdevices">
 		<div class="container-fluid">
            <?php include "sessionExpiringPopup.php" ?> 
             
              <div class="row mainRow"> 
-                <?php include "mainMenu.php" ?> 
                 <div 
                      <?php //MM201218
 				if (($hide_menu=="hide")) {?>
@@ -238,12 +222,12 @@ if (isset($_SESSION['refreshToken'])) {
 					if (($hide_menu!="hide")) {?>
                     <div class="row" id="title_row">
                         <div class="col-xs-10 col-md-12 centerWithFlex" id="headerTitleCnt">IoT Directory: Devices</div>
-                        <div class="col-xs-2 hidden-md hidden-lg centerWithFlex" id="headerMenuCnt"><!--php include "mobMainMenu.php" ?--></div> 
+                        <div class="col-xs-2 hidden-md hidden-lg centerWithFlex" id="headerMenuCnt"></div> 
                     </div>
 					<?php } //MM201218 FINE ?>
 							
                     <div class="row">
-                        <div class="col-xs-12" id="mainContentCnt">
+                        <div class="col-xs-12" id="mainContentCntIot">
 						
 						
 				             <div id="synthesis" class="row hidden-xs hidden-sm mainContentRow">
@@ -569,7 +553,7 @@ if (isset($_SESSION['refreshToken'])) {
 										<div class="form-row iot-directory-form-row">
 												<link rel="stylesheet" href="../css/leaflet.css" />
 												<link rel="stylesheet" href="../css/leaflet.draw.css" />
-												<div id="addDeviceMapModalBodyUser" style="width: 100%; height: 400px" class="modal-body modalBody"></div>
+												<div id="addDeviceMapModalBodyUser" style="width: 100%; height: 400px"></div>
 										</div> 
 									  </div>
                                 </div>
@@ -580,16 +564,16 @@ if (isset($_SESSION['refreshToken'])) {
                             <div id="displayAllDeviceRow" class="row mainContentRow">
                                 <div class="col-xs-12 mainContentRowDesc"></div>
                                 <div class="col-xs-12 mainContentCellCnt">
-									<div class="row" style= "background-color: rgb(241, 245, 244);">
-										<div class="col-xs-12 col-md-6 modalCell" style= "background-color: rgb(241, 245, 244);">
-										<div id="displayDevicesMap" class="pull-right"><button type="button" class="btn btn-primary btn-round"><span class="glyphicon glyphicon-globe" style="font-size:36px; color: #0000ff"></span></button></div>
+									<div class="row">
+										<div class="col-xs-12 col-md-6 modalCell">
+										<div id="displayDevicesMap" class="pull-right"><button type="button" class="btn btn-primary btn-round"><i class="fa-solid fa-map-location-dot viewOnMap"></i></button></div>
 										</div>										
 								    </div>
 									<div>
                                     <!-- <table id="devicesTable" class="table"></table> -->
-									<table id="devicesTable" class="table table-bordered table-striped" cellspacing="0" width="100%">
-										<thead>
-										  <tr style="background: rgb(0, 162, 211); color: rgb(255, 255, 255); font-size: 1em;">
+									<table id="devicesTable" class="addWidgetWizardTable table table-striped dt-responsive nowrap dataTable no-footer dtr-inline collapsed" cellspacing="0" width="100%">
+										<thead class="dataTableHeadColTitle">
+										  <tr>
 											<th></th>	
 											<th data-cellTitle="device">Device Identifier</th> 
 											<th data-cellTitle="value_type">Value Type</th>
@@ -683,7 +667,7 @@ if (isset($_SESSION['refreshToken'])) {
                 <div class="modalHeader centerWithFlex">
                   Success device registration
                 </div>
-                <div id="addDeviceModalBody" class="modal-body modalBody">
+                <div id="addDeviceModalBody">
                     <div class="row">
                         <div class="col-xs-12 modalCell">
                             <div id="addDeviceOkModalInnerDiv1">
@@ -708,7 +692,7 @@ if (isset($_SESSION['refreshToken'])) {
                   Add new device
                 </div>
                 <input type="hidden" id="deviceNameToDelete" />
-                <div id="deleteDeviceModalBody" class="modal-body modalBody">
+                <div id="deleteDeviceModalBody">
                     <div class="row">
                         <div class="col-xs-12 modalCell">
                             <div id="addDeviceKoModalInnerDiv1" class="modalDelMsg col-xs-12 centerWithFlex">
@@ -734,7 +718,7 @@ if (isset($_SESSION['refreshToken'])) {
                 <div class="modalHeader centerWithFlex">
                   Update device
                 </div>
-                <div class="modal-body modalBody">
+                <div>
                     <div class="row">
                         <div class="col-xs-12 modalCell">
                             <div id="editDeviceOkModalInnerDiv1" class="modalDelMsg col-xs-12 centerWithFlex">
@@ -758,7 +742,7 @@ if (isset($_SESSION['refreshToken'])) {
                 <div class="modalHeader centerWithFlex">
                   Update device
                 </div>
-                <div id="deleteDeviceModalBody" class="modal-body modalBody">
+                <div id="deleteDeviceModalBody">
                     <div class="row">
                         <div class="col-xs-12 modalCell">
                             <div id="editDeviceKoModalInnerDiv1" class="modalDelMsg col-xs-12 centerWithFlex">
@@ -789,7 +773,7 @@ if (isset($_SESSION['refreshToken'])) {
 				<div class="form-row iot-directory-form-row">
 				        <link rel="stylesheet" href="../css/leaflet.css" />
 						<link rel="stylesheet" href="../css/leaflet.draw.css" />
-						<div id="addDeviceMapModalBodyShow" style="width: 100%; height: 400px" class="modal-body modalBody">                  
+						<div id="addDeviceMapModalBodyShow" style="width: 100%; height: 400px">                  
 					</div>
 				</div> 
 				<div class="modal-footer">
@@ -810,7 +794,7 @@ if (isset($_SESSION['refreshToken'])) {
 				<div class="form-row iot-directory-form-row">
 				        <link rel="stylesheet" href="../css/leaflet.css" />
 						<link rel="stylesheet" href="../css/leaflet.draw.css" />
-						<div id="searchDeviceMapModalBody" style="width: 100%; height: 400px" class="modal-body modalBody">		   
+						<div id="searchDeviceMapModalBody" style="width: 100%; height: 400px">		   
 					</div>
 				</div> 
 				<div class="modal-footer">
@@ -829,7 +813,7 @@ if (isset($_SESSION['refreshToken'])) {
 				<div class="form-row iot-directory-form-row">
 				        <link rel="stylesheet" href="../css/leaflet.css" />
 						<link rel="stylesheet" href="../css/leaflet.draw.css" />
-						<div id="searchDeviceMapModalBody_d" style="width: 100%; height: 400px" class="modal-body modalBody">		   
+						<div id="searchDeviceMapModalBody_d" style="width: 100%; height: 400px">		   
 					</div>
 				</div> 
 				<div class="modal-footer">
@@ -845,12 +829,12 @@ if (isset($_SESSION['refreshToken'])) {
 				<div id="delegationHeadModalLabel"  class="modalHeader centerWithFlex">
 				  
 				</div>
-					<!--div id="delegationsModalBody" class="modal-body modalBody">
+					<!--div id="delegationsModalBody">
 					
 						<div id="delegationsModalRightCnt" class="col-xs-12 col-sm-12"-->
 						
                                                         <form class="form-horizontal">
-					                       <div id="delegationsModalBody" class="modal-body modalBody">
+					                       <div id="delegationsModalBody">
 					                        <!-- Tabs -->
 					                        <ul id="delegationsTabsContainer" class="nav nav-tabs nav-justified">
 					                            <li id="visibilityTab" class="active"><a data-toggle="tab" href="#visibilityCnt" class="dashboardWizardTabTxt" aria-expanded="false">Visibility</a></li>

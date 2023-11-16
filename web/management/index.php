@@ -34,10 +34,6 @@
         <!-- JQUERY UI -->
         <script src="../js/jqueryUi/jquery-ui.js"></script>
         
-        <!-- Font awesome icons -->
-        <link rel="stylesheet" href="../js/fontAwesome/css/font-awesome.min.css">
-        
-        <!--<link href="https://fonts.googleapis.com/css?family=Montserrat" rel="stylesheet">-->
         
         <!-- Highcharts -->
         <script src="../js/highcharts/code/highcharts.js"></script>
@@ -46,7 +42,8 @@
         <script src="../js/highcharts/code/modules/solid-gauge.js"></script>
         <script src="../js/highcharts/code/highcharts-3d.js"></script>
         
-        <link href="../css/dashboard.css" rel="stylesheet">
+        <?php include "theme-switcher.php"?>
+        
         <!--<link href="../css/pageTemplate.css" rel="stylesheet">-->
 		        <script type='text/javascript'>
             $(document).ready(function ()
@@ -76,7 +73,7 @@
             });
         </script>
     </head>
-    <body id="loginBody" class="guiPageBody">
+    <body id="loginBody" class="guiPageBody IOTdevices">
         <div class="container-fluid">
             <div class="row">
                 <div class="col-xs-12 centerWithFlex" id="loginMainTitle">Snap4City IoT Directory</div>  

@@ -113,17 +113,13 @@ if (isset($_REQUEST['redirect'])){
         
         <!-- Filestyle -->
         <script  src="../js/filestyle/src/bootstrap-filestyle.min.js"></script>
-
-       <!-- Font awesome icons -->
-        <link rel="stylesheet" href="../js/fontAwesome/css/font-awesome.min.css">
+       
 
 		<!-- utf8 -->				
 		<script  src="js/utf8.js"></script>
-		
-     <!--    <link href="https://fonts.googleapis.com/css?family=Cabin:400,500,600,700|Catamaran|Varela+Round" rel="stylesheet"> -->
-        
+		        
         <!-- Custom CSS -->
-        <link href="../css/dashboard.css" rel="stylesheet">
+        <?php include "theme-switcher.php"?>
 	
 		<script>
 		 var loggedRole = "<?php echo $_SESSION['loggedRole']; ?>";
@@ -288,15 +284,12 @@ if (isset($_REQUEST['redirect'])){
 		
 		
         
-        <!--<link href="https://fonts.googleapis.com/css?family=Cabin:400,500,600,700|Catamaran|Varela+Round" rel="stylesheet">
-        <link href="https://fonts.googleapis.com/css?family=Montserrat" rel="stylesheet">-->
 	</head>
-    <body class="guiPageBody">
+    <body class="guiPageBody IOTdevices">
 		<div class="container-fluid">
            <?php include "sessionExpiringPopup.php" ?> 
             
              <div class="row mainRow"> 
-                <?php include "mainMenu.php" ?> 
                 <div class="col-xs-12 col-md-10" id="mainCnt">
                     <div class="row hidden-md hidden-lg">
                         <div id="mobHeaderClaimCnt" class="col-xs-12 hidden-md hidden-lg centerWithFlex">
@@ -305,19 +298,19 @@ if (isset($_REQUEST['redirect'])){
                     </div>
                     <div class="row" id="title_row">
                         <div class="col-xs-10 col-md-12 centerWithFlex" id="headerTitleCnt">IoT Directory: Devices</div>
-                        <div class="col-xs-2 hidden-md hidden-lg centerWithFlex" id="headerMenuCnt"><?php include "mobMainMenu.php" ?></div> 
+                        <div class="col-xs-2 hidden-md hidden-lg centerWithFlex" id="headerMenuCnt"></div> 
                     </div>
 					
 							
 					<div class="row">
-                        <div class="col-xs-12" id="mainContentCnt">
+                        <div class="col-xs-12" id="mainContentCntIot">
 						
 							<!-- the table-->
 							<div id="displayAllDeviceRow" class="row mainContentRow">
 							
 								<div class="col-xs-12 mainContentCellCnt">
-									<table id="devicesTable" class="table" cellspacing="0" width="100%">
-									 <thead>
+									<table id="devicesTable" class="addWidgetWizardTable table table-striped dt-responsive nowrap dataTable no-footer dtr-inline collapsed" cellspacing="0" width="100%">
+									 <thead class="dataTableHeadColTitle">
 									  <tr>
 										<th data-cellTitle="time">Time</th>
 										<th id = "accessedby" data-cellTitle="accessed_by" >Accessed By</th>

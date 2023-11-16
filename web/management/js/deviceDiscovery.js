@@ -783,7 +783,7 @@ function drawAttributeMenu
 		else mydatatypes += "<option value=\"" + gb_datatypes[n] + "\">" + gb_datatypes[n] + "</option>";
 	}
 	console.log(data_type + "," + value_type + "," + editable + "," + value_unit + "," + healthiness_criteria + "," + value_refresh_rate + "," + parent);
-	return "<div class=\"row\" style=\"border:3px solid blue;\" ><div class=\"col-xs-6 col-md-3 modalCell\">" +
+	return "<div class=\"row\"><div class=\"col-xs-6 col-md-3 modalCell\">" +
 		"<div class=\"modalFieldCnt\"><input type=\"text\" class=\"modalInputTxt\"" +
 		"name=\"" + attrName + "\"  value=\"" + attrName + "\">" +
 		"</div><div class=\"modalFieldLabelCnt\">Value Name</div></div>" +
@@ -843,7 +843,7 @@ function drawAttributeMenu2
 	(attrName, data_type, value_type, editable, value_unit, healthiness_criteria, value_refresh_rate, old_value_name, parent, indice) {
 
 	if (attrName == "") {
-		msg = "<div style=\"color:red;\" class=\"modalFieldMsgCnt\"></div>";
+		msg = "<div class=\"not_ok_label\" class=\"modalFieldMsgCnt\"></div>";
 	}
 	else {
 		msg = "<div class=\"modalFieldMsgCnt\">&nbsp;</div>";
@@ -853,10 +853,10 @@ function drawAttributeMenu2
 	options = "";
 	if (value_type == "") {
 		options += "<option hidden disabled selected value=\"NOT VALID OPTION\"> -- select an option -- </option>";
-		msg_value_type = "<div style=\"color:red;\" class=\"modalFieldMsgCnt\">Value type is mandatory</div>";
+		msg_value_type = "<div class=\"not_ok_label\" class=\"modalFieldMsgCnt\">Value type is mandatory</div>";
 	}
 	else
-		msg_value_type = "<div style=\"color:#337ab7;\" class=\"modalFieldMsgCnt\">Ok</div>";
+		msg_value_type = "<div class=\"ok_label\" class=\"modalFieldMsgCnt\">Ok</div>";
 
 	for (var n = 0; n < gb_value_types.length; n++) {
 		if (value_type == gb_value_types[n].value)
@@ -866,14 +866,14 @@ function drawAttributeMenu2
 	}
 
 	myunits = "";// <option value=\"none\"></option>";
-	msg_value_unit = "<div style=\"color:#337ab7;\" class=\"modalFieldMsgCnt\">Ok</div>";
+	msg_value_unit = "<div class=\"ok_label\" class=\"modalFieldMsgCnt\">Ok</div>";
 	//retrieve acceptable value unit, and select the selected if available
 	validValueUnit = getValidValueUnit(value_type, value_unit);
 
 	if (validValueUnit !== "") {
 		if (!validValueUnit.includes('selected')) {
 			myunits += "<option hidden disabled selected value=\"NOT VALID OPTION\"> -- select an option -- </option>";
-			msg_value_unit = "<div style=\"color:red;\" class=\"modalFieldMsgCnt\">Value unit is mandatory</div>";
+			msg_value_unit = "<div class=\"not_ok_label\" class=\"modalFieldMsgCnt\">Value unit is mandatory</div>";
 		}
 		myunits += validValueUnit;
 	}
@@ -925,7 +925,7 @@ function drawAttributeMenu2
 		else mydatatypes += "<option value=\"" + gb_datatypes[n] + "\">" + gb_datatypes[n] + "</option>";
 	}
 	//console.log(data_type + "," + value_type + "," + editable + "," + value_unit + "," + healthiness_criteria + "," + value_refresh_rate + "," + parent);
-	return "<div class=\"row\" style=\"border:2px solid blue;\" ><div class=\"col-xs-6 col-md-3 modalCell\">" +
+	return "<div class=\"row\"><div class=\"col-xs-6 col-md-3 modalCell\">" +
 		"<div class=\"modalFieldCnt\"><input type=\"text\" class=\"modalInputTxt\"" +
 		"name=\"" + attrName + "\"  value=\"" + attrName + "\"disabled>" +
 		"</div><div class=\"modalFieldLabelCnt\">Value Name</div>" + msg + "</div>" +

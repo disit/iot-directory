@@ -134,13 +134,10 @@ else
 		<!-- utf8 -->
 		<script  src="js/utf8.js"></script>
 
-       <!-- Font awesome icons -->
-        <link rel="stylesheet" href="../js/fontAwesome/css/font-awesome.min.css">
-
-     <!--    <link href="https://fonts.googleapis.com/css?family=Cabin:400,500,600,700|Catamaran|Varela+Round" rel="stylesheet"> -->
+       
 
         <!-- Custom CSS -->
-        <link href="../css/dashboard.css" rel="stylesheet">
+        <?php include "theme-switcher.php"?>
         <link href="../css/bulkDeviceLoad.css" rel="stylesheet">
         <link href="../css/d3tree.css" rel="stylesheet">
 
@@ -307,17 +304,12 @@ else
 
         </style>
 
-
-
-        <!--<link href="https://fonts.googleapis.com/css?family=Cabin:400,500,600,700|Catamaran|Varela+Round" rel="stylesheet">
-        <link href="https://fonts.googleapis.com/css?family=Montserrat" rel="stylesheet">-->
 	</head>
-    <body class="guiPageBody">
+    <body class="guiPageBody IOTdevices">
 		<div class="container-fluid">
            <?php include "sessionExpiringPopup.php" ?> 
 
              <div class="row mainRow"> 
-                <?php include "mainMenu.php" ?> 
                 <div class="col-xs-12 col-md-10" id="mainCnt">
                     <div class="row hidden-md hidden-lg">
                         <div id="mobHeaderClaimCnt" class="col-xs-12 hidden-md hidden-lg centerWithFlex">
@@ -326,12 +318,12 @@ else
                     </div>
                     <div class="row" id="title_row">
                         <div class="col-xs-10 col-md-12 centerWithFlex" id="headerTitleCnt">IoT Directory: Devices</div>
-                        <div class="col-xs-2 hidden-md hidden-lg centerWithFlex" id="headerMenuCnt"><!--?php include "mobMainMenu.php" ?--></div> 
+                        <div class="col-xs-2 hidden-md hidden-lg centerWithFlex" id="headerMenuCnt"></div> 
                     </div>
 
 
 					<div class="row">
-                        <div class="col-xs-12" id="mainContentCnt">
+                        <div class="col-xs-12" id="mainContentCntIot">
 							<div id="synthesis" class="row hidden-xs hidden-sm mainContentRow">
             	                <div id="hintEng" class="simple-modal row">
                 	                In this page it's possible to launch a scan on every external Context Broker of the "ngsi w/ Multiservice" kind, in order to find new
@@ -381,7 +373,7 @@ else
                                       Update Device
                                     </div>
 
-                                    <div id="editDeviceModalBody" class="modal-body modalBody">
+                                    <div id="editDeviceModalBody">
 
                                          <ul id="editDeviceModalTabs" class="nav nav-tabs nav-justified">
                     						<li  class="active"><a data-toggle="tab" href="#editIOTBrokerTabDevice">IoT Broker</a></li>
@@ -645,7 +637,7 @@ else
                     								<div class="form-row iot-directory-form-row">
                     									<link rel="stylesheet" href="../css/leaflet.css" />
                     									<link rel="stylesheet" href="../css/leaflet.draw.css" />
-                    									<div id="editLatLong" style="width: 100%; height: 400px" class="modal-body modalBody">
+                    									<div id="editLatLong" style="width: 100%; height: 400px">
                     								</div>
                     							</div>
 
@@ -692,7 +684,7 @@ else
                                                 <div class="modalHeader centerWithFlex">
                                                   Success device registration
                                                 </div>
-                                                <div id="editDeviceModalBody" class="modal-body modalBody">
+                                                <div id="editDeviceModalBody">
                                                     <div class="row">
                                                         <div class="col-xs-12 modalCell">
                                                             <div id="editDeviceOkModalInnerDiv1">
@@ -716,7 +708,7 @@ else
                                                   Add new device
                                                 </div>
                                                 <input type="hidden" id="deviceNameToDelete" />
-                                                <div id="deleteDeviceModalBody" class="modal-body modalBody">
+                                                <div id="deleteDeviceModalBody">
                                                     <div class="row">
                                                         <div class="col-xs-12 modalCell">
                                                             <div id="editDeviceKoModalInnerDiv1" class="modalDelMsg col-xs-12 centerWithFlex">

@@ -646,7 +646,7 @@ function createRowElem(initialValueDictiornary, initialValue, currentDictionaryS
     var row = document.createElement("div");
     $(row).attr('class', 'row');
     $(row).attr('name', 'additionalRow');
-    $(row).attr('style', 'border:2px solid blue');
+    // $(row).attr('style', 'border:2px solid blue');
 
 
     //selection
@@ -1541,15 +1541,15 @@ function checkProtocol(value, mode, context) {
         // console.log("checkProtocol: not equal");
         // disable ServicePath input (and put some graphical sugar for the user)
         servicePath.val("");
-        servicePathLabel.css("color", "lightgrey");
-        servicePathMsg.css("color", "lightgrey");
+        //servicePathLabel.css("color", "lightgrey");
+        //servicePathMsg.css("color", "lightgrey");
         servicePathMsg.html("only ngsi w/MultiService supports ServicePath");
         servicePath.prop('disabled', true);
 
         // disable Service/Tenant select (and put some graphical sugar for the user)
         selectService.val("");
-        selectServiceLabel.css("color", "lightgrey");
-        selectServiceMsg.css("color", "lightgrey");
+        //selectServiceLabel.css("color", "lightgrey");
+        //selectServiceMsg.css("color", "lightgrey");
         selectServiceMsg.html("only ngsi w/MultiService supports Service/Tenant selection");
         selectService.prop('disabled', true);
     }
@@ -1734,15 +1734,15 @@ function fillMultiTenancyFormSection(serviceVal, servicePathVal, brokerName, con
 
             // disable ServicePath input (and put some graphical sugar for the user)
             servicePath.val("");
-            servicePathLabel.css("color", "lightgrey");
-            servicePathMsg.css("color", "lightgrey");
+            //servicePathLabel.css("color", "lightgrey");
+            //servicePathMsg.css("color", "lightgrey");
             servicePathMsg.html("only ngsi w/MultiService supports ServicePath");
             servicePath.prop('disabled', true);
 
             // disable Service/Tenant select (and put some graphical sugar for the user)
             selectService.val("");
-            selectServiceLabel.css("color", "lightgrey");
-            selectServiceMsg.css("color", "lightgrey");
+            //selectServiceLabel.css("color", "lightgrey");
+            //selectServiceMsg.css("color", "lightgrey");
             selectServiceMsg.html("only ngsi w/MultiService supports Service/Tenant selection");
             selectService.prop('disabled', true);
         }
@@ -1789,27 +1789,27 @@ function getInfoCert(privatekey, visibility, created, id, contextbroker, certifi
         y = x.toString();
         txtCert =
                 '<div class="row">' +
-                '<div class="col-xs-6 col-sm-6" style="background-color:#E6E6FA;"><b>Created on:</b>' + "  " + created + '</div>' +
+                '<div class="col-xs-6 col-sm-6 stripeSubtableDark"><b>Created on:</b>' + "  " + created + '</div>' +
                 '<div class="clearfix visible-xs"></div>' +
-                '<div class="col-xs-6 col-sm-6" style="background-color:#E6E6FA;"><b>Expire on:</b>' + "  " + y + '</div>' +
+                '<div class="col-xs-6 col-sm-6 stripeSubtableDark"><b>Expire on:</b>' + "  " + y + '</div>' +
                 '</div>' +
                 '<div class="row">' +
-                '<div class="col-xs-6 col-sm-6" style="background-color:#D6CADD;"><button class="btn btn-primary my-small-button" onclick="download(\'\/private\/' +
+                '<div class="col-xs-6 col-sm-6 stripeSubtableLight"><button class="btn btn-primary my-small-button" onclick="download(\'\/private\/' +
                 privatekey + '\',\'' + id + '\',\'' + contextbroker + '\');return true;"><b>PRIVATE KEY</b></button></div>' +
                 '<div class="clearfix visible-xs"></div>' +
-                '<div class="col-xs-6 col-sm-6" style="background-color:#D6CADD;"><button class="btn btn-primary my-small-button" onclick="download(\'\/certsdb\/' +
+                '<div class="col-xs-6 col-sm-6 stripeSubtableLight"><button class="btn btn-primary my-small-button" onclick="download(\'\/certsdb\/' +
                 certificate + '\',\'' + id + '\',\'' + contextbroker + '\');return true;"><b>CERTIFICATE</b></button></div>' +
                 '</div>' +
                 '<div class="row">' +
-                '<div class="col-xs-6 col-sm-6" style="background-color:#E6E6FA;"><a href="https://www.snap4city.org/ca/ca.pem" download>' +
+                '<div class="col-xs-6 col-sm-6 stripeSubtableDark"><a href="https://www.snap4city.org/ca/ca.pem" download>' +
                 '<button class="btn btn-primary my-small-button"><b>CA CERTIFICATE</b></button></a></div>' +
                 '<div class="clearfix visible-xs"></div>' +
-                '<div class="col-xs-6 col-sm-6" style="background-color:#E6E6FA;"><b>SHA1:</b>' + "  " + sha + '</div>' +
+                '<div class="col-xs-6 col-sm-6 stripeSubtableDark"><b>SHA1:</b>' + "  " + sha + '</div>' +
                 '</div>';
     } else
         txtCert =
                 '<div class="row">' +
-                '<div class="col-xs-12 col-sm-12" style="background-color:#E6E6FA;"><b>Created on:</b>' + "  " + created + '</div>' +
+                '<div class="col-xs-12 col-sm-12 stripeSubtableDark"><b>Created on:</b>' + "  " + created + '</div>' +
                 '<div class="clearfix visible-xs"></div>' +
                 '</div>';
     return txtCert;

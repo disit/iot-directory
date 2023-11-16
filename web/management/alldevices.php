@@ -130,19 +130,12 @@ use Jumbojett\OpenIDConnectClient;
         <!-- Filestyle -->
         <script  src="../js/filestyle/src/bootstrap-filestyle.min.js"></script>
 
-       <!-- Font awesome icons -->
-        <link rel="stylesheet" href="../js/fontAwesome/css/font-awesome.min.css">
-
-     <!--    <link href="https://fonts.googleapis.com/css?family=Cabin:400,500,600,700|Catamaran|Varela+Round" rel="stylesheet"> -->
         
         <!-- Custom CSS -->
-        <link href="../css/dashboard.css" rel="stylesheet">
-		<style> .btn-round { width: 30px; height:30px; border-radius: 50%; }
+       <?php include "theme-switcher.php"?>
+		<style>
         #mainMenuCnt
 		{
-			background-color: rgba(51, 64, 69, 1);
-			color: white;
-			height: 100vh;
 			<?php if ($hide_menu=="hide") echo "display:none"; //MM201218 ?>
 		}
         
@@ -205,19 +198,13 @@ use Jumbojett\OpenIDConnectClient;
 		<script  src="../js/leaflet.js"></script>
 		<script  src="../js/leaflet.draw.js"></script>
 		<script  src="../js/jquery.fancytree-all.min.js"></script>
-		
-		
-		
-        
-        <!--<link href="https://fonts.googleapis.com/css?family=Cabin:400,500,600,700|Catamaran|Varela+Round" rel="stylesheet">
-        <link href="https://fonts.googleapis.com/css?family=Montserrat" rel="stylesheet">-->
+
 	</head>
-    <body class="guiPageBody">
+    <body class="guiPageBody IOTdevices">
 		<div class="container-fluid">
            <?php include "sessionExpiringPopup.php" ?> 
             
              <div class="row mainRow"> 
-                <?php include "mainMenu.php" ?> 
                  <div 
                      <?php //MM201218
 				if (($hide_menu=="hide")) {?>
@@ -235,12 +222,12 @@ use Jumbojett\OpenIDConnectClient;
 					if (($hide_menu!="hide")) {?>
                     <div class="row" id="title_row">
                         <div class="col-xs-10 col-md-12 centerWithFlex" id="headerTitleCnt">IoT Directory: Devices</div>
-                        <div class="col-xs-2 hidden-md hidden-lg centerWithFlex" id="headerMenuCnt"><!--?php include "mobMainMenu.php" ?--></div> 
+                        <div class="col-xs-2 hidden-md hidden-lg centerWithFlex" id="headerMenuCnt"></div> 
                     </div>
 					<?php } //MM201218 FINE ?>
 							
                     <div class="row">
-                        <div class="col-xs-12" id="mainContentCnt">
+                        <div class="col-xs-12" id="mainContentCntIot">
 						
 						
 				             <div id="synthesis" class="row hidden-xs hidden-sm mainContentRow">
@@ -452,7 +439,7 @@ use Jumbojett\OpenIDConnectClient;
 										<div class="form-row iot-directory-form-row">
 												<link rel="stylesheet" href="../css/leaflet.css" />
 												<link rel="stylesheet" href="../css/leaflet.draw.css" />
-												<div id="addDeviceMapModalBodyUser" style="width: 100%; height: 400px" class="modal-body modalBody">
+												<div id="addDeviceMapModalBodyUser" style="width: 100%; height: 400px">
 												</div>
 										</div> 
 									  </div>
@@ -466,15 +453,15 @@ use Jumbojett\OpenIDConnectClient;
                             <div id="displayAllDeviceRow" class="row mainContentRow">
                                <!-- <div class="col-xs-12 mainContentRowDesc"></div> -->
                                 <div class="col-xs-12 mainContentCellCnt">
-									<div class="row" style= "background-color: rgb(241, 245, 244);">
-										<div class="col-xs-12 col-md-6 modalCell" style= "background-color: rgb(241, 245, 244);">
-										<div id="displayDevicesMap" class="pull-right"><button type="button" class="btn btn-primary btn-round"><span class="glyphicon glyphicon-globe" style="font-size:36px; color: #0000ff"></span></button></div>
+									<div class="row">
+										<div class="col-xs-12 col-md-6 modalCell">
+										<div id="displayDevicesMap" class="pull-right"><button type="button" class="btn btn-primary btn-round"><i class="fa-solid fa-map-location-dot viewOnMap"></i></button></div>
 										</div>										
 								    </div>
 									<div>
-									<table id="devicesTable" class="table table-bordered table-striped" cellspacing="0" width="100%">
-										<thead>
-										  <tr style="background: rgb(0, 162, 211); color: rgb(255, 255, 255); font-size: 1em;">
+									<table id="devicesTable" class="addWidgetWizardTable table table-striped dt-responsive nowrap dataTable no-footer dtr-inline collapsed" cellspacing="0" width="100%">
+										<thead class="dataTableHeadColTitle">
+										  <tr>
 											<th></th>	
 											<th data-cellTitle="name">Device Identifier</th> 
 											<th data-cellTitle="contextbroker">IOT Broker</th>
@@ -559,7 +546,7 @@ use Jumbojett\OpenIDConnectClient;
                             </div>
                     <div class="tab-pane " id="Mtab" role="tabpanel" aria-labelledby="data-ex-tab1-tab">
                         <p id="NoMobile"></p> 
-                        <div id="editLatLongValue" style="width: 100%; height: 400px" class="modal-body modalBody"></div>
+                        <div id="editLatLongValue" style="width: 100%; height: 400px"></div>
       </div> </div>
                 </div> </div> 
       
@@ -628,7 +615,7 @@ use Jumbojett\OpenIDConnectClient;
         
 		
 				
-					<div id="addDeviceModalBody" class="modal-body modalBody">
+					<div id="addDeviceModalBody">
 				
                 
 					<ul id="addDeviceModalTabs" class="nav nav-tabs nav-justified">
@@ -899,7 +886,7 @@ use Jumbojett\OpenIDConnectClient;
 							<div class="form-row iot-directory-form-row">
 									<link rel="stylesheet" href="../css/leaflet.css" />
 									<link rel="stylesheet" href="../css/leaflet.draw.css" />
-									<div id="addLatLong" style="width: 100%; height: 400px" class="modal-body modalBody">
+									<div id="addLatLong" style="width: 100%; height: 400px">
 								</div>
 							</div> 
 							
@@ -960,7 +947,7 @@ use Jumbojett\OpenIDConnectClient;
                   Add new device
                 </div>
                 <input type="hidden" id="deviceNameToDelete" />
-                <div id="deleteDeviceModalBody" class="modal-body modalBody">
+                <div id="deleteDeviceModalBody">
                     <div class="row">
                         <div class="col-xs-12 modalCell">
                             <div id="addDeviceOkModalInnerDiv1" class="modalDelMsg col-xs-12 centerWithFlex">
@@ -985,7 +972,7 @@ use Jumbojett\OpenIDConnectClient;
                   Add new device
                 </div>
                 <input type="hidden" id="deviceNameToDelete" />
-                <div id="deleteDeviceModalBody" class="modal-body modalBody">
+                <div id="deleteDeviceModalBody">
                     <div class="row">
                         <div class="col-xs-12 modalCell">
                             <div id="addDeviceKoModalInnerDiv1" class="modalDelMsg col-xs-12 centerWithFlex">
@@ -1011,7 +998,7 @@ use Jumbojett\OpenIDConnectClient;
                   Update Device
                 </div>
         
-                <div id="editDeviceModalBody" class="modal-body modalBody">
+                <div id="editDeviceModalBody">
                     
                      <ul id="editDeviceModalTabs" class="nav nav-tabs nav-justified">
 						<li  class="active"><a data-toggle="tab" href="#editIOTBrokerTabDevice">IoT Broker</a></li>
@@ -1310,7 +1297,7 @@ use Jumbojett\OpenIDConnectClient;
 								<div class="form-row iot-directory-form-row">
 									<link rel="stylesheet" href="../css/leaflet.css" />
 									<link rel="stylesheet" href="../css/leaflet.draw.css" />
-									<div id="editLatLong" style="width: 100%; height: 400px" class="modal-body modalBody">
+									<div id="editLatLong" style="width: 100%; height: 400px">
 								</div>
 							</div> 
 							<h1>&nbsp;</h1>							
@@ -1358,7 +1345,7 @@ use Jumbojett\OpenIDConnectClient;
 							<div id="editlistAttributes"></div>
 							<div id="addlistAttributesM"></div>
 							<div id="deletedAttributes" style="display:none"></div>
-							<!-- <div class="pull-left"><i id="addAttrMBtn" class="fa fa-plus-square" style="font-size:36px; color: #ffcc00"></i></div> -->
+							<!-- <div class="pull-left"><i id="addAttrMBtn" class="fa-solid fa-circle-plus" style="font-size:36px; color: #ffcc00"></i></div> -->
 							<div class="pull-left"><button id="addAttrMBtn" class="btn btn-primary">Add Value</button></div>
 							<div id="editlistAttributesMsg" class="modalFieldMsgCnt">&nbsp;</div>
                         </div>
@@ -1435,7 +1422,7 @@ use Jumbojett\OpenIDConnectClient;
                 <div class="modalHeader centerWithFlex">
                   Update device
                 </div>
-                <div class="modal-body modalBody">
+                <div>
                     <div class="row">
                         <div class="col-xs-12 modalCell">
                             <div id="editDeviceOkModalInnerDiv1" class="modalDelMsg col-xs-12 centerWithFlex">
@@ -1459,7 +1446,7 @@ use Jumbojett\OpenIDConnectClient;
                 <div class="modalHeader centerWithFlex">
                   Update device
                 </div>
-                <div id="deleteDeviceModalBody" class="modal-body modalBody">
+                <div id="deleteDeviceModalBody">
                     <div class="row">
                         <div class="col-xs-12 modalCell">
                             <div id="editDeviceKoModalInnerDiv1" class="modalDelMsg col-xs-12 centerWithFlex">
@@ -1490,7 +1477,7 @@ use Jumbojett\OpenIDConnectClient;
 				<div class="form-row iot-directory-form-row">
 				        <link rel="stylesheet" href="../css/leaflet.css" />
 						<link rel="stylesheet" href="../css/leaflet.draw.css" />
-						<div id="addDeviceMapModalBodyShow" style="width: 100%; height: 400px" class="modal-body modalBody">                  
+						<div id="addDeviceMapModalBodyShow" style="width: 100%; height: 400px">                  
 					</div>
 				</div> 
 				<div class="modal-footer">
@@ -1511,7 +1498,7 @@ use Jumbojett\OpenIDConnectClient;
 				<div class="form-row iot-directory-form-row">
 				        <link rel="stylesheet" href="../css/leaflet.css" />
 						<link rel="stylesheet" href="../css/leaflet.draw.css" />
-						<div id="searchDeviceMapModalBody" style="width: 100%; height: 400px" class="modal-body modalBody">		   
+						<div id="searchDeviceMapModalBody" style="width: 100%; height: 400px">		   
 					</div>
 				</div> 
 				<div class="modal-footer">
@@ -1530,7 +1517,7 @@ use Jumbojett\OpenIDConnectClient;
 				  
 				</div>
 	
-					<div id="delegationsModalBody" class="modal-body modalBody">
+					<div id="delegationsModalBody">
 						
 						
 						<div id="delegationsModalRightCnt" class="col-xs-12 col-sm-12">
@@ -1610,7 +1597,7 @@ use Jumbojett\OpenIDConnectClient;
 				</div>
 				<form class="form-horizontal">
 	
-					<div id="delegationsModalBody" class="modal-body modalBody">
+					<div id="delegationsModalBody">
                                                        <!-- Tabs -->
                                                        <ul id="delegationsTabsContainer" class="nav nav-tabs nav-justified">
                                                                    <li id="ownershipTab" class="active"><a data-toggle="tab" href="#ownershipCnt" class="dashboardWizardTabTxt" aria-expanded="false">Ownership</a></li>

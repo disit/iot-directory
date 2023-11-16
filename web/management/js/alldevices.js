@@ -96,7 +96,7 @@ function removeElementAt(parent, child) {
 
 function drawAttributeMenu(attrName, data_type, value_type, editable, value_unit, healthiness_criteria, value_refresh_rate, old_value_name, parent, indice) {
     if (attrName == "")
-        msg = "<div style=\"color:red;\" class=\"modalFieldMsgCnt\"></div>";
+        msg = "<div class=\"not_ok_label\" class=\"modalFieldMsgCnt\"></div>";
     else
         msg = "<div class=\"modalFieldMsgCnt\">&nbsp;</div>";
 
@@ -104,9 +104,9 @@ function drawAttributeMenu(attrName, data_type, value_type, editable, value_unit
     //   mydatatypes = "";
     if (value_type == "") {
         options += "<option hidden disabled selected value=\"NOT VALID OPTION\"> -- select an option -- </option>";
-        msg_value_type = "<div style=\"color:red;\" class=\"modalFieldMsgCnt\">Value type is mandatory</div>";
+        msg_value_type = "<div class=\"not_ok_label\" class=\"modalFieldMsgCnt\">Value type is mandatory</div>";
     } else
-        msg_value_type = "<div style=\"color:#337ab7;\" class=\"modalFieldMsgCnt\">Ok</div>";
+        msg_value_type = "<div class=\"ok_label\" class=\"modalFieldMsgCnt\">Ok</div>";
 
     for (var n = 0; n < gb_value_types.length; n++) {
         if (value_type == gb_value_types[n].value){
@@ -119,24 +119,24 @@ function drawAttributeMenu(attrName, data_type, value_type, editable, value_unit
     }}
 
     myunits = "";
-    msg_value_unit = "<div style=\"color:#337ab7;\" class=\"modalFieldMsgCnt\">Ok</div>";
+    msg_value_unit = "<div class=\"ok_label\" class=\"modalFieldMsgCnt\">Ok</div>";
     //retrieve acceptable value unit, and select the selected if available
     validValueUnit = getValidValueUnit(value_type, value_unit);
     if (validValueUnit !== "") {
         if (!validValueUnit.includes('selected')) {
             myunits += "<option hidden disabled selected value=\"NOT VALID OPTION\"> -- select an option -- </option>";
-            msg_value_unit = "<div style=\"color:red;\" class=\"modalFieldMsgCnt\">Value unit is mandatory</div>";
+            msg_value_unit = "<div class=\"not_ok_label\" class=\"modalFieldMsgCnt\">Value unit is mandatory</div>";
         }
         myunits += validValueUnit;
     }
 
-  msg_data_unit = "<div style=\"color:#337ab7;\" class=\"modalFieldMsgCnt\">Ok</div>";
+  msg_data_unit = "<div class=\"ok_label\" class=\"modalFieldMsgCnt\">Ok</div>";
      mydatatypes = "";
    validDataType =  getValidDataType(value_type, data_type);
     if (validDataType !== "") {
         if (!validDataType.includes('selected')) {
             mydatatypes += "<option hidden disabled selected value=\"NOT VALID OPTION\"> -- select an option -- </option>";
-            msg_data_unit = "<div style=\"color:red;\" class=\"modalFieldMsgCnt\">Data type is mandatory</div>";
+            msg_data_unit = "<div class=\"not_ok_label\" class=\"modalFieldMsgCnt\">Data type is mandatory</div>";
         }
         mydatatypes += validDataType;
     }
@@ -158,7 +158,7 @@ function drawAttributeMenu(attrName, data_type, value_type, editable, value_unit
 //            mydatatypes += "<option value=\"" + gb_datatypes[n] + "\">" + gb_datatypes[n] + "</option>";
 //    }
 
-    return "<div class=\"row\" style=\"border:2px solid blue; padding: 8px;\" id=\"value" + indice + "\">" +
+    return "<div class=\"row\" id=\"value" + indice + "\">" +
             "<div class=\"col-xs-6 col-md-3 modalCell\">" +
             "<div class=\"modalFieldCnt\" title=\"Insert a name for the sensor/actuator\"><input type=\"text\" class=\"modalInputTxt valueName Input_onlyread\"" +
             "name=\"" + attrName + "\"  value=\"" + attrName + "\" onkeyup=\"checkStrangeCharacters(this)\">" +
@@ -227,9 +227,9 @@ function format(d) {
         if (d.k1 != "" && d.k2 != "")
             showKey =
                     '<div class="row">' +
-                    '<div class="col-xs-6 col-sm-6" style="background-color:#D6CADD;"><b>K1:</b>' + "  " + d.k1 + '</div>' +
+                    '<div class="col-xs-6 col-sm-6 stripeSubtableLight"><b>K1:</b>' + "  " + d.k1 + '</div>' +
                     '<div class="clearfix visible-xs"></div>' +
-                    '<div class="col-xs-6 col-sm-6" style="background-color:#D6CADD;"><b>K2:</b>' + "  " + d.k2 + '</div>' +
+                    '<div class="col-xs-6 col-sm-6 stripeSubtableLight"><b>K2:</b>' + "  " + d.k2 + '</div>' +
                     '</div>';
     }
 
@@ -245,41 +245,41 @@ function format(d) {
 
     var a = '<div class="container-fluid">' +
             '<div class="row">' +
-            '<div class="col-xs-6 col-sm-6" style="background-color:#E6E6FA;"><b>Broker URI:</b>' + "  " + d.accesslink + '</div>' +
+            '<div class="col-xs-6 col-sm-6 stripeSubtableDark"><b>Broker URI:</b>' + "  " + d.accesslink + '</div>' +
             '<div class="clearfix visible-xs"></div>' +
-            '<div class="col-xs-6 col-sm-6" style="background-color:#E6E6FA;"><b>Broker Port:</b>' + "  " + d.accessport + '</div>' +
+            '<div class="col-xs-6 col-sm-6 stripeSubtableDark"><b>Broker Port:</b>' + "  " + d.accessport + '</div>' +
             '</div>' +
             '<div class="row">' +
-            '<div class="col-xs-6 col-sm-6" style="background-color:#D6CADD;"><b>Kind:</b>' + "  " + d.kind + '</div>' +
+            '<div class="col-xs-6 col-sm-6 stripeSubtableLight"><b>Kind:</b>' + "  " + d.kind + '</div>' +
             '<div class="clearfix visible-xs"></div>' +
-            '<div class="col-xs-6 col-sm-6" style="background-color:#D6CADD;"><b>Visibility:</b>' + "  " + d.visibility + '</div>' +
+            '<div class="col-xs-6 col-sm-6 stripeSubtableLight"><b>Visibility:</b>' + "  " + d.visibility + '</div>' +
             '</div>' +
             '<div class="row">' +
-            '<div class="col-xs-6 col-sm-6" style="background-color:#E6E6FA;"><b>Device Type:</b>' + "  " + d.devicetype + '</div>' +
+            '<div class="col-xs-6 col-sm-6 stripeSubtableDark"><b>Device Type:</b>' + "  " + d.devicetype + '</div>' +
             '<div class="clearfix visible-xs"></div>' +
-            '<div class="col-xs-6 col-sm-6" style="background-color:#E6E6FA;"><b>Format:</b>' + "  " + d.format + '</div>' +
+            '<div class="col-xs-6 col-sm-6 stripeSubtableDark"><b>Format:</b>' + "  " + d.format + '</div>' +
             '</div>' +
             '<div class="row">' +
-            '<div class="col-xs-6 col-sm-6" style="background-color:#D6CADD;"><b>Protocol:</b>' + "  " + d.protocol + '</div>' +
+            '<div class="col-xs-6 col-sm-6 stripeSubtableLight"><b>Protocol:</b>' + "  " + d.protocol + '</div>' +
             '<div class="clearfix visible-xs"></div>' +
-            '<div class="col-xs-6 col-sm-6" style="background-color:#D6CADD;"><b>MAC:</b>' + "  " + d.macaddress + '</div>' +
+            '<div class="col-xs-6 col-sm-6 stripeSubtableLight"><b>MAC:</b>' + "  " + d.macaddress + '</div>' +
             '</div>' +
             '<div class="row">' +
-            '<div class="col-xs-6 col-sm-6" style="background-color:#E6E6FA;"><b>Model:</b>' + "  " + d.model + '</div>' +
+            '<div class="col-xs-6 col-sm-6 stripeSubtableDark"><b>Model:</b>' + "  " + d.model + '</div>' +
             '<div class="clearfix visible-xs"></div>' +
-            '<div class="col-xs-6 col-sm-6" style="background-color:#E6E6FA;"><b>Producer:</b>' + "  " + d.producer + '</div>' +
+            '<div class="col-xs-6 col-sm-6 stripeSubtableDark"><b>Producer:</b>' + "  " + d.producer + '</div>' +
             '</div>' +
             '<div class="row">' +
-            '<div class="col-xs-6 col-sm-6" style="background-color:#D6CADD;"><b>Longitude:</b>' + "  " + d.longitude + '</div>' +
+            '<div class="col-xs-6 col-sm-6 stripeSubtableLight"><b>Longitude:</b>' + "  " + d.longitude + '</div>' +
             '<div class="clearfix visible-xs"></div>' +
-            '<div class="col-xs-6 col-sm-6" style="background-color:#D6CADD;"><b>Latitude:</b>' + "  " + d.latitude + '</div>' +
+            '<div class="col-xs-6 col-sm-6 stripeSubtableLight"><b>Latitude:</b>' + "  " + d.latitude + '</div>' +
             '</div>' +
             '<div class="row">' +
-            '<div class="col-xs-12 col-sm-12" style="background-color:#E6E6FA;" data-toggle="tooltip" title="Go to the log LD"><b>Device Uri:</b><a href="' + d.url + '" target="_blank" > ' + d.uri + '</a> <a class="btn btn-info my-small-button pull-right" href="' + d.m_url + '" target="_blank"><b>VIEW IN SERVICE MAP</b></a></div>' +
+            '<div class="col-xs-12 col-sm-12 stripeSubtableDark" data-toggle="tooltip" title="Go to the log LD"><b>Device Uri:</b><a href="' + d.url + '" target="_blank" > ' + d.uri + '</a> <a class="btn btn-info my-small-button pull-right" href="' + d.m_url + '" target="_blank"><b>VIEW IN SERVICE MAP</b></a></div>' +
             '</div>' +
             '</div>' +
             '<div class="row">' +
-            '<div class="col-xs-12 col-sm-12" style="background-color:#D6CADD;"><b>Organization:</b>' + "  " + d.organization;
+            '<div class="col-xs-12 col-sm-12 stripeSubtableLight"><b>Organization:</b>' + "  " + d.organization;
     var b = ' <button type="button"class="btn btn-info my-small-button pull-right" ' +
             'data-id="' + d.id + '" ' +
             'data-contextbroker="' + d.contextBroker + '" ' +
@@ -292,10 +292,10 @@ function format(d) {
     var c = '</div>' + '<div class="clearfix visible-xs"></div>' +
             '</div>' +
             '<div class="row">' +
-            '<div class="col-xs-6 col-sm-6" style="background-color:#E6E6FA;"><button class="btn btn-info my-small-button" onclick="datainspect(\'' +
+            '<div class="col-xs-6 col-sm-6 stripeSubtableDark"><button class="btn btn-info my-small-button" onclick="datainspect(\'' +
             d.id + '\',\'' + d.devicetype + '\',\'' + d.contextBroker + '\',\'' + d.service + '\',\'' + d.servicePath + '\',\'v1\');return true;"><b>PAYLOAD NGSI v1</b></button></div>' +
             '<div class="clearfix visible-xs"></div>' +
-            '<div class="col-xs-6 col-sm-6" style="background-color:#E6E6FA;"><button class="btn btn-info my-small-button" onclick="datainspect(\'' +
+            '<div class="col-xs-6 col-sm-6 stripeSubtableDark"><button class="btn btn-info my-small-button" onclick="datainspect(\'' +
             d.id + '\',\'' + d.devicetype + '\',\'' + d.contextBroker + '\',\'' + d.service + '\',\'' + d.servicePath + '\',\'v2\');return true;"><b>PAYLOAD NGSI v2</b></button></div>' +
             '</div>' +
             showKey +
@@ -350,7 +350,7 @@ function fetch_data(destroyOld, selected = null) {
                 "data": null,
                 "defaultContent": "",
                 "render": function () {
-                    return '<i class="fa fa-plus-square" aria-hidden="true"></i>';
+                    return '<i class="fa-solid fa-circle-plus" aria-hidden="true"></i>';
                 },
                 width: "15px"
             },
@@ -383,9 +383,9 @@ function fetch_data(destroyOld, selected = null) {
                     //return row.visibility;
 
                     if (row.visibility == 'MyOwnPrivate') {
-                        return '<button type="button"  class=\"myOwnPrivateBtn\" onclick="changeVisibility(\'' + row.id + '\',\'' + row.contextBroker + '\',\'' + row.organization + '\',\'' + row.visibility + '\',\'' + row.uri + '\',\'' + row.k1 + '\',\'' + row.k2 + '\',\'' + row.model + '\',\'' + row.protocol + '\',\'' + row.service + '\',\'' + row.servicePath + '\')">' + row.visibility + '</button>';
+                        return '<button type="button"  class=\"myOwnPrivateBtn btn\" onclick="changeVisibility(\'' + row.id + '\',\'' + row.contextBroker + '\',\'' + row.organization + '\',\'' + row.visibility + '\',\'' + row.uri + '\',\'' + row.k1 + '\',\'' + row.k2 + '\',\'' + row.model + '\',\'' + row.protocol + '\',\'' + row.service + '\',\'' + row.servicePath + '\')">' + row.visibility + '</button>';
                     } else if (row.visibility == 'MyOwnPublic') {
-                        return '<button type="button"  class=\"myOwnPublicBtn\" onclick="changeVisibility(\'' + row.id + '\',\'' + row.contextBroker + '\',\'' + row.organization + '\',\'' + row.visibility + '\',\'' + row.uri + '\',\'' + row.k1 + '\',\'' + row.k2 + '\',\'' + row.model + '\',\'' + row.protocol + '\',\'' + row.service + '\',\'' + row.servicePath + '\')">' + row.visibility + '</button>';
+                        return '<button type="button"  class=\"myOwnPublicBtn btn\" onclick="changeVisibility(\'' + row.id + '\',\'' + row.contextBroker + '\',\'' + row.organization + '\',\'' + row.visibility + '\',\'' + row.uri + '\',\'' + row.k1 + '\',\'' + row.k2 + '\',\'' + row.model + '\',\'' + row.protocol + '\',\'' + row.service + '\',\'' + row.servicePath + '\')">' + row.visibility + '</button>';
                     } else if (row.visibility == 'public' || row.visibility == 'Public') {
                         return '<button type="button"  class=\"publicBtn\" onclick="changeVisibility(\'' + row.id + '\',\'' + row.contextBroker + '\',\'' + row.organization + '\',\'' + row.visibility + '\',\'' + row.uri + '\',\'' + row.k1 + '\',\'' + row.k2 + '\',\'' + row.model + '\',\'' + row.protocol + '\',\'' + row.service + '\',\'' + row.servicePath + '\')">' + row.visibility + '</button>';
                     } else // value is private
@@ -488,7 +488,7 @@ function fetch_data(destroyOld, selected = null) {
                 className: "center",
                 //defaultContent: '<button type="button" id="map" class="delDashBtn delete">Location</button>'
                 render: function (d) {
-                    return '<div class="addMapBtn"><i  data-toggle="modal" data-target="#addMapShow" onclick="drawMap(\'' + d.latitude + '\',\'' + d.longitude + '\', \'' + d.id + '\', \'' + d.devicetype + '\', \'' + d.kind + '\', \'' + 'addDeviceMapModalBodyShow' + '\')\" class="fa fa-globe"  style=\"font-size:36px; color: #0000ff\"></i></div>';
+                    return '<div class="addMapBtn"><i  data-toggle="modal" data-target="#addMapShow" onclick="drawMap(\'' + d.latitude + '\',\'' + d.longitude + '\', \'' + d.id + '\', \'' + d.devicetype + '\', \'' + d.kind + '\', \'' + 'addDeviceMapModalBodyShow' + '\')\" class="fa-solid fa-map-location-dot viewOnMap"></i></div>';
                 }
             }
         ],
@@ -1318,7 +1318,7 @@ $(document).ready(function () {
                 inputPropertiesDeviceMMsg.innerHTML = "";
             }
 
-            div.innerHTML = ("<div style=\"border:3px solid blue;\" >" +
+            div.innerHTML = ("<div>" +
                     "<h2>Device Status</h2>" +
                     "<table class=\"table\"><thead><tr><th>Property Status</th><th> checked</th></tr></thead>" +
                     "<tbody><tr><td>id</td><td>" + idNote + "</td></tr>" +
@@ -2640,9 +2640,9 @@ $(document).ready(function () {
 
     // Device dataTable table Style 
 
-    $('#devicesTable thead').css("background", "rgba(0, 162, 211, 1)");
-    $('#devicesTable thead').css("color", "white");
-    $('#devicesTable thead').css("font-size", "1em");
+    // $('#devicesTable thead').css("background", "rgba(0, 162, 211, 1)");
+    // $('#devicesTable thead').css("color", "white");
+    // $('#devicesTable thead').css("font-size", "1em");
 
 
     $('#devicesTable tbody tr').each(function () {

@@ -109,27 +109,11 @@ $accessToken = "";
     <!-- Filestyle -->
     <script type="text/javascript" src="../js/filestyle/src/bootstrap-filestyle.min.js"></script>
 
-    <!-- Font awesome icons -->
-    <link rel="stylesheet" href="../js/fontAwesome/css/font-awesome.min.css">
+    
 
     <!-- Custom CSS -->
-    <link href="../css/dashboard.css" rel="stylesheet">
+    <?php include "theme-switcher.php"?>
 
-    <style>
-        .btn-round {
-            width: 30px;
-            height: 30px;
-            border-radius: 50%;
-        }
-
-        #mainMenuCnt {
-            background-color: rgba(51, 64, 69, 1);
-            color: white;
-            height: 100vh;
-            <?php if ($hide_menu == "hide") echo "display:none"; //MM201218 
-            ?>
-        }
-    </style>
 
     <!-- Custom scripts -->
     <script>
@@ -190,12 +174,11 @@ $accessToken = "";
 
 </head>
 
-<body class="guiPageBody">
+<body class="guiPageBody IOTdevices">
     <div class="container-fluid">
         <?php include "sessionExpiringPopup.php" ?>
 
         <div class="row mainRow">
-            <?php include "mainMenu.php" ?>
             <div <?php //MM201218
                     if (($hide_menu == "hide")) { ?> class="col-xs-12 col-md-12" <?php } else { ?> class="col-xs-12 col-md-10" <?php } //MM201218 FINE
                                                                                                                         ?> id="mainCnt">
@@ -209,14 +192,13 @@ $accessToken = "";
                     <div class="row" id="title_row">
                         <div class="col-xs-10 col-md-12 centerWithFlex" id="headerTitleCnt">IoT Directory : Sensors and Actuators</div>
                         <div class="col-xs-2 hidden-md hidden-lg centerWithFlex" id="headerMenuCnt">
-                            <!--?php include "mobMainMenu.php" ?-->
                         </div>
                     </div>
                 <?php } //MM201218 FINE 
                 ?>
 
                 <div class="row">
-                    <div class="col-xs-12" id="mainContentCnt">
+                    <div class="col-xs-12" id="mainContentCntIot">
                         <div id="synthesis" class="row hidden-xs hidden-sm mainContentRow">
                             <div class="col-xs-12 mainContentRowDesc"></div>
                             <div id="dashboardTotNumberCnt" class="col-md-3 mainContentCellCnt">
@@ -267,18 +249,18 @@ $accessToken = "";
                             <div class="col-xs-12 mainContentRowDesc"></div>
                             <div class="col-xs-12 mainContentCellCnt">
 
-                                <div class="row" style="background-color: rgb(241, 245, 244);">
-                                    <div class="col-xs-12 col-md-6 modalCell" style="background-color: rgb(241, 245, 244);">
-                                        <div id="displayDevicesMapSA" class="pull-right"><button type="button" class="btn btn-primary btn-round"><span class="glyphicon glyphicon-globe" title="Location of Values on Map" style="font-size:36px; color: #0000ff"></span></button></div>
+                                <div class="row">
+                                    <div class="col-xs-12 col-md-6 modalCell">
+                                        <div id="displayDevicesMapSA" class="pull-right"><button type="button" class="btn btn-primary btn-round"><i class="fa-solid fa-map-location-dot viewOnMap"></i></button></div>
                                     </div>
-                                    <div class="col-xs-12 col-md-6 modalCell" style="background-color: rgb(241, 245, 244);">
+                                    <div class="col-xs-12 col-md-6 modalCell">
                                         <div class="pull-right"><button id="addValueBtn" class="btn btn-primary">Add New Sensor<BR>and Actuator</button></div>
                                     </div>
                                 </div>
                                 <div>
-                                    <table id="valuesTable" class="table table-bordered table-striped" cellspacing="0" width="100%">
-                                        <thead>
-                                            <tr style="background: rgb(0, 162, 211); color: rgb(255, 255, 255); font-size: 1em;">
+                                    <table id="valuesTable" class="table table-striped dt-responsive nowrap dataTable no-footer dtr-inline collapsed" cellspacing="0" width="100%">
+                                        <thead class="dataTableHeadColTitle">
+                                            <tr>
                                                 <th></th>
                                                 <th data-cellTitle="contextbroker">IOT Broker</th>
                                                 <th data-cellTitle="device">Device Identifier</th>
@@ -336,7 +318,7 @@ $accessToken = "";
 
 
                 <!-- <form id="addValueForm" name="addValueForm" role="form" method="post" action="" data-toggle="validator"> -->
-                <div id="addValueModalBody" class="modal-body modalBody">
+                <div id="addValueModalBody">
 
 
                     <!--ul id="addValueModalTabs" class="nav nav-tabs nav-justified">
@@ -585,7 +567,7 @@ $accessToken = "";
                     Add new value
                 </div>
                 <input type="hidden" id="deviceNameToDelete" />
-                <div id="deleteDeviceModalBody" class="modal-body modalBody">
+                <div id="deleteDeviceModalBody">
                     <div class="row">
                         <div class="col-xs-12 modalCell">
                             <div id="addDeviceOkModalInnerDiv1" class="modalDelMsg col-xs-12 centerWithFlex">
@@ -610,7 +592,7 @@ $accessToken = "";
                     Add new value
                 </div>
                 <input type="hidden" id="deviceNameToDelete" />
-                <div id="deleteDeviceModalBody" class="modal-body modalBody">
+                <div id="deleteDeviceModalBody">
                     <div class="row">
                         <div class="col-xs-12 modalCell">
                             <div id="addDeviceKoModalInnerDiv1" class="modalDelMsg col-xs-12 centerWithFlex">
@@ -637,7 +619,7 @@ $accessToken = "";
                 </div>
 
                 <form id="editValueForm" name="editValueForm" role="form" method="post" action="" data-toggle="validator">
-                    <div id="editValueModalBody" class="modal-body modalBody">
+                    <div id="editValueModalBody">
 
                         <ul id="editValueModalTabs" class="nav nav-tabs nav-justified">
                             <li class="active"><a data-toggle="tab" href="#editInfoTabValue">Info</a></li>
@@ -852,7 +834,7 @@ $accessToken = "";
                 <div class="modalHeader centerWithFlex">
                     Update value
                 </div>
-                <div class="modal-body modalBody">
+                <div>
                     <div class="row">
                         <div class="col-xs-12 modalCell">
                             <div id="editValueOkModalInnerDiv1" class="modalDelMsg col-xs-12 centerWithFlex">
@@ -876,7 +858,7 @@ $accessToken = "";
                 <div class="modalHeader centerWithFlex">
                     Update value
                 </div>
-                <div id="deleteDeviceModalBody" class="modal-body modalBody">
+                <div id="deleteDeviceModalBody">
                     <div class="row">
                         <div class="col-xs-12 modalCell">
                             <div id="editDeviceKoModalInnerDiv1" class="modalDelMsg col-xs-12 centerWithFlex">
@@ -904,7 +886,7 @@ $accessToken = "";
                 <div class="form-row iot-directory-form-row">
                     <link rel="stylesheet" href="../css/leaflet.css" />
                     <link rel="stylesheet" href="../css/leaflet.draw.css" />
-                    <div id="addDeviceMapModalBody" style="width: 100%; height: 400px" class="modal-body modalBody">
+                    <div id="addDeviceMapModalBody" style="width: 100%; height: 400px">
                     </div>
                 </div>
                 <div class="modal-footer">
@@ -923,7 +905,7 @@ $accessToken = "";
                 <div class="form-row iot-directory-form-row">
                     <link rel="stylesheet" href="../css/leaflet.css" />
                     <link rel="stylesheet" href="../css/leaflet.draw.css" />
-                    <div id="searchDeviceMapModalBodySA" style="width: 100%; height: 400px" class="modal-body modalBody">
+                    <div id="searchDeviceMapModalBodySA" style="width: 100%; height: 400px">
                     </div>
                 </div>
                 <div class="modal-footer">
@@ -941,12 +923,12 @@ $accessToken = "";
                 <div id="delegationHeadModalLabel" class="modalHeader centerWithFlex">
 
                 </div>
-                <!--div id="delegationsModalBody" class="modal-body modalBody">
+                <!--div id="delegationsModalBody">
 					
 						<div id="delegationsModalRightCnt" class="col-xs-12 col-sm-12"-->
 
                 <form class="form-horizontal">
-                    <div id="delegationsModalBody" class="modal-body modalBody">
+                    <div id="delegationsModalBody">
                         <!-- Tabs -->
                         <ul id="delegationsTabsContainer" class="nav nav-tabs nav-justified">
                             <li id="visibilityTab" class="active"><a data-toggle="tab" href="#visibilityCnt" class="dashboardWizardTabTxt" aria-expanded="false">Visibility</a></li>

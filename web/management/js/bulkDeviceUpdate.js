@@ -457,39 +457,39 @@ function format(d) {
 	return '<div class="container-fluid">' +
 
 		'<div class="row">' +
-		'<div class="col-xs-6 col-sm-6" style="background-color:#D6CADD;"><b>Kind:</b>' + "  " + d.kind + '</div>' +
+		'<div class="col-xs-6 col-sm-6 stripeSubtableLight"><b>Kind:</b>' + "  " + d.kind + '</div>' +
 		'<div class="clearfix visible-xs"></div>' +
-		'<div class="col-xs-6 col-sm-6" style="background-color:#D6CADD;"><b>Visibility:</b>' + "  " + d.visibility + '</div>' +
+		'<div class="col-xs-6 col-sm-6 stripeSubtableLight"><b>Visibility:</b>' + "  " + d.visibility + '</div>' +
 		'</div>' +
 		'<div class="row">' +
-		'<div class="col-xs-6 col-sm-6" style="background-color:#E6E6FA;"><b>Device Type:</b>' + "  " + d.devicetype + '</div>' +
+		'<div class="col-xs-6 col-sm-6 stripeSubtableDark"><b>Device Type:</b>' + "  " + d.devicetype + '</div>' +
 		'<div class="clearfix visible-xs"></div>' +
-		'<div class="col-xs-6 col-sm-6" style="background-color:#E6E6FA;"><b>Format:</b>' + "  " + d.format + '</div>' +
+		'<div class="col-xs-6 col-sm-6 stripeSubtableDark"><b>Format:</b>' + "  " + d.format + '</div>' +
 		'</div>' +
 		'<div class="row">' +
-		'<div class="col-xs-6 col-sm-6" style="background-color:#D6CADD;"><b>Protocol:</b>' + "  " + d.protocol + '</div>' +
+		'<div class="col-xs-6 col-sm-6 stripeSubtableLight"><b>Protocol:</b>' + "  " + d.protocol + '</div>' +
 		'<div class="clearfix visible-xs"></div>' +
-		'<div class="col-xs-6 col-sm-6" style="background-color:#D6CADD;"><b>MAC:</b>' + "  " + d.macaddress + '</div>' +
+		'<div class="col-xs-6 col-sm-6 stripeSubtableLight"><b>MAC:</b>' + "  " + d.macaddress + '</div>' +
 		'</div>' +
 		'<div class="row">' +
-		'<div class="col-xs-6 col-sm-6" style="background-color:#E6E6FA;"><b>Model:</b>' + "  " + d.model + '</div>' +
+		'<div class="col-xs-6 col-sm-6 stripeSubtableDark"><b>Model:</b>' + "  " + d.model + '</div>' +
 		'<div class="clearfix visible-xs"></div>' +
-		'<div class="col-xs-6 col-sm-6" style="background-color:#E6E6FA;"><b>Producer:</b>' + "  " + d.producer + '</div>' +
+		'<div class="col-xs-6 col-sm-6 stripeSubtableDark"><b>Producer:</b>' + "  " + d.producer + '</div>' +
 		'</div>' +
 		'<div class="row">' +
-		'<div class="col-xs-6 col-sm-6" style="background-color:#D6CADD;"><b>Longitude:</b>' + "  " + d.longitude + '</div>' +
+		'<div class="col-xs-6 col-sm-6 stripeSubtableLight"><b>Longitude:</b>' + "  " + d.longitude + '</div>' +
 		'<div class="clearfix visible-xs"></div>' +
-		'<div class="col-xs-6 col-sm-6" style="background-color:#D6CADD;"><b>Latitude:</b>' + "  " + d.latitude + '</div>' +
+		'<div class="col-xs-6 col-sm-6 stripeSubtableLight"><b>Latitude:</b>' + "  " + d.latitude + '</div>' +
 		'</div>' +
 		'<div class="row">' +
-		'<div class="col-xs-6 col-sm-6" style="background-color:#E6E6FA;"><b>Gateway/Edge Type:</b>' + "  " + d.edge_gateway_type + '</div>' +
+		'<div class="col-xs-6 col-sm-6 stripeSubtableDark"><b>Gateway/Edge Type:</b>' + "  " + d.edge_gateway_type + '</div>' +
 		'<div class="clearfix visible-xs"></div>' +
-		'<div class="col-xs-6 col-sm-6" style="background-color:#E6E6FA;"><b>Gateway/Edge Uri:</b>' + "  " + d.edge_gateway_uri + '</div>' +
+		'<div class="col-xs-6 col-sm-6 stripeSubtableDark"><b>Gateway/Edge Uri:</b>' + "  " + d.edge_gateway_uri + '</div>' +
 		'</div>' +
 		'<div class="row">' +
-		'<div class="col-xs-6 col-sm-6" style="background-color:#D6CADD;"><b>K1:</b>' + "  " + d.k1 + '</div>' +
+		'<div class="col-xs-6 col-sm-6 stripeSubtableLight"><b>K1:</b>' + "  " + d.k1 + '</div>' +
 		'<div class="clearfix visible-xs"></div>' +
-		'<div class="col-xs-6 col-sm-6" style="background-color:#D6CADD;"><b>K2:</b>' + "  " + d.k2 + '</div>' +
+		'<div class="col-xs-6 col-sm-6 stripeSubtableLight"><b>K2:</b>' + "  " + d.k2 + '</div>' +
 		'</div>' + multitenancy +
 		'</div>';
 }
@@ -530,7 +530,7 @@ function fetch_data(destroyOld, selected = null) {
 				"data": null,
 				"defaultContent": "",
 				"render": function () {
-					return '<i class="fa fa-plus-square" aria-hidden="true"></i>';
+					return '<i class="fa-solid fa-circle-plus" aria-hidden="true"></i>';
 				},
 				width: "15px"
 			},
@@ -640,7 +640,7 @@ function fetch_data(destroyOld, selected = null) {
 				className: "center",
 				//defaultContent: '<button type="button" id="map" class="delDashBtn delete">Location</button>'
 				render: function (d) {
-					return '<div class="addMapBtn"><i  data-toggle="modal" data-target="#addMapShow" onclick="drawMap(\'' + d.latitude + '\',\'' + d.longitude + '\', \'' + d.id + '\', \'' + d.devicetype + '\', \'' + d.kind + '\', \'' + 'addDeviceMapModalBodyShow' + '\')\" class="fa fa-globe"  style=\"font-size:36px; color: #0000ff\"></i></div>';
+					return '<div class="addMapBtn"><i  data-toggle="modal" data-target="#addMapShow" onclick="drawMap(\'' + d.latitude + '\',\'' + d.longitude + '\', \'' + d.id + '\', \'' + d.devicetype + '\', \'' + d.kind + '\', \'' + 'addDeviceMapModalBodyShow' + '\')\" class="fa-solid fa-map-location-dot viewOnMap"></i></div>';
 				}
 			}
 		],
@@ -847,13 +847,13 @@ $(document).ready(function () {
 			$(this).parents('tr').find('td').eq(1).css('background', $(this).parents('td').css('background'));
 		});
 
-	$('#devicesTable thead').css("background", "rgba(0, 162, 211, 1)");
-	$('#devicesTable thead').css("color", "white");
-	$('#devicesTable thead').css("font-size", "1em");
+	// $('#devicesTable thead').css("background", "rgba(0, 162, 211, 1)");
+	// $('#devicesTable thead').css("color", "white");
+	// $('#devicesTable thead').css("font-size", "1em");
 
 	$('#devicesTable tbody tr').each(function () {
 		if ((dataTable.row(this).index()) % 2 !== 0) {
-			$('#devicesTable tbody').css("background", "rgba(0, 162, 211, 1)");
+			//$('#devicesTable tbody').css("background", "rgba(0, 162, 211, 1)");
 			//console.log( 'Row index: '+dataTable.row( this ).index() );
 			$(this).find('td').eq(0).css("background-color", "rgb(230, 249, 255)");
 			$(this).find('td').eq(0).css("border-top", "none");
@@ -1050,7 +1050,7 @@ $(document).ready(function () {
 				inputPropertiesDeviceMMsg.innerHTML = "";
 			}
 
-			div.innerHTML = ("<div style=\"border:3px solid blue;\" >" +
+			div.innerHTML = ("<div>" +
 				"<h2>Device Status</h2>" +
 				"<table class=\"table\"><thead><tr><th>Property Status</th><th> checked</th></tr></thead>" +
 				"<tbody><tr><td>id</td><td>" + idNote + "</td></tr>" +
@@ -1844,9 +1844,9 @@ $(document).ready(function () {
 	});
 
 
-	$('#devicesTable thead').css("background", "rgba(0, 162, 211, 1)");
-	$('#devicesTable thead').css("color", "white");
-	$('#devicesTable thead').css("font-size", "1em");
+	// $('#devicesTable thead').css("background", "rgba(0, 162, 211, 1)");
+	// $('#devicesTable thead').css("color", "white");
+	// $('#devicesTable thead').css("font-size", "1em");
 
 
 	// This is for - Testing Propose Start --should be removed for the production 
@@ -2771,7 +2771,7 @@ function drawAttributeMenu
 		msg_value_type = "<div style=\"color:red;\" class=\"modalFieldMsgCnt\">Value type is mandatory</div>";
 	}
 	else
-		msg_value_type = "<div style=\"color:#337ab7;\" class=\"modalFieldMsgCnt\">Ok</div>";
+		msg_value_type = "<div class=\"ok_label\" class=\"modalFieldMsgCnt\">Ok</div>";
 
 	for (var n = 0; n < gb_value_types.length; n++) {
 		if (value_type == gb_value_types[n].value)
@@ -2781,14 +2781,14 @@ function drawAttributeMenu
 	}
 
 	myunits = "";// <option value=\"none\"></option>";
-	msg_value_unit = "<div style=\"color:#337ab7;\" class=\"modalFieldMsgCnt\">Ok</div>";
+	msg_value_unit = "<div class=\"ok_label\" class=\"modalFieldMsgCnt\">Ok</div>";
 	//retrieve acceptable value unit, and select the selected if available
 	validValueUnit = getValidValueUnit(value_type, value_unit);
 
 	if (validValueUnit !== "") {
 		if (!validValueUnit.includes('selected')) {
 			myunits += "<option hidden disabled selected value=\"NOT VALID OPTION\"> -- select an option -- </option>";
-			msg_value_unit = "<div style=\"color:red;\" class=\"modalFieldMsgCnt\">Value unit is mandatory</div>";
+			msg_value_unit = "<div class=\"not_ok_label\" class=\"modalFieldMsgCnt\">Value unit is mandatory</div>";
 		}
 		myunits += validValueUnit;
 	}
@@ -2840,7 +2840,7 @@ function drawAttributeMenu
 		else mydatatypes += "<option value=\"" + gb_datatypes[n] + "\">" + gb_datatypes[n] + "</option>";
 	}
 	//console.log(data_type + "," + value_type + "," + editable + "," + value_unit + "," + healthiness_criteria + "," + value_refresh_rate + "," + parent);
-	return "<div class=\"row\" style=\"border:2px solid blue;\" ><div class=\"col-xs-6 col-md-3 modalCell\">" +
+	return "<div class=\"row\"><div class=\"col-xs-6 col-md-3 modalCell\">" +
 		"<div class=\"modalFieldCnt\"><input type=\"text\" class=\"modalInputTxt\"" +
 		"name=\"" + attrName + "\"  value=\"" + attrName + "\">" +
 		"</div><div class=\"modalFieldLabelCnt\">Value Name</div>" + msg + "</div>" +

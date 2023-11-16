@@ -111,11 +111,10 @@ $accessToken = "";
     <!-- utf8 -->
     <script src="js/utf8.js"></script>
 
-    <!-- Font awesome icons -->
-    <link rel="stylesheet" href="../js/fontAwesome/css/font-awesome.min.css">
+    
 
     <!-- Custom CSS -->
-    <link href="../css/dashboard.css" rel="stylesheet">
+    <?php include "theme-switcher.php"?>
 
     <style>
         .labelinput {
@@ -314,12 +313,11 @@ $accessToken = "";
 
 </head>
 
-<body class="guiPageBody">
+<body class="guiPageBody IOTdevices">
     <div class="container-fluid">
         <?php include "sessionExpiringPopup.php" ?>
 
         <div class="row mainRow">
-            <?php include "mainMenu.php" ?>
             <div class="col-xs-12 col-md-10 " id="mainCnt">
                 <div class="row hidden-md hidden-lg">
                     <div id="mobHeaderClaimCnt" class="col-xs-12 hidden-md hidden-lg centerWithFlex">
@@ -329,13 +327,13 @@ $accessToken = "";
                 <div class="row" id="title_row">
                     <div class="col-xs-10 col-md-12 centerWithFlex" id="headerTitleCnt">IoT Directory: Devices</div>
                     <div class="col-xs-2 hidden-md hidden-lg centerWithFlex" id="headerMenuCnt">
-                        <!--?php include "mobMainMenu.php" ?-->
+                        
                     </div>
                 </div>
 
 
                 <div class="row">
-                    <div class="col-xs-12" id="mainContentCnt">
+                    <div class="col-xs-12" id="mainContentCntIot">
 
                         <!--the statistics bar section -->
 
@@ -367,7 +365,7 @@ $accessToken = "";
                                         Add New Rule
                                     </div>
 
-                                    <div id="addDeviceModalBody" class="modal-body modalBody">
+                                    <div id="addDeviceModalBody">
 
                                         <ul id="addDeviceModalTabs" class="nav nav-tabs nav-justified">
                                             <li class="active"><a data-toggle="tab" href="#addInfoTabDevice">Info</a></li>
@@ -621,7 +619,7 @@ $accessToken = "";
                                     <div class="modalHeader centerWithFlex">
                                         Add new rule
                                     </div>
-                                    <div id="addDeviceModalBody" class="modal-body modalBody">
+                                    <div id="addDeviceModalBody">
                                         <div class="row">
                                             <div class="col-xs-12 modalCell">
                                                 <div id="addDeviceOkModalInnerDiv1" class="modalDelMsg col-xs-12 centerWithFlex">
@@ -645,7 +643,7 @@ $accessToken = "";
                                         Add new rule
                                     </div>
                                     <input type="hidden" id="deviceNameToDelete" />
-                                    <div id="deleteDeviceModalBody" class="modal-body modalBody">
+                                    <div id="deleteDeviceModalBody">
                                         <div class="row">
                                             <div class="col-xs-12 modalCell">
                                                 <div id="addDeviceKoModalInnerDiv1" class="modalDelMsg col-xs-12 centerWithFlex">
@@ -666,16 +664,16 @@ $accessToken = "";
                         <div id="displayAllDeviceRow" class="row mainContentRow">
                             <div class="col-xs-12 mainContentRowDesc"></div>
                             <div class="col-xs-12 mainContentCellCnt">
-                                <div class="row" style="background-color: rgb(241, 245, 244);">
-                                    <div class="col-xs-12 col-md-6 modalCell" style="background-color: rgb(241, 245, 244);">
+                                <div class="row">
+                                    <div class="col-xs-12 col-md-6 modalCell">
                                     </div>
-                                    <div class="col-xs-12 col-md-6 modalCell" style="background-color: rgb(241, 245, 244);">
+                                    <div class="col-xs-12 col-md-6 modalCell">
                                         <div class="pull-right"><button id="newRule" class="btn btn-primary">New Rule</button></div>
                                     </div>
                                 </div>
                                 <div>
-                                    <table id="devicesTable" class="table" cellspacing="0" width="100%">
-                                        <thead>
+                                    <table id="devicesTable" class="addWidgetWizardTable table table-striped dt-responsive nowrap dataTable no-footer dtr-inline collapsed" cellspacing="0" width="100%">
+                                        <thead class="dataTableHeadColTitle">
                                             <tr>
                                                 <th></th>
                                                 <th data-cellTitle="name">Name</th>
@@ -766,7 +764,7 @@ $accessToken = "";
                     <div class="modalHeader centerWithFlex">
                         Change Ownership
                     </div>
-                    <div id="changeOwnershipModalBody" class="modal-body modalBody">
+                    <div id="changeOwnershipModalBody">
                         <div class="row">
                             <div class="col-xs-12 modalCell">
                                 <div id="changeOwnershipOkModalInnerDiv1" class="modalDelMsg col-xs-12 centerWithFlex">
@@ -794,7 +792,7 @@ $accessToken = "";
                         Update Device
                     </div>
 
-                    <div id="editDeviceModalBody" class="modal-body modalBody">
+                    <div id="editDeviceModalBody">
 
                         <ul id="editDeviceModalTabs" class="nav nav-tabs nav-justified">
                             <li class="active"><a data-toggle="tab" href="#editInfoTabDevice">Info</a></li>
@@ -1047,7 +1045,7 @@ $accessToken = "";
                 <div class="modalHeader centerWithFlex">
                     Update device
                 </div>
-                <div class="modal-body modalBody">
+                <div>
                     <div class="row">
                         <div class="col-xs-12 modalCell">
                             <div id="editDeviceOkModalInnerDiv1" class="modalDelMsg col-xs-12 centerWithFlex">
@@ -1071,7 +1069,7 @@ $accessToken = "";
                 <div class="modalHeader centerWithFlex">
                     Update device
                 </div>
-                <div id="deleteDeviceModalBody" class="modal-body modalBody">
+                <div id="deleteDeviceModalBody">
                     <div class="row">
                         <div class="col-xs-12 modalCell">
                             <div id="editDeviceKoModalInnerDiv1" class="modalDelMsg col-xs-12 centerWithFlex">
@@ -1142,7 +1140,7 @@ $accessToken = "";
 
                 </div>
 
-                <div id="delegationsModalBody" class="modal-body modalBody">
+                <div id="delegationsModalBody">
 
 
                     <div id="delegationsModalRightCnt" class="col-xs-12 col-sm-12">

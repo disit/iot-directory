@@ -96,7 +96,7 @@ function checkEditDeviceType()
     var message = null;
     if ( !$("#editInfoTabDevice #inputTypeDeviceM").val() || $("#editInfoTabDevice #inputTypeDeviceM").val().length === 0)
     {
-        $("#inputTypeDeviceMMsg").css("color", "red");
+        $("#inputTypeDeviceMMsg").css("color", "var(--red-)");
         message = 'Device Type is mandatory';
         editDeviceConditionsArray['inputTypeDeviceM'] = false;
     }
@@ -104,14 +104,14 @@ function checkEditDeviceType()
     var regex=/[^a-z0-9_-]/gi;
     if ( regex.test($("#editInfoTabDevice #inputTypeDeviceM").val()) )
     {
-        $("#inputTypeDeviceMMsg").css("color", "red");
+        $("#inputTypeDeviceMMsg").css("color", "var(--red-)");
         message = 'No special characters are allowed';
         editDeviceConditionsArray['inputTypeDeviceM'] = false;
     }
 	/*
     else if($("#editInfoTabDevice #inputTypeDeviceM").val().length < 5)
     {
-        $("#inputTypeDeviceMMsg").css("color", "red");
+        $("#inputTypeDeviceMMsg").css("color", "var(--red-)");
         message = 'Type name (at least 5 chars long)';
         editDeviceConditionsArray['inputTypeDeviceM'] = false;
     }
@@ -121,19 +121,19 @@ function checkEditDeviceType()
 		//Check if this part is necessary
         if(($.inArray($("#editInfoTabDevice #inputTypeDeviceM").val(), devicenamesArray, 0) > 0)||($("#editInfoTabDevice #inputTypeDeviceM").val() === devicenamesArray[0]))
         {
-            $("#inputTypeDeviceMMsg").css("color", "red");
+            $("#inputTypeDeviceMMsg").css("color", "var(--red-)");
             message = 'Device Type already used';
             editDeviceConditionsArray['inputTypeDeviceM'] = false;
         }
         else
         {
             if($("#editInfoTabDevice #inputTypeDeviceM").val().indexOf(' ')>-1) {
-				$("#inputTypeDeviceMMsg").css("color", "red");
+				$("#inputTypeDeviceMMsg").css("color", "var(--red-)");
 				message = 'Device Type cannot contain blank spaces';
 				editDeviceConditionsArray['inputTypeDeviceM'] = false;
 			}
 			else {
-				$("#inputTypeDeviceMMsg").css("color", "#337ab7");
+				$("#inputTypeDeviceMMsg").css("color", "var(--green-)");
 				message = 'Ok';
 				editDeviceConditionsArray['inputTypeDeviceM'] = true;
 			}

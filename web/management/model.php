@@ -112,29 +112,9 @@ $accessToken = "";
         <!-- Filestyle -->
         <script type="text/javascript" src="../js/filestyle/src/bootstrap-filestyle.min.js"></script>
 
-        <!-- Font awesome icons -->
-        <link rel="stylesheet" href="../js/fontAwesome/css/font-awesome.min.css">
-
-        <link href="https://fonts.googleapis.com/css?family=Cabin:400,500,600,700|Catamaran|Varela+Round" rel="stylesheet">
 
         <!-- Custom CSS -->
-        <link href="../css/dashboard.css" rel="stylesheet">
-        <style>
-            .btn-round {
-                width: 30px;
-                height: 30px;
-                border-radius: 50%;
-            }
-
-            #mainMenuCnt {
-                background-color: rgba(51, 64, 69, 1);
-                color: white;
-                height: 100vh;
-                <?php if ($hide_menu == "hide")
-                    echo "display:none"; //MM201218 
-                ?>
-            }
-        </style>
+        <?php include "theme-switcher.php"?>
 
         <!-- Custom scripts -->
         <script>
@@ -197,11 +177,10 @@ $accessToken = "";
 
     </head>
 
-    <body class="guiPageBody">
+    <body class="guiPageBody IOTdevices">
         <div class="container-fluid">
                     <?php include "sessionExpiringPopup.php" ?>
             <div class="row mainRow">
-<?php include "mainMenu.php" ?>
                 <div <?php //MM201218
 if (($hide_menu == "hide")) {
     ?> class="col-xs-12 col-md-12" <?php } else { ?> class="col-xs-12 col-md-10" <?php } //MM201218 FINE
@@ -217,14 +196,14 @@ if (($hide_menu != "hide")) {
                         <div class="row" id="title_row">
                             <div class="col-xs-10 col-md-12 centerWithFlex" id="headerTitleCnt">IoT Directory: Models</div>
                             <div class="col-xs-2 hidden-md hidden-lg centerWithFlex" id="headerMenuCnt">
-                                <!--php include "mobMainMenu.php" ?-->
+                               
                             </div>
                         </div>
 <?php } //MM201218 FINE 
 ?>
 
                     <div class="row">
-                        <div class="col-xs-12" id="mainContentCnt">
+                        <div class="col-xs-12" id="mainContentCntIot">
                             <div id="synthesis" class="row hidden-xs hidden-sm mainContentRow">
                                 <div class="col-xs-12 mainContentRowDesc"></div>
 
@@ -249,7 +228,14 @@ if (($hide_menu != "hide")) {
                             <div class="row mainContentRow">
                                 <div class="col-xs-12 mainContentRowDesc"></div>
                                 <div class="col-xs-12 mainContentCellCnt">
-
+                                    <div class="row">
+                                        <div class="col-xs-12 col-md-6 modalCell">
+                                            <div class="pull-left">
+                                                <div></div>
+                                            </div>
+                                        </div>
+                                        <div class="col-xs-12 col-md-6 modalCell">
+<!-- <<<<<<< Updated upstream
                                     <div class="row" style="background-color: rgb(241, 245, 244);">
                                         <div class="col-xs-6 col-md-6 modalCell" style="background-color: rgb(241, 245, 244);">
                                             <div class="pull-left">
@@ -257,6 +243,14 @@ if (($hide_menu != "hide")) {
                                             </div>
                                         </div>
                                         <div class="col-xs-6 col-md-6 modalCell" style="background-color: rgb(241, 245, 244);">
+=======
+                                    <div class="row">
+                                        <div class="col-xs-12 col-md-6 modalCell">
+                                            <div class="pull-right"></div>
+                                        </div>
+                                        <div class="col-xs-12 col-md-6 modalCell">
+>>>>>>> Stashed changes
+-->
 <?php if ($_SESSION['loggedRole'] == 'RootAdmin' || $_SESSION['loggedRole'] == 'ToolAdmin' || $_SESSION['loggedRole'] == 'AreaManager') { ?>
 
                                                 <div class="pull-right"><button id="importModelBtn" class="btn btn-primary" style="margin:5px;">Import New Model</button></div>
@@ -269,8 +263,8 @@ if (($hide_menu != "hide")) {
 
                                     <div>
 
-                                        <table id="modelTable" class="table table-bordered table-striped " cellspacing="0" width="100%">
-                                            <thead style="background: rgb(0, 162, 211); color: rgb(255, 255, 255); font-size: 1em;">
+                                        <table id="modelTable" class="table table-striped dt-responsive nowrap dataTable no-footer dtr-inline collapsed" cellspacing="0" width="100%">
+                                            <thead class="dataTableHeadColTitle">
                                                 <tr>
                                                     <th></th>
                                                     <th data-cellTitle="name">Device Model</th>
@@ -308,7 +302,7 @@ if (($hide_menu != "hide")) {
                        
                     </div>
 
-                    <div id="addModelModalBody" class="modal-body modalBody">
+                    <div id="addModelModalBody">
 
                         <div>
                             <br> 
@@ -682,7 +676,7 @@ if (($hide_menu != "hide")) {
                         Update Model
                     </div>
 
-                    <div id="editModelModalBody" class="modal-body modalBody">
+                    <div id="editModelModalBody">
 
                         <ul id="editModelModalTabs" class="nav nav-tabs nav-justified">
                             <li class="active"><a data-toggle="tab" href="#editInfoTabModel">General Info</a></li>
@@ -1093,7 +1087,7 @@ if (($hide_menu != "hide")) {
                     </div>
                     <form class="form-horizontal">
 
-                        <div id="delegationsModalBody" class="modal-body modalBody">
+                        <div id="delegationsModalBody">
                             <!-- Tabs -->
                             <ul id="delegationsTabsContainer" class="nav nav-tabs nav-justified">
                                 <li id="ownershipTab" class="active"><a data-toggle="tab" href="#ownershipCnt" class="dashboardWizardTabTxt" aria-expanded="false">Ownership</a></li>

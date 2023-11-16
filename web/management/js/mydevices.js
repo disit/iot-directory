@@ -109,9 +109,9 @@ function format(d) {
         if (d.k1 != "" && d.k2 != "")
             showKey =
                     '<div class="row">' +
-                    '<div class="col-xs-6 col-sm-6" style="background-color:#D6CADD;"><b>K1:</b>' + "  " + d.k1 + '</div>' +
+                    '<div class="col-xs-6 col-sm-6 stripeSubtableLight"><b>K1:</b>' + "  " + d.k1 + '</div>' +
                     '<div class="clearfix visible-xs"></div>' +
-                    '<div class="col-xs-6 col-sm-6" style="background-color:#D6CADD;"><b>K2:</b>' + "  " + d.k2 + '</div>' +
+                    '<div class="col-xs-6 col-sm-6 stripeSubtableLight"><b>K2:</b>' + "  " + d.k2 + '</div>' +
                     '</div>';
     } else
         showKey = "";
@@ -128,47 +128,47 @@ function format(d) {
 
     var result = '<div class="container-fluid">' +
             '<div class="row">' +
-            '<div class="col-xs-6 col-sm-6" style="background-color:#D6CADD;"><b>Broker URI:</b>' + "  " + d.accesslink + '</div>' +
+            '<div class="col-xs-6 col-sm-6 stripeSubtableLight"><b>Broker URI:</b>' + "  " + d.accesslink + '</div>' +
             '<div class="clearfix visible-xs"></div>' +
-            '<div class="col-xs-6 col-sm-6" style="background-color:#D6CADD;"><b>Broker Port:</b>' + "  " + d.accessport + '</div>' +
+            '<div class="col-xs-6 col-sm-6 stripeSubtableLight"><b>Broker Port:</b>' + "  " + d.accessport + '</div>' +
             '</div>' +
             '<div class="row">' +
-            '<div class="col-xs-6 col-sm-6" style="background-color:#E6E6FA;"><b>Data Type:</b>' + "  " + d.data_type + '</div>' +
+            '<div class="col-xs-6 col-sm-6 stripeSubtableDark"><b>Data Type:</b>' + "  " + d.data_type + '</div>' +
             '<div class="clearfix visible-xs"></div>' +
-            '<div class="col-xs-6 col-sm-6" style="background-color:#E6E6FA;"><b>Editable:</b>' + "  " + d.editable + '</div>' +
+            '<div class="col-xs-6 col-sm-6 stripeSubtableDark"><b>Editable:</b>' + "  " + d.editable + '</div>' +
             '</div>' +
             '<div class="row">' +
-            '<div class="col-xs-6 col-sm-6" style="background-color:#D6CADD;"><b>Healthiness Criteria:</b>' + "  " + d.healthiness_criteria + '</div>' +
+            '<div class="col-xs-6 col-sm-6 stripeSubtableLight"><b>Healthiness Criteria:</b>' + "  " + d.healthiness_criteria + '</div>' +
             '<div class="clearfix visible-xs"></div>' +
-            '<div class="col-xs-6 col-sm-6" style="background-color:#D6CADD;"><b>Refresh Rate:</b>' + "  " + d.value_refresh_rate + '</div>' +
+            '<div class="col-xs-6 col-sm-6 stripeSubtableLight"><b>Refresh Rate:</b>' + "  " + d.value_refresh_rate + '</div>' +
             '</div>' +
             '<div class="row">' +
-            '<div class="col-xs-6 col-sm-6" style="background-color:#E6E6FA;"><b>Kind:</b>' + "  " + d.kind + '</div>' +
+            '<div class="col-xs-6 col-sm-6 stripeSubtableDark"><b>Kind:</b>' + "  " + d.kind + '</div>' +
             '<div class="clearfix visible-xs"></div>' +
-            '<div class="col-xs-6 col-sm-6" style="background-color:#E6E6FA;"><b>Value Name:</b>' + "  " + d.value_name + '</div>' +
+            '<div class="col-xs-6 col-sm-6 stripeSubtableDark"><b>Value Name:</b>' + "  " + d.value_name + '</div>' +
             '</div>' +
             '<div class="row">' +
-            '<div class="col-xs-6 col-sm-6" style="background-color:#D6CADD;"><b>Longitude:</b>' + "  " + d.longitude + '</div>' +
+            '<div class="col-xs-6 col-sm-6 stripeSubtableLight"><b>Longitude:</b>' + "  " + d.longitude + '</div>' +
             '<div class="clearfix visible-xs"></div>' +
-            '<div class="col-xs-6 col-sm-6" style="background-color:#D6CADD;"><b>Latitude:</b>' + "  " + d.latitude + '</div>' +
+            '<div class="col-xs-6 col-sm-6 stripeSubtableLight"><b>Latitude:</b>' + "  " + d.latitude + '</div>' +
             '</div>';
 
     if (!gb_delegated) {
         result +=
                 '<div class="row">' +
-                '<div class="col-xs-6 col-sm-6" style="background-color:#E6E6FA;"><b>Gateway/Edge Type:</b>' + "  " + d.edgegateway_type + '</div>' +
+                '<div class="col-xs-6 col-sm-6 stripeSubtableDark"><b>Gateway/Edge Type:</b>' + "  " + d.edgegateway_type + '</div>' +
                 '<div class="clearfix visible-xs"></div>' +
-                '<div class="col-xs-6 col-sm-6" style="background-color:#E6E6FA;"><b>Gateway/Edge Uri:</b>' + "  " + d.edgegateway_uri + '</div>' +
+                '<div class="col-xs-6 col-sm-6 stripeSubtableDark"><b>Gateway/Edge Uri:</b>' + "  " + d.edgegateway_uri + '</div>' +
                 '</div>' +
                 '<div class="row">' +
-                '<div class="col-xs-12 col-sm-12" style="background-color:#D6CADD;"><b>Device Uri:</b> <a href="' + d.uri + '">' + d.uri + '</a></div>' +
+                '<div class="col-xs-12 col-sm-12 stripeSubtableLight"><b>Device Uri:</b> <a href="' + d.uri + '">' + d.uri + '</a></div>' +
                 '<div class="clearfix visible-xs"></div>' +
                 '</div>';
     }
 
     result +=
             '<div class="row">' +
-            '<div class="col-xs-6 col-sm-6" style="background-color:#E6E6FA;"><b>Organization:</b>' + "  " + d.organization + '</div>' +
+            '<div class="col-xs-6 col-sm-6 stripeSubtableDark"><b>Organization:</b>' + "  " + d.organization + '</div>' +
             '<div class="clearfix visible-xs"></div>' +
             '</div>' +
             showKey +
@@ -235,7 +235,7 @@ function fetch_data(destroyOld, delegated = null, selected = null)
                 "content": null,
                 "defaultContent": "",
                 "render": function () {
-                    return '<i class="fa fa-plus-square" aria-hidden="true"></i>';
+                    return '<i class="fa-solid fa-circle-plus" aria-hidden="true"></i>';
                 },
                 width: "15px"
             },
@@ -255,9 +255,9 @@ function fetch_data(destroyOld, delegated = null, selected = null)
                     //return row.visibility;
 
                     if (row.visibility == 'MyOwnPrivate') {
-                        return '<button type="button"  class=\"myOwnPrivateBtn\" onclick="changeVisibility(\'' + row.id + '\',\'' + row.cb + '\',\'' + row.value_name + '\',\'' + row.visibility + '\',\'' + row.uri + '\',\'' + row.k1 + '\',\'' + row.k2 + '\',\'' + row.model + '\')">' + row.visibility + '</button>';
+                        return '<button type="button"  class=\"myOwnPrivateBtn btn\" onclick="changeVisibility(\'' + row.id + '\',\'' + row.cb + '\',\'' + row.value_name + '\',\'' + row.visibility + '\',\'' + row.uri + '\',\'' + row.k1 + '\',\'' + row.k2 + '\',\'' + row.model + '\')">' + row.visibility + '</button>';
                     } else if (row.visibility == 'MyOwnPublic') {
-                        return '<button type="button"  class=\"myOwnPublicBtn\" onclick="changeVisibility(\'' + row.id + '\',\'' + row.cb + '\',\'' + row.value_name + '\',\'' + row.visibility + '\',\'' + row.uri + '\',\'' + row.k1 + '\',\'' + row.k2 + '\',\'' + row.model + '\')">' + row.visibility + '</button>';
+                        return '<button type="button"  class=\"myOwnPublicBtn btn\" onclick="changeVisibility(\'' + row.id + '\',\'' + row.cb + '\',\'' + row.value_name + '\',\'' + row.visibility + '\',\'' + row.uri + '\',\'' + row.k1 + '\',\'' + row.k2 + '\',\'' + row.model + '\')">' + row.visibility + '</button>';
                     } else {
                         return '';
                     }
@@ -300,7 +300,7 @@ function fetch_data(destroyOld, delegated = null, selected = null)
                 className: "center",
                 //defaultContent: '<button type="button" id="map" class="delDashBtn delete">Location</button>'
                 render: function (d) {
-                    return '<div class="addMapBtn"><i  data-toggle="modal" data-target="#addMapShow" onclick="drawMap(\'' + d.latitude + '\',\'' + d.longitude + '\', \'' + d.id + '\', \'' + d.devicetype + '\', \'' + d.kind + '\', \'' + 'addDeviceMapModalBodyShow' + '\')\" class="fa fa-globe"  style=\"font-size:36px; color: #0000ff\"></i></div>';
+                    return '<div class="addMapBtn"><i  data-toggle="modal" data-target="#addMapShow" onclick="drawMap(\'' + d.latitude + '\',\'' + d.longitude + '\', \'' + d.id + '\', \'' + d.devicetype + '\', \'' + d.kind + '\', \'' + 'addDeviceMapModalBodyShow' + '\')\" class="fa-solid fa-map-location-dot viewOnMap"></i></div>';
                 }
             }
         ],
@@ -748,9 +748,9 @@ $(document).ready(function ()
 //End of Delete Button 		
 
 // Device dataTable table Style 
-    $('#devicesTable thead').css("background", "rgba(0, 162, 211, 1)");
-    $('#devicesTable thead').css("color", "white");
-    $('#devicesTable thead').css("font-size", "1em");
+    // $('#devicesTable thead').css("background", "rgba(0, 162, 211, 1)");
+    // $('#devicesTable thead').css("color", "white");
+    // $('#devicesTable thead').css("font-size", "1em");
 
     $('#devicesTable tbody tr').each(function () {
         if ((dataTable.row(this).index()) % 2 !== 0)
@@ -1124,7 +1124,7 @@ $(document).ready(function ()
                 inputPropertiesDeviceMMsg.innerHTML = "";
             }
 
-            div.innerHTML = ("<div style=\"border:3px solid blue;\" >" +
+            div.innerHTML = ("<div>" +
                     "<h2>Device Status</h2>" +
                     "<table class=\"table\"><thead><tr><th>Property Status</th><th> checked</th></tr></thead>" +
                     "<tbody><tr><td>id</td><td>" + idNote + "</td></tr>" +

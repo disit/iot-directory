@@ -43,7 +43,7 @@ $(document).ready(function () {
                 "data": null,
                 "defaultContent": "",
                 "render": function () {
-                    return '<i class="fa fa-plus-square" aria-hidden="true" disabled ></i>';
+                    return '<i class="fa-solid fa-circle-plus" aria-hidden="true" disabled ></i>';
                 },
                 width: "15px"
             }, {

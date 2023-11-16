@@ -108,7 +108,7 @@ function drawAttributeMenu
 	(attrName, data_type, value_type, editable, value_unit, healthiness_criteria, value_refresh_rate, old_value_name, parent) {
 	//console.log("parent1= "+parent);
 	if (attrName == "")
-		msg = "<div style=\"color:red;\" class=\"modalFieldMsgCnt\"></div>";
+		msg = "<div class=\"not_ok_label\" class=\"modalFieldMsgCnt\"></div>";
 	else
 		msg = "<div class=\"modalFieldMsgCnt\">&nbsp;</div>";
 	options = "";
@@ -149,7 +149,7 @@ function drawAttributeMenu
 	}
 
 	//console.log("parent2= "+parent);
-	return "<div class=\"row\" style=\"border:3px solid blue;\" ><div class=\"col-xs-6 col-md-3 modalCell\">" +
+	return "<div class=\"row\"><div class=\"col-xs-6 col-md-3 modalCell\">" +
 		"<div class=\"modalFieldCnt\"><input type=\"text\" class=\"modalInputTxt\"" +
 		"name=\"" + attrName + "\"  value=\"" + attrName + "\">" +
 		"</div><div class=\"modalFieldLabelCnt\">Value Name</div>" + msg + "</div>" +
@@ -234,9 +234,9 @@ function format(d) {
 	if (d.visibility == 'MyOwnPublic' || d.visibility == 'MyOwnPrivate' || d.visibility == 'delegated') {
 		if (d.k1 != "" && d.k2 != "")
 			showKey = '<div class="row">' +
-				'<div class="col-xs-6 col-sm-6" style="background-color:#D6CADD;"><b>K1:</b>' + "  " + d.k1 + '</div>' +
+				'<div class="col-xs-6 col-sm-6 stripeSubtableLight"><b>K1:</b>' + "  " + d.k1 + '</div>' +
 				'<div class="clearfix visible-xs"></div>' +
-				'<div class="col-xs-6 col-sm-6" style="background-color:#D6CADD;"><b>K2:</b>' + "  " + d.k2 + '</div>' +
+				'<div class="col-xs-6 col-sm-6 stripeSubtableLight"><b>K2:</b>' + "  " + d.k2 + '</div>' +
 				'</div>';
 	}
 	else showKey = "";
@@ -253,67 +253,67 @@ function format(d) {
 		//console.log(x);
 		//var tu = x.getYear();
 		txtCert = '<div class="row">' +
-			'<div class="col-xs-6 col-sm-6" style="background-color:#D6CADD;"><b>Created on:</b>' + "  " + d.created + '</div>' +
+			'<div class="col-xs-6 col-sm-6 stripeSubtableLight"><b>Created on:</b>' + "  " + d.created + '</div>' +
 			'<div class="clearfix visible-xs"></div>' +
-			'<div class="col-xs-6 col-sm-6" style="background-color:#D6CADD;"><b>Expire on:</b>' + "  " + y + '</div>' +
+			'<div class="col-xs-6 col-sm-6 stripeSubtableLight"><b>Expire on:</b>' + "  " + y + '</div>' +
 			'</div>' +
 
 			'<div class="row">' +
-			'<div class="col-xs-6 col-sm-6" style="background-color:#E6E6FA;"><button class="btn btn-warning" onclick="download(\'\/private\/' + d.privatekey + '\',\'' + d.id + '\',\'' + d.contextbroker + '\');return true;"><b>private key</b></button></div>' +
+			'<div class="col-xs-6 col-sm-6 stripeSubtableDark"><button class="btn btn-warning" onclick="download(\'\/private\/' + d.privatekey + '\',\'' + d.id + '\',\'' + d.contextbroker + '\');return true;"><b>private key</b></button></div>' +
 			'<div class="clearfix visible-xs"></div>' +
-			'<div class="col-xs-6 col-sm-6" style="background-color:#E6E6FA;"><button class="btn btn-warning" onclick="download(\'\/certsdb\/' + d.certificate + '\',\'' + d.id + '\',\'' + d.contextbroker + '\');return true;"><b>certificate</b></button></div>' +
+			'<div class="col-xs-6 col-sm-6 stripeSubtableDark"><button class="btn btn-warning" onclick="download(\'\/certsdb\/' + d.certificate + '\',\'' + d.id + '\',\'' + d.contextbroker + '\');return true;"><b>certificate</b></button></div>' +
 			'</div>' +
 			'<div class="row">' +
-			'<div class="col-xs-6 col-sm-6" style="background-color:#D6CADD;"><b>SHA1:</b>' + "  " + d.sha + '</div>' +
+			'<div class="col-xs-6 col-sm-6 stripeSubtableLight"><b>SHA1:</b>' + "  " + d.sha + '</div>' +
 			'<div class="clearfix visible-xs"></div>' +
 			'</div>';
 	}
 	else
 		txtCert = '<div class="row">' +
-			'<div class="col-xs-6 col-sm-6" style="background-color:#D6CADD;"><b>Created on:</b>' + "  " + d.created + '</div>' +
+			'<div class="col-xs-6 col-sm-6 stripeSubtableLight"><b>Created on:</b>' + "  " + d.created + '</div>' +
 			'<div class="clearfix visible-xs"></div>' +
 			'</div>';
 
 	// `d` is the original data object for the row
 	return '<div class="container-fluid">' +
 		'<div class="row">' +
-		'<div class="col-xs-6 col-sm-6" style="background-color:#E6E6FA;"><b>IoT Broker URI:</b>' + "  " + d.accesslink + '</div>' +
+		'<div class="col-xs-6 col-sm-6 stripeSubtableDark"><b>IoT Broker URI:</b>' + "  " + d.accesslink + '</div>' +
 		'<div class="clearfix visible-xs"></div>' +
-		'<div class="col-xs-6 col-sm-6" style="background-color:#E6E6FA;"><b>IoT Broker Port:</b>' + "  " + d.accessport + '</div>' +
+		'<div class="col-xs-6 col-sm-6 stripeSubtableDark"><b>IoT Broker Port:</b>' + "  " + d.accessport + '</div>' +
 		'</div>' +
 		'<div class="row">' +
-		'<div class="col-xs-6 col-sm-6" style="background-color:#D6CADD;"><b>Kind:</b>' + "  " + d.kind + '</div>' +
+		'<div class="col-xs-6 col-sm-6 stripeSubtableLight"><b>Kind:</b>' + "  " + d.kind + '</div>' +
 		'<div class="clearfix visible-xs"></div>' +
-		'<div class="col-xs-6 col-sm-6" style="background-color:#D6CADD;"><b>Visibility:</b>' + "  " + d.visibility + '</div>' +
+		'<div class="col-xs-6 col-sm-6 stripeSubtableLight"><b>Visibility:</b>' + "  " + d.visibility + '</div>' +
 		'</div>' +
 		'<div class="row">' +
-		'<div class="col-xs-6 col-sm-6" style="background-color:#E6E6FA;"><b>Device Type:</b>' + "  " + d.devicetype + '</div>' +
+		'<div class="col-xs-6 col-sm-6 stripeSubtableDark"><b>Device Type:</b>' + "  " + d.devicetype + '</div>' +
 		'<div class="clearfix visible-xs"></div>' +
-		'<div class="col-xs-6 col-sm-6" style="background-color:#E6E6FA;"><b>Format:</b>' + "  " + d.format + '</div>' +
+		'<div class="col-xs-6 col-sm-6 stripeSubtableDark"><b>Format:</b>' + "  " + d.format + '</div>' +
 		'</div>' +
 		'<div class="row">' +
-		'<div class="col-xs-6 col-sm-6" style="background-color:#D6CADD;"><b>Protocol:</b>' + "  " + d.protocol + '</div>' +
+		'<div class="col-xs-6 col-sm-6 stripeSubtableLight"><b>Protocol:</b>' + "  " + d.protocol + '</div>' +
 		'<div class="clearfix visible-xs"></div>' +
-		'<div class="col-xs-6 col-sm-6" style="background-color:#D6CADD;"><b>MAC:</b>' + "  " + d.macaddress + '</div>' +
+		'<div class="col-xs-6 col-sm-6 stripeSubtableLight"><b>MAC:</b>' + "  " + d.macaddress + '</div>' +
 		'</div>' +
 		'<div class="row">' +
-		'<div class="col-xs-6 col-sm-6" style="background-color:#E6E6FA;"><b>Model:</b>' + "  " + d.model + '</div>' +
+		'<div class="col-xs-6 col-sm-6 stripeSubtableDark"><b>Model:</b>' + "  " + d.model + '</div>' +
 		'<div class="clearfix visible-xs"></div>' +
-		'<div class="col-xs-6 col-sm-6" style="background-color:#E6E6FA;"><b>Producer:</b>' + "  " + d.producer + '</div>' +
+		'<div class="col-xs-6 col-sm-6 stripeSubtableDark"><b>Producer:</b>' + "  " + d.producer + '</div>' +
 		'</div>' +
 		'<div class="row">' +
-		'<div class="col-xs-6 col-sm-6" style="background-color:#D6CADD;"><b>Longitude:</b>' + "  " + d.longitude + '</div>' +
+		'<div class="col-xs-6 col-sm-6 stripeSubtableLight"><b>Longitude:</b>' + "  " + d.longitude + '</div>' +
 		'<div class="clearfix visible-xs"></div>' +
-		'<div class="col-xs-6 col-sm-6" style="background-color:#D6CADD;"><b>Latitude:</b>' + "  " + d.latitude + '</div>' +
+		'<div class="col-xs-6 col-sm-6 stripeSubtableLight"><b>Latitude:</b>' + "  " + d.latitude + '</div>' +
 		'</div>' +
 		'<div class="row">' +
-		'<div class="col-xs-6 col-sm-6" style="background-color:#E6E6FA;"><b>Gateway/Edge Type:</b>' + "  " + d.edgegateway_type + '</div>' +
+		'<div class="col-xs-6 col-sm-6 stripeSubtableDark"><b>Gateway/Edge Type:</b>' + "  " + d.edgegateway_type + '</div>' +
 		'<div class="clearfix visible-xs"></div>' +
-		'<div class="col-xs-6 col-sm-6" style="background-color:#E6E6FA;"><b>Gateway/Edge Uri:</b>' + "  " + d.edgegateway_uri + '</div>' +
+		'<div class="col-xs-6 col-sm-6 stripeSubtableDark"><b>Gateway/Edge Uri:</b>' + "  " + d.edgegateway_uri + '</div>' +
 		'</div>' + showKey +
 
 		'<div class="row">' +
-		'<div class="col-xs-6 col-sm-6" style="background-color:#E6E6FA;"><b>Organization:</b>' + "  " + d.organization + '</div>' +
+		'<div class="col-xs-6 col-sm-6 stripeSubtableDark"><b>Organization:</b>' + "  " + d.organization + '</div>' +
 		'<div class="clearfix visible-xs"></div>' +
 
 		'</div>' + txtCert +
@@ -369,7 +369,7 @@ function fetch_data(destroyOld, selected = null) {
 				"data": null,
 				"defaultContent": "",
 				"render": function () {
-					return '<i class="fa fa-plus-square" aria-hidden="true"></i>';
+					return '<i class="fa-solid fa-circle-plus" aria-hidden="true"></i>';
 				},
 				width: "15px"
 			},
@@ -515,9 +515,9 @@ $(document).ready(function () {
 
 	// Device dataTable table Style 
 
-	$('#devicesTable thead').css("background", "rgba(0, 162, 211, 1)");
-	$('#devicesTable thead').css("color", "white");
-	$('#devicesTable thead').css("font-size", "1em");
+	// $('#devicesTable thead').css("background", "rgba(0, 162, 211, 1)");
+	// $('#devicesTable thead').css("color", "white");
+	// $('#devicesTable thead').css("font-size", "1em");
 
 
 	$('#devicesTable tbody tr').each(function () {
@@ -749,7 +749,7 @@ $(document).ready(function () {
 				inputPropertiesDeviceMMsg.innerHTML = "";
 			}
 
-			div.innerHTML = ("<div style=\"border:3px solid blue;\" >" +
+			div.innerHTML = ("<div>" +
 				"<h2>Device Status</h2>" +
 				"<table class=\"table\"><thead><tr><th>Property Status</th><th> checked</th></tr></thead>" +
 				"<tbody><tr><td>id</td><td>" + idNote + "</td></tr>" +

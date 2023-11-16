@@ -129,9 +129,9 @@ $(document).ready(function ()
 
 // Device dataTable table Style 
   
-	$('#devicesTable thead').css("background", "rgba(0, 162, 211, 1)");
-	$('#devicesTable thead').css("color", "white");
-	$('#devicesTable thead').css("font-size", "1em");
+	// $('#devicesTable thead').css("background", "rgba(0, 162, 211, 1)");
+	// $('#devicesTable thead').css("color", "white");
+	// $('#devicesTable thead').css("font-size", "1em");
 
 	console.log("logged role "+loggedRole);
 	if(loggedRole != 'Root' && loggedRole != 'RootAdmin'){

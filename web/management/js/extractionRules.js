@@ -103,17 +103,17 @@ function format(d) {
 	return '<div class="container-fluid">' +
 
 		'<div class="row">' +
-		'<div class="col-xs-6 col-sm-6" style="background-color:#D6CADD;"><b>Selector:</b>' + "  " + d.selector + '</div>' +
+		'<div class="col-xs-6 col-sm-6 stripeSubtableLight"><b>Selector:</b>' + "  " + d.selector + '</div>' +
 		'<div class="clearfix visible-xs"></div>' +
-		'<div class="col-xs-6 col-sm-6" style="background-color:#D6CADD;"><b>Data type:</b>' + "  " + d.data_type + '</div>' +
+		'<div class="col-xs-6 col-sm-6 stripeSubtableLight"><b>Data type:</b>' + "  " + d.data_type + '</div>' +
 		'</div>' +
 		'<div class="row">' +
-		'<div class="col-xs-6 col-sm-6" style="background-color:#E6E6FA;"><b>Value Type:</b>' + "  " + d.value_type + '</div>' +
+		'<div class="col-xs-6 col-sm-6 stripeSubtableDark"><b>Value Type:</b>' + "  " + d.value_type + '</div>' +
 		'<div class="clearfix visible-xs"></div>' +
-		'<div class="col-xs-6 col-sm-6" style="background-color:#E6E6FA;"><b>Value Unit</b>' + "  " + d.value_unit + '</div>' +
+		'<div class="col-xs-6 col-sm-6 stripeSubtableDark"><b>Value Unit</b>' + "  " + d.value_unit + '</div>' +
 		'</div>' +
 		'<div class="row">' +
-		'<div class="col-xs-6 col-sm-6" style="background-color:#D6CADD;"><b>Structure Value:</b>' + "  " + d.structure_flag + '</div>' +
+		'<div class="col-xs-6 col-sm-6 stripeSubtableLight"><b>Structure Value:</b>' + "  " + d.structure_flag + '</div>' +
 		'<div class="clearfix visible-xs"></div>' +
 		'</div>' +
 		'</div>';
@@ -158,7 +158,7 @@ function fetch_data(destroyOld, selected = null) {
 				"data": null,
 				"defaultContent": "",
 				"render": function () {
-					return '<i class="fa fa-plus-square" aria-hidden="true"></i>';
+					return '<i class="fa-solid fa-circle-plus" aria-hidden="true"></i>';
 				},
 				width: "15px"
 			},
@@ -361,9 +361,9 @@ $(document).ready(function () {
 
 	// Device dataTable table Style 
 
-	$('#devicesTable thead').css("background", "rgba(0, 162, 211, 1)");
-	$('#devicesTable thead').css("color", "white");
-	$('#devicesTable thead').css("font-size", "1em");
+	// $('#devicesTable thead').css("background", "rgba(0, 162, 211, 1)");
+	// $('#devicesTable thead').css("color", "white");
+	// $('#devicesTable thead').css("font-size", "1em");
 
 
 	$('#devicesTable tbody tr').each(function () {
@@ -504,7 +504,7 @@ $(document).ready(function () {
 				inputPropertiesDeviceMMsg.innerHTML = "";
 			}
 
-			div.innerHTML = ("<div style=\"border:3px solid blue;\" >" +
+			div.innerHTML = ("<div>" +
 				"<h2>Device Status</h2>" +
 				"<table class=\"table\"><thead><tr><th>Property Status</th><th> checked</th></tr></thead>" +
 				"<tbody><tr><td>id</td><td>" + idNote + "</td></tr>" +
@@ -973,9 +973,9 @@ $(document).ready(function () {
 	});
 
 
-	$('#devicesTable thead').css("background", "rgba(0, 162, 211, 1)");
-	$('#devicesTable thead').css("color", "white");
-	$('#devicesTable thead').css("font-size", "1em");
+	// $('#devicesTable thead').css("background", "rgba(0, 162, 211, 1)");
+	// $('#devicesTable thead').css("color", "white");
+	// $('#devicesTable thead').css("font-size", "1em");
 
 	//CONTEXTBROKER AND PROTOCOL RELATION FOR ADD DEVICE -SELECTOR 
 	$("#selectContextBroker").change(function () {

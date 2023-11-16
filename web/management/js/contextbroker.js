@@ -65,30 +65,30 @@ function aggiornaStub()
 function format(d) {
 //     return '<div class="container-fluid">' +
 //            '<div class="row">' +
-//            '<div class="col-xs-6 col-sm-6" style="background-color:#E6E6FA;"><b>Broker URI:</b>' + "  " + d.accesslink + '</div>' +
+//            '<div class="col-xs-6 col-sm-6 stripeSubtableDark"><b>Broker URI:</b>' + "  " + d.accesslink + '</div>' +
 //            '<div class="clearfix visible-xs"></div>' +
-//            '<div class="col-xs-6 col-sm-6" style="background-color:#E6E6FA;"><b>Broker Port:</b>' + "  " + d.accessport + '</div>' +
+//            '<div class="col-xs-6 col-sm-6 stripeSubtableDark"><b>Broker Port:</b>' + "  " + d.accessport + '</div>' +
 //            '</div>' +
 //            '<div class="row">' +
-//            '<div class="col-xs-6 col-sm-6" style="background-color:#D6CADD;"><b>Latitude:</b>' + "  " + d.latitude + '</div>' +
+//            '<div class="col-xs-6 col-sm-6 stripeSubtableLight"><b>Latitude:</b>' + "  " + d.latitude + '</div>' +
 //            '<div class="clearfix visible-xs"></div>' +
-//            '<div class="col-xs-6 col-sm-6" style="background-color:#D6CADD;"><b>Longitude:</b>' + "  " + d.longitude + '</div>' +
+//            '<div class="col-xs-6 col-sm-6 stripeSubtableLight"><b>Longitude:</b>' + "  " + d.longitude + '</div>' +
 //            '</div>' +
 //            '<div class="row">' +
-//            '<div class="col-xs-6 col-sm-6" style="background-color:#E6E6FA;"><b>Login:</b>' + "  " + d.login + '</div>' +
+//            '<div class="col-xs-6 col-sm-6 stripeSubtableDark"><b>Login:</b>' + "  " + d.login + '</div>' +
 //            '<div class="clearfix visible-xs"></div>' +
-//            '<div class="col-xs-6 col-sm-6" style="background-color:#E6E6FA;"><b>Password:</b>' + "  " + d.password + '</div>' +
+//            '<div class="col-xs-6 col-sm-6 stripeSubtableDark"><b>Password:</b>' + "  " + d.password + '</div>' +
 //            '</div>' +            
 //            '<div class="row">' +
-//            '<div class="col-xs-6 col-sm-6" style="background-color:#D6CADD;"><b>SHA:</b>' + "  " + d.sha + '</div>' +
+//            '<div class="col-xs-6 col-sm-6 stripeSubtableLight"><b>SHA:</b>' + "  " + d.sha + '</div>' +
 //            '<div class="clearfix visible-xs"></div>' +
-//            '<div class="col-xs-6 col-sm-6" style="background-color:#D6CADD;"><b>Version:</b>' + "  " + d.version + '</div>' +     
+//            '<div class="col-xs-6 col-sm-6 stripeSubtableLight"><b>Version:</b>' + "  " + d.version + '</div>' +     
 //             '</div>' +            
 //              
 //            
 //            '<div class="row">' +
-//            '<div class="col-xs-6 col-sm-6" style="background-color:#E6E6FA;"><b>Orion version:</b>' + "  " + '<span id=\"Version_api\" class=\"rsvp\" ></span>' +  '</div>' +
-//            '<div class="col-xs-6 col-sm-6" style="background-color:#E6E6FA;"><b>Orion status:</b>' + "  " + '<span id=\"Version_status\" class=\"rsvp\" ></span>' + 
+//            '<div class="col-xs-6 col-sm-6 stripeSubtableDark"><b>Orion version:</b>' + "  " + '<span id=\"Version_api\" class=\"rsvp\" ></span>' +  '</div>' +
+//            '<div class="col-xs-6 col-sm-6 stripeSubtableDark"><b>Orion status:</b>' + "  " + '<span id=\"Version_status\" class=\"rsvp\" ></span>' + 
 //            '<button id="Update_version_CB" class="btn btn-info my-small-button pull-right" type="button" data-org="' + d.organization + '"  data-name="' + d.name + '" onclick="UpDateOrion()">TRY UPDATE</button></div>' +
 //            '</div>' +  
 //            '</div>' +
@@ -99,27 +99,27 @@ function format(d) {
     if (d.dynamic == true) {
         return '<div class="container-fluid">' +
                 '<div class="row">' +
-                '<div class="col-xs-6 col-sm-6" style="background-color:#E6E6FA;"><b>Broker URI:</b>' + "  " + d.accesslink + '</div>' +
+                '<div class="col-xs-6 col-sm-6 stripeSubtableDark"><b>Broker URI:</b>' + "  " + d.accesslink + '</div>' +
                 '<div class="clearfix visible-xs"></div>' +
-                '<div class="col-xs-6 col-sm-6" style="background-color:#E6E6FA;"><b>Broker Port:</b>' + "  " + d.accessport + '</div>' +
+                '<div class="col-xs-6 col-sm-6 stripeSubtableDark"><b>Broker Port:</b>' + "  " + d.accessport + '</div>' +
                 '</div>' +
                 '<div class="row">' +
-                '<div class="col-xs-6 col-sm-6" style="background-color:#D6CADD;"><b>Latitude:</b>' + "  " + d.latitude + '</div>' +
+                '<div class="col-xs-6 col-sm-6 stripeSubtableLight"><b>Latitude:</b>' + "  " + d.latitude + '</div>' +
                 '<div class="clearfix visible-xs"></div>' +
-                '<div class="col-xs-6 col-sm-6" style="background-color:#D6CADD;"><b>Longitude:</b>' + "  " + d.longitude + '</div>' +
+                '<div class="col-xs-6 col-sm-6 stripeSubtableLight"><b>Longitude:</b>' + "  " + d.longitude + '</div>' +
                 '</div>' +
                 '<div class="row">' +
-                '<div class="col-xs-6 col-sm-6" style="background-color:#E6E6FA;"><b>Login:</b>' + "  " + d.login + '</div>' +
+                '<div class="col-xs-6 col-sm-6 stripeSubtableDark"><b>Login:</b>' + "  " + d.login + '</div>' +
                 '<div class="clearfix visible-xs"></div>' +
-                '<div class="col-xs-6 col-sm-6" style="background-color:#E6E6FA;"><b>Password:</b>' + "  " + d.password + '</div>' +
+                '<div class="col-xs-6 col-sm-6 stripeSubtableDark"><b>Password:</b>' + "  " + d.password + '</div>' +
                 '</div>' +
                 '<div class="row">' +
-                '<div class="col-xs-6 col-sm-6" style="background-color:#D6CADD;"><b>SHA:</b>' + "  " + d.sha + '</div>' +
+                '<div class="col-xs-6 col-sm-6 stripeSubtableLight"><b>SHA:</b>' + "  " + d.sha + '</div>' +
                 '<div class="clearfix visible-xs"></div>' +
-                '<div class="col-xs-6 col-sm-6" style="background-color:#D6CADD;"><b>Version:</b>' + "  " + d.version + '</div>' +
+                '<div class="col-xs-6 col-sm-6 stripeSubtableLight"><b>Version:</b>' + "  " + d.version + '</div>' +
                 '<div class="row">' +
-                '<div class="col-xs-6 col-sm-6" style="background-color:#E6E6FA;"><b>Orion version:</b>' + "  " + '<span id=\"Version_api\" class=\"rsvp\" ></span>' + '</div>' +
-                '<div class="col-xs-6 col-sm-6" style="background-color:#E6E6FA;"><b>Orion status:</b>' + "  " + '<span id=\"Version_status\" class=\"rsvp\" ></span>' +
+                '<div class="col-xs-6 col-sm-6 stripeSubtableDark"><b>Orion version:</b>' + "  " + '<span id=\"Version_api\" class=\"rsvp\" ></span>' + '</div>' +
+                '<div class="col-xs-6 col-sm-6 stripeSubtableDark"><b>Orion status:</b>' + "  " + '<span id=\"Version_status\" class=\"rsvp\" ></span>' +
                 '<button id="Update_version_CB" class="btn btn-info my-small-button pull-right" type="button" data-org="' + d.organization + '"  data-name="' + d.name + '" onclick="UpDateOrion()">UPDATE</button></div>' +
                 '</div>' +
                 '</div>' +
@@ -130,24 +130,24 @@ function format(d) {
     } else if (d.dynamic == false) {
         return '<div class="container-fluid">' +
                 '<div class="row">' +
-                '<div class="col-xs-6 col-sm-6" style="background-color:#E6E6FA;"><b>Broker URI:</b>' + "  " + d.accesslink + '</div>' +
+                '<div class="col-xs-6 col-sm-6 stripeSubtableDark"><b>Broker URI:</b>' + "  " + d.accesslink + '</div>' +
                 '<div class="clearfix visible-xs"></div>' +
-                '<div class="col-xs-6 col-sm-6" style="background-color:#E6E6FA;"><b>Broker Port:</b>' + "  " + d.accessport + '</div>' +
+                '<div class="col-xs-6 col-sm-6 stripeSubtableDark"><b>Broker Port:</b>' + "  " + d.accessport + '</div>' +
                 '</div>' +
                 '<div class="row">' +
-                '<div class="col-xs-6 col-sm-6" style="background-color:#D6CADD;"><b>Latitude:</b>' + "  " + d.latitude + '</div>' +
+                '<div class="col-xs-6 col-sm-6 stripeSubtableLight"><b>Latitude:</b>' + "  " + d.latitude + '</div>' +
                 '<div class="clearfix visible-xs"></div>' +
-                '<div class="col-xs-6 col-sm-6" style="background-color:#D6CADD;"><b>Longitude:</b>' + "  " + d.longitude + '</div>' +
+                '<div class="col-xs-6 col-sm-6 stripeSubtableLight"><b>Longitude:</b>' + "  " + d.longitude + '</div>' +
                 '</div>' +
                 '<div class="row">' +
-                '<div class="col-xs-6 col-sm-6" style="background-color:#E6E6FA;"><b>Login:</b>' + "  " + d.login + '</div>' +
+                '<div class="col-xs-6 col-sm-6 stripeSubtableDark"><b>Login:</b>' + "  " + d.login + '</div>' +
                 '<div class="clearfix visible-xs"></div>' +
-                '<div class="col-xs-6 col-sm-6" style="background-color:#E6E6FA;"><b>Password:</b>' + "  " + d.password + '</div>' +
+                '<div class="col-xs-6 col-sm-6 stripeSubtableDark"><b>Password:</b>' + "  " + d.password + '</div>' +
                 '</div>' +
                 '<div class="row">' +
-                '<div class="col-xs-6 col-sm-6" style="background-color:#D6CADD;"><b>SHA:</b>' + "  " + d.sha + '</div>' +
+                '<div class="col-xs-6 col-sm-6 stripeSubtableLight"><b>SHA:</b>' + "  " + d.sha + '</div>' +
                 '<div class="clearfix visible-xs"></div>' +
-                '<div class="col-xs-6 col-sm-6" style="background-color:#D6CADD;"><b>Version:</b>' + "  " + d.version + '</div>' +
+                '<div class="col-xs-6 col-sm-6 stripeSubtableLight"><b>Version:</b>' + "  " + d.version + '</div>' +
                 '<div class="row">' +
                 '</div>' +
                 '</div>' +
@@ -228,7 +228,7 @@ function fetch_data(destroyOld, selected = null) {
                 "data": null,
                 "defaultContent": "",
                 "render": function () {
-                    return '<i class="fa fa-plus-square" aria-hidden="true"></i>';
+                    return '<i class="fa-solid fa-circle-plus" aria-hidden="true"></i>';
                 }
             }, {
                 "name": "name",
@@ -259,10 +259,10 @@ function fetch_data(destroyOld, selected = null) {
                 "name": "visibility",
                 "data": function (row, type, val, meta) {
                     if (row.visibility == 'MyOwnPrivate') {
-                        return '<button type="button"  class=\"myOwnPrivateBtn\" onclick="changeVisibility(\'' +
+                        return '<button type="button"  class=\"myOwnPrivateBtn btn\" onclick="changeVisibility(\'' +
                                 row.name + '\',\'' + row.visibility + '\',\'' + row.organization + '\',\'' + row.accesslink + '\')">' + row.visibility + '</button>';
                     } else if (row.visibility == 'MyOwnPublic') {
-                        return '<button type="button"  class=\"myOwnPublicBtn\" onclick="changeVisibility(\'' +
+                        return '<button type="button"  class=\"myOwnPublicBtn btn\" onclick="changeVisibility(\'' +
                                 row.name + '\',\'' + row.visibility + '\',\'' + row.organization + '\',\'' + row.accesslink + '\')">' + row.visibility + '</button>';
                     } else if (row.visibility == 'public')
                     {
@@ -376,7 +376,7 @@ function fetch_data(destroyOld, selected = null) {
                 render: function (d) {
                     if ((d.protocol == 'ngsi' || d.protocol.substring(0, 4) == 'ngsi')) {
                         //&& (d.accesslink.substring(0, 14) != "http://192.168" && d.accesslink.substring(0, 7) != "192.168")
-                        return '<button id="testbuttonB" type="button"  class="testDashBtn" data-name="' + d.name + '" ' + 'data-version="' + d.version + '" ' + 'data-organization="' + d.organization + '" > Test </button><button type="button" class="viewButDashBtn" data-name="' + d.name + '" ' +
+                        return '<button id="testbuttonB" type="button"  class="testDashBtn btn" data-name="' + d.name + '" ' + 'data-version="' + d.version + '" ' + 'data-organization="' + d.organization + '" > Test </button><button type="button" class="viewButDashBtn btn" data-name="' + d.name + '" ' +
                                 'data-organization="' + d.organization + '" ' +
                                 'data-kind="' + d.kind + '" ' +
                                 'data-ip="' + d.ip + '" ' +
@@ -400,7 +400,7 @@ function fetch_data(destroyOld, selected = null) {
                                 'data-urlnificallback="' + d.urlnificallback + '" ' +
                                 'data-subscription_id="' + d.subscription_id + '" ' + 'data-services="' + d.services + '">View</button>';
                     } else {
-                        return '<button type="button" class="viewButDashBtn" data-name="' + d.name + '" ' +
+                        return '<button type="button" class="viewButDashBtn btn" data-name="' + d.name + '" ' +
                                 'data-organization="' + d.organization + '" ' +
                                 'data-kind="' + d.kind + '" ' +
                                 'data-ip="' + d.ip + '" ' +
