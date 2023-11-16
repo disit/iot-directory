@@ -15,9 +15,8 @@
   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA. */
 
 include('../config.php');
-session_start();
 
-manageLegacy();
+session_start();
 
 ///// SHOW FRAME PARAMETER /////
 if (isset($_REQUEST['showFrame'])) {
@@ -118,10 +117,22 @@ if (isset($_SESSION['refreshToken'])) {
         <!-- Filestyle -->
         <script type="text/javascript" src="../js/filestyle/src/bootstrap-filestyle.min.js"></script>
 
+        <!-- Font awesome icons -->
+        <link rel="stylesheet" href="../js/fontAwesome/css/font-awesome.min.css">
+
+        <link href="https://fonts.googleapis.com/css?family=Cabin:400,500,600,700|Catamaran|Varela+Round" rel="stylesheet">
 
         <!-- Custom CSS -->
-        <?php include "theme-switcher.php"?>
-        
+        <link href="../css/dashboard.css" rel="stylesheet">
+        <style> .btn-round { width: 30px; height:30px; border-radius: 50%; }
+            #mainMenuCnt
+            {
+                background-color: rgba(51, 64, 69, 1);
+                color: white;
+                height: 100vh;
+                <?php if ($hide_menu == "hide") echo "display:none"; //MM201218   ?>
+            }
+        </style>
 
         <!-- Custom scripts     -->
         <script>
@@ -177,12 +188,12 @@ if (isset($_SESSION['refreshToken'])) {
         <script type="text/javascript" src="../js/dashboard_mng.js"></script>
 
         <!-- Custom scripts -->
-        <script type="text/javascript" src="js/contextbroker.js"></script>
+        <script type="text/javascript" src="../legacy/management/js/contextbroker.js"></script>
 
         <!-- Custom scripts -->
-        <script type="text/javascript" src="js/cbsManagement.js"></script>
-        <script type="text/javascript" src="js/cbsEditManagement.js"></script>
-        <script type="text/javascript" src="js/fieldsManagement.js"></script>
+        <script type="text/javascript" src="../legacy/management/js/cbsManagement.js"></script>
+        <script type="text/javascript" src="../legacy/management/js/cbsEditManagement.js"></script>
+        <script type="text/javascript" src="../legacy/management/js/fieldsManagement.js"></script>
 
         <!-- leaflet scripts -->
         <script type="text/javascript" src="../js/leaflet.js"></script>
@@ -190,10 +201,11 @@ if (isset($_SESSION['refreshToken'])) {
         <script type="text/javascript" src="../js/jquery.fancytree-all.min.js"></script>
 
     </head>
-    <body class="guiPageBody IOTdevices">
+    <body class="guiPageBody">
         <div class="container-fluid">
             <?php include "sessionExpiringPopup.php" ?>         
             <div class="row mainRow">
+                <?php include "mainMenu.php" ?>
                 <div 
                 <?php
                 //MM201218
@@ -215,12 +227,12 @@ if (isset($_SESSION['refreshToken'])) {
                         ?>
                         <div class="row" id="title_row">
                             <div class="col-xs-10 col-md-12 centerWithFlex" id="headerTitleCnt">IoT Directory: Context Brokers</div>
-                            <div class="col-xs-2 hidden-md hidden-lg centerWithFlex" id="headerMenuCnt"></div>
+                            <div class="col-xs-2 hidden-md hidden-lg centerWithFlex" id="headerMenuCnt"><!--?php include "mobMainMenu.php" ?--></div>
                         </div>
                     <?php } //MM201218 FINE     ?>
 
                     <div class="row">
-                        <div class="col-xs-12" id="mainContentCntIot">
+                        <div class="col-xs-12" id="mainContentCnt">
                             <div id="synthesis" class="row hidden-xs hidden-sm mainContentRow">
                                 <div class="col-xs-12 mainContentRowDesc"></div>
                                 <div id="dashboardTotNumberCnt" class="col-md-3 mainContentCellCnt">
@@ -241,11 +253,11 @@ if (isset($_SESSION['refreshToken'])) {
                             <div class="row mainContentRow">
                                 <div class="col-xs-12 mainContentRowDesc"></div>
                                 <div class="col-xs-12 mainContentCellCnt">
-                                    <div class="row">
-                                        <div class="col-xs-12 col-md-6 modalCell">
-                                            <div id="displayDevicesMapCB" class="pull-right"><button type="button" class="btn btn-primary btn-round"><i class="fa-solid fa-map-location-dot viewOnMap"></i></button></div>
+                                    <div class="row" style= "background-color: rgb(241, 245, 244);">
+                                        <div class="col-xs-12 col-md-6 modalCell" style= "background-color: rgb(241, 245, 244);">
+                                            <div id="displayDevicesMapCB" class="pull-right"><button type="button" class="btn btn-primary btn-round"><span class="glyphicon glyphicon-globe" style="font-size:36px; color: #0000ff"></span></button></div>
                                         </div>
-                                        <div class="col-xs-12 col-md-6 modalCell">
+                                        <div class="col-xs-12 col-md-6 modalCell" style= "background-color: rgb(241, 245, 244);">
                                             <?php if ($_SESSION['loggedRole'] == 'RootAdmin' || $_SESSION['loggedRole'] == 'ToolAdmin') { ?>
 
                                                 <?php if ($deployOrion == "true") { ?>
@@ -257,9 +269,9 @@ if (isset($_SESSION['refreshToken'])) {
                                         </div>
                                     </div>
                                     <div>
-                                        <table id="contextBrokerTable" class="table table-striped dt-responsive nowrap dataTable no-footer dtr-inline collapsed" cellspacing="0" width="100%">
-                                            <thead class="dataTableHeadColTitle">
-                                                <tr>
+                                        <table id="contextBrokerTable" class="table table-bordered table-striped" cellspacing="0" width="100%">
+                                            <thead>
+                                                <tr style="background: rgb(0, 162, 211); color: rgb(255, 255, 255); font-size: 1em;">
                                                     <th></th>	
                                                     <th data-cellTitle="name">IOT Broker</th>
                                                     <th data-cellTitle="accesslink">Access Link</th>
@@ -363,7 +375,7 @@ if (isset($_SESSION['refreshToken'])) {
 
                     </div>
 
-                    <div id="addContextBrokerModalBody">
+                    <div id="addContextBrokerModalBody" class="modal-body modalBody">
                         <ul id="addContextBrokerModalTabs" class="nav nav-tabs nav-justified">
                             <li id='tab-addCB-1' class="active"><a data-toggle="tab" href="#infoTabCB">Info</a></li>
                             <li id="multiServiceTabSelector" class="hidden"><a data-toggle="tab" href="#serviceTenantTabCB">Multitenancy</a></li>
@@ -549,7 +561,7 @@ if (isset($_SESSION['refreshToken'])) {
                                 <div class="form-row iot-directory-form-row">
                                     <link rel="stylesheet" href="../css/leaflet.css" />
                                     <link rel="stylesheet" href="../css/leaflet.draw.css" />
-                                    <div id="addLatLong" style="width: 100%; height: 400px">
+                                    <div id="addLatLong" style="width: 100%; height: 400px" class="modal-body modalBody">
 
                                     </div>
                                 </div> 
@@ -719,7 +731,7 @@ if (isset($_SESSION['refreshToken'])) {
                         </div> 
                     </div>
                 </div>  
-                <div id="editContextBrokerModalBody">
+                <div id="editContextBrokerModalBody" class="modal-body modalBody">
                     <ul id="editContextBrokerModalTabs" class="nav nav-tabs nav-justified">
                         <li id="tab-editCB-1" class="active"><a  data-toggle="tab" href="#editInfoTabCB">Info</a></li>
                         <li id="editMultiServiceTabSelector" class="hidden"><a data-toggle="tab" href="#editServiceTenantTabCB">Multitenancy</a></li>
@@ -902,7 +914,7 @@ if (isset($_SESSION['refreshToken'])) {
                             <div class="form-row iot-directory-form-row">
                                 <link rel="stylesheet" href="../css/leaflet.css" />
                                 <link rel="stylesheet" href="../css/leaflet.draw.css" />
-                                <div id="addLatLongEdit" style="width: 100%; height: 400px">
+                                <div id="addLatLongEdit" style="width: 100%; height: 400px" class="modal-body modalBody">
                                 </div>
                             </div> 
 
@@ -1013,7 +1025,7 @@ if (isset($_SESSION['refreshToken'])) {
                 <div class="form-row iot-directory-form-row">
                     <link rel="stylesheet" href="../css/leaflet.css" />
                     <link rel="stylesheet" href="../css/leaflet.draw.css" />
-                    <div id="searchDeviceMapModalBodyCB" style="width: 100%; height: 400px">
+                    <div id="searchDeviceMapModalBodyCB" style="width: 100%; height: 400px" class="modal-body modalBody">
                     </div>
                 </div> 
                 <div class="modal-footer">
@@ -1031,7 +1043,7 @@ if (isset($_SESSION['refreshToken'])) {
                 </div>
                 <form class="form-horizontal">
 
-                    <div id="delegationsModalBody">
+                    <div id="delegationsModalBody" class="modal-body modalBody">
                         <!-- Tabs -->
                         <ul id="delegationsTabsContainer" class="nav nav-tabs nav-justified">
                             <li id="ownershipTab" class="active"><a data-toggle="tab" href="#ownershipCnt" class="dashboardWizardTabTxt" aria-expanded="false">Ownership</a></li>

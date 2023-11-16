@@ -17,7 +17,6 @@
 include('../config.php');
 
 session_start();
-manageLegacy();
 
 ///// SHOW FRAME PARAMETER /////
 if (isset($_REQUEST['showFrame'])) {
@@ -116,10 +115,11 @@ $accessToken = "";
         <!-- utf8 -->
         <script src="js/utf8.js"></script>
 
-      
+        <!-- Font awesome icons -->
+        <link rel="stylesheet" href="../js/fontAwesome/css/font-awesome.min.css">
 
         <!-- Custom CSS -->
-       <?php include "theme-switcher.php"?>
+        <link href="../css/dashboard.css" rel="stylesheet">
         <link href="../css/bulkDeviceLoad.css" rel="stylesheet">
 
         <script>
@@ -297,11 +297,12 @@ else
         </style>
     </head>
 
-    <body class="guiPageBody IOTdevices">
+    <body class="guiPageBody">
         <div class="container-fluid">
                 <?php include "sessionExpiringPopup.php" ?>
 
             <div class="row mainRow">
+<?php include "mainMenu.php" ?>
                 <div class="col-xs-12 col-md-10" id="mainCnt">
                     <div class="row hidden-md hidden-lg">
                         <div id="mobHeaderClaimCnt" class="col-xs-12 hidden-md hidden-lg centerWithFlex">
@@ -311,18 +312,18 @@ else
                     <div class="row" id="title_row">
                         <div class="col-xs-10 col-md-12 centerWithFlex" id="headerTitleCnt">IoT Directory: Devices</div>
                         <div class="col-xs-2 hidden-md hidden-lg centerWithFlex" id="headerMenuCnt">
-                            
+                            <!--php include "mobMainMenu.php" ?-->
                         </div>
                     </div>
 
 
                     <div class="row">
-                        <div class="col-xs-12" id="mainContentCntIot">
+                        <div class="col-xs-12" id="mainContentCnt">
 
                             <!--the statistics bar section -->
 
 
-                            <div id="synthesis" class="row mainContentRow">
+                            <div id="synthesis" class="row hidden-xs hidden-sm mainContentRow">
                                 <!--   <div  class="col-xs-12 mainContentRowDesc"></div> -->
                                 <div id="dashboardTotActiveCnt" class="col-md-4 mainContentCellCnt">
                                     <div class="col-md-12 centerWithFlex pageSingleDataCnt">
@@ -527,8 +528,8 @@ else
 
                                         </div>
                                         <div class="col-xs-12 mainContentCellCnt">
-                                            <table id="devicesTable" class="addWidgetWizardTable table table-striped dt-responsive nowrap dataTable no-footer dtr-inline collapsed" cellspacing="0" width="100%">
-                                                <thead class="dataTableHeadColTitle">
+                                            <table id="devicesTable" class="table" cellspacing="0" width="100%">
+                                                <thead>
                                                     <tr>
                                                         <th></th>
                                                         <th data-cellTitle="name">Device Identifier</th>
@@ -627,7 +628,7 @@ else
                         Bulk Update Rule - Devices
                     </div>
 
-                    <div id="addContextBrokerModalBody">
+                    <div id="addContextBrokerModalBody" class="modal-body modalBody">
 
                         <div class="tab-content">
 
@@ -687,7 +688,7 @@ else
                                                             <h3><span class="label label-warning">AFFECTED</span></h3>
                                                         </td>
                                                         <td>
-                                                            <div id="devicesFound">0 devices founded</div>
+                                                            <div id="devicesFound" style="border:0px; background-color:rgb(230, 249, 255)">0 devices founded</div>
                                                         </td>
                                                         <td>
                                                             <button type="text" id="updateAllConfirmBtn" name="updateAllConfirmBtn" class="btn confirmBtn internalLink">Update All</button>
@@ -738,7 +739,7 @@ else
                     <div class="modalHeader centerWithFlex">
                         Bulk Update Rule - Values
                     </div>
-                    <div id="addContextBrokerModalBody1">
+                    <div id="addContextBrokerModalBody1" class="modal-body modalBody">
 
                         <div class="tab-content">
                             <div id="infoTabCB1" class="tab-pane fade in active">
@@ -793,7 +794,7 @@ else
                                                             <h3><span class="label label-warning">AFFECTED</span></h3>
                                                         </td>
                                                         <td>
-                                                            <div id="valueFound">0 values founded</div>
+                                                            <div id="valueFound" style="border:0px; background-color:rgb(230, 249, 255)">0 values founded</div>
                                                         </td>
                                                         <td>
                                                             <button type="text" id="updateAllValuesConfirmBtn" name="updateAllValuesConfirmBtn" class="btn confirmBtn internalLink">Update All</button>
@@ -844,7 +845,7 @@ else
                     <div class="modalHeader centerWithFlex">
                         Change Ownership
                     </div>
-                    <div id="changeOwnershipModalBody">
+                    <div id="changeOwnershipModalBody" class="modal-body modalBody">
                         <div class="row">
                             <div class="col-xs-12 modalCell">
                                 <div id="changeOwnershipOkModalInnerDiv1" class="modalDelMsg col-xs-12 centerWithFlex">
@@ -867,7 +868,7 @@ else
                         Add new device
                     </div>
                     <input type="hidden" id="deviceNameToDelete" />
-                    <div id="deleteDeviceModalBody">
+                    <div id="deleteDeviceModalBody" class="modal-body modalBody">
                         <div class="row">
                             <div class="col-xs-12 modalCell">
                                 <div id="addDeviceKoModalInnerDiv1" class="modalDelMsg col-xs-12 centerWithFlex">
@@ -894,7 +895,7 @@ else
                         Update Device
                     </div>
 
-                    <div id="editDeviceModalBody">
+                    <div id="editDeviceModalBody" class="modal-body modalBody">
 
                         <ul id="editDeviceModalTabs" class="nav nav-tabs nav-justified">
                             <li class="active"><a data-toggle="tab" href="#editIOTBrokerTabDevice">IoT Broker</a></li>
@@ -930,7 +931,7 @@ else
                                 <div class="form-row iot-directory-form-row">
                                     <link rel="stylesheet" href="../css/leaflet.css" />
                                     <link rel="stylesheet" href="../css/leaflet.draw.css" />
-                                    <div id="editLatLong" style="width: 100%; height: 400px"></div>
+                                    <div id="editLatLong" style="width: 100%; height: 400px" class="modal-body modalBody"></div>
                                 </div>
                                 <div id="positionMsgHintM" class="modalFieldMsgCnt" hidden="true">
                                     <h1>&nbsp;</h1>
@@ -1218,7 +1219,7 @@ else
                                 <div id="editlistAttributes"></div>
                                 <div id="addlistAttributesM"></div>
                                 <div id="deletedAttributes" style="display:none"></div>
-                                <!-- <div class="pull-left"><i id="addAttrMBtn" class="fa-solid fa-circle-plus" style="font-size:36px; color: #ffcc00"></i></div> -->
+                                <!-- <div class="pull-left"><i id="addAttrMBtn" class="fa fa-plus-square" style="font-size:36px; color: #ffcc00"></i></div> -->
                                 <div class="pull-left"><button id="addAttrMBtn" class="btn btn-primary">Add Value</button></div>
                                 <div id="editlistAttributesMsg" class="modalFieldMsgCnt">&nbsp;</div>
                             </div>
@@ -1290,7 +1291,7 @@ else
                     <div class="modalHeader centerWithFlex">
                         Update device
                     </div>
-                    <div>
+                    <div class="modal-body modalBody">
                         <div class="row">
                             <div class="col-xs-12 modalCell">
                                 <div id="editDeviceOkModalInnerDiv1" class="modalDelMsg col-xs-12 centerWithFlex">
@@ -1312,7 +1313,7 @@ else
                     <div class="modalHeader centerWithFlex">
                         Update device
                     </div>
-                    <div id="deleteDeviceModalBody">
+                    <div id="deleteDeviceModalBody" class="modal-body modalBody">
                         <div class="row">
                             <div class="col-xs-12 modalCell">
                                 <div id="editDeviceKoModalInnerDiv1" class="modalDelMsg col-xs-12 centerWithFlex">
@@ -1338,7 +1339,7 @@ else
                     <div class="modalHeader centerWithFlex">
                         Update device
                     </div>
-                    <div>
+                    <div class="modal-body modalBody">
                         <div class="row">
                             <div class="col-xs-12 modalCell">
                                 <div id="bulkUpdateModalInnerDiv" class="modalDelMsg col-xs-12 centerWithFlex">
@@ -1362,7 +1363,7 @@ else
                     <div class="modalHeader centerWithFlex">
                         Update device
                     </div>
-                    <div id="deleteDeviceModalBody">
+                    <div id="deleteDeviceModalBody" class="modal-body modalBody">
                         <div class="row">
                             <div class="col-xs-12 modalCell">
                                 <div id="bulkUpdateModalInnerDivFaliure" class="modalDelMsg col-xs-12 centerWithFlex">
@@ -1471,7 +1472,7 @@ else
                         Device Location on Map
                     </div>
                     <div class="form-row iot-directory-form-row">
-                        <div id="progress-update-body" style="width: 100%; height: 400px">
+                        <div id="progress-update-body" style="width: 100%; height: 400px" class="modal-body modalBody">
                         </div>
                     </div>
                 </div>
@@ -1489,7 +1490,7 @@ else
                     <div class="form-row iot-directory-form-row">
                         <link rel="stylesheet" href="../css/leaflet.css" />
                         <link rel="stylesheet" href="../css/leaflet.draw.css" />
-                        <div id="addDeviceMapModalBodyShow" style="width: 100%; height: 400px">
+                        <div id="addDeviceMapModalBodyShow" style="width: 100%; height: 400px" class="modal-body modalBody">
                         </div>
                     </div>
                     <div class="modal-footer">
@@ -1512,7 +1513,7 @@ else
                     <div class="form-row iot-directory-form-row">
                         <link rel="stylesheet" href="../css/leaflet.css" />
                         <link rel="stylesheet" href="../css/leaflet.draw.css" />
-                        <div id="searchDeviceMapModalBody" style="width: 100%; height: 400px">
+                        <div id="searchDeviceMapModalBody" style="width: 100%; height: 400px" class="modal-body modalBody">
                         </div>
                     </div>
                     <div class="modal-footer">
@@ -1531,7 +1532,7 @@ else
 
                     </div>
 
-                    <div id="delegationsModalBody">
+                    <div id="delegationsModalBody" class="modal-body modalBody">
 
 
                         <div id="delegationsModalRightCnt" class="col-xs-12 col-sm-12">

@@ -18,7 +18,6 @@
 include('../config.php');
 
 session_start();
-manageLegacy();
 
 ///// SHOW FRAME PARAMETER /////
 if (isset($_REQUEST['showFrame'])) {
@@ -110,11 +109,27 @@ $accessToken = "";
     <!-- Filestyle -->
     <script type="text/javascript" src="../js/filestyle/src/bootstrap-filestyle.min.js"></script>
 
-    
+    <!-- Font awesome icons -->
+    <link rel="stylesheet" href="../js/fontAwesome/css/font-awesome.min.css">
 
     <!-- Custom CSS -->
-    <?php include "theme-switcher.php"?>
+    <link href="../css/dashboard.css" rel="stylesheet">
 
+    <style>
+        .btn-round {
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+        }
+
+        #mainMenuCnt {
+            background-color: rgba(51, 64, 69, 1);
+            color: white;
+            height: 100vh;
+            <?php if ($hide_menu == "hide") echo "display:none"; //MM201218 
+            ?>
+        }
+    </style>
 
     <!-- Custom scripts -->
     <script>
@@ -164,9 +179,9 @@ $accessToken = "";
 
     <script type="text/javascript" src="../js/dashboard_mng.js"></script>
 
-    <script type="text/javascript" src="js/value.js"></script>
-    <script type="text/javascript" src="js/fieldsManagement.js"></script>
-    <script type="text/javascript" src="js/common.js"></script>
+    <script type="text/javascript" src="../legacy/management/js/value.js"></script>
+    <script type="text/javascript" src="../legacy/management/js/fieldsManagement.js"></script>
+    <script type="text/javascript" src="../legacy/management/js/common.js"></script>
 
     <!-- leaflet scripts -->
     <script type="text/javascript" src="../js/leaflet.js"></script>
@@ -175,11 +190,12 @@ $accessToken = "";
 
 </head>
 
-<body class="guiPageBody IOTdevices">
+<body class="guiPageBody">
     <div class="container-fluid">
         <?php include "sessionExpiringPopup.php" ?>
 
         <div class="row mainRow">
+            <?php include "mainMenu.php" ?>
             <div <?php //MM201218
                     if (($hide_menu == "hide")) { ?> class="col-xs-12 col-md-12" <?php } else { ?> class="col-xs-12 col-md-10" <?php } //MM201218 FINE
                                                                                                                         ?> id="mainCnt">
@@ -193,13 +209,14 @@ $accessToken = "";
                     <div class="row" id="title_row">
                         <div class="col-xs-10 col-md-12 centerWithFlex" id="headerTitleCnt">IoT Directory : Sensors and Actuators</div>
                         <div class="col-xs-2 hidden-md hidden-lg centerWithFlex" id="headerMenuCnt">
+                            <!--?php include "mobMainMenu.php" ?-->
                         </div>
                     </div>
                 <?php } //MM201218 FINE 
                 ?>
 
                 <div class="row">
-                    <div class="col-xs-12" id="mainContentCntIot">
+                    <div class="col-xs-12" id="mainContentCnt">
                         <div id="synthesis" class="row hidden-xs hidden-sm mainContentRow">
                             <div class="col-xs-12 mainContentRowDesc"></div>
                             <div id="dashboardTotNumberCnt" class="col-md-3 mainContentCellCnt">
@@ -250,18 +267,18 @@ $accessToken = "";
                             <div class="col-xs-12 mainContentRowDesc"></div>
                             <div class="col-xs-12 mainContentCellCnt">
 
-                                <div class="row">
-                                    <div class="col-xs-12 col-md-6 modalCell">
-                                        <div id="displayDevicesMapSA" class="pull-right"><button type="button" class="btn btn-primary btn-round"><i class="fa-solid fa-map-location-dot viewOnMap"></i></button></div>
+                                <div class="row" style="background-color: rgb(241, 245, 244);">
+                                    <div class="col-xs-12 col-md-6 modalCell" style="background-color: rgb(241, 245, 244);">
+                                        <div id="displayDevicesMapSA" class="pull-right"><button type="button" class="btn btn-primary btn-round"><span class="glyphicon glyphicon-globe" title="Location of Values on Map" style="font-size:36px; color: #0000ff"></span></button></div>
                                     </div>
-                                    <div class="col-xs-12 col-md-6 modalCell">
+                                    <div class="col-xs-12 col-md-6 modalCell" style="background-color: rgb(241, 245, 244);">
                                         <div class="pull-right"><button id="addValueBtn" class="btn btn-primary">Add New Sensor<BR>and Actuator</button></div>
                                     </div>
                                 </div>
                                 <div>
-                                    <table id="valuesTable" class="table table-striped dt-responsive nowrap dataTable no-footer dtr-inline collapsed" cellspacing="0" width="100%">
-                                        <thead class="dataTableHeadColTitle">
-                                            <tr>
+                                    <table id="valuesTable" class="table table-bordered table-striped" cellspacing="0" width="100%">
+                                        <thead>
+                                            <tr style="background: rgb(0, 162, 211); color: rgb(255, 255, 255); font-size: 1em;">
                                                 <th></th>
                                                 <th data-cellTitle="contextbroker">IOT Broker</th>
                                                 <th data-cellTitle="device">Device Identifier</th>
@@ -319,7 +336,7 @@ $accessToken = "";
 
 
                 <!-- <form id="addValueForm" name="addValueForm" role="form" method="post" action="" data-toggle="validator"> -->
-                <div id="addValueModalBody">
+                <div id="addValueModalBody" class="modal-body modalBody">
 
 
                     <!--ul id="addValueModalTabs" class="nav nav-tabs nav-justified">
@@ -568,7 +585,7 @@ $accessToken = "";
                     Add new value
                 </div>
                 <input type="hidden" id="deviceNameToDelete" />
-                <div id="deleteDeviceModalBody">
+                <div id="deleteDeviceModalBody" class="modal-body modalBody">
                     <div class="row">
                         <div class="col-xs-12 modalCell">
                             <div id="addDeviceOkModalInnerDiv1" class="modalDelMsg col-xs-12 centerWithFlex">
@@ -593,7 +610,7 @@ $accessToken = "";
                     Add new value
                 </div>
                 <input type="hidden" id="deviceNameToDelete" />
-                <div id="deleteDeviceModalBody">
+                <div id="deleteDeviceModalBody" class="modal-body modalBody">
                     <div class="row">
                         <div class="col-xs-12 modalCell">
                             <div id="addDeviceKoModalInnerDiv1" class="modalDelMsg col-xs-12 centerWithFlex">
@@ -620,7 +637,7 @@ $accessToken = "";
                 </div>
 
                 <form id="editValueForm" name="editValueForm" role="form" method="post" action="" data-toggle="validator">
-                    <div id="editValueModalBody">
+                    <div id="editValueModalBody" class="modal-body modalBody">
 
                         <ul id="editValueModalTabs" class="nav nav-tabs nav-justified">
                             <li class="active"><a data-toggle="tab" href="#editInfoTabValue">Info</a></li>
@@ -835,7 +852,7 @@ $accessToken = "";
                 <div class="modalHeader centerWithFlex">
                     Update value
                 </div>
-                <div>
+                <div class="modal-body modalBody">
                     <div class="row">
                         <div class="col-xs-12 modalCell">
                             <div id="editValueOkModalInnerDiv1" class="modalDelMsg col-xs-12 centerWithFlex">
@@ -859,7 +876,7 @@ $accessToken = "";
                 <div class="modalHeader centerWithFlex">
                     Update value
                 </div>
-                <div id="deleteDeviceModalBody">
+                <div id="deleteDeviceModalBody" class="modal-body modalBody">
                     <div class="row">
                         <div class="col-xs-12 modalCell">
                             <div id="editDeviceKoModalInnerDiv1" class="modalDelMsg col-xs-12 centerWithFlex">
@@ -887,7 +904,7 @@ $accessToken = "";
                 <div class="form-row iot-directory-form-row">
                     <link rel="stylesheet" href="../css/leaflet.css" />
                     <link rel="stylesheet" href="../css/leaflet.draw.css" />
-                    <div id="addDeviceMapModalBody" style="width: 100%; height: 400px">
+                    <div id="addDeviceMapModalBody" style="width: 100%; height: 400px" class="modal-body modalBody">
                     </div>
                 </div>
                 <div class="modal-footer">
@@ -906,7 +923,7 @@ $accessToken = "";
                 <div class="form-row iot-directory-form-row">
                     <link rel="stylesheet" href="../css/leaflet.css" />
                     <link rel="stylesheet" href="../css/leaflet.draw.css" />
-                    <div id="searchDeviceMapModalBodySA" style="width: 100%; height: 400px">
+                    <div id="searchDeviceMapModalBodySA" style="width: 100%; height: 400px" class="modal-body modalBody">
                     </div>
                 </div>
                 <div class="modal-footer">
@@ -924,12 +941,12 @@ $accessToken = "";
                 <div id="delegationHeadModalLabel" class="modalHeader centerWithFlex">
 
                 </div>
-                <!--div id="delegationsModalBody">
+                <!--div id="delegationsModalBody" class="modal-body modalBody">
 					
 						<div id="delegationsModalRightCnt" class="col-xs-12 col-sm-12"-->
 
                 <form class="form-horizontal">
-                    <div id="delegationsModalBody">
+                    <div id="delegationsModalBody" class="modal-body modalBody">
                         <!-- Tabs -->
                         <ul id="delegationsTabsContainer" class="nav nav-tabs nav-justified">
                             <li id="visibilityTab" class="active"><a data-toggle="tab" href="#visibilityCnt" class="dashboardWizardTabTxt" aria-expanded="false">Visibility</a></li>

@@ -18,8 +18,6 @@ include('../config.php');
 
 session_start();
 
-manageLegacy();
-
 ///// SHOW FRAME PARAMETER /////
 if (isset($_REQUEST['showFrame'])) {
     if ($_REQUEST['showFrame'] == 'false') {
@@ -116,10 +114,25 @@ $accessToken = "";
         <!-- Filestyle -->
         <script  src="../js/filestyle/src/bootstrap-filestyle.min.js"></script>
 
-        
+        <!-- Font awesome icons -->
+        <link rel="stylesheet" href="../js/fontAwesome/css/font-awesome.min.css">
 
         <!-- Custom CSS -->
-        <?php include "theme-switcher.php"?>
+        <link href="../css/dashboard.css" rel="stylesheet">
+        <style> .btn-round {
+                width: 30px;
+                height:30px;
+                border-radius: 50%;
+            }
+            #mainMenuCnt
+            {
+                background-color: rgba(51, 64, 69, 1);
+                color: white;
+                height: 100vh;
+                <?php if ($hide_menu == "hide") echo "display:none"; //MM201218 ?>
+            }
+
+        </style>
 
         <script>
             var loggedRole = "<?php echo $_SESSION['loggedRole']; ?>";
@@ -166,12 +179,12 @@ $accessToken = "";
         </script>
 
         <!-- Custom scripts -->
-        <script  src="js/devices.js"></script>
-        <script  src="js/devicesManagement.js"></script>
-        <script  src="js/fieldsManagement.js"></script>
-        <script  src="js/devicesEditManagement.js"></script>
+        <script  src="../legacy/management/js/devices.js"></script>
+        <script  src="../legacy/management/js/devicesManagement.js"></script>
+        <script  src="../legacy/management/js/fieldsManagement.js"></script>
+        <script  src="../legacy/management/js/devicesEditManagement.js"></script>
         <script  src="../js/dashboard_mng.js"></script>
-        <script  src="js/common.js"></script>	
+        <script  src="../legacy/management/js/common.js"></script>	
 
         <!-- leaflet scripts -->
         <script  src="../js/leaflet.js"></script>
@@ -179,10 +192,11 @@ $accessToken = "";
         <script  src="../js/jquery.fancytree-all.min.js"></script>
 
     </head>
-    <body class="guiPageBody IOTdevices">
+    <body class="guiPageBody">
         <div class="container-fluid">
                 <?php include "sessionExpiringPopup.php" ?> 
             <div class="row mainRow"> 
+                <?php include "mainMenu.php" ?> 
                 <div 
                 <?php //MM201218
                 if (($hide_menu == "hide")) {
@@ -202,12 +216,12 @@ if (($hide_menu != "hide")) {
     ?>
                         <div class="row" id="title_row">
                             <div class="col-xs-10 col-md-12 centerWithFlex" id="headerTitleCnt">IoT Directory: Devices</div>
-                            <div class="col-xs-2 hidden-md hidden-lg centerWithFlex" id="headerMenuCnt"></div> 
+                            <div class="col-xs-2 hidden-md hidden-lg centerWithFlex" id="headerMenuCnt"><!--?php include "mobMainMenu.php" ?--></div> 
                         </div>
 <?php } //MM201218 FINE  ?>
 
                     <div class="row">
-                        <div class="col-xs-12" id="mainContentCntIot">
+                        <div class="col-xs-12" id="mainContentCnt">
                             <div id="synthesis" class="row hidden-xs hidden-sm mainContentRow">
                                 <div id="dashboardTotNumberCnt" class="col-md-3 mainContentCellCnt">
                                     <div class="col-md-12 centerWithFlex pageSingleDataCnt">
@@ -357,7 +371,7 @@ if (($hide_menu != "hide")) {
                                         <div class="form-row iot-directory-form-row">
                                             <link rel="stylesheet" href="../css/leaflet.css" />
                                             <link rel="stylesheet" href="../css/leaflet.draw.css" />
-                                            <div id="addDeviceMapModalBodyUser" style="width: 100%; height: 400px">
+                                            <div id="addDeviceMapModalBodyUser" style="width: 100%; height: 400px" class="modal-body modalBody">
                                             </div>
                                         </div> 
                                     </div>
@@ -371,29 +385,19 @@ if (($hide_menu != "hide")) {
                             <div id="displayAllDeviceRow" class="row mainContentRow">
                                 <div class="col-xs-12 mainContentRowDesc "></div>
                                 <div class="col-xs-12 mainContentCellCnt ">
-                                    <div class="row">
-                                        <div class="col-xs-12 col-md-9 modalCell ">
-                                            <div class="pull-left "><button id="ShowOnlyDelegated"  class="btn btn-primary">Show delegated dev.</button></div>&nbsp;<button id="ShowOnlyPublic"  class="btn btn-primary">Show public dev.</button>&nbsp;<button id="ShowOnlyOwn"  class="btn btn-primary">Show my dev.</button>&nbsp;<button id="ShowAll"  class="btn btn-primary">Show all dev.</button>
-                                            <div id="displayDevicesMap" class="pull-right"><button type="button" class="btn btn-primary btn-round"><i class="fa-solid fa-map-location-dot viewOnMap"></i></button></div>
+                                    <div class="row" style= "background-color: rgb(241, 245, 244);">
+                                        <div class="col-xs-12 col-md-6 modalCell " style= "background-color: rgb(241, 245, 244);">
+                                            <div class="pull-left "><button id="ShowOnlyDelegated"  class="btn btn-primary">Show delegated dev.</button></div><div >&nbsp;<button id="ShowOnlyPublic"  class="btn btn-primary">Show public dev.</button>&nbsp;<button id="ShowOnlyOwn"  class="btn btn-primary">Show my dev.</button>&nbsp;<button id="ShowAll"  class="btn btn-primary">Show all dev.</button></div>
+                                            <div id="displayDevicesMap" class="pull-right"><button type="button" class="btn btn-primary btn-round"><span class="glyphicon glyphicon-globe" style="font-size:36px; color: #0000ff"></span></button></div>
                                         </div>
-                                        <div class="col-xs-12 col-md-3 modalCell">
-                                            <div class="pull-right "><button id="importDeviceBtn" class="btn btn-primary" style="margin-left:3px" >Import New Device</button></div><div><div class="pull-right "><button id="addDeviceBtn"  class="btn btn-primary">Add new device</button></div></div>
-<!--
-<<<<<<< Updated upstream
                                         <div class="col-xs-12 col-md-6 modalCell" style= "background-color: rgb(241, 245, 244);">
                                             <div class="pull-right "><button id="importDeviceBtn" class="btn btn-primary" style="margin-left:3px" >Import New Device</button></div><div><div class="pull-right "><button id="addDeviceBtn"  class="btn btn-primary">Add new device</button></div></div>
-=======
-                                        <div class="col-xs-12 col-md-3 modalCell">
-                                            <div class="pull-right "><button id="addDeviceBtn"  class="btn btn-primary">Add new device</button></div>
-
->>>>>>> Stashed changes
--->
                                         </div>
                                     </div>
                                     <div >
-                                        <table id="devicesTable" class="addWidgetWizardTable table table-striped dt-responsive nowrap dataTable no-footer dtr-inline collapsed" cellspacing="0"  width="100%">
-                                            <thead class="dataTableHeadColTitle">
-                                                <tr>
+                                        <table id="devicesTable" class="table table-bordered table-striped nowrap" cellspacing="0"  width="100%">
+                                            <thead>
+                                                <tr style="background: rgb(0, 162, 211); color: rgb(255, 255, 255); font-size: 1em;">
                                                     <th></th>	
                                                     <th data-cellTitle="name">Device Identifier</th>
                                                     <th data-cellTitle="contextbroker">IOT Broker</th>
@@ -488,7 +492,7 @@ if (($hide_menu != "hide")) {
                                 </div>
                                 <div class="tab-pane " id="Mtab" role="tabpanel" aria-labelledby="data-ex-tab1-tab">
                                     <p id="NoMobile"></p> 
-                                    <div id="editLatLongValue" style="width: 100%; height: 400px"></div>
+                                    <div id="editLatLongValue" style="width: 100%; height: 400px" class="modal-body modalBody"></div>
                                 </div> </div>
                         </div> </div> 
 
@@ -557,7 +561,7 @@ if (($hide_menu != "hide")) {
                         Add a new device
                     </div>
 
-                    <div id="addDeviceModalBody">
+                    <div id="addDeviceModalBody" class="modal-body modalBody">
 
                         <ul id="addDeviceModalTabs" class="nav nav-tabs nav-justified">
                             <li  class="active"><a data-toggle="tab" href="#addInfoTabDevice">Info</a></li>
@@ -806,7 +810,7 @@ if (($hide_menu != "hide")) {
                                 <div class="form-row iot-directory-form-row">
                                     <link rel="stylesheet" href="../css/leaflet.css" />
                                     <link rel="stylesheet" href="../css/leaflet.draw.css" />
-                                    <div id="addLatLong" style="width: 100%; height: 400px">
+                                    <div id="addLatLong" style="width: 100%; height: 400px" class="modal-body modalBody">
                                     </div>
                                 </div> 
                                 <div id="positionMsgHint" class="modalFieldMsgCnt" hidden="true"><h1>&nbsp;</h1><p class="text-danger font-weight-bold">WARNING: the indicated GPS Position has to be intended as the Initial Position of the Device. To see the Current Position of the Device, please proceed via Service Map</p></div>	
@@ -910,7 +914,7 @@ if (($hide_menu != "hide")) {
                         Add new device
                     </div>
                     <input type="hidden" id="deviceNameToDelete" />
-                    <div id="deleteDeviceModalBody">
+                    <div id="deleteDeviceModalBody" class="modal-body modalBody">
                         <div class="row">
                             <div class="col-xs-12 modalCell">
                                 <div id="addDeviceOkModalInnerDiv1" ></div>
@@ -942,7 +946,7 @@ if (($hide_menu != "hide")) {
                     <div class="modalHeader centerWithFlex">
                         Change Ownership
                     </div>
-                    <div id="changeOwnershipModalBody">
+                    <div id="changeOwnershipModalBody" class="modal-body modalBody">
                         <div class="row">
                             <div class="col-xs-12 modalCell">
                                 <div id="changeOwnershipOkModalInnerDiv1" class="modalDelMsg col-xs-12 centerWithFlex">
@@ -967,7 +971,7 @@ if (($hide_menu != "hide")) {
                     <div class="modalHeader centerWithFlex">
                         Success device registration
                     </div>
-                    <div id="addDeviceModalBody">
+                    <div id="addDeviceModalBody" class="modal-body modalBody">
                         <div class="row">
                             <div class="col-xs-12 modalCell">
                                 <div id="addDeviceOkModalInnerDiv1">
@@ -991,7 +995,7 @@ if (($hide_menu != "hide")) {
                         Add new device
                     </div>
                     <input type="hidden" id="deviceNameToDelete" />
-                    <div id="deleteDeviceModalBody">
+                    <div id="deleteDeviceModalBody" class="modal-body modalBody">
                         <div class="row">
                             <div class="col-xs-12 modalCell">
                                 <div id="addDeviceKoModalInnerDiv1" class="modalDelMsg col-xs-12 centerWithFlex">
@@ -1016,7 +1020,7 @@ if (($hide_menu != "hide")) {
                         Update Device
                     </div>
 
-                    <div id="editDeviceModalBody">
+                    <div id="editDeviceModalBody" class="modal-body modalBody">
 
                         <ul id="editDeviceModalTabs" class="nav nav-tabs nav-justified">
                             <li  class="active"><a data-toggle="tab" href="#editInfoTabDevice">Info</a></li>
@@ -1289,7 +1293,7 @@ if (($hide_menu != "hide")) {
                                 <div class="form-row iot-directory-form-row">
                                     <link rel="stylesheet" href="../css/leaflet.css" />
                                     <link rel="stylesheet" href="../css/leaflet.draw.css" />
-                                    <div id="editLatLong" style="width: 100%; height: 400px"></div>
+                                    <div id="editLatLong" style="width: 100%; height: 400px" class="modal-body modalBody"></div>
                                 </div>
                                 <div id="positionMsgHintM" class="modalFieldMsgCnt" hidden="true"><h1>&nbsp;</h1><p class="text-danger font-weight-bold">WARNING: the indicated GPS Position has to be intended as the Initial Position of the Device. To see the Current Position of the Device, please proceed via Service Map</p></div>
                             </div>
@@ -1479,7 +1483,7 @@ if (($hide_menu != "hide")) {
                     <div class="modalHeader centerWithFlex">
                         Update device
                     </div>
-                    <div id="editDeviceOkModalBody">
+                    <div id="editDeviceOkModalBody" class="modal-body modalBody">
                         <div class="row">
                             <div class="col-xs-12 modalCell">
                                 <div id="editDeviceOkModalInnerDivA">
@@ -1503,7 +1507,7 @@ if (($hide_menu != "hide")) {
                     <div class="modalHeader centerWithFlex">
                         Update device
                     </div>
-                    <div id="deleteDeviceModalBody">
+                    <div id="deleteDeviceModalBody" class="modal-body modalBody">
                         <div class="row">
                             <div class="col-xs-12 modalCell">
                                 <div id="editDeviceKoModalInnerDivA" class="modalDelMsg col-xs-12 centerWithFlex">
@@ -1537,7 +1541,7 @@ if (($hide_menu != "hide")) {
                     <div class="form-row iot-directory-form-row">
                         <link rel="stylesheet" href="../css/leaflet.css" />
                         <link rel="stylesheet" href="../css/leaflet.draw.css" />
-                        <div id="addDeviceMapModalBodyShow" style="width: 100%; height: 400px">                  
+                        <div id="addDeviceMapModalBodyShow" style="width: 100%; height: 400px" class="modal-body modalBody">                  
                         </div>
                     </div> 
                     <div class="modal-footer">
@@ -1558,7 +1562,7 @@ if (($hide_menu != "hide")) {
                     <div class="form-row iot-directory-form-row">
                         <link rel="stylesheet" href="../css/leaflet.css" />
                         <link rel="stylesheet" href="../css/leaflet.draw.css" />
-                        <div id="searchDeviceMapModalBody" style="width: 100%; height: 400px">		   
+                        <div id="searchDeviceMapModalBody" style="width: 100%; height: 400px" class="modal-body modalBody">		   
                         </div>
                     </div> 
                     <div class="modal-footer">
@@ -1580,7 +1584,7 @@ if (($hide_menu != "hide")) {
                               <div class="modalHeader centerWithFlex">
                                 Management
                               </div>
-                                      <div id="delegationsModalBody">
+                                      <div id="delegationsModalBody" class="modal-body modalBody">
                                               <ul id="delegationsTabsContainer" class="nav nav-tabs nav-justified">
                                                       <li id="ownershipTab" class="active"><a data-toggle="tab" href="#ownershipCnt" class="dashboardWizardTabTxt">Ownership</a></li>
                                                       <li id="visibilityTab"><a data-toggle="tab" href="#visibilityCnt" class="dashboardWizardTabTxt">Visibility</a></li>
@@ -1666,7 +1670,7 @@ if (($hide_menu != "hide")) {
                     </div>
                     <form class="form-horizontal">
 
-                        <div id="delegationsModalBody">
+                        <div id="delegationsModalBody" class="modal-body modalBody">
                             <!-- Tabs -->
                             <ul id="delegationsTabsContainer" class="nav nav-tabs nav-justified">
                                 <li id="ownershipTab" class="active"><a data-toggle="tab" href="#ownershipCnt" class="dashboardWizardTabTxt" aria-expanded="false">Ownership</a></li>
@@ -1841,7 +1845,7 @@ if (($hide_menu != "hide")) {
                           Management
                         </div>
                         <form id="delegationsForm" class="form-horizontal" name="delegationsForm" role="form" method="post" action="" data-toggle="validator">
-                                <div id="delegationsModalBody">
+                                <div id="delegationsModalBody" class="modal-body modalBody">
                                         <ul id="delegationsTabsContainer" class="nav nav-tabs nav-justified">
                                                 <li id="ownershipTab" class="active"><a data-toggle="tab" href="#ownershipCnt" class="dashboardWizardTabTxt">Ownership</a></li>
                                                 <li id="visibilityTab"><a data-toggle="tab" href="#visibilityCnt" class="dashboardWizardTabTxt">Visibility</a></li>

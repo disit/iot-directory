@@ -16,8 +16,6 @@
 include('../config.php');
 
 session_start();
-manageLegacy();
-
 
 ///// SHOW FRAME PARAMETER /////
 if (isset($_REQUEST['showFrame'])) {
@@ -116,15 +114,25 @@ $accessToken = "";
         <!-- utf8 -->
         <script src="js/utf8.js"></script>
 
-       
+        <!-- Font awesome icons -->
+        <link rel="stylesheet" href="../js/fontAwesome/css/font-awesome.min.css">
 
         <!--     Custom CSS 
             <link href="../css/dashboard.css" rel="stylesheet">
             <link href="../css/bulkDeviceLoad.css" rel="stylesheet">-->
 
         <!-- Custom CSS -->
-        <?php include "theme-switcher.php"?>
-        
+        <link href="../css/dashboard.css" rel="stylesheet">
+        <style> .btn-round { width: 30px; height:30px; border-radius: 50%; }
+            #mainMenuCnt
+            {
+                background-color: rgba(51, 64, 69, 1);
+                color: white;
+                height: 100vh;
+                <?php if ($hide_menu == "hide") echo "display:none"; //MM201218 ?>
+            }
+
+        </style>
         <script>
             var loggedRole = "<?php echo $_SESSION['loggedRole']; ?>";
             var loggedUser = "<?php echo $_SESSION['loggedUsername']; ?>";
@@ -161,10 +169,11 @@ $accessToken = "";
 
 
     </head>
-    <body class="guiPageBody IOTdevices">
+    <body class="guiPageBody">
         <div class="container-fluid">
                 <?php include "sessionExpiringPopup.php" ?> 
             <div class="row mainRow"> 
+                <?php include "mainMenu.php" ?> 
                 <div 
                     <?php
                     //MM201218
@@ -186,18 +195,18 @@ if (($hide_menu != "hide")) {
     ?>
                         <div class="row" id="title_row">
                             <div class="col-xs-10 col-md-12 centerWithFlex" id="headerTitleCnt">IoT Directory: Devices</div>
-                            <div class="col-xs-2 hidden-md hidden-lg centerWithFlex" id="headerMenuCnt"></div> 
+                            <div class="col-xs-2 hidden-md hidden-lg centerWithFlex" id="headerMenuCnt"><!--?php include "mobMainMenu.php" ?--></div> 
                         </div>
 <?php } //MM201218 FINE   ?>
 
                     <div class="row">
-                        <div class="col-xs-12" id="mainContentCntIot">
+                        <div class="col-xs-12" id="mainContentCnt">
 
                             <div>
                                 <div id="addMyNewDeviceRow" class="row mainContentRow">
                                     <table id="contextExternalBrokerTable" class="table table-striped" cellspacing="0" width="100%">
                                         <thead>
-                                            <tr>
+                                            <tr style="background: rgb(0, 162, 211); color: rgb(255, 255, 255); font-size: 1em;">
                                                 <th></th>	
                                                 <th data-cellTitle="name">IOT Broker</th>
                                                 <th data-cellTitle="StatusCB">Status</th>
