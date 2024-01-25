@@ -34,13 +34,13 @@ switch ($current_page) {
 
 <script>
   document.addEventListener('DOMContentLoaded', function() {
-	var themeSwitcher = parent.document.getElementById('theme-switcher');
+	/*var themeSwitcher = parent.document.getElementById('theme-switcher');
 	themeSwitcher.value = '<?php echo $selectedTheme; ?>'; // Set the initial selected theme
 
 	themeSwitcher.addEventListener('change', function() {
 	  var selectedTheme = themeSwitcher.value;
 	  document.cookie = 'selected_theme=' + selectedTheme + '; expires=' + new Date(Date.now() + (30 * 24 * 60 * 60 * 1000)).toUTCString(); // Update the cookie with the selected theme
 	  location.reload(); // Refresh the page to apply the new theme
-	});
+	});*/
   });
 </script>

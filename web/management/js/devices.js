@@ -1175,7 +1175,7 @@ function NewValuesOnDevice(strID) {
                             $(".Hidden_insert").hide();
                             $('.Select_onlyread').prop('disabled', true);
                             $('.Input_onlyread').attr('readonly', true);
-                            $('#NewValuesInputConfirmButton').click(function () {
+                            $('#NewValuesInputConfirmButton').off('click').on('click', function () {
                                 if (strTIME != null && (old_value[strTIME.substr(6, strTIME.length)] == $(strTIME).val())) {
                                     // if(old_value[strTIME.substr(6, strTIME.length)]==$(strTIME).val()){
                                     $('#ValuesINPUT').hide();
