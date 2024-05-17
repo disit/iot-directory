@@ -177,7 +177,7 @@ function removeElementAt(parent, child) {
 
 
 function drawAttributeMenu
-        (attrName, data_type, value_type, editable, value_unit, healthiness_criteria, value_refresh_rate, parent, indice)
+        (attrName, data_type, value_type, editable, value_unit, healthiness_criteria, value_refresh_rate,realtime, parent, indice)
 {
     if (attrName == "")
         msg = "<div style=\"color:red;\" class=\"modalFieldMsgCnt\"></div>";
@@ -190,6 +190,15 @@ function drawAttributeMenu
         msg_value_type = "<div style=\"color:red;\" class=\"modalFieldMsgCnt\">Value type is mandatory</div>";
     } else
         msg_value_type = "<div style=\"color:#337ab7;\" class=\"modalFieldMsgCnt\">Ok</div>"
+    //I value type indicati qui non avranno il checkbox realtime, magari in fututo potrebbe essere utile, basta aggiungere hidden nello style dell' else (al momento è disabilitato e timestamp è un placeholder)
+
+    if(attrName === 'DateObserved' || attrName === 'dateObserved'){
+        real_time_flag = "<input type=\"checkbox\"  id=\"realtime_flag"+indice+"\"  style=\"margin-right: 5px;display:none;\" class=\"realtime_checkbox\"><label for=\"realtime_flag"+indice+"\" style=\"margin-bottom: 5px;display:none;\">Real Time</label>"
+    }else if (realtime === "true") {
+        real_time_flag = "<input type=\"checkbox\"  id=\"realtime_flag" + indice + "\"  style=\"margin-right: 5px;\" checked ><label for=\"realtime_flag" + indice + "\" style=\"margin-bottom: 5px;\">Real Time</label>"
+    }else {
+    real_time_flag = "<input type=\"checkbox\"  id=\"realtime_flag"+indice+"\"  style=\"margin-right: 5px;\" class=\"realtime_checkbox\"><label for=\"realtime_flag"+indice+"\" style=\"margin-bottom: 5px;\">Real Time</label>"
+}
 
     for (var n = 0; n < gb_value_types.length; n++)
     {
@@ -221,6 +230,10 @@ function drawAttributeMenu
         }
         mydatatypes += validDataType;
     }
+    if (value_refresh_rate === "")
+        msg_refresh_rate = "<div style=\"color:red;\" class=\"modalFieldMsgCnt\"></div>";
+    else
+        msg_refresh_rate = "<div class=\"modalFieldMsgCnt\">&nbsp;</div>";
 
 
 //    mydatatypes = "";
@@ -236,9 +249,9 @@ function drawAttributeMenu
 //            mydatatypes += "<option value=\"" + gb_datatypes[n] + "\">" + gb_datatypes[n] + "</option>";
 //    }
 
-    return "<div class=\"row\" style=\"border:2px solid blue;\" ><div class=\"col-xs-6 col-md-3 modalCell\">" +
-            "<div class=\"modalFieldCnt\" title=\"Insert a name for the sensor/actuator\"><input  id=\"InputVNM\" type=\"text\" class=\"modalInputTxt Input_readoonly\"" +
-            "name=\"" + attrName + "\"  value=\"" + attrName + "\" onkeyup=\"checkStrangeCharacters(this)\">" +
+    return "<div class=\"row\" style=\"border:2px solid blue;\" id=\"row"+indice+"\" ><div class=\"col-xs-6 col-md-3 modalCell\">" +
+            "<div class=\"modalFieldCnt\" title=\"Insert a name for the sensor/actuator\"><input  id=\"InputVNM"+indice+"\" type=\"text\" class=\"modalInputTxt Input_readoonly\"" +
+            "name=\"" + attrName + "\"  value=\"" + attrName + "\" onkeyup=\"checkStrangeCharacters(this)\" >" +
             "</div><div class=\"modalFieldLabelCnt\">Value Name</div>" + msg + "</div>" +
             "<div class=\"col-xs-6 col-md-3 modalCell\"><div class=\"modalFieldCnt\" title=\"select the type of the sensor/actuator\">" +
             "<select  class=\"modalInputTxt Select_readoonly\" id=\"value_type" + indice + "\" " +
@@ -277,8 +290,9 @@ function drawAttributeMenu
             "<option value=\"within_bounds\">Within bounds</option>" +
             "</select></div><div  class=\"modalFieldLabelCnt\">Healthiness Criteria</div></div>" +
             "<div class=\"col-xs-6 col-md-3 modalCell\"><div class=\"modalFieldCnt\" title=\"Insert the limit value(s) to consider the sensor/actuator as healthy, according to the selected criterion \">" +
-            "<input  id=\"InputHV\" type=\"text\" class=\"modalInputTxt Select_readoonly \" name=\"" + value_refresh_rate +
-            "\" value=\"" + value_refresh_rate + "\"></div><div class=\"modalFieldLabelCnt\">Healthiness Value</div></div>" +
+            "<input  id=\"InputHV\" type=\"text\" class=\"modalInputTxt Select_readoonly \" " + value_refresh_rate +
+            "\" value=\"" + value_refresh_rate + "\"></div><div class=\"modalFieldLabelCnt\">Healthiness Value</div>"+ msg_refresh_rate +" </div>" +
+            "<div class=\"col-xs-6 col-md-3 modalCell\"><div class=\"modalFieldCnt\">"+ real_time_flag + "</div></div>" +
             "<div class=\"col-xs-6 col-md-3 modalCell\"><div class=\"modalFieldCnt\">" +
             //"<i class=\"fa fa-minus-square\" onclick=\"removeElementAt('" + parent + "',this); return true;\"  style=\"font-size:36px; color: #ffcc00\"></i></div></div></div>";
             "<button  id=\"RemoveButtAttr\" class=\"btn btn-danger Hidebutton\" onclick=\"removeElementAt('" + parent + "',this); return true;\">Remove Value</button></div></div></div>";
@@ -876,7 +890,7 @@ $(document).ready(function ()
                 i++;
             }
         }
-        rowCount = $("#addlistAttributes .row").length;
+        //rowCount = $("#addlistAttributes .row").length;
 
         $("#addlistAttributes").find("[id^=\"InputVNM\"]").each(function() {
             $(this).val(parsedJson.d_attributes[j].value_name);
@@ -906,6 +920,18 @@ $(document).ready(function ()
 
         $("#addlistAttributes").find("#device_refresh_value").each(function() {
             $(this).val(parsedJson.d_attributes[j].healthiness_value)
+            j++
+        });
+        j=0;
+        $("#addlistAttributes").find("[id^=\"realtime_flag\"]").each(function() {
+            if(parsedJson.d_attributes[j].value_name === "DateObserved" || parsedJson.d_attributes[j].value_name === "dateObserved" ){
+                $(this).prop('hidden',true);
+                console.log(this.id)
+                $(this).find($("label[for='"+this.id+"']").prop('hidden',true));
+            }
+            if(parsedJson.d_attributes[j].real_time_flag === "true"){
+                $(this).prop('checked',true);
+            }
             j++
         });
         // $('#addlistAttributes').children('.row').each(function (){
@@ -974,7 +1000,8 @@ $(document).ready(function ()
                 editable: '0',
                 value_unit: document.getElementById('addlistAttributes').childNodes[m].childNodes[2].childNodes[0].childNodes[0].value.trim(),
                 healthiness_criteria: document.getElementById('addlistAttributes').childNodes[m].childNodes[5].childNodes[0].childNodes[0].value.trim(),
-                healthiness_value: document.getElementById('addlistAttributes').childNodes[m].childNodes[6].childNodes[0].childNodes[0].value.trim()};
+                healthiness_value: document.getElementById('addlistAttributes').childNodes[m].childNodes[6].childNodes[0].childNodes[0].value.trim(),
+                real_time_flag: document.getElementById('addlistAttributes').childNodes[m].childNodes[7].childNodes[0].childNodes[0].checked.toString()};
             if (newatt.value_name == "" || regex.test(newatt.value_name) || newatt.value_name.length < 2) {
                 someNameisWrong = true;
                 msg_whatiswrong += "The Value name must be at least 2 characters. No special characters are allowed. "
@@ -1185,7 +1212,7 @@ $(document).ready(function ()
     /* add lines related to attributes*/
     $("#addAttrBtn").off("click");
     $("#addAttrBtn").click(function () {
-        content = drawAttributeMenu("", "", "", "", "", "", "300", 'addlistAttributes', indexValues);
+        content = drawAttributeMenu("", "", "", "", "", "", "300","", 'addlistAttributes', indexValues);
         indexValues = indexValues + 1;
         // addDeviceConditionsArray['addlistAttributes'] = true;
         $('#addlistAttributes').append(content);
@@ -1193,6 +1220,23 @@ $(document).ready(function ()
         $("#addSchemaTabModel #addlistAttributes .row input:even").each(function () {
             checkModelValueName($(this));
         });
+        $("#addSchemaTabModel #addlistAttributes .row input:odd").each(function () {
+            checkModelValueName($(this));
+        });
+        checkAddModelConditions();
+    });
+    $("#addlistAttributes").on("keyup", "input[id^='InputVNM']", function() {
+        // Get the value of the input field you're currently interacting with
+        var value = $(this).val();
+        let eventFiredIndex = event.target.id
+        eventFiredIndex = eventFiredIndex.match(/\d+$/);
+        if (value === 'DateObserved' || value === 'dateObserved' ){
+            $("#realtime_flag"+eventFiredIndex[0]).hide()
+            $('label[for="realtime_flag' + eventFiredIndex + '"]').hide();
+        }else {
+            $("#realtime_flag"+eventFiredIndex[0]).show()
+            $('label[for="realtime_flag' + eventFiredIndex + '"]').show();
+        }
         checkAddModelConditions();
     });
     $("#addSchemaTabModel").off("click");
@@ -1200,6 +1244,9 @@ $(document).ready(function ()
 
         //checkAtlistOneAttribute();
         $("#addSchemaTabModel #addlistAttributes .row input:even").each(function () {
+            checkModelValueName($(this));
+        });
+        $("#addSchemaTabModel #addlistAttributes .row input:odd").each(function () {
             checkModelValueName($(this));
         });
         checkAddModelConditions();
@@ -1229,7 +1276,8 @@ $(document).ready(function ()
                 editable: '0',
                 value_unit: document.getElementById('addlistAttributes').childNodes[m].childNodes[2].childNodes[0].childNodes[0].value.trim(),
                 healthiness_criteria: document.getElementById('addlistAttributes').childNodes[m].childNodes[5].childNodes[0].childNodes[0].value.trim(),
-                healthiness_value: document.getElementById('addlistAttributes').childNodes[m].childNodes[6].childNodes[0].childNodes[0].value.trim()};
+                healthiness_value: document.getElementById('addlistAttributes').childNodes[m].childNodes[6].childNodes[0].childNodes[0].value.trim(),
+                real_time_flag: document.getElementById('addlistAttributes').childNodes[m].childNodes[7].childNodes[0].childNodes[0].checked.toString()};
             if (newatt.value_name == "" || regex.test(newatt.value_name) || newatt.value_name.length < 2) {
                 someNameisWrong = true;
                 msg_whatiswrong += "The Value name must be at least 2 characters. No special characters are allowed. "
@@ -1609,7 +1657,7 @@ $(document).ready(function ()
                         {
                             content = drawAttributeMenu(myattributes[k].value_name,
                                     myattributes[k].data_type, myattributes[k].value_type, myattributes[k].editable, myattributes[k].value_unit, myattributes[k].healthiness_criteria,
-                                    myattributes[k].healthiness_value, 'editlistAttributes', indexValues);
+                                    myattributes[k].healthiness_value,myattributes[k].real_time_flag, 'editlistAttributes', indexValues);
                             indexValues = indexValues + 1;
                             k++;
                             $('#editlistAttributes').append(content);
@@ -1623,6 +1671,7 @@ $(document).ready(function ()
 //                   $("#RemoveButtAttr").hide();
 //                  $("#CopyButtAttr").hide();
                         $(".Hidebutton").hide();
+                        $(':checkbox').prop('disabled', true);
                         $('.Input_readoonly').attr('readonly', true);
                         $('.Select_readoonly').prop('disabled', true);
                         $('#editModelLoadingIcon').hide();
@@ -1647,7 +1696,7 @@ $(document).ready(function ()
     //add lines related to attributes in case of edit
     $("#addAttrMBtn").off("click");
     $("#addAttrMBtn").click(function () {
-        content = drawAttributeMenu("", "", "", "", "", "", "300", 'addlistAttributesM', indexValues);
+        content = drawAttributeMenu("", "", "", "", "", "", "300","", 'addlistAttributesM', indexValues);
         indexValues = indexValues + 1;
         $('#addlistAttributesM').append(content);
         checkEditAtlistOneAttributeM();
@@ -1656,12 +1705,28 @@ $(document).ready(function ()
         });
         checkEditModelConditions();
     });
+    $("#addlistAttributesM").on("keyup", "input[id^='InputVNM']", function() {
+        // Get the value of the input field you're currently interacting with
+        var value = $(this).val();
+        let eventFiredIndex = event.target.id
+        eventFiredIndex = eventFiredIndex.match(/\d+$/);
+        if (value === 'DateObserved'){
+            $("#realtime_flag"+eventFiredIndex[0]).hide()
+            $('label[for="realtime_flag' + eventFiredIndex + '"]').hide();
+        }else {
+            $("#realtime_flag"+eventFiredIndex[0]).show()
+            $('label[for="realtime_flag' + eventFiredIndex + '"]').show();
+        }
+    });
     $("#editSchemaTabModel").off("click");
     $("#editSchemaTabModel").on('click keyup', function () {
 
      // check if an edit of a model's attribute name is acceptable
         $("#editSchemaTabModel #editlistAttributes .row input:even").each(function () { //:even
            checkModelValueName($(this));
+        })
+        $("#editSchemaTabModel #editlistAttributes .row input:odd").each(function () {
+            checkModelValueName($(this));
         })
         $("#editSchemaTabModel #addlistAttributesM .row input").each(function () { //:even
             checkModelValueNameM($(this));
@@ -1740,7 +1805,7 @@ $(document).ready(function ()
                         {
                             content = drawAttributeMenu(myattributes[k].value_name,
                                     myattributes[k].data_type, myattributes[k].value_type, myattributes[k].editable, myattributes[k].value_unit, myattributes[k].healthiness_criteria,
-                                    myattributes[k].healthiness_value, 'editlistAttributes', indexValues);
+                                    myattributes[k].healthiness_value,myattributes[k].real_time_flag, 'editlistAttributes', indexValues);
                             indexValues = indexValues + 1;
                             k++;
                             $('#editlistAttributes').append(content);
@@ -1800,7 +1865,8 @@ $(document).ready(function ()
                 editable: '0',
                 value_unit: document.getElementById('addlistAttributesM').childNodes[m].childNodes[2].childNodes[0].childNodes[0].value.trim(),
                 healthiness_criteria: document.getElementById('addlistAttributesM').childNodes[m].childNodes[5].childNodes[0].childNodes[0].value.trim(),
-                healthiness_value: document.getElementById('addlistAttributesM').childNodes[m].childNodes[6].childNodes[0].childNodes[0].value.trim()};
+                healthiness_value: document.getElementById('addlistAttributesM').childNodes[m].childNodes[6].childNodes[0].childNodes[0].value.trim(),
+                real_time_flag: document.getElementById('addlistAttributesM').childNodes[m].childNodes[7].childNodes[0].childNodes[0].checked.toString()};
             //MARCO: mynewAttributes.push(newatt);
 
             if (newatt.value_name != "" && !regex.test(newatt.value_name) && newatt.value_name.length >= 2 && newatt.data_type != "" && newatt.value_type != "" && newatt.editable != "" && newatt.value_unit != "" && newatt.healthiness_criteria != "" && newatt.healthiness_value != "")
@@ -1831,7 +1897,8 @@ $(document).ready(function ()
                 editable: '0',
                 value_unit: selectOpt_value_unit[selectIndex_value_unit].value,
                 healthiness_criteria: selectOpt_hc[selectIndex_hc].value,
-                healthiness_value: document.getElementById('editlistAttributes').childNodes[j].childNodes[6].childNodes[0].childNodes[0].value.trim()};
+                healthiness_value: document.getElementById('editlistAttributes').childNodes[j].childNodes[6].childNodes[0].childNodes[0].value.trim(),
+                real_time_flag: document.getElementById('editlistAttributes').childNodes[j].childNodes[7].childNodes[0].childNodes[0].checked.toString()};
             if (att.value_name != "" && !regex.test(att.value_name) && att.value_name.length >= 2 && att.data_type != "" && att.value_type != "" && att.editable != "" && att.value_unit != "" && att.healthiness_criteria != "" && att.healthiness_value != "")
                 myAttributes.push(att);
             else {
@@ -2103,7 +2170,7 @@ $(document).ready(function ()
          // creates 6 arrays one for each parameter of an attribute, specifically: Value Name,value type,value unit,data type,Healthiness Criteria,Healthiness value.
         //For each attribute, the 6 parameter for each attribute are on the same index (EX: first attribute has its parameters at index 0 of each array)
          const AttributesArray= []
-        $("#editlistAttributes").find("#InputVNM").each(function() {
+        $("#editlistAttributes").find("[id^=\"InputVNM\"]").each(function() {
             AttributesArray.push($(this).val());
         });
 
@@ -2134,10 +2201,14 @@ $(document).ready(function ()
         $("#editlistAttributes").find("#InputHV").each(function() {
             HVArray.push($(this).val());
         });
-
+        const RealTimeFlagArray = []
+        $("#editlistAttributes").find("[id^=\"realtime_flag\"]").each(function() {
+            RealTimeFlagArray.push($(this).prop('checked'));
+        });
+        //console.log(RealTimeFlagArray)
         //For each deleted attribute, search the name in the attributes array created before, get the index, and delete that index in all 6 arrays
         //Now we have the attributes minus the deleted ones
-        $("#deletedAttributes").find("#InputVNM").each(function() {
+        $("#deletedAttributes").find("[id^=\"InputVNM\"]").each(function() {
             const deletedIndex = findStringIndex(AttributesArray, $(this).val);
             AttributesArray.splice(deletedIndex,1);
             ValueUnitArray.splice(deletedIndex,1);
@@ -2145,6 +2216,7 @@ $(document).ready(function ()
             DataTypeArray.splice(deletedIndex,1);
             HCArray.splice(deletedIndex,1);
             HVArray.splice(deletedIndex,1);
+            RealTimeFlagArray.splice(deletedIndex,1);
         });
 
         function findStringIndex(arr, searchString) {
@@ -2153,7 +2225,7 @@ $(document).ready(function ()
 
         //For each attribute, add his parameters to the end of the arrays created before,now we have 6 arrays with the included
         //addition or deletions made by the user on the edit page
-        $("#addlistAttributesM").find("#InputVNM").each(function() {
+        $("#addlistAttributesM").find("[id^=\"InputVNM\"]").each(function() {
             AttributesArray.push($(this).val());
         });
 
@@ -2176,27 +2248,32 @@ $(document).ready(function ()
         $("#addlistAttributesM").find("#InputHV").each(function() {
             HVArray.push($(this).val());
         });
+        $("#addlistAttributesM").find("[id^=\"realtime_flag\"]").each(function() {
+            RealTimeFlagArray.push($(this).prop('checked'));
+        });
+
 
         //Populate the attributes field using the values in the 6 arrays(EX: first attributes will have all the parameters saved at index 0 of each array)
         mynewAttributesSaveas = []
          $('#addlistAttributes').children('.row').each(function (){
-
-             $('#InputVNM',this).val(AttributesArray[j]);
+             $("#InputVNM"+j,this).val(AttributesArray[j]);
              $("#value_type"+ j +" option[value="+ValueTypeArray[j]+"]").attr('selected', 'selected').change();
              $("#value_unit"+ j +" option[value="+ValueUnitArray[j]+"]").attr('selected', 'selected').change();
              $("#data_type"+ j +" option[value="+DataTypeArray[j]+"]").attr('selected', 'selected').change();
              $("#SelectHC option[value="+ HCArray[j] +"]").attr('selected', 'selected').change();
              $('#InputHV',this).val(HVArray[j]);
-             j++;
 
-             var newattsaveas = {value_name: $("#InputVNM",this).val(),
-             value_type: $('#value_type'+j).val(),
+
+             var newattsaveas = {value_name: $("#InputVNM"+j).val(),
+                value_type: $('#value_type'+j).val(),
                  data_type:$('#data_type'+j).val(),
                  editable: '0',
                  value_unit: $('#value_unit'+j).val(),
                  healthiness_criteria: $('#SelectHC',this).val(),
-                 healthiness_value: $('#InputHV',this).val()
+                 healthiness_value: $('#InputHV',this).val(),
+                 real_time_flag: RealTimeFlagArray[j].toString()
              };
+             j++;
              mynewAttributesSaveas.push(newattsaveas)
            })
 

@@ -75,7 +75,7 @@ function checkRegisterOwnerShipObject($token, $object, &$result) {
 function insert_device($link, $id, $devicetype, $contextbroker, $kind, $protocol, $format, $macaddress, $model,
         $producer, $latitude, $longitude, $visibility, $frequency, $k1, $k2, $edgegateway_type, $edgegateway_uri,
         $listAttributes, $subnature, $staticAttributes, $pathCertificate, $accessToken, &$result, $shouldbeRegistered = 'yes',
-        $organization, $kbUrl = "", $username = "", $service = "", $servicePath = "") {
+        $organization, $kbUrl = "", $username = "", $service = "", $servicePath = "",$wktGeometry="") {
     if (($k1 == null) || ($k1 == ""))
         $k1 = guidv4();
     if (($k2 == null) || ($k2 == ""))
@@ -141,11 +141,11 @@ function insert_device($link, $id, $devicetype, $contextbroker, $kind, $protocol
                 if (!isset($shouldbeRegistered)) {
                     registerKB($link, $id, $devicetype, $contextbroker, $kind, $protocol,
                             $format, $macaddress, $model, $producer, $latitude, $longitude, $visibility,
-                            $frequency, $listAttributes, $subnature, $staticAttributes, $result, 'yes', $organization, $kbUrl, $service, $servicePath, $accessToken);
+                            $frequency, $listAttributes, $subnature, $staticAttributes, $result, 'yes', $organization, $kbUrl, $service, $servicePath, $accessToken,$wktGeometry);
                 } else {
                     registerKB($link, $id, $devicetype, $contextbroker, $kind, $protocol,
                             $format, $macaddress, $model, $producer, $latitude, $longitude, $visibility,
-                            $frequency, $listAttributes, $subnature, $staticAttributes, $result, $shouldbeRegistered, $organization, $kbUrl, $service, $servicePath, $accessToken);
+                            $frequency, $listAttributes, $subnature, $staticAttributes, $result, $shouldbeRegistered, $organization, $kbUrl, $service, $servicePath, $accessToken,$wktGeometry);
                 }
 
                 if ($result["status"] == 'ko')
@@ -165,15 +165,17 @@ function insert_device($link, $id, $devicetype, $contextbroker, $kind, $protocol
                     $service = "NULL";
                     $servicePath = "NULL";
                 }
-
+                if($wktGeometry==""){
+                    $wktGeometry= null;
+                }
                 if ($syntaxRes == 0) {
 
                     if ($result["status"] == 'ok' && $result["content"] == null) {
-                        $q = "INSERT INTO devices(id, devicetype, contextBroker,  kind, protocol, format, macaddress, model, producer, latitude, longitude, visibility, frequency, privatekey, certificate, organization, subnature, static_attributes, service, servicePath) " .
-                                "VALUES('$id', '$devicetype', '$contextbroker', '$kind', '$protocol', '$format', '$macaddress', '$model', '$producer', '$latitude', '$longitude', '$visibility', '$frequency', '$privatekey','$certificate', '$organization', '$subnature', '$staticAttributes', $service, $servicePath)";
+                        $q = "INSERT INTO devices(id, devicetype, contextBroker,  kind, protocol, format, macaddress, model, producer, latitude, longitude, visibility, frequency, privatekey, certificate, organization, subnature, static_attributes, service, servicePath, wktGeometry) " .
+                                "VALUES('$id', '$devicetype', '$contextbroker', '$kind', '$protocol', '$format', '$macaddress', '$model', '$producer', '$latitude', '$longitude', '$visibility', '$frequency', '$privatekey','$certificate', '$organization', '$subnature', '$staticAttributes', $service, $servicePath,CASE WHEN '$wktGeometry' = '' THEN NULL ELSE '$wktGeometry' END)";
                     } else {
-                        $q = "INSERT INTO devices(id, devicetype, contextBroker,  kind, protocol, format, macaddress, model, producer, latitude, longitude,uri, visibility,  frequency, privatekey, certificate, mandatoryproperties,mandatoryvalues, organization, subnature, static_attributes, service, servicePath) " .
-                                "VALUES('$id', '$devicetype', '$contextbroker', '$kind', '$protocol', '$format', '$macaddress', '$model', '$producer', '$latitude', '$longitude', '" . $result["content"] . "', '$visibility', '$frequency', '$privatekey','$certificate',1,1, '$organization', '$subnature', '$staticAttributes', $service, $servicePath)";
+                        $q = "INSERT INTO devices(id, devicetype, contextBroker,  kind, protocol, format, macaddress, model, producer, latitude, longitude,uri, visibility,  frequency, privatekey, certificate, mandatoryproperties,mandatoryvalues, organization, subnature, static_attributes, service, servicePath,wktGeometry) " .
+                                "VALUES('$id', '$devicetype', '$contextbroker', '$kind', '$protocol', '$format', '$macaddress', '$model', '$producer', '$latitude', '$longitude', '" . $result["content"] . "', '$visibility', '$frequency', '$privatekey','$certificate',1,1, '$organization', '$subnature', '$staticAttributes', $service, $servicePath,CASE WHEN '$wktGeometry' = '' THEN NULL ELSE '$wktGeometry' END)";
                     }
 
                     $r = mysqli_query($link, $q);
@@ -228,7 +230,7 @@ function insert_device($link, $id, $devicetype, $contextbroker, $kind, $protocol
                             else
                                 $hc = "value_bounds";
 
-                            $insertquery = "INSERT INTO `event_values`(`cb`, `device`, `value_name`, `data_type`, `order`, `value_type`, `editable`,`value_unit`,`healthiness_criteria`,`$hc`) VALUES ('$contextbroker','$id','$att->value_name','$att->data_type','$b','$att->value_type','$att->editable','$att->value_unit','$att->healthiness_criteria','$att->healthiness_value');";
+                            $insertquery = "INSERT INTO `event_values`(`cb`, `device`, `value_name`, `data_type`, `order`, `value_type`, `editable`,`value_unit`,`healthiness_criteria`,`$hc`,`real_time_flag`) VALUES ('$contextbroker','$id','$att->value_name','$att->data_type','$b','$att->value_type','$att->editable','$att->value_unit','$att->healthiness_criteria','$att->healthiness_value','$att->real_time_flag');";
 
                             try {
                                 $r1 = mysqli_query($link, $insertquery);
@@ -516,6 +518,7 @@ function generateAttributes($link, $name, $cb) {
                 $rec["healthiness_value"] = $row["different_values"];
             if ($rec["healthiness_criteria"] == "within_bounds")
                 $rec["healthiness_value"] = $row["value_bounds"];
+            $rec["real_time_flag"] = $row["real_time_flag"];
             array_push($attributes, $rec);
         }
     }
@@ -1747,7 +1750,7 @@ function canBeRegistered($name, $type, $contextbroker, $kind, $protocol, $format
 
 function registerKB($link, $name, $type, $contextbroker, $kind, $protocol, $format, $macaddress, $model, $producer, $latitude,
         $longitude, $visibility, $frequency, $listnewAttributes, $subnature, $staticAttributes, &$result, $shouldbeRegistered,
-        $organization, $kbUrl = "", $service = "", $servicePath = "", $accessToken) {
+        $organization, $kbUrl = "", $service = "", $servicePath = "", $accessToken, $wktGeometry="") {
     $result["status"] = 'ok';
 
     if (canBeRegistered($name, $type, $contextbroker, $kind, $protocol, $format, $macaddress, $model, $producer, $latitude, $longitude,
@@ -1784,6 +1787,7 @@ function registerKB($link, $name, $type, $contextbroker, $kind, $protocol, $form
         $msg["organization"] = $organization;
         $msg["ownership"] = $visibility;
         $msg["subnature"] = $subnature;
+        $msg["wktGeometry"] = $wktGeometry;
 
         foreach (json_decode(stripcslashes($staticAttributes)) as $stAtt) {
             $msg[$stAtt[0]] = $stAtt[1];
@@ -1816,6 +1820,7 @@ function registerKB($link, $name, $type, $contextbroker, $kind, $protocol, $form
             // $myatt["different_values"]=$att["different_values"];
             //else $myatt["value_bounds"]=$att["value_bounds"];
             $myatt["order"] = $i++;
+            $myatt["realtime"]= $att->real_time_flag;
             $myAttrs[] = $myatt;
         }
         $msg["attributes"] = $myAttrs;
@@ -2116,6 +2121,7 @@ function updateKB($link, $name, $type, $contextbroker, $kind, $protocol, $format
             else
                 $myatt["value_bounds"] = $att->value_bounds;
             $myatt["order"] = $i++;
+            $myatt["realtime"]= $att->real_time_flag;
             $myAttrs[] = $myatt;
         }
         $msg["attributes"] = $myAttrs;

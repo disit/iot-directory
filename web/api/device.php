@@ -211,6 +211,11 @@ if ($action == "insert") {
             $edgegateway_uri = $_REQUEST['edgegateway_uri'];
         else
             $edgegateway_uri = "";
+        if (isset($_REQUEST['wktGeometry']))
+            $wktGeometry = mysqli_real_escape_string($link, $_REQUEST['wktGeometry']);
+        else
+            $wktGeometry = "";
+
         $listAttributes = json_decode($_REQUEST['attributes']);
 
         $protocol = getProtocol($contextbroker, $link);
@@ -251,7 +256,8 @@ if ($action == "insert") {
                     retrieveKbUrl($organizationApiURI, $organization),
                     $username,
                     $service,
-                    $servicePath
+                    $servicePath,
+                    $wktGeometry
             );
 
             if ($result["status"] == "ok") {
@@ -555,7 +561,7 @@ if ($action == "insert") {
                                 $b = $a + 1;
                                 $upquery = "UPDATE event_values SET cb='$contextbroker', device = '$id',value_name='$att->value_name',data_type='$att->data_type', 
 					event_values.order='$b',value_type='$att->value_type', editable='$att->editable', value_unit='$att->value_unit', 
-					healthiness_criteria='$att->healthiness_criteria', value_refresh_rate='$att->healthiness_value', old_value_name= '$att->value_name' 
+					healthiness_criteria='$att->healthiness_criteria', value_refresh_rate='$att->healthiness_value', old_value_name= '$att->value_name',real_time_flag='$att->real_time_flag'
 					WHERE  cb='$old_contextbroker' AND device='$id' AND value_name='$att->old_value_name';";
                                 $r1 = mysqli_query($link, $upquery);
                                 if ($r1) {
@@ -585,9 +591,9 @@ if ($action == "insert") {
                                         $hc = "value_bounds";
 
                                     $insertquery = "INSERT INTO `event_values`(`cb`, `device`, `old_value_name`, `value_name`, `data_type`, `order`, 
-							`value_type`, `editable`, `value_unit`, `healthiness_criteria`, `$hc`) 
+							`value_type`, `editable`, `value_unit`, `healthiness_criteria`, `$hc`,`real_time_flag`)
 							VALUES ('$contextbroker','$id','$att->value_name', '$att->value_name','$att->data_type','$b','$att->value_type',
-							'$att->editable','$att->value_unit','$att->healthiness_criteria','$att->healthiness_value');";
+							'$att->editable','$att->value_unit','$att->healthiness_criteria','$att->healthiness_value','$att->real_time_flag');";
                                     $r1 = mysqli_query($link, $insertquery);
                                     if ($r1) {
                                         $result["msg"] .= "\n attribute $att->value_name correctly inserted";
@@ -718,7 +724,7 @@ if ($action == "insert") {
 
                     $q3 = "INSERT INTO deleted_devices select * from devices WHERE id = '$id' and contextBroker='$cb'and deleted IS NOT NULL;";
                     $q4 = "INSERT INTO deleted_event_values (select cb,device,value_name,data_type,value_type,editable,value_unit,healthiness_criteria,
-						value_refresh_rate, different_values,value_bounds, event_values.order from event_values where device = '$id' and cb='$cb' );";
+						value_refresh_rate, different_values,value_bounds, event_values.order,real_time_flag from event_values where device = '$id' and cb='$cb' );";
 
                     $q5 = "DELETE FROM event_values WHERE device = '$id' and cb='$cb';";
                     $q6 = "DELETE FROM devices WHERE id = '$id' and contextBroker='$cb';";
@@ -1068,6 +1074,7 @@ else if ($action == 'change_visibility') {
                             $rec["value_unit"] = $row["value_unit"];
                             $rec["order"] = $row["order"];
                             $rec["healthiness_criteria"] = $row["healthiness_criteria"];
+                            $rec["real_time_flag"]=$row["real_time_flag"];
                             if ($rec["healthiness_criteria"] == "refresh_rate")
                                 $rec["healthiness_value"] = $row["value_refresh_rate"];
                             if ($rec["healthiness_criteria"] == "different_values")

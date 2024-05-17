@@ -173,7 +173,7 @@ function SuccessOfLoadAttr(data, kindModel, version, domain, subdomain) {
             while (k < myattributes.length) {
                 content += drawAttributeMenu(myattributes[k].value_name,
                         myattributes[k].data_type, myattributes[k].value_type, myattributes[k].editable, myattributes[k].value_unit, myattributes[k].healthiness_criteria,
-                        myattributes[k].healthiness_value, myattributes[k].old_value_name, 'addlistAttributes', indexValues);
+                        myattributes[k].healthiness_value, myattributes[k].old_value_name,myattributes[k].real_time_flag ,'addlistAttributes', indexValues);
                 indexValues = indexValues + 1;
                 k++;
             }
@@ -191,7 +191,7 @@ function SuccessOfLoadAttr(data, kindModel, version, domain, subdomain) {
                 if (myattributes[k].value_name != 'type') {
                     content += drawAttributeMenu(myattributes[k].value_name,
                             myattributes[k].data_type, myattributes[k].value_type, myattributes[k].editable, myattributes[k].value_unit, myattributes[k].healthiness_criteria,
-                            myattributes[k].healthiness_value, '', 'addlistAttributes', indexValues);
+                            myattributes[k].healthiness_value, '', myattributes[k].real_time_flag,'addlistAttributes', indexValues);
                     indexValues = indexValues + 1;
                 }
 
@@ -236,7 +236,7 @@ function SuccessOfLoadAttr(data, kindModel, version, domain, subdomain) {
     }
 }
 
-function drawAttributeMenu(attrName, data_type, value_type, editable, value_unit, healthiness_criteria, value_refresh_rate, old_value_name, parent, indice)
+function drawAttributeMenu(attrName, data_type, value_type, editable, value_unit, healthiness_criteria, value_refresh_rate, old_value_name,realtime, parent, indice)
 {
     if (attrName == "") {
         msg = "<div style=\"color:red;\" class=\"modalFieldMsgCnt\"></div>";
@@ -251,6 +251,14 @@ function drawAttributeMenu(attrName, data_type, value_type, editable, value_unit
         msg_value_type = "<div style=\"color:red;\" class=\"modalFieldMsgCnt\">Value type is mandatory</div>";
     } else {
         msg_value_type = "<div style=\"color:#337ab7;\" class=\"modalFieldMsgCnt\">Ok</div>";
+    }
+
+    if(attrName === 'DateObserved' || attrName === 'dateObserved'){
+        real_time_flag = "<input type=\"checkbox\"  id=\"realtime_flag"+indice+"\"  style=\"margin-right: 5px;display:none;\" class=\"realtime_checkbox\"><label for=\"realtime_flag"+indice+"\" style=\"margin-bottom: 5px;display:none;\">Real Time</label>"
+    }else if (realtime === "true") {
+        real_time_flag = "<input type=\"checkbox\"  id=\"realtime_flag" + indice + "\"  style=\"margin-right: 5px;\" checked ><label for=\"realtime_flag" + indice + "\" style=\"margin-bottom: 5px;\">Real Time</label>"
+    }else {
+        real_time_flag = "<input type=\"checkbox\"  id=\"realtime_flag"+indice+"\"  style=\"margin-right: 5px;\" class=\"realtime_checkbox\"><label for=\"realtime_flag"+indice+"\" style=\"margin-bottom: 5px;\">Real Time</label>"
     }
 
     for (var n = 0; n < gb_value_types.length; n++)
@@ -286,9 +294,10 @@ function drawAttributeMenu(attrName, data_type, value_type, editable, value_unit
         mydatatypes += validDataType;
     }
 
-    return "<div class=\"row\" style=\"border:2px solid blue; padding: 8px;\" id=\"value" + indice + "\">" +
+    if (parent === "ValuesINPUT") {
+        return "<div class=\"row\" style=\"border:2px solid blue; padding: 8px;\" id=\"value" + indice + "\">" +
             "<div class=\"col-xs-6 col-md-3 modalCell\">" +
-            "<div  class=\"modalFieldCnt \" title=\"Insert a name for the sensor/actuator\"><input id=\"value_name\" type=\"text\" class=\"modalInputTxt Input_onlyread  valueName\"" +
+            "<div  class=\"modalFieldCnt \" title=\"Insert a name for the sensor/actuator\"><input id=\"value_name"+indice+"\" type=\"text\" class=\"modalInputTxt Input_onlyread  valueName\"" +
             "name=\"" + attrName + "\"  value=\"" + attrName + "\" onkeyup=\"checkStrangeCharacters(this)\">" +
             "</div><div class=\"modalFieldLabelCnt\">Value Name</div>" + msg + "</div>" +
             "<div class=\"col-xs-6 col-md-3 modalCell\"><div class=\"modalFieldCnt\">" +
@@ -328,7 +337,50 @@ function drawAttributeMenu(attrName, data_type, value_type, editable, value_unit
             "</select></div></div>" +
             "<div class=\"col-xs-6 col-md-3 modalCell\"><div class=\"modalFieldCnt\">" +
             "<button id=\"RemoveAttrEdit\" class=\"btn btn-danger RemoveAttrEdit\" onclick=\"removeElementAt('" + parent + "',this); return true;\">Remove Value</button></div></div></div></div>";
-}
+    }else{
+        return "<div class=\"row\" style=\"border:2px solid blue; padding: 8px;\" id=\"value" + indice + "\">" +
+            "<div class=\"col-xs-6 col-md-3 modalCell\">" +
+            "<div  class=\"modalFieldCnt \" title=\"Insert a name for the sensor/actuator\"><input id=\"value_name"+indice +"\" type=\"text\" class=\"modalInputTxt Input_onlyread  valueName\"" +
+            "name=\"" + attrName + "\"  value=\"" + attrName + "\" onkeyup=\"checkStrangeCharacters(this)\">" +
+            "</div><div class=\"modalFieldLabelCnt\">Value Name</div>" + msg + "</div>" +
+            "<div class=\"col-xs-6 col-md-3 modalCell\"><div class=\"modalFieldCnt\">" +
+            "<select  class=\"modalInputTxt Select_onlyread\" id=\"value_type" + indice + "\" " +
+            "onchange=valueTypeChanged(" + indice + ") " +
+            "title=\"select the type of the sensor/actuator\"> " + options +
+            "</select></div><div   class=\"modalFieldLabelCnt\">Value Type</div>" + msg_value_type + "</div>" +
+            "<div class=\"col-xs-6 col-md-3 modalCell\"><div class=\"modalFieldCnt\" title=\"select the unit of the data generated by the sensor/actuator\">" +
+            "<select class=\"modalInputTxt Select_onlyread\" id=\"value_unit" + indice + "\" " +
+            "onchange=valueUnitChanged(" + indice + ") " +
+            "\">" +
+            myunits +
+            "</select></div><div  id=\"SELECTunit\" class=\"modalFieldLabelCnt\">Value Unit</div>" + msg_value_unit + "</div>" +
+            "<div class=\"col-xs-6 col-md-3 modalCell\"><div class=\"modalFieldCnt\">" +
+            "<select  class=\"modalInputTxt Select_onlyread InputDataType" + attrName + "\" id=\"data_type" + indice + "\"" +
+            "onchange=dataTypeChanged(" + indice + ") " +
+            "\" title=\"select the type of data generated by the sensor/actuator\">" + mydatatypes +
+            "</select></div><div  class=\"modalFieldLabelCnt\">Data Type</div>" + msg_data_type + "</div>" +
+            "<div class=\"col-xs-6 col-md-3 modalCell\"><div class=\"modalFieldCnt\" title=\"select a criterion as a reference to decide whether the sensor/actuator is working well\">" +
+            "<select id=\"SELECTHealthCriteria\" class=\"modalInputTxt Select_onlyread Hidden_insert\" name=\"" + healthiness_criteria +
+            "\" \>" +
+            "<option value=\"refresh_rate\">Refresh rate</option>" +
+            "<option value=\"different_values\">Different Values</option>" +
+            "<option value=\"within_bounds\">Within bounds</option>" +
+            "</select></div><div  class=\"modalFieldLabelCnt Hidden_insert\">Healthiness Criteria</div></div>" +
+            "<div class=\"col-xs-6 col-md-3 modalCell\"><div class=\"modalFieldCnt\" title=\"Insert the limit value(s) to consider the sensor/actuator as healthy, according to the selected criterion \">" +
+            "<input id=\"device_refresh_value\" type=\"text\"  class=\"modalInputTxt Input_onlyread Hidden_insert\" name=\"" + value_refresh_rate +
+            "\" value=\"" + value_refresh_rate + "\"></div><div   class=\"modalFieldLabelCnt Hidden_insert\">Healthiness Value</div></div>" +
+            "<div class=\"col-xs-6 col-md-3 modalCell\"><div class=\"modalFieldCnt\">"+ real_time_flag + "</div></div>" +
+            "<div  style=\"display:none\"  class=\"modalFieldLabelCnt INSERTValues\">Insert data <span id=\"access-code-error" + attrName + "\" class=\"rsvp\" style=\"display:none; color:red;\"> Unvalid input</span></div>" +
+            "<div class=\"col-xs-6 col-md-3 modalCell\"><div class=\"modalFieldCnt\">" +
+            "<select class=\"modalInputTxt\" style=\"display:none\" name=\"" + old_value_name +
+            "\" \>" +
+            "<option value=\"" + old_value_name + "\">" + old_value_name + "</option>" +
+            "</select></div></div>" +
+            "<div class=\"col-xs-6 col-md-3 modalCell\"><div class=\"modalFieldCnt\">" +
+            "<button id=\"RemoveAttrEdit\" class=\"btn btn-danger RemoveAttrEdit\" onclick=\"removeElementAt('" + parent + "',this); return true;\">Remove Value</button></div></div></div></div></div>";
+
+    }
+    }
 
 
 
@@ -933,7 +985,7 @@ function NewValuesOnDevice(strID) {
                             {
                                 content = drawAttributeMenu(myattributes[k].value_name,
                                         myattributes[k].data_type, myattributes[k].value_type, myattributes[k].editable, myattributes[k].value_unit, myattributes[k].healthiness_criteria,
-                                        myattributes[k].healthiness_value, myattributes[k].value_name, 'ValuesINPUT', indexValues);
+                                        myattributes[k].healthiness_value, myattributes[k].value_name,myattributes[k].real_time_flag, 'ValuesINPUT', indexValues);
                                 str = "#Value" + myattributes[k].value_name;
                                 str_checkBox = "Checkbox_" + myattributes[k].value_name;
                                 NameAttrUp.push("" + str_checkBox + "");
@@ -1492,22 +1544,49 @@ $(document).ready(function () {
     // Add lines related to attributes			
     $("#addAttrBtn").off("click");
     $("#addAttrBtn").click(function () {
-        //console.log("#addAttrBtn");									
-        content = drawAttributeMenu("", "", "", "", "", "", "300", "", 'addlistAttributes', indexValues);
+        //console.log("#addAttrBtn");
+
+        content = drawAttributeMenu("", "", "", "", "", "", "300", "","", 'addlistAttributes', indexValues);
         indexValues = indexValues + 1;
         $('#addlistAttributes').append(content);
         checkAtlistOneAttribute();
         $("#addSchemaTabDevice #addlistAttributes .row input:even").each(function () {
             checkValueName($(this));
         });
+        $("#addSchemaTabDevice #addlistAttributes .row input:odd").each(function () {
+            checkValueName($(this));
+        });
         checkAddDeviceConditions();
     });
+        $("#addlistAttributes").on("keyup", "input[id^='value_name']", function() {
+            // Get the value of the input field you're currently interacting with
+
+
+            var value = $(this).val();
+            console.log(value)
+            let eventFiredIndex = event.target.id
+            console.log(eventFiredIndex)
+            eventFiredIndex = eventFiredIndex.match(/\d+$/);
+            console.log(eventFiredIndex)
+            if (value === 'DateObserved' || value === 'dateObserved' ){
+                $("#realtime_flag"+eventFiredIndex[0]).css('visibility','hidden')
+                $('label[for="realtime_flag' + eventFiredIndex + '"]').css('visibility','hidden')
+            }else {
+                $("#realtime_flag"+eventFiredIndex[0]).css('visibility','visible')
+                $('label[for="realtime_flag' + eventFiredIndex + '"]').css('visibility','visible')
+            }
+            checkAddDeviceConditions();
+        });
+
     $("#addSchemaTabDevice").off("click");
     $("#addSchemaTabDevice").on('click keyup', function () {
         //console.log("#addSchemaTabDevice");	
 
         //checkAtlistOneAttribute();
         $("#addSchemaTabDevice #addlistAttributes .row input:even").each(function () {
+            checkValueName($(this));
+        });
+        $("#addSchemaTabDevice #addlistAttributes .row input:odd").each(function () {
             checkValueName($(this));
         });
         checkAddDeviceConditions();
@@ -1621,7 +1700,6 @@ $(document).ready(function () {
         $('#selectSubnature').trigger('change');
         let static_attributes_from_json = parsedJson.static_attributes.replace(/[\\\[\]"]/g, '');
         static_attributes_from_json = static_attributes_from_json.split(",");
-        console.log(static_attributes_from_json)
         for(let i=0;i<= static_attributes_from_json.length;i++){
                 if(static_attributes_from_json[i]=="http://www.disit.org/km4city/schema#isMobile" ){
                     $('#isMobileTick').prop('checked', true);
@@ -1674,6 +1752,18 @@ $(document).ready(function () {
             $(this).val(parsedJson.deviceattributes[j].healthiness_value).change()
             j++
         });
+        j=0;
+        $("#addlistAttributes").find("[id^=\"realtime_flag\"]").each(function() {
+            if(parsedJson.deviceattributes[j].value_name === "DateObserved" || parsedJson.deviceattributes[j].value_name === "dateObserved" ){
+                $(this).prop('hidden',true);
+                console.log(this.id)
+                $(this).find($("label[for='"+this.id+"']").prop('hidden',true));
+            }
+            if(parsedJson.deviceattributes[j].real_time_flag === "true"){
+                $(this).prop('checked',true);
+            }
+            j++
+        });
 
 
         // $('#addlistAttributes').children('.row').each(function (){
@@ -1722,7 +1812,13 @@ $(document).ready(function () {
         $("#editSchemaTabDevice #addlistAttributesM .row input:even").each(function () {
             checkEditValueName($(this));
         });
+        $("#editSchemaTabDevice #addlistAttributesM .row input:odd").each(function () {
+            checkEditValueName($(this));
+        });
         $("#editSchemaTabDevice #editlistAttributes .row input:even").each(function () {
+            checkEditValueName($(this));
+        });
+        $("#editSchemaTabDevice #editlistAttributes .row input:odd").each(function () {
             checkEditValueName($(this));
         });
         checkEditDeviceConditions();
@@ -1735,8 +1831,48 @@ $(document).ready(function () {
         $("#editSchemaTabDevice #addlistAttributesM .row input:even").each(function () {
             checkEditValueName($(this));
         });
+        $("#editSchemaTabDevice #addlistAttributesM .row input:odd").each(function () {
+            checkEditValueName($(this));
+        });
         $("#editSchemaTabDevice #editlistAttributes .row input:even").each(function () {
             checkEditValueName($(this));
+        });
+        $("#editSchemaTabDevice #editlistAttributes .row input:odd").each(function () {
+            checkEditValueName($(this));
+        });
+        $("#editlistAttributes").on("keyup", "input[id^='value_name']", function() {
+            // Get the value of the input field you're currently interacting with
+            var value = $(this).val();
+            let eventFiredIndex = event.target.id
+            console.log(eventFiredIndex)
+            eventFiredIndex = eventFiredIndex.match(/\d+$/);
+            console.log(eventFiredIndex)
+            if (value === 'DateObserved' || value === 'dateObserved' ){
+                $("#realtime_flag"+eventFiredIndex[0]).css('visibility','hidden')
+                $('label[for="realtime_flag' + eventFiredIndex + '"]').css('visibility','hidden')
+            }else {
+                $("#realtime_flag"+eventFiredIndex[0]).show();
+                $('label[for="realtime_flag' + eventFiredIndex + '"]').show();
+                $("#realtime_flag"+eventFiredIndex[0]).css('visibility','visible')
+                $('label[for="realtime_flag' + eventFiredIndex + '"]').css('visibility','visible')
+            }
+            checkAddDeviceConditions();
+        });
+        $("#addlistAttributesM").on("keyup", "input[id^='value_name']", function() {
+            // Get the value of the input field you're currently interacting with
+            var value = $(this).val();
+            let eventFiredIndex = event.target.id
+            console.log(eventFiredIndex)
+            eventFiredIndex = eventFiredIndex.match(/\d+$/);
+            console.log(eventFiredIndex)
+            if (value === 'DateObserved' || value === 'dateObserved' ){
+                $("#realtime_flag"+eventFiredIndex[0]).css('visibility','hidden')
+                $('label[for="realtime_flag' + eventFiredIndex + '"]').css('visibility','hidden')
+            }else {
+                $("#realtime_flag"+eventFiredIndex[0]).css('visibility','visible')
+                $('label[for="realtime_flag' + eventFiredIndex + '"]').css('visibility','visible')
+            }
+            checkAddDeviceConditions();
         });
         checkEditDeviceConditions();
     });
@@ -1887,7 +2023,7 @@ $(document).ready(function () {
                             // console.log(k); 
                             content = drawAttributeMenu(myattributes[k].value_name,
                                     myattributes[k].data_type, myattributes[k].value_type, myattributes[k].editable, myattributes[k].value_unit, myattributes[k].healthiness_criteria,
-                                    myattributes[k].healthiness_value, myattributes[k].value_name, 'editlistAttributes', indexValues);
+                                    myattributes[k].healthiness_value, myattributes[k].value_name,myattributes[k].real_time_flag, 'editlistAttributes', indexValues);
                             indexValues = indexValues + 1;
                             k++;
                             $('#editlistAttributes').append(content);
@@ -1901,6 +2037,7 @@ $(document).ready(function () {
                         $(".RemoveAttrEdit").hide();
                         $('.Select_onlyread').prop('disabled', true);
                         $('.Input_onlyread').attr('readonly', true);
+                        $(':checkbox').prop('disabled', true);
                         $('#editDeviceLoadingIcon').hide();
                     },
                     error: function (data)
@@ -2096,7 +2233,7 @@ $(document).ready(function () {
                         // console.log(k); 
                         content = drawAttributeMenu(myattributes[k].value_name,
                                 myattributes[k].data_type, myattributes[k].value_type, myattributes[k].editable, myattributes[k].value_unit, myattributes[k].healthiness_criteria,
-                                myattributes[k].healthiness_value, myattributes[k].value_name, 'editlistAttributes', indexValues);
+                                myattributes[k].healthiness_value, myattributes[k].value_name, myattributes[k].real_time_flag ,'editlistAttributes', indexValues);
                         indexValues = indexValues + 1;
 
 
@@ -2265,6 +2402,10 @@ $(document).ready(function () {
         $("#editlistAttributes").find("#device_refresh_value").each(function() {
             HVArray.push($(this).val());
         });
+        const RealTimeFlagArray = []
+        $("#editlistAttributes").find("[id^=\"realtime_flag\"]").each(function() {
+            RealTimeFlagArray.push($(this).prop('checked'));
+        });
 
         //For each deleted attribute, search the name in the attributes array created before, get the index, and delete that index in all 6 arrays
         //Now we have the attributes minus the deleted ones
@@ -2309,6 +2450,10 @@ $(document).ready(function () {
             HVArray.push($(this).val());
         });
 
+        $("#addlistAttributesM").find("[id^=\"realtime_flag\"]").each(function() {
+            RealTimeFlagArray.push($(this).prop('checked'));
+        });
+
         //Populate the attributes field using the values in the 6 arrays(EX: first attributes will have all the parameters saved at index 0 of each array)
         mynewAttributesSaveas = []
         var j=0;
@@ -2342,7 +2487,10 @@ $(document).ready(function () {
             $(this).val(HVArray[j]).change()
             j++
         });
-
+        j=0;
+        $("#addlistAttributes").find("[id^=\"realtime_flag\"]").each(function() {
+            $(this).val(RealTimeFlagArray[j]).change();
+        });
 
 
         j=0
@@ -2355,7 +2503,8 @@ $(document).ready(function () {
                 editable: '0',
                 value_unit: ValueUnitArray[j],
                 healthiness_criteria: HCArray[j],
-                healthiness_value: HVArray[j]
+                healthiness_value: HVArray[j],
+                real_time_flag: RealTimeFlagArray[j].toString()
             };
             mynewAttributesSaveas.push(newattsaveas)
             j++;
@@ -2795,9 +2944,9 @@ $(document).ready(function () {
                 value_type: document.getElementById('addlistAttributes').childNodes[m].childNodes[1].childNodes[0].childNodes[0].value.trim(),
                 editable: '0',
                 value_unit: document.getElementById('addlistAttributes').childNodes[m].childNodes[2].childNodes[0].childNodes[0].value.trim(),
-                healthiness_criteria: document.getElementById('addlistAttributes').childNodes[m].childNodes[5].childNodes[0].childNodes[0].value.trim(),
-                healthiness_value: document.getElementById('addlistAttributes').childNodes[m].childNodes[6].childNodes[0].childNodes[0].value.trim()};
-            //console.log("new att:"+JSON.stringify(newatt));
+                healthiness_criteria: document.getElementById('addlistAttributes').childNodes[m].childNodes[4].childNodes[0].childNodes[0].value.trim(),
+                healthiness_value: document.getElementById('addlistAttributes').childNodes[m].childNodes[5].childNodes[0].childNodes[0].value.trim(),
+                real_time_flag: document.getElementById('addlistAttributes').childNodes[m].childNodes[6].childNodes[0].childNodes[0].checked.toString()};
             if(newatt.value_type=='timestamp'){
                 timestampNumberCount +=1;
             }
@@ -2822,7 +2971,8 @@ $(document).ready(function () {
                 editable: "0",
                 value_unit: "timestamp",
                 healthiness_criteria: "refresh_rate",
-                healthiness_value: "300"
+                healthiness_value: "300",
+                    real_time_flag: "false"
                 }
 
                 mynewAttributes.push(newatt);
@@ -3142,9 +3292,10 @@ $(document).ready(function () {
                 value_type: document.getElementById('addlistAttributesM').childNodes[m].childNodes[1].childNodes[0].childNodes[0].value.trim(),
                 editable: '0',
                 value_unit: document.getElementById('addlistAttributesM').childNodes[m].childNodes[2].childNodes[0].childNodes[0].value.trim(),
-                healthiness_criteria: document.getElementById('addlistAttributesM').childNodes[m].childNodes[5].childNodes[0].childNodes[0].value.trim(),
-                healthiness_value: document.getElementById('addlistAttributesM').childNodes[m].childNodes[6].childNodes[0].childNodes[0].value.trim(),
-                old_value_name: document.getElementById('addlistAttributesM').childNodes[m].childNodes[8].childNodes[0].childNodes[0].value.trim()};
+                healthiness_criteria: document.getElementById('addlistAttributesM').childNodes[m].childNodes[4].childNodes[0].childNodes[0].value.trim(),
+                healthiness_value: document.getElementById('addlistAttributesM').childNodes[m].childNodes[5].childNodes[0].childNodes[0].value.trim(),
+                old_value_name: document.getElementById('addlistAttributesM').childNodes[m].childNodes[8].childNodes[0].childNodes[0].value.trim(),
+                real_time_flag: document.getElementById('addlistAttributesM').childNodes[m].childNodes[6].childNodes[0].childNodes[0].checked.toString()};
             if (newatt.value_name != "" && !regex.test(newatt.value_name) && newatt.data_type != "" && newatt.value_type != "" &&
                     newatt.editable != "" && newatt.healthiness_criteria != "" && newatt.healthiness_value != "")
                 mynewAttributes.push(newatt);
@@ -3160,8 +3311,8 @@ $(document).ready(function () {
             var selectIndex_data_type = document.getElementById('editlistAttributes').childNodes[j].childNodes[3].childNodes[0].childNodes[0].selectedIndex;
             var selectOpt_value_unit = document.getElementById('editlistAttributes').childNodes[j].childNodes[2].childNodes[0].childNodes[0].options;
             var selectIndex_value_unit = document.getElementById('editlistAttributes').childNodes[j].childNodes[2].childNodes[0].childNodes[0].selectedIndex;
-            var selectOpt_hc = document.getElementById('editlistAttributes').childNodes[j].childNodes[5].childNodes[0].childNodes[0].options;
-            var selectIndex_hc = document.getElementById('editlistAttributes').childNodes[j].childNodes[5].childNodes[0].childNodes[0].selectedIndex;
+            var selectOpt_hc = document.getElementById('editlistAttributes').childNodes[j].childNodes[4].childNodes[0].childNodes[0].options;
+            var selectIndex_hc = document.getElementById('editlistAttributes').childNodes[j].childNodes[4].childNodes[0].childNodes[0].selectedIndex;
             // var selectOpt_edit = document.getElementById('editlistAttributes').childNodes[j].childNodes[4].childNodes[0].childNodes[0].options;
             // var selectIndex_edit = document.getElementById('editlistAttributes').childNodes[j].childNodes[4].childNodes[0].childNodes[0].selectedIndex;
 
@@ -3188,8 +3339,10 @@ $(document).ready(function () {
             var att = {value_name: document.getElementById('editlistAttributes').childNodes[j].childNodes[0].childNodes[0].childNodes[0].value.trim(),
                 data_type: dt, value_type: vt, value_unit: vu, healthiness_criteria: selectOpt_hc[selectIndex_hc].value,
                 editable: '0',
-                healthiness_value: document.getElementById('editlistAttributes').childNodes[j].childNodes[6].childNodes[0].childNodes[0].value.trim(),
-                old_value_name: document.getElementById('editlistAttributes').childNodes[j].childNodes[8].childNodes[0].childNodes[0].value};
+                healthiness_value: document.getElementById('editlistAttributes').childNodes[j].childNodes[5].childNodes[0].childNodes[0].value.trim(),
+                old_value_name: document.getElementById('editlistAttributes').childNodes[j].childNodes[8].childNodes[0].childNodes[0].value,
+                real_time_flag:document.getElementById('editlistAttributes').childNodes[j].childNodes[6].childNodes[0].childNodes[0].checked.toString()};
+            console.log(att)
             if (att.value_name != "" && !regex.test(att.value_name) && att.data_type != "" && att.value_type != "" &&
                     att.editable != "" && att.value_unit != "" && att.healthiness_criteria != "" && att.healthiness_value != "")
                 myAttributes.push(att);
@@ -3205,8 +3358,8 @@ $(document).ready(function () {
             var selectIndex_data_type = document.getElementById('deletedAttributes').childNodes[j].childNodes[3].childNodes[0].childNodes[0].selectedIndex;
             var selectOpt_value_unit = document.getElementById('deletedAttributes').childNodes[j].childNodes[2].childNodes[0].childNodes[0].options;
             var selectIndex_value_unit = document.getElementById('deletedAttributes').childNodes[j].childNodes[2].childNodes[0].childNodes[0].selectedIndex;
-            var selectOpt_hc = document.getElementById('deletedAttributes').childNodes[j].childNodes[5].childNodes[0].childNodes[0].options;
-            var selectIndex_hc = document.getElementById('deletedAttributes').childNodes[j].childNodes[5].childNodes[0].childNodes[0].selectedIndex;
+            var selectOpt_hc = document.getElementById('deletedAttributes').childNodes[j].childNodes[4].childNodes[0].childNodes[0].options;
+            var selectIndex_hc = document.getElementById('deletedAttributes').childNodes[j].childNodes[4].childNodes[0].childNodes[0].selectedIndex;
             //var selectOpt_edit = document.getElementById('deletedAttributes').childNodes[j].childNodes[4].childNodes[0].childNodes[0].options;
             //var selectIndex_edit = document.getElementById('deletedAttributes').childNodes[j].childNodes[4].childNodes[0].childNodes[0].selectedIndex;
             var att = {value_name: document.getElementById('deletedAttributes').childNodes[j].childNodes[0].childNodes[0].childNodes[0].value.trim(),
@@ -3214,7 +3367,7 @@ $(document).ready(function () {
                 editable: '0',
                 value_unit: selectOpt_value_unit[selectIndex_value_unit].value,
                 healthiness_criteria: selectOpt_hc[selectIndex_hc].value,
-                healthiness_value: document.getElementById('deletedAttributes').childNodes[j].childNodes[6].childNodes[0].childNodes[0].value.trim(),
+                healthiness_value: document.getElementById('deletedAttributes').childNodes[j].childNodes[5].childNodes[0].childNodes[0].value.trim(),
                 //new
                 old_value_name: document.getElementById('deletedAttributes').childNodes[j].childNodes[8].childNodes[0].childNodes[0].value};
             mydeletedAttributes.push(att);
@@ -3873,7 +4026,7 @@ function activateStub(cb, deviceName, ipa, protocol, user, accesslink, accesspor
                 {
                     content += drawAttributeMenu(myattributes[k].value_name,
                             myattributes[k].data_type, myattributes[k].value_type, myattributes[k].editable, myattributes[k].value_unit, myattributes[k].healthiness_criteria,
-                            myattributes[k].healthiness_value, myattributes[k].value_name, 'addlistAttributes', indexValues);
+                            myattributes[k].healthiness_value, myattributes[k].value_name,myattributes[k].real_time_flag, 'addlistAttributes', indexValues);
                     indexValues = indexValues + 1;
                     k++;
                 }

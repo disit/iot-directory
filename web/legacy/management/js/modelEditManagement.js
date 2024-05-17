@@ -311,10 +311,11 @@ function checkModelProducerM()
 function checkEditModelConditions()
 {
         //check that any value has a correct name/syntax
-        var n = $('#editSchemaTabModel #editlistAttributes .row input:even').filter(function(){return this.value.length>=2}).length;
-        var nx= $('#editSchemaTabModel #addlistAttributesM .row input:even').filter(function(){return this.value.length>=2}).length;
-        var n1 =$('#editSchemaTabModel #editlistAttributes .row input:even').length;
-        var n1x =$('#editSchemaTabModel #addlistAttributesM .row input:even').length;
+        var n = $('#editSchemaTabModel #editlistAttributes .row input[id*="InputVNM"]').filter(function(){return this.value.length>=2}).length;
+        var nx= $('#editSchemaTabModel #addlistAttributesM .row input[id*="InputVNM"]').filter(function(){return this.value.length>=2}).length;
+
+        var n1 =$('#editSchemaTabModel #editlistAttributes .row input[id*="InputVNM"]').length;
+        var n1x =$('#editSchemaTabModel #addlistAttributesM .row input[id*="InputVNM"]').length;
 
         //console.log("n: "+n+" n1:"+n1+" nx:"+nx+" n1x:"+n1x);
         if ((n+nx)==(n1+n1x))
@@ -328,8 +329,8 @@ function checkEditModelConditions()
 
         //check that any value has a correct name/syntax. this enforce is done here since the list of values is dynamic
         var regex=/[^a-z0-9:._-]/gi;
-        var o = $('#editSchemaTabModel #editlistAttributes .row input:even').filter(function(){return !regex.test(this.value)}).length;
-        var ox = $('#editSchemaTabModel #addlistAttributesM .row input:even').filter(function(){return !regex.test(this.value)}).length;
+        var o = $('#editSchemaTabModel #editlistAttributes .row input[id*="InputVNM"]').filter(function(){return !regex.test(this.value)}).length;
+        var ox = $('#editSchemaTabModel #addlistAttributesM .row input[id*="InputVNM"]').filter(function(){return !regex.test(this.value)}).length;
 
         //console.log("o: "+o+" n1:"+n1+" ox:"+ox);
         if ((o+ox)==(n1+n1x))
@@ -345,8 +346,9 @@ function checkEditModelConditions()
         var p = $('#editSchemaTabModel #editlistAttributes select[id*="value_type"]').filter(function(){return this.value!=="NOT VALID OPTION"}).length;
         var px = $('#editSchemaTabModel #addlistAttributesM select[id*="value_type"]').filter(function(){return this.value!=="NOT VALID OPTION"}).length;
 
-        //console.log("p: "+p+" n1:"+n1+" px:"+px);
-        if ((p+px)==(n1+n1x))
+        console.log("p: "+p+" px:"+px+" n1:"+n1+" n1x: "+ n1x);
+        console.log($('#editSchemaTabModel #editlistAttributes .row input:even'))
+        if ((p+px)===(n1+n1x))
         {
                 editModelConditionsArray['attributeWithValueType'] = true;
         }

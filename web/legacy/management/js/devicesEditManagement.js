@@ -285,12 +285,13 @@ function UserEditKey()
 function checkEditDeviceConditions()
 {
 	//check that any value has a correct name/syntax
-	var n = $('#editSchemaTabDevice #editlistAttributes .row input.valueName').filter(function(){return this.value.length>=2}).length;
-	var nx= $('#editSchemaTabDevice #addlistAttributesM .row input.valueName').filter(function(){return this.value.length>=2}).length;
-	var n1 =$('#editSchemaTabDevice #editlistAttributes .row input.valueName').length;
-	var n1x =$('#editSchemaTabDevice #addlistAttributesM .row input.valueName').length;
+	var n = $('#editSchemaTabDevice #editlistAttributes .row input[id*="value_name"]').filter(function(){return this.value.length>=2}).length;
+	var nx= $('#editSchemaTabDevice #addlistAttributesM .row input[id*="value_name"]').filter(function(){return this.value.length>=2}).length;
 
-	//console.log("n: "+n+" n1:"+n1+" nx:"+nx+" n1x:"+n1x);
+	var n1 =$('#editSchemaTabDevice #editlistAttributes .row input[id*="value_name"]').length;
+	var n1x =$('#editSchemaTabDevice #addlistAttributesM .row input[id*="value_name"]').length;
+
+	console.log("n: "+n+" n1:"+n1+" nx:"+nx+" n1x:"+n1x);
 	if ((n+nx)==(n1+n1x))
 	{
 		editDeviceConditionsArray['attributeWithName'] = true;
@@ -302,8 +303,8 @@ function checkEditDeviceConditions()
 
 	//check that any value has a correct name/syntax. this enforce is done here since the list of values is dynamic
 	var regex=/([^a-z0-9:._-])/gi  ;
-	var o = $('#editSchemaTabDevice #editlistAttributes .row input.valueName').filter(function(){return !regex.test(this.value)}).length;
-	var ox = $('#editSchemaTabDevice #addlistAttributesM .row input.valueName').filter(function(){return !regex.test(this.value)}).length;
+	var o = $('#editSchemaTabDevice #editlistAttributes .row input[id*="value_name"]').filter(function(){return !regex.test(this.value)}).length;
+	var ox = $('#editSchemaTabDevice #addlistAttributesM .row input[id*="value_name"]').filter(function(){return !regex.test(this.value)}).length;
 
 	//console.log("o: "+o+" n1:"+n1+" ox:"+ox);
 	if ((o+ox)==(n1+n1x))

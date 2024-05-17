@@ -70,7 +70,7 @@ function checkSelectionProtocol()
 {
     var message = null;
 
-	console.log("aa:"+$("#addIOTBrokerTabModel #selectProtocolModel").val());
+	//console.log("aa:"+$("#addIOTBrokerTabModel #selectProtocolModel").val());
 
     if ( !$("#addIOTBrokerTabModel #selectProtocolModel").val() || $("#addIOTBrokerTabModel #selectProtocolModel").val().length === 0 )
     {
@@ -92,7 +92,7 @@ function checkSelectionFormat()
 {
     var message = null;
 
-	console.log("bb:"+$("#addIOTBrokerTabModel #selectFormatModel").val());
+	//console.log("bb:"+$("#addIOTBrokerTabModel #selectFormatModel").val());
 
     if ( !$("#addIOTBrokerTabModel #selectFormatModel").val() || $("#addIOTBrokerTabModel #selectFormatModel").val().length === 0)
     {
@@ -147,54 +147,68 @@ function checkModelName()
     $("#inputNameModelMsg").html(message);
 }
 
-function checkModelValueName(current, FF=false)
-{
-    var message = null;
-    var regex=/[^a-z0-9_-]/gi;
-    var sensibleInputRegex=/\b(?:id|type|value)\b/i;
-    if(FF){
-         value=current.value;
-    }else{
-        value=current.val(); 
-    }
-   
-    element=current.parent().siblings().last();
+function checkModelValueName(current, FF=false) {
+    if (!current.is("#InputHV")) {
+        var message = null;
+        var regex = /[^a-z0-9_-]/gi;
+        var sensibleInputRegex = /\b(?:id|type|value)\b/i;
+        if (FF) {
+            value = current.value;
+        } else {
+            value = current.val();
+        }
 
-    //console.log("valore identificato " + $(this).val());
-    //console.log("elemento identificato " + $(this).parent().siblings().last().html());
-	
-    if ( !value || value.length === 0)
-    {
-        element.css("color", "red");
-        message = 'Value name is mandatory';
-        //addDeviceConditionsArray['inputNameValue'] = false;
+        element = current.parent().siblings().last();
+
+        //console.log("valore identificato " + $(this).val());
+        //console.log("elemento identificato " + $(this).parent().siblings().last().html());
+
+        if (!value || value.length === 0) {
+            element.css("color", "red");
+            message = 'Value name is mandatory';
+            //addDeviceConditionsArray['inputNameValue'] = false;
+        } else if (sensibleInputRegex.test(value)) {
+            element.css("color", "red");
+            message = 'No valid Value name: you can not use <b>id</b>, <b>type</b> or <b>value</b>';
+        } else if (value.length < 2) {
+            element.css("color", "red");
+            message = 'Value name (at least 2 chars long)';
+            //addDeviceConditionsArray['inputNameValue'] = false;
+        } else if (regex.test(value)) {
+            element.css("color", "red");
+            message = 'No special characters are allowed in Value name';
+            //addDeviceConditionsArray['inputNameValue'] = false;
+        } else {
+            element.css("color", "#337ab7");
+            message = 'Ok';
+
+        }
+
+        element.html(message);
+    }else{
+        if (FF) {
+            value = current.value;
+        } else {
+            value = current.val();
+        }
+        element = current.parent().siblings().last();
+        var regexHV = /^\d+$/;
+        //console.log("valore identificato " + $(this).val());
+        //console.log("elemento identificato " + $(this).parent().siblings().last().html());
+
+        if (!value || value.length === 0) {
+            element.css("color", "red");
+            message = 'Value Refresh rate is mandatory';
+        } else if (!regexHV.test(value)) {
+            element.css("color", "red");
+            message = 'No valid refresh value: you can only use numbers'
+        } else {
+            element.css("color", "#337ab7");
+            message = 'Ok';
+
+        }
+        element.html(message);
     }
-    else if(sensibleInputRegex.test(value))
-    {
-        element.css("color", "red");
-        message = 'No valid Value name: you can not use <b>id</b>, <b>type</b> or <b>value</b>';
-    }
-    else if(value.length < 2)
-    {
-        element.css("color", "red");
-        message = 'Value name (at least 2 chars long)';
-        //addDeviceConditionsArray['inputNameValue'] = false;
-    }
-    else if(regex.test(value))
-    {
-        element.css("color", "red");
-        message = 'No special characters are allowed in Value name';
-        //addDeviceConditionsArray['inputNameValue'] = false;
-    }
-    else
-    {
-		element.css("color", "#337ab7");
-		message = 'Ok';
-		//addDeviceConditionsArray['inputNameValue'] = true;
-	
-    }
-    
-    element.html(message);
 }
 /*
 function checkModelDescription()
@@ -289,8 +303,8 @@ function checkAddModelConditions()
 {
 
         //check that any value has a correct name/syntax
-        var n = $('#addSchemaTabModel #addlistAttributes .row input:even').filter(function(){return this.value.length>=2}).length;
-        var n1 =$('#addSchemaTabModel #addlistAttributes .row input:even').length;
+        var n = $('#addSchemaTabModel #addlistAttributes .row input[id*="InputVNM"]').filter(function(){return this.value.length>=2}).length;
+        var n1 =$('#addSchemaTabModel #addlistAttributes .row input[id*="InputVNM"]').length;
 
         //console.log("n: "+n+" n1:"+n1);
         if (n==n1)
@@ -304,10 +318,12 @@ function checkAddModelConditions()
 
         //check that any value has a correct name/syntax. this enforce is done here since the list of values is dynamic
         var regex=/[^a-z0-9:._-]/gi;
-        var o = $('#addSchemaTabModel #addlistAttributes .row input:even').filter(function(){return !regex.test(this.value)}).length;
+        var o = $('#addSchemaTabModel #addlistAttributes .row input[id*="InputVNM"]').filter(function(){
+            return !regex.test(this.value)
+        }).length;
 
         //console.log("o: "+o+" n1:"+n1);
-        if (o==n1)
+        if (o===n1)
         {
                 addModelConditionsArray['specialChars'] = true;
         }
@@ -329,18 +345,41 @@ function checkAddModelConditions()
         }
 
         //check that any value has a value unit selected
+        var data_type_sel = $('#addSchemaTabModel #addlistAttributes select[id*="data_type"]').filter(function(){return this.value!=="NOT VALID OPTION"}).length;
+
+        //console.log("c: "+data_type_sel+" n1:"+n1);
+        if (data_type_sel===n1)
+        {
+                addModelConditionsArray['attributeWithDataType'] = true;
+        }
+        else
+        {
+                addModelConditionsArray['attributeWithDataType'] = false;
+        }
         var c = $('#addSchemaTabModel #addlistAttributes select[id*="value_unit"]').filter(function(){return this.value!=="NOT VALID OPTION"}).length;
 
         //console.log("c: "+c+" n1:"+n1);
         if (c==n1)
         {
-                addModelConditionsArray['attributeWithValueUnit'] = true;
+            addModelConditionsArray['attributeWithValueUnit'] = true;
         }
         else
         {
-                addModelConditionsArray['attributeWithValueUnit'] = false;
+            addModelConditionsArray['attributeWithValueUnit'] = false;
         }
 
+        var regexHV = /^\d+$/;
+        var hv = $('#addSchemaTabModel #addlistAttributes .row input[id*="InputHV"]').filter(function(){return regexHV.test(this.value)}).length;
+
+        //console.log("hv: "+hv+" n1:"+n1);
+        if (hv===n1)
+        {
+            addModelConditionsArray['InputHV'] = true;
+        }
+        else
+        {
+            addModelConditionsArray['InputHV'] = false;
+        }
 
     var enableButton = true;
     // console.log(addModelConditionsArray);
@@ -352,7 +391,7 @@ function checkAddModelConditions()
             break;
         }
     }
-    console.log("value enabled" +  enableButton);
+
     if(enableButton)
     {
         $("#addNewModelConfirmBtn").attr("disabled", false);   
