@@ -75,7 +75,7 @@ function checkRegisterOwnerShipObject($token, $object, &$result) {
 function insert_device($link, $id, $devicetype, $contextbroker, $kind, $protocol, $format, $macaddress, $model,
         $producer, $latitude, $longitude, $visibility, $frequency, $k1, $k2, $edgegateway_type, $edgegateway_uri,
         $listAttributes, $subnature, $staticAttributes, $pathCertificate, $accessToken, &$result, $shouldbeRegistered = 'yes',
-        $organization, $kbUrl = "", $username = "", $service = "", $servicePath = "",$wktGeometry="") {
+        $organization, $kbUrl = "", $username = "", $service = "", $servicePath = "",$wktGeometry="",$hlt) {
     if (($k1 == null) || ($k1 == ""))
         $k1 = guidv4();
     if (($k2 == null) || ($k2 == ""))
@@ -141,11 +141,11 @@ function insert_device($link, $id, $devicetype, $contextbroker, $kind, $protocol
                 if (!isset($shouldbeRegistered)) {
                     registerKB($link, $id, $devicetype, $contextbroker, $kind, $protocol,
                             $format, $macaddress, $model, $producer, $latitude, $longitude, $visibility,
-                            $frequency, $listAttributes, $subnature, $staticAttributes, $result, 'yes', $organization, $kbUrl, $service, $servicePath, $accessToken,$wktGeometry);
+                            $frequency, $listAttributes, $subnature, $staticAttributes, $result, 'yes', $organization, $kbUrl, $service, $servicePath, $accessToken,$wktGeometry,$hlt);
                 } else {
                     registerKB($link, $id, $devicetype, $contextbroker, $kind, $protocol,
                             $format, $macaddress, $model, $producer, $latitude, $longitude, $visibility,
-                            $frequency, $listAttributes, $subnature, $staticAttributes, $result, $shouldbeRegistered, $organization, $kbUrl, $service, $servicePath, $accessToken,$wktGeometry);
+                            $frequency, $listAttributes, $subnature, $staticAttributes, $result, $shouldbeRegistered, $organization, $kbUrl, $service, $servicePath, $accessToken,$wktGeometry,$hlt);
                 }
 
                 if ($result["status"] == 'ko')
@@ -171,11 +171,11 @@ function insert_device($link, $id, $devicetype, $contextbroker, $kind, $protocol
                 if ($syntaxRes == 0) {
 
                     if ($result["status"] == 'ok' && $result["content"] == null) {
-                        $q = "INSERT INTO devices(id, devicetype, contextBroker,  kind, protocol, format, macaddress, model, producer, latitude, longitude, visibility, frequency, privatekey, certificate, organization, subnature, static_attributes, service, servicePath, wktGeometry) " .
-                                "VALUES('$id', '$devicetype', '$contextbroker', '$kind', '$protocol', '$format', '$macaddress', '$model', '$producer', '$latitude', '$longitude', '$visibility', '$frequency', '$privatekey','$certificate', '$organization', '$subnature', '$staticAttributes', $service, $servicePath,CASE WHEN '$wktGeometry' = '' THEN NULL ELSE '$wktGeometry' END)";
+                        $q = "INSERT INTO devices(id, devicetype, contextBroker,  kind, protocol, format, macaddress, model, producer, latitude, longitude, visibility, frequency, privatekey, certificate, organization, subnature, static_attributes, service, servicePath, wktGeometry, hlt) " .
+                                "VALUES('$id', '$devicetype', '$contextbroker', '$kind', '$protocol', '$format', '$macaddress', '$model', '$producer', '$latitude', '$longitude', '$visibility', '$frequency', '$privatekey','$certificate', '$organization', '$subnature', '$staticAttributes', $service, $servicePath,CASE WHEN '$wktGeometry' = '' THEN NULL ELSE '$wktGeometry' END, '$hlt')";
                     } else {
-                        $q = "INSERT INTO devices(id, devicetype, contextBroker,  kind, protocol, format, macaddress, model, producer, latitude, longitude,uri, visibility,  frequency, privatekey, certificate, mandatoryproperties,mandatoryvalues, organization, subnature, static_attributes, service, servicePath,wktGeometry) " .
-                                "VALUES('$id', '$devicetype', '$contextbroker', '$kind', '$protocol', '$format', '$macaddress', '$model', '$producer', '$latitude', '$longitude', '" . $result["content"] . "', '$visibility', '$frequency', '$privatekey','$certificate',1,1, '$organization', '$subnature', '$staticAttributes', $service, $servicePath,CASE WHEN '$wktGeometry' = '' THEN NULL ELSE '$wktGeometry' END)";
+                        $q = "INSERT INTO devices(id, devicetype, contextBroker,  kind, protocol, format, macaddress, model, producer, latitude, longitude,uri, visibility,  frequency, privatekey, certificate, mandatoryproperties,mandatoryvalues, organization, subnature, static_attributes, service, servicePath,wktGeometry,hlt) " .
+                                "VALUES('$id', '$devicetype', '$contextbroker', '$kind', '$protocol', '$format', '$macaddress', '$model', '$producer', '$latitude', '$longitude', '" . $result["content"] . "', '$visibility', '$frequency', '$privatekey','$certificate',1,1, '$organization', '$subnature', '$staticAttributes', $service, $servicePath,CASE WHEN '$wktGeometry' = '' THEN NULL ELSE '$wktGeometry' END, '$hlt')";
                     }
 
                     $r = mysqli_query($link, $q);
@@ -1750,7 +1750,7 @@ function canBeRegistered($name, $type, $contextbroker, $kind, $protocol, $format
 
 function registerKB($link, $name, $type, $contextbroker, $kind, $protocol, $format, $macaddress, $model, $producer, $latitude,
         $longitude, $visibility, $frequency, $listnewAttributes, $subnature, $staticAttributes, &$result, $shouldbeRegistered,
-        $organization, $kbUrl = "", $service = "", $servicePath = "", $accessToken, $wktGeometry="") {
+        $organization, $kbUrl = "", $service = "", $servicePath = "", $accessToken, $wktGeometry="",$hlt) {
     $result["status"] = 'ok';
 
     if (canBeRegistered($name, $type, $contextbroker, $kind, $protocol, $format, $macaddress, $model, $producer, $latitude, $longitude,
@@ -1788,6 +1788,7 @@ function registerKB($link, $name, $type, $contextbroker, $kind, $protocol, $form
         $msg["ownership"] = $visibility;
         $msg["subnature"] = $subnature;
         $msg["wktGeometry"] = $wktGeometry;
+        $msg["highleveltype"] = $hlt;
 
         foreach (json_decode(stripcslashes($staticAttributes)) as $stAtt) {
             $msg[$stAtt[0]] = $stAtt[1];
@@ -2051,7 +2052,7 @@ function update_amqp($name, $type, $contextbroker, $kind, $protocol, $format, $l
 
 function updateKB($link, $name, $type, $contextbroker, $kind, $protocol, $format, $macaddress, $model, $producer, $latitude, $longitude,
         $visibility, $frequency, $attributes, $deletedAttributes, $uri, $organization, $subnature, $staticAttributes, &$result, $service = "",
-        $servicePath = "", $kbUrl = "", $accessToken) {
+        $servicePath = "", $kbUrl = "", $accessToken,$hlt,$wktGeometry) {
     $result["status"] = 'ok';
 
     if (canBeRegistered($name, $type, $contextbroker, $kind, $protocol, $format, $macaddress, $model, $producer, $latitude, $longitude,
@@ -2100,6 +2101,8 @@ function updateKB($link, $name, $type, $contextbroker, $kind, $protocol, $format
         $msg["broker"]["longitude"] = $rowCB["longitude"];
         $msg["broker"]["created"] = $rowCB["created"];
         $msg["subnature"] = $subnature;
+        $msg["highleveltype"] = $hlt;
+        $msg["wktgeometry"] = $wktGeometry;
 
         foreach (json_decode(stripcslashes($staticAttributes)) as $stAtt) {
             $msg[$stAtt[0]] = $stAtt[1];
@@ -2297,7 +2300,7 @@ function deleteKB($link, $name, $contextbroker, $kbUrl = "", &$result, $service 
     $listnewAttributes = generateAttributes($link, $name, $contextbroker);
 
     $query = "SELECT d.organization, d.uri, d.id, d.devicetype AS entityType, d.kind, d.format, d.macaddress, d.model, d.producer, d.protocol, d.longitude,d.subnature, d.static_attributes, 
-		d.latitude, d.visibility, d.frequency, d.service, d.servicePath, cb.name, cb.protocol as type, cb.ip, cb.port, cb.login, cb.password, cb.latitude as cblatitude, 
+		d.latitude, d.visibility, d.frequency, d.service, d.servicePath,d.hlt,d.wktGeometry, cb.name, cb.protocol as type, cb.ip, cb.port, cb.login, cb.password, cb.latitude as cblatitude, 
 		cb.longitude as cblongitude, cb.created, cb.kind as cbkind FROM devices d JOIN contextbroker cb ON d.contextBroker = cb.name WHERE d.deleted is null and 
 		d.contextBroker='$contextbroker' and d.id='$name';";
 
@@ -2330,6 +2333,8 @@ function deleteKB($link, $name, $contextbroker, $kbUrl = "", &$result, $service 
     $uri = $row["uri"];
     $subnature = $row["subnature"];
     $staticAttributes = $row["static_attributes"];
+    $hlt=$row["hlt"];
+    $wktGeometry=$row["wktGeometry"];
 
     $result["msg"] = "$name, $type, $contextbroker, $kind, $protocol, $format, $macaddress, $model, $producer, $latitude, $longitude, 
 		$visibility, $frequency," . count($listnewAttributes);
@@ -2365,6 +2370,8 @@ function deleteKB($link, $name, $contextbroker, $kbUrl = "", &$result, $service 
         $msg["broker"]["longitude"] = $row["cblongitude"];
         $msg["broker"]["created"] = $row["created"];
         $msg["subnature"] = $subnature;
+        $msg["highleveltype"]=$hlt;
+        $msg["wktGeometry"]=$wktGeometry;
 
         $myAttrs = array();
         $i = 1;

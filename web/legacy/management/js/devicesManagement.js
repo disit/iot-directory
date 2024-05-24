@@ -889,3 +889,105 @@ function checkAddMyDeviceConditions()
     }
 }
 
+function checkWellFormedWKT() {
+    var wkt = $("#wktGeometryText").val();
+    console.log(wkt)
+    // Regular expression to match WKT Geometry types
+    var wktTypes = /(POINT|LINESTRING|POLYGON|MULTIPOINT|MULTILINESTRING|MULTIPOLYGON|GEOMETRYCOLLECTION)/i;
+
+    // Regular expression to match a pair of coordinates in WKT format
+    var coordinatePair = /\(\s*([\d\.-]+)\s+([\d\.-]+)\s*\)/g;
+
+    // Check if the WKT string starts with a valid Geometry type
+    if (wkt=="") {
+            $("#addHLTattributesMsg").css("color", "red");
+            $("#addHLTattributesMsg").text('Please insert a valid geometry');
+            return;
+    }
+
+        if (!wkt.match(wktTypes)) {
+            $("#addHLTattributesMsg").css("color", "red");
+            $("#addHLTattributesMsg").text('Unrecognized WktGeometry type');
+            return;
+        }
+
+        // Count the number of opening and closing parentheses to validate structure
+        var openingParentheses = wkt.split('(').length - 1;
+        var closingParentheses = wkt.split(')').length - 1;
+
+        if (openingParentheses !== closingParentheses) {
+
+            $("#addHLTattributesMsg").css("color", "red");
+            $("#addHLTattributesMsg").text('Parenthesis doesn\'t match');
+            return;
+        }
+
+        // Check if coordinates within parentheses are valid
+        var matches = wkt.match(coordinatePair);
+        if(matches) {
+            for (var i = 0; i < matches.length; i++) {
+                var coords = matches[i].replace(/[()]/g, '').split(' ');
+                if (coords.length !== 2 || isNaN(parseFloat(coords[0])) || isNaN(parseFloat(coords[1]))) {
+                    $("#addHLTattributesMsg").css("color", "red");
+                    $("#addHLTattributesMsg").text('Coordinates are not valid');
+                    return;
+                }
+            }
+
+        }
+    // If all checks pass, return true
+    $("#addHLTattributesMsg").css("color", 'rgb(51, 122, 183)');
+    $("#addHLTattributesMsg").text('Ok');
+
+}
+function checkWellFormedWKTedit() {
+    var wkt = $("#wktGeometryTextM").val();
+    console.log(wkt)
+    // Regular expression to match WKT Geometry types
+    var wktTypes = /(POINT|LINESTRING|POLYGON|MULTIPOINT|MULTILINESTRING|MULTIPOLYGON|GEOMETRYCOLLECTION)/i;
+
+    // Regular expression to match a pair of coordinates in WKT format
+    var coordinatePair = /\(\s*([\d\.-]+)\s+([\d\.-]+)\s*\)/g;
+
+    // Check if the WKT string starts with a valid Geometry type
+    if (wkt=="") {
+        $("#editHLTattributesMsg").css("color", "red");
+        $("#editHLTattributesMsg").text('Please insert a valid geometry');
+        return;
+    }
+
+    if (!wkt.match(wktTypes)) {
+        $("#editHLTattributesMsg").css("color", "red");
+        $("#editHLTattributesMsg").text('Unrecognized WktGeometry type');
+        return;
+    }
+
+    // Count the number of opening and closing parentheses to validate structure
+    var openingParentheses = wkt.split('(').length - 1;
+    var closingParentheses = wkt.split(')').length - 1;
+
+    if (openingParentheses !== closingParentheses) {
+
+        $("#editHLTattributesMsg").css("color", "red");
+        $("#editHLTattributesMsg").text('Parenthesis doesn\'t match');
+        return;
+    }
+
+    // Check if coordinates within parentheses are valid
+    var matches = wkt.match(coordinatePair);
+    if(matches) {
+        for (var i = 0; i < matches.length; i++) {
+            var coords = matches[i].replace(/[()]/g, '').split(' ');
+            if (coords.length !== 2 || isNaN(parseFloat(coords[0])) || isNaN(parseFloat(coords[1]))) {
+                $("#editHLTattributesMsg").css("color", "red");
+                $("#editHLTattributesMsg").text('Coordinates are not valid');
+                return;
+            }
+        }
+
+    }
+    // If all checks pass, return true
+    $("#editHLTattributesMsg").css("color", 'rgb(51, 122, 183)');
+    $("#editHLTattributesMsg").text('Ok');
+
+}

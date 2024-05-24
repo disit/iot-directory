@@ -122,10 +122,10 @@ function checkModelNameM()
         message = 'Model name is mandatory';
         editModelConditionsArray['inputNameModelM'] = false;
     }
-    else if($("#editInfoTabModel #inputNameModelM").val().length < 5)
+    else if($("#editInfoTabModel #inputNameModelM").val().length < 2)
     {
         $("#inputNameModelMMsg").css("color", "red");
-        message = 'Model name (at least 5 chars long)';
+        message = 'Model name (at least 2 chars long)';
         editModelConditionsArray['inputNameModelM'] = false;
     } 
     else if(regex.test($("#editInfoTabModel #inputNameModelM").val()))

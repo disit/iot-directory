@@ -197,7 +197,7 @@ if ($action_lwr == "get_fiware_model" || $action_lwr == "get_fiwire_model") {
         //get_model
         $q = "SELECT m.id,m.name,m.description,m.devicetype,m.kind,m.producer,m.frequency,m.policy,m.attributes,m.link,m.contextbroker,m.protocol,
 	                m.format,m.healthiness_criteria,m.healthiness_value,m.k1,m.k2,m.kgenerator,m.edgegateway_type,m.organization,
-    	            m.visibility,m.subnature,m.static_attributes,m.service,m.servicePath,cb.organization as cb_organization
+    	            m.visibility,m.subnature,m.static_attributes,m.service,m.servicePath,m.hlt,cb.organization as cb_organization
         	        FROM model m JOIN contextbroker cb on m.contextbroker = cb.name WHERE m.name = '$name'";
         $r = mysqli_query($link, $q);
         if (!$r) {
@@ -380,6 +380,10 @@ else if ($action == "get_all_models_DataTable") {
             $servicePath = mysqli_real_escape_string($link, $_REQUEST['servicePath']);
         else
             $servicePath = "";
+        if (isset($_REQUEST['HLT']))
+            $HLT = mysqli_real_escape_string($link, $_REQUEST['HLT']);
+        else
+            $HLT = "";
 
         $protocol = getProtocol($contextbroker, $link);
 
@@ -410,9 +414,9 @@ else if ($action == "get_all_models_DataTable") {
                 if ($syntaxRes == 0) {
 
                     $q = "INSERT INTO model(name, description, devicetype, kind, producer, frequency, contextbroker, protocol, format, 
-							healthiness_criteria, healthiness_value, kgenerator, attributes, edgegateway_type, organization, visibility, subnature, static_attributes, service, servicePath )
+							healthiness_criteria, healthiness_value, kgenerator, attributes, edgegateway_type, organization, visibility, subnature, static_attributes, service, servicePath, hlt)
 							VALUES('$name', '$description', '$type', '$kind', '$producer', '$frequency', '$contextbroker', '$protocol', '$format', '$hc', '$hv', '$kgenerator', 
-							'$listAttributes', '$edgegateway_type', '$organization', 'private', '$subnature', '$staticAttributes', $service, $servicePath)";
+							'$listAttributes', '$edgegateway_type', '$organization', 'private', '$subnature', '$staticAttributes', $service, $servicePath, '$HLT')";
                     $r = mysqli_query($link, $q);
 
                     if ($r) {
@@ -471,6 +475,7 @@ if ($action == "update") {
         $hc = mysqli_real_escape_string($link, $_REQUEST['hc']);
         $hv = mysqli_real_escape_string($link, $_REQUEST['hv']);
         $listAttributes = mysqli_real_escape_string($link, $_REQUEST['attributes']);
+        $hlt = mysqli_real_escape_string($link, $_REQUEST['hlt']);
         if (isset($_REQUEST['subnature']))
             $subnature = mysqli_real_escape_string($link, $_REQUEST['subnature']);
         else
@@ -538,7 +543,7 @@ if ($action == "update") {
                         $q = "UPDATE model SET name = '$name', attributes = '$listAttributes', description = '$description', devicetype = '$type', 
 								kind = '$kind',  producer= '$producer', frequency = '$frequency', contextbroker='$contextbroker', protocol = '$protocol', 
 								format = '$format', healthiness_criteria = '$hc', healthiness_value='$hv', kgenerator = '$kgenerator', edgegateway_type = '$edgegateway_type', 
-								subnature='$subnature', static_attributes='$staticAttributes' , service = $service, servicePath = $servicePath WHERE id = '$id'";
+								subnature='$subnature', static_attributes='$staticAttributes' , service = $service, servicePath = $servicePath , hlt = '$hlt' WHERE id = '$id'";
 
                         $r = mysqli_query($link, $q);
 

@@ -539,6 +539,7 @@ function fetch_data(destroyOld/*, selected=null*/)
                                 'data-static-attributes="' + btoa(d.static_attributes) + '" ' +
                                 'data-service="' + d.service + '" ' +
                                 'data-servicePath="' + d.servicePath + '" ' +
+                                'data-hlt="' + d.hlt + '" ' +
                                 'data-policy="' + d.policy + '">Edit</button>';
                     }
                     return '';
@@ -587,6 +588,7 @@ function fetch_data(destroyOld/*, selected=null*/)
                             'data-static-attributes="' + btoa(d.static_attributes) + '" ' +
                             'data-service="' + d.service + '" ' +
                             'data-servicePath="' + d.servicePath + '" ' +
+                            'data-hlt="' + d.hlt + '" ' +
                             'data-policy="' + d.policy + '">View</button>';
 
                 }
@@ -1371,7 +1373,9 @@ $(document).ready(function ()
                     static_attributes: JSON.stringify(retrieveStaticAttributes("addlistStaticAttributes", false, "isMobileTick")),
                     service: service,
                     servicePath: servicePath,
+                    HLT: $('#selectHLT').val(),
                     token: sessionToken
+
                 },
                 type: "POST",
                 async: true,
@@ -1413,6 +1417,8 @@ $(document).ready(function ()
                         $('#addlistAttributes').html("");
                         $('#selectSubnature').val("");
                         $('#selectSubnature').trigger("change");
+                        $('#selectHLT').val("");
+                        $('#selectHLT').trigger("change");
                         $("#addNewStaticBtn").hide();
                         removeStaticAttributes();
                         $('#addModelLoadingMsg').hide();
@@ -1428,6 +1434,7 @@ $(document).ready(function ()
                         $('#addNewModelOkBtn').show();
                         $('#addModelOkMsg').show();
                         $('#addModelOkIcon').show();
+                        $("#addModelModal").modal('hide');
                         $('#dashboardTotNumberCnt .pageSingleDataCnt').html(parseInt($('#dashboardTotNumberCnt .pageSingleDataCnt').html()) + 1);
                         $('#modelTable').DataTable().destroy();
                         fetch_data(true);
@@ -1580,6 +1587,7 @@ $(document).ready(function ()
         $('#selectHCModelM').prop('disabled', mode);
         $('#inputHVModelM').attr('readonly', mode);
         $('#selectSubnatureM').prop('disabled', mode);
+        $('#selectHLTM').prop('disabled', mode);
         document.getElementById("isMobileTickM").disabled = mode;
     }
 
@@ -1604,6 +1612,7 @@ $(document).ready(function ()
         var subnature = $(this).attr('data-subnature');
         var hc = $(this).attr('data-healthiness_criteria');
         var hv = $(this).attr('data-healthiness_value');
+        var hlt =$(this).attr('data-hlt')
         $('#inputIdModelM').val(id);
         $('#inputOrganizationModelM').val(obj_organization);
         $('#inputNameModelM').val(name);
@@ -1621,6 +1630,8 @@ $(document).ready(function ()
         $('#inputHVModelM').val(hv);
         $('#selectSubnatureM').val(subnature);
         $('#selectSubnatureM').trigger('change');
+        $('#selectHLTM').val(hlt);
+        $('#selectHLTM').trigger('change');
         subnatureChanged("view", JSON.parse(atob($(this).attr("data-static-attributes"))));
         $('#addNewStaticBtnM').hide();
         fillMultiTenancyFormSection($(this).attr('data-service'), $(this).attr('data-servicePath'), contextbroker, 'model');
@@ -1753,6 +1764,7 @@ $(document).ready(function ()
         var subnature = $(this).attr('data-subnature');
         var hc = $(this).attr('data-healthiness_criteria');
         var hv = $(this).attr('data-healthiness_value');
+        var hlt = $(this).attr('data-hlt');
         $('#inputIdModelM').val(id);
         $('#inputOrganizationModelM').val(obj_organization);
         $('#inputNameModelM').val(name);
@@ -1770,6 +1782,14 @@ $(document).ready(function ()
         $('#inputHVModelM').val(hv);
         $('#selectSubnatureM').val(subnature);
         $('#selectSubnatureM').trigger('change');
+
+        if(hlt === "null"){
+            console.log("prova")
+            $('#selectHLTM').val($("#selectHLTM option:first").val());
+        }else{
+            $('#selectHLTM').val(hlt);
+        }
+        $('#selectHLTM').trigger('change');
         subnatureChanged(true, JSON.parse(atob($(this).attr("data-static-attributes"))));
         fillMultiTenancyFormSection($(this).attr('data-service'), $(this).attr('data-servicePath'), contextbroker, 'model');
         showEditModelModal();
@@ -2015,9 +2035,10 @@ $(document).ready(function ()
                     hc: $('#selectHCModelM').val(),
                     hv: $('#inputHVModelM').val(),
                     subnature: $('#selectSubnatureM').val(),
-                    static_attributes: JSON.stringify(retrieveStaticAttributes("editlistStaticAttributes", false, "isMobileTickM")),
+                    static_attributes: JSON.stringify(retrieveStaticAttributes("editlistStaticAttributes", false, "isMobileTickM", "isCertifiedTickM")),
                     service: service,
                     servicePath: servicePath,
+                    hlt: $('#selectHLTM').val(),
                     token: sessionToken
                 },
                 type: "POST",

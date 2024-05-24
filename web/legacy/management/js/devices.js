@@ -169,7 +169,8 @@ function SuccessOfLoadAttr(data, kindModel, version, domain, subdomain) {
             var service = data.content.service;
             var servicePath = data.content.servicePath;
             var valOrg = data.content.cb_organization;
-            // population of the value tab with the values taken from the db						
+            var hlt = data.content.hlt;
+            // population of the value tab with the values taken from the db
             while (k < myattributes.length) {
                 content += drawAttributeMenu(myattributes[k].value_name,
                         myattributes[k].data_type, myattributes[k].value_type, myattributes[k].editable, myattributes[k].value_unit, myattributes[k].healthiness_criteria,
@@ -209,6 +210,8 @@ function SuccessOfLoadAttr(data, kindModel, version, domain, subdomain) {
         $('#selectProtocolDevice').val(protocol);
         $('#selectFormatDevice').val(format);
         $('#selectEdgeGatewayType').val(edgegateway_type);
+        $('#selectHLT').val(hlt);
+        $('#selectHLT').trigger('change');
 
         addDeviceConditionsArray['contextbroker'] = true;
         addDeviceConditionsArray['kind'] = true;
@@ -595,6 +598,7 @@ function fetch_data(destroyOld, selected = null) {
                                 'data-subnature="' + d.subnature + '" ' +
                                 'data-service="' + d.service + '" ' +
                                 'data-servicePath="' + d.servicePath + '" ' +
+                                'data-hlt="' + d.hlt + '" ' +
                                 'data-static-attributes="' + btoa(unescape(encodeURIComponent(d.staticAttributes))) + '" ' +
                                 'data-status1="' + d.status1 + '">Edit</button>';
                     } else {
@@ -661,6 +665,8 @@ function fetch_data(destroyOld, selected = null) {
                             'data-subnature="' + d.subnature + '" ' +
                             'data-service="' + d.service + '" ' +
                             'data-servicePath="' + d.servicePath + '" ' +
+                            'data-hlt="' + d.hlt + '" ' +
+                            'data-wktGeometry="' + d.wktGeometry + '" ' +
                             'data-static-attributes="' + btoa(unescape(encodeURIComponent(d.staticAttributes))) + '" ' +
                             'data-status1="' + d.status1 + '">View</button>';
                 }
@@ -758,6 +764,8 @@ function fetch_data(destroyOld, selected = null) {
                                 'data-subnature="' + d.subnature + '" ' +
                                 'data-service="' + d.service + '" ' +
                                 'data-servicePath="' + d.servicePath + '" ' +
+                                'data-hlt="' + d.hlt + '" ' +
+                                'data-wktGeometry="' + d.wktGeometry + '" ' +
                                 'data-static-attributes="' + btoa(unescape(encodeURIComponent(d.staticAttributes))) + '" ' +
                                 'data-status1="' + d.status1 + '">Edit</button>';
                     } else {
@@ -824,6 +832,8 @@ function fetch_data(destroyOld, selected = null) {
                             'data-subnature="' + d.subnature + '" ' +
                             'data-service="' + d.service + '" ' +
                             'data-servicePath="' + d.servicePath + '" ' +
+                            'data-hlt="' + d.hlt + '" ' +
+                            'data-wktGeometry="' + d.wktGeometry + '" ' +
                             'data-static-attributes="' + btoa(unescape(encodeURIComponent(d.staticAttributes))) + '" ' +
                             'data-status1="' + d.status1 + '">View</button>';
                 }
@@ -1591,6 +1601,13 @@ $(document).ready(function () {
         });
         checkAddDeviceConditions();
     });
+
+
+    $("#wktGeometryText").off("click");
+    $("#wktGeometryText").on('click keyup input paste', function () {
+        checkWellFormedWKT();
+    });
+
 //End Related to Add Device
 // start related to import device
 
@@ -1878,6 +1895,33 @@ $(document).ready(function () {
     });
     //testing
 
+    $("#addHLTTabDevice").off("click");
+    $("#addHLTTabDevice").on('click keyup', function () {
+        if( $("#selectHLT").val() == "iot_device_entity" ){
+            $('#wktGeometryText').prop('disabled', true);
+            $("#addHLTattributesMsg").css("color", "red");
+            $("#addHLTattributesMsg").text('');
+        }else{
+            $('#wktGeometryText').prop('disabled', false);
+            checkWellFormedWKT();
+
+        }
+    });
+    $("#selectHLT").on('click keyup change', function () {
+
+        if( $("#selectHLT").val() == "iot_device_entity" ){
+            $('#wktGeometryText').prop('disabled', true);
+            $("#addHLTattributesMsg").css("color", "red");
+            $("#addHLTattributesMsg").text('');
+        }else{
+            $('#wktGeometryText').prop('disabled', false);
+            $("#addHLTattributesMsg").css("color", "red");
+            $("#addHLTattributesMsg").text('Please insert a valid geometry');
+        }
+    });
+
+
+
     function get_form(mode) {
         $("#editDeviceModalTabs").show();
         $('.nav-tabs a[href="#editInfoTabDevice"]').tab('show');
@@ -1915,6 +1959,8 @@ $(document).ready(function () {
         $('#inputEdgeGatewayUriM').attr('readonly', mode);
         $('#selectSubnatureM').prop('disabled', mode);
         $('#selectSubnatureM').prop('disabled', mode);
+        $('#selectHLTM').prop('disabled', mode);
+        $('#wktGeometryTextM').attr('disabled', mode);
         document.getElementById("isMobileTickM").disabled = mode;
         $('.modalInputTxt').attr('readonly', mode);
         $('.modalFieldCnt').prop('disabled', mode);
@@ -1957,6 +2003,8 @@ $(document).ready(function () {
         fillMultiTenancyFormSection($(this).attr('data-service'), $(this).attr('data-servicePath'), contextbroker, 'device');
         var serv = $(this).attr('data-service');
         var servP = $(this).attr('data-servicePath');
+        var hlt = $(this).attr('data-hlt');
+        var wktGeometry = $(this).attr('data-wktGeometry');
         //console.log(key1 + key2);
 
         $("#editDeviceGenerateKeyBtn").hide();
@@ -1981,6 +2029,9 @@ $(document).ready(function () {
         $('#selectEdgeGatewayTypeM').val(gtw_type);
         $('#inputEdgeGatewayUriM').val(gtw_uri);
         $('#selectSubnatureM').val(subnature);
+        $('#selectHLTM').val(hlt);
+        $('#selectHLTM').trigger('change');
+        $('#wktGeometryTextM').val(wktGeometry);
         subnatureChanged("view", JSON.parse(atob($(this).attr("data-static-attributes"))));
         //$('#removeCBServiceBtn').hide();
 
@@ -2093,6 +2144,20 @@ $(document).ready(function () {
             var gtw_type = $(this).attr('data-edgegateway_type');
             var gtw_uri = $(this).attr('data-edgegateway_uri');
             var subnature = $(this).attr('data-subnature');
+            var hlt = $(this).attr('data-hlt');
+            var wktGeometry= $(this).attr('data-wktGeometry');
+            if(hlt === "null"){
+                $('#selectHLTM').val($("#selectHLTM option:first").val());
+            }else{
+                $('#selectHLTM').val(hlt);
+            }
+            if(hlt === "iot_device_entity"){
+                $('#wktGeometryTextM').attr('disabled',true);
+            }else{
+                $('#wktGeometryTextM').attr('disabled',false);
+            }
+
+
             fillMultiTenancyFormSection($(this).attr('data-service'), $(this).attr('data-servicePath'), contextbroker, 'device');
             //console.log(key1 + key2);
 
@@ -2119,6 +2184,10 @@ $(document).ready(function () {
             $('#inputEdgeGatewayUriM').val(gtw_uri);
             $('#selectSubnatureM').val(subnature);
             $('#selectSubnatureM').trigger('change');
+            $('#selectHLTM').val(hlt);
+            $('#selectHLTM').trigger('change');
+            $('#wktGeometryTextM').val(wktGeometry);
+            $('#wktGeometryTextM').click();
             subnatureChanged(true, JSON.parse(atob($(this).attr("data-static-attributes"))));
             $('a[data-toggle="tab"]').off('shown.bs.tab').on('shown.bs.tab', function (e) {
                 var target = $(e.target).attr("href");
@@ -2271,6 +2340,8 @@ $(document).ready(function () {
                     $('#KeyOneDeviceUserM').val("");
                     $('#KeyTwoDeviceUserM').val("");
                     $('#selectSubnatureM').val("");
+                    $('#selectHLTM').val("");
+                    $('#wktGeometryTextM').val("");
                     // $("#editDeviceModal").modal('hide');
 
                 }
@@ -2289,6 +2360,41 @@ $(document).ready(function () {
                 $(this).css('background', 'rgb(69, 183, 175)');
                 $(this).parents('tr').find('td').eq(1).css('background', $(this).parents('td').css('background'));
             });
+
+    $("#selectHLTM").off("click");
+    $('#selectHLTM').on('click keyup',function () {
+        console.log($("#selectHLTM").val())
+        if( $("#selectHLTM").val() == "iot_device_entity"){
+            $("#wktGeometryTextM").attr('disabled',true)
+        }else{
+            $("#wktGeometryTextM").attr('disabled',false)
+        }
+
+
+    });
+    $("#editHLTTabDevice").off("click");
+    $("#editHLTTabDevice").on('click keyup', function () {
+        $('#selectHLTM').trigger("change");
+        if( $("#selectHLTM").val() == "iot_device_entity" ){
+            $('#wktGeometryTextM').prop('disabled', true);
+            $("#editHLTattributesMsg").css("color", "red");
+            $("#editHLTattributesMsg").text('');
+        }else{
+            $('#wktGeometryTextM').prop('disabled', false);
+            checkWellFormedWKTedit();
+
+        }
+    });
+    $("#selectHLTM").on('click keyup change', function () {
+        if( $("#selectHLTM").val() == "iot_device_entity" ){
+            $('#wktGeometryTextM').prop('disabled', true);
+            $("#editHLTattributesMsg").css("color", "red");
+            $("#editHLTattributesMsg").text('');
+        }else{
+            $('#wktGeometryTextM').prop('disabled', false);
+            checkWellFormedWKTedit();
+        }
+    });
 //End Related to Edit Device
 
 
@@ -3041,7 +3147,9 @@ $(document).ready(function () {
                     subnature: $('#selectSubnature').val(),
                     static_attributes: JSON.stringify(retrieveStaticAttributes("addlistStaticAttributes", false, "isMobileTick")),
                     service: service,
-                    servicePath: servicePath
+                    servicePath: servicePath,
+                    hlt: $('#selectHLT').val(),
+                    wktGeometry: $('#wktGeometryText').val()
                 },
                 type: "POST",
                 async: true,
@@ -3083,6 +3191,9 @@ $(document).ready(function () {
                         $("#KeyTwoDeviceUserMsg").html("");
                         $('#selectSubnature').val("");
                         $('#selectSubnature').trigger("change");
+                        $('#selectHLT').val("");
+                        $('#selectHLT').trigger("change");
+                        $('wktGeometryTextM').val("");
                         $("#addNewStaticBtn").hide();
                         removeStaticAttributes();
                         $("#addDeviceKoModal").modal('show');
@@ -3120,6 +3231,9 @@ $(document).ready(function () {
                         $("#KeyTwoDeviceUserMsg").html("");
                         $('#selectSubnature').val("");
                         $('#selectSubnature').trigger("change");
+                        $('#selectHLT').val("");
+                        $('#selectHLT').trigger("change");
+                        $('wktGeometryTextM').val("");
                         $("#addNewStaticBtn").hide();
                         removeStaticAttributes();
                         $("#addDeviceOkModal").modal('show');
@@ -3164,6 +3278,9 @@ $(document).ready(function () {
                     $("#KeyTwoDeviceUserMsg").html("");
                     $('#selectSubnature').val("");
                     $('#selectSubnature').trigger("change");
+                    $('#selectHLT').val("");
+                    $('#selectHLT').trigger("change");
+                    $('wktGeometryTextM').val("");
                     $("#addNewStaticBtn").hide();
                     removeStaticAttributes();
                     console.log("Error adding Device type");
@@ -3428,7 +3545,9 @@ $(document).ready(function () {
                     subnature: $('#selectSubnatureM').val(),
                     static_attributes: JSON.stringify(retrieveStaticAttributes("editlistStaticAttributes", false, "isMobileTickM")),
                     service: service,
-                    servicePath: servicePath
+                    servicePath: servicePath,
+                    hlt: $('#selectHLTM').val(),
+                    wktGeometry:$('#wktGeometryTextM').val(),
                 },
                 type: "POST",
                 async: true,
@@ -3536,6 +3655,9 @@ $(document).ready(function () {
         document.getElementById('addlistAttributes').innerHTML = "";
         $('#selectSubnature').val("");
         $('#selectSubnature').trigger("change");
+        $('#selectHLT').val("");
+        $('#selectHLT').trigger("change");
+        $('wktGeometryTextM').val("");
         $("#addNewStaticBtn").hide();
         removeStaticAttributes();
     });

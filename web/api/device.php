@@ -156,6 +156,7 @@ if ($action == "insert") {
         $contextbroker = mysqli_real_escape_string($link, $_REQUEST['contextbroker']);
         $kind = mysqli_real_escape_string($link, $_REQUEST['kind']);
         $format = mysqli_real_escape_string($link, $_REQUEST['format']);
+        $hlt = mysqli_real_escape_string($link, $_REQUEST['hlt']);
         if (isset($_REQUEST['mac']))
             $macaddress = mysqli_real_escape_string($link, $_REQUEST['mac']);
         else
@@ -257,7 +258,8 @@ if ($action == "insert") {
                     $username,
                     $service,
                     $servicePath,
-                    $wktGeometry
+                    $wktGeometry,
+                $hlt
             );
 
             if ($result["status"] == "ok") {
@@ -313,6 +315,12 @@ if ($action == "insert") {
         $old_contextbroker = mysqli_real_escape_string($link, $_REQUEST['gb_old_cb']);
         $kind = mysqli_real_escape_string($link, $_REQUEST['kind']);
         $format = mysqli_real_escape_string($link, $_REQUEST['format']);
+        $hlt = mysqli_real_escape_string($link, $_REQUEST['hlt']);
+        if (isset($_REQUEST['wktGeometry']))
+            $wktGeometry=mysqli_real_escape_string($link, $_REQUEST['wktGeometry']);
+        else
+            $wktGeometry="";
+
         if (isset($_REQUEST['mac']))
             $macaddress = mysqli_real_escape_string($link, $_REQUEST['mac']);
         else
@@ -488,7 +496,9 @@ if ($action == "insert") {
                                 $service,
                                 $servicePath,
                                 retrieveKbUrl($organizationApiURI, $dev_organization),
-                                $accessToken
+                                $accessToken,
+                                $hlt,
+                                $wktGeometry
                         );
 
                         if ($result["status"] == 'ko') {
@@ -505,13 +515,13 @@ if ($action == "insert") {
                         if ($result["status"] == 'ok' && $result["content"] == null) {
                             $q = "UPDATE devices SET contextBroker='$contextbroker', devicetype='$devicetype', kind= '$kind', protocol='$protocol', format='$format', 
 						macaddress='$macaddress', model='$model', producer='$producer', latitude='$latitude', longitude='$longitude', frequency = '$frequency', 
-						organization='$dev_organization', subnature='$subnature', static_attributes='$staticAttributes' 
+						organization='$dev_organization', subnature='$subnature', static_attributes='$staticAttributes', hlt='$hlt', wktGeometry='$wktGeometry'
 						WHERE id='$id' and contextBroker='$old_contextbroker'";
                         } else {
                             $q = "UPDATE  devices SET uri = '" . $result["content"] . "', mandatoryproperties=1, mandatoryvalues=1, contextBroker='$contextbroker', 
 						devicetype='$devicetype', kind= '$kind', protocol='$protocol', format='$format', macaddress='$macaddress', model='$model', 
 						producer='$producer', latitude='$latitude', longitude='$longitude', frequency = '$frequency',organization='$dev_organization', 
-						subnature='$subnature', static_attributes='$staticAttributes'  WHERE id='$id' and contextBroker='$old_contextbroker'";
+						subnature='$subnature', static_attributes='$staticAttributes',hlt='$hlt' , wktGeometry='$wktGeometry'  WHERE id='$id' and contextBroker='$old_contextbroker'";
                         }
 
                         $r = mysqli_query($link, $q);
@@ -724,7 +734,7 @@ if ($action == "insert") {
 
                     $q3 = "INSERT INTO deleted_devices select * from devices WHERE id = '$id' and contextBroker='$cb'and deleted IS NOT NULL;";
                     $q4 = "INSERT INTO deleted_event_values (select cb,device,value_name,data_type,value_type,editable,value_unit,healthiness_criteria,
-						value_refresh_rate, different_values,value_bounds, event_values.order,real_time_flag from event_values where device = '$id' and cb='$cb' );";
+						value_refresh_rate, different_values,value_bounds, event_values.order, real_time_flag from event_values where device = '$id' and cb='$cb' );";
 
                     $q5 = "DELETE FROM event_values WHERE device = '$id' and cb='$cb';";
                     $q6 = "DELETE FROM devices WHERE id = '$id' and contextBroker='$cb';";
@@ -1569,7 +1579,7 @@ else if ($action == 'change_visibility') {
 				CASE WHEN mandatoryproperties AND mandatoryvalues THEN \"active\" ELSE \"idle\" END AS status1, 
 				d.`macaddress`, d.`model`, d.`producer`, d.`longitude`, d.`latitude`, d.`protocol`, d.`format`, d.`visibility`, 
 				d.`frequency`, d.`created`, d.`privatekey`, d.`certificate`,d.`organization`, cb.`accesslink`, cb.`accessport`, cb.`version`,
-				cb.`sha`, d.`subnature`, d.`static_attributes`,d.`service`, d.`servicePath` FROM `devices` d JOIN `contextbroker` cb ON (d.contextBroker=cb.name)";
+				cb.`sha`, d.`subnature`, d.`static_attributes`,d.`service`, d.`servicePath`,d.`hlt`,d.`wktGeometry` FROM `devices` d JOIN `contextbroker` cb ON (d.contextBroker=cb.name)";
 
     if ($Sel_Time) {
         $start_int = mysqli_real_escape_string($link, $_REQUEST['start_time']);
@@ -1658,6 +1668,8 @@ else if ($action == 'change_visibility') {
                     $rec["staticAttributes"] = ($row["static_attributes"] == null) ? "[]" : $row["static_attributes"];
                     $rec["service"] = $row["service"];
                     $rec["servicePath"] = $row["servicePath"];
+                    $rec["hlt"] = $row["hlt"];
+                    $rec["wktGeometry"] = $row["wktGeometry"];
                     $rec["accesslink"] = $row["accesslink"];
                     $rec["accessport"] = $row["accessport"];
                     $rec["version"] = $row["version"];

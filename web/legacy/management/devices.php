@@ -569,6 +569,7 @@ if (($hide_menu != "hide")) {
                             <li><a data-toggle="tab" href="#addGeoPositionTabDevice">Position</a></li>
                             <li><a data-toggle="tab" href="#addStaticTabModel">Static Attributes</a></li>
                             <li><a data-toggle="tab" href="#addSchemaTabDevice">Values</a></li>
+                            <li><a data-toggle="tab" href="#addHLTTabDevice">HLT</a></li>
                         </ul>
 
                         <div class="tab-content">
@@ -859,6 +860,34 @@ if (($hide_menu != "hide")) {
                                 </div>
                             </div>
 
+                            <div id="addHLTTabDevice" class="tab-pane fade">
+                                <div class="row">
+
+                                    <div class="col-xs-12 col-md-6 modalCell">
+                                        <select id="selectHLT" name="selectHLT" class="modalInputTxt" required>
+                                            <option value="iot_device_entity">IOT Device/entity</option>
+                                            <option value="traffic_flow">Traffic flow</option>
+                                            <option value="odm">ODM</option>
+                                            <option value="trajectory_path">Trajectory path</option>
+                                            <option value="garden">Garden</option>
+                                            <option value="building_plant">Building plant</option>
+                                            <option value="building_3d">Building 3D</option>
+                                            <option value="floor">Floor</option>
+                                            <option value="cycling_path">Cycling Path</option>
+                                        </select>
+                                        <div class="modalFieldLabelCnt">Select HLT</div>
+
+                                    </div>
+                                </div>
+                                <div class="row">
+                                    <div class="col-xs-12 col-md-12 modalCell">
+                                        <textarea id="wktGeometryText" name="wktGeometry" rows="4" cols="0" style="max-width: 100%;min-width:100%" disabled></textarea>
+                                        <label for="wktGeometryText" style="display:block">wktGeometry</label>
+                                        <div id="addHLTattributesMsg" class="modalFieldMsgCnt">&nbsp;</div>
+                                    </div>
+                                </div>
+                            </div>
+
                         </div>
 
                     </div> 	
@@ -1028,6 +1057,7 @@ if (($hide_menu != "hide")) {
                             <li><a data-toggle="tab" href="#editGeoPositionTabDevice">Position</a></li>
                             <li><a data-toggle="tab" href="#editStaticTabModel">Static Attributes</a></li>
                             <li><a data-toggle="tab" href="#editSchemaTabDevice">Values</a></li>
+                            <li><a data-toggle="tab" href="#editHLTTabDevice">HLT</a></li>
                             <li><a id="EStatus" data-toggle="tab" href="#editStatusTabDevice">Status</a></li>
 
                         </ul>
@@ -1360,6 +1390,33 @@ if (($hide_menu != "hide")) {
                                     </div>
                                 </div>
 
+                            </div>
+
+                            <div id="editHLTTabDevice" class="tab-pane fade">
+                                <div class="row">
+
+                                    <div class="col-xs-12 col-md-6 modalCell">
+                                        <select id="selectHLTM" name="selectHLTM" class="modalInputTxt" required>
+                                            <option value="iot_device_entity">IOT Device/entity</option>
+                                            <option value="traffic_flow">Traffic flow</option>
+                                            <option value="odm">ODM</option>
+                                            <option value="trajectory_path">Trajectory path</option>
+                                            <option value="garden">Garden</option>
+                                            <option value="building_plant">Building plant</option>
+                                            <option value="building_3d">Building 3D</option>
+                                            <option value="floor">Floor</option>
+                                            <option value="cycling_path">Cycling Path</option>
+                                        </select>
+                                        <div class="modalFieldLabelCnt">Select HLT</div>
+                                    </div>
+                                </div>
+                                <div class="row">
+                                    <div class="col-xs-12 col-md-12 modalCell">
+                                        <textarea id="wktGeometryTextM" name="wktGeometry" rows="4" cols="0" style="max-width: 100%;min-width:100%"></textarea>
+                                        <label for="wktGeometryText" style="display:block">wktGeometry</label>
+                                        <div id="editHLTattributesMsg" class="modalFieldMsgCnt">&nbsp;</div>
+                                    </div>
+                                </div>
                             </div>
 
 

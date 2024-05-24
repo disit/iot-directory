@@ -345,6 +345,7 @@ if (($hide_menu != "hide")) {
                             <li><a data-toggle="tab" href="#addIOTBrokerTabModel">IOT Broker</a></li>
                             <li><a data-toggle="tab" href="#addStaticTabModel">Static Attributes</a></li>
                             <li><a data-toggle="tab" href="#addSchemaTabModel">Values</a></li>
+                            <li><a data-toggle="tab" href="#addHLTTabModel">HLT</a></li>
 
                         </ul>
 
@@ -636,7 +637,30 @@ if (($hide_menu != "hide")) {
                                     </div>
                                 </div>
                             </div>
-                        </div>
+
+                            <!--add hlt tab-->
+                            <div id="addHLTTabModel" class="tab-pane fade">
+                                <div class="row">
+
+                                    <div class="col-xs-12 col-md-6 modalCell">
+
+                                            <select id="selectHLT" name="selectHLT" class="modalInputTxt" required>
+                                                <option value="iot_device_entity">IOT Device/entity</option>
+                                                <option value="traffic_flow">Traffic flow</option>
+                                                <option value="odm">ODM</option>
+                                                <option value="trajectory_path">Trajectory path</option>
+                                                <option value="garden">Garden</option>
+                                                <option value="building_plant">Building plant</option>
+                                                <option value="building_3d">Building 3D</option>
+                                                <option value="floor">Floor</option>
+                                                <option value="cycling_path">Cycling Path</option>
+                                            </select>
+                                        <div class="modalFieldLabelCnt">Select HLT</div>
+                                        <div id="addHLTattributesMsg" class="modalFieldMsgCnt">&nbsp;</div>
+                                    </div>
+                                </div>
+                            </div>
+                            <!--add hlt tab-->
 
                     </div>
 
@@ -669,6 +693,7 @@ if (($hide_menu != "hide")) {
 
                 </div>
             </div>
+            </div>
         </div>
 
 
@@ -689,7 +714,7 @@ if (($hide_menu != "hide")) {
                             <li><a data-toggle="tab" href="#editIOTBrokerTabModel">IoT Broker</a></li>
                             <li><a data-toggle="tab" href="#editStaticTabModel">Static Attributes</a></li>
                             <li><a data-toggle="tab" href="#editSchemaTabModel">Values</a></li>
-
+                            <li><a data-toggle="tab" href="#editHLTTabModel">HLT</a></li>
                         </ul>
 
 
@@ -945,6 +970,27 @@ if (($hide_menu != "hide")) {
                                 <div class="row">
                                     <div class="col-xs-12 col-md-12 modalCell">
                                         <div class="pull-left"><button type="text" id="addNewStaticBtnM" class="btn confirmBtn" style="display: none;">Add Attribute</button></div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- HLT Tab -->
+                            <div id="editHLTTabModel" class="tab-pane fade">
+                                <div class="row">
+                                    <div class="col-xs-12 col-md-6 modalCell">
+                                        <select id="selectHLTM" name="selectHLTM" class="modalInputTxt" required>
+                                            <option value="iot_device_entity">IOT Device/entity</option>
+                                            <option value="traffic_flow">Traffic flow</option>
+                                            <option value="odm">ODM</option>
+                                            <option value="trajectory_path">Trajectory path</option>
+                                            <option value="garden">Garden</option>
+                                            <option value="building_plant">Building plant</option>
+                                            <option value="building_3d">Building 3D</option>
+                                            <option value="floor">Floor</option>
+                                            <option value="cycling_path">Cycling Path</option>
+                                        </select>
+                                        <div class="modalFieldLabelCnt">Select HLT</div>
+                                        <div id="addHLTattributesMsg" class="modalFieldMsgCnt">&nbsp;</div>
                                     </div>
                                 </div>
                             </div>
