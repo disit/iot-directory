@@ -646,14 +646,15 @@ if (($hide_menu != "hide")) {
 
                                             <select id="selectHLT" name="selectHLT" class="modalInputTxt" required>
                                                 <option value="iot_device_entity">IOT Device/entity</option>
-                                                <option value="traffic_flow">Traffic flow</option>
-                                                <option value="odm">ODM</option>
-                                                <option value="trajectory_path">Trajectory path</option>
-                                                <option value="garden">Garden</option>
-                                                <option value="building_plant">Building plant</option>
-                                                <option value="building_3d">Building 3D</option>
-                                                <option value="floor">Floor</option>
-                                                <option value="cycling_path">Cycling Path</option>
+                                                <option value="Heatmap">Heatmap</option>
+                                                <option value="Traffic_flow">Traffic flow</option>
+                                                <option value="OriginDestinationMatrix">Origin Destination Matrix</option>
+                                                <option value="Trajectory_path">Trajectory path</option>
+                                                <option value="Gardens">Garden</option>
+                                                <option value="Building_plant">Building plant</option>
+                                                <option value="Building">Building 3D</option>
+                                                <option value="Floor">Floor</option>
+                                                <option value="Cycling_paths">Cycling Path</option>
                                             </select>
                                         <div class="modalFieldLabelCnt">Select HLT</div>
                                         <div id="addHLTattributesMsg" class="modalFieldMsgCnt">&nbsp;</div>
