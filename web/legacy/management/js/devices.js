@@ -1899,8 +1899,8 @@ $(document).ready(function () {
     $("#addHLTTabDevice").on('click keyup', function () {
         if( $("#selectHLT").val() == "iot_device_entity" ){
             $('#wktGeometryText').prop('disabled', true);
-            $("#addHLTattributesMsg").css("color", "red");
-            $("#addHLTattributesMsg").text('');
+            //$("#addHLTattributesMsg").css("color", "red");
+            //$("#addHLTattributesMsg").text('');
         }else{
             $('#wktGeometryText').prop('disabled', false);
             checkWellFormedWKT();
@@ -1909,10 +1909,11 @@ $(document).ready(function () {
     });
     $("#selectHLT").on('click keyup change', function () {
 
-        if( $("#selectHLT").val() == "iot_device_entity" ){
+        if( $("#selectHLT").val() === "iot_device_entity" ){
             $('#wktGeometryText').prop('disabled', true);
-            $("#addHLTattributesMsg").css("color", "red");
-            $("#addHLTattributesMsg").text('');
+                $("#addHLTattributesMsg").css("color", "rgb(51, 122, 183)");
+                $("#addHLTattributesMsg").text('When "IOT Device/Entity" is selected, the wktGeometry is discarded');
+            $("#addNewDeviceConfirmBtn").attr("disabled", false);
         }else{
             $('#wktGeometryText').prop('disabled', false);
             $("#addHLTattributesMsg").css("color", "red");
@@ -2146,11 +2147,13 @@ $(document).ready(function () {
             var subnature = $(this).attr('data-subnature');
             var hlt = $(this).attr('data-hlt');
             var wktGeometry= $(this).attr('data-wktGeometry');
-            if(hlt === "null"){
-                $('#selectHLTM').val($("#selectHLTM option:first").val());
-            }else{
-                $('#selectHLTM').val(hlt);
-            }
+            if(hlt == "null"){
+                hlt='iot_device_entity';
+                wktGeometry='';
+             }
+            //else{
+            //     $('#selectHLTM').val(hlt);
+            // }
             if(hlt === "iot_device_entity"){
                 $('#wktGeometryTextM').attr('disabled',true);
             }else{
@@ -2361,24 +2364,20 @@ $(document).ready(function () {
                 $(this).parents('tr').find('td').eq(1).css('background', $(this).parents('td').css('background'));
             });
 
-    $("#selectHLTM").off("click");
-    $('#selectHLTM').on('click keyup',function () {
-        console.log($("#selectHLTM").val())
-        if( $("#selectHLTM").val() == "iot_device_entity"){
-            $("#wktGeometryTextM").attr('disabled',true)
-        }else{
-            $("#wktGeometryTextM").attr('disabled',false)
-        }
-
-
-    });
+    // $("#selectHLTM").off("click");
+    // $('#selectHLTM').on('click keyup',function () {
+    //     console.log($("#selectHLTM").val())
+    //     if( $("#selectHLTM").val() == "iot_device_entity"){
+    //         $("#wktGeometryTextM").attr('disabled',true)
+    //     }else{
+    //         $("#wktGeometryTextM").attr('disabled',false)
+    //     }
+    //});
     $("#editHLTTabDevice").off("click");
     $("#editHLTTabDevice").on('click keyup', function () {
-        $('#selectHLTM').trigger("change");
+        //$('#selectHLTM').trigger("change");
         if( $("#selectHLTM").val() == "iot_device_entity" ){
             $('#wktGeometryTextM').prop('disabled', true);
-            $("#editHLTattributesMsg").css("color", "red");
-            $("#editHLTattributesMsg").text('');
         }else{
             $('#wktGeometryTextM').prop('disabled', false);
             checkWellFormedWKTedit();
@@ -2388,10 +2387,16 @@ $(document).ready(function () {
     $("#selectHLTM").on('click keyup change', function () {
         if( $("#selectHLTM").val() == "iot_device_entity" ){
             $('#wktGeometryTextM').prop('disabled', true);
-            $("#editHLTattributesMsg").css("color", "red");
-            $("#editHLTattributesMsg").text('');
+            //if( $.trim($("#wktGeometryTextM").val())) {
+                $("#editHLTattributesMsg").css("color", "rgb(51, 122, 183)");
+                $("#editHLTattributesMsg").text('When "IOT Device/Entity" is selected, the wktGeometry is discarded');
+
+            $("#editDeviceConfirmBtn").attr("disabled", false);
         }else{
             $('#wktGeometryTextM').prop('disabled', false);
+            $("#editHLTattributesMsg").css("color", "red");
+            $("#editHLTattributesMsg").text('Please insert a valid geometry');
+
             checkWellFormedWKTedit();
         }
     });
@@ -3122,6 +3127,10 @@ $(document).ready(function () {
                 var TempModel = $('#selectModelDevice').val();
             }
 
+            if($('#selectHLT').val()=='iot_device_entity'){
+                $('#wktGeometryText').val("")
+            }
+
             $.ajax({
                 url: "../api/device.php",
                 data: {
@@ -3191,7 +3200,7 @@ $(document).ready(function () {
                         $("#KeyTwoDeviceUserMsg").html("");
                         $('#selectSubnature').val("");
                         $('#selectSubnature').trigger("change");
-                        $('#selectHLT').val("");
+                        $('#selectHLT').val("iot_device_entity");
                         $('#selectHLT').trigger("change");
                         $('wktGeometryTextM').val("");
                         $("#addNewStaticBtn").hide();
@@ -3293,7 +3302,7 @@ $(document).ready(function () {
                         $("#addDeviceKoModalInnerDiv1").html('<h5>An error occurred, operation failed.</h5>');
                 }
             });
-        } else if(timestampNumberCount >1){
+        }else if(timestampNumberCount >1){
             alert("Only one timestamp attribute can be accepted");
         }else{
             alert("Check the values of your device, make sure that data you entered are valid");
@@ -3515,6 +3524,9 @@ $(document).ready(function () {
                     servicePath = "/" + servicePath;
                 if (servicePath[servicePath.length - 1] === "/" && servicePath.length > 1)
                     servicePath = servicePath.substr(0, servicePath.length - 1);
+            }
+            if($('#selectHLTM').val()=="iot_device_entity"){
+                $('#wktGeometryTextM').val("")
             }
 
             $.ajax({

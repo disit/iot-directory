@@ -890,6 +890,7 @@ function checkAddMyDeviceConditions()
 }
 
 function checkWellFormedWKT() {
+    var buttonEnabled = true;
     var wkt = $("#wktGeometryText").val();
     console.log(wkt)
     // Regular expression to match WKT Geometry types
@@ -899,16 +900,18 @@ function checkWellFormedWKT() {
     var coordinatePair = /\(\s*([\d\.-]+)\s+([\d\.-]+)\s*\)/g;
 
     // Check if the WKT string starts with a valid Geometry type
-    if (wkt=="") {
+    if (!$.trim($("#wktGeometryText").val())) {
             $("#addHLTattributesMsg").css("color", "red");
             $("#addHLTattributesMsg").text('Please insert a valid geometry');
-            return;
+            buttonEnabled=false;
+            //return;
     }
 
-        if (!wkt.match(wktTypes)) {
+        if ( $("#wktGeometryText").val() && !wkt.match(wktTypes) ){
             $("#addHLTattributesMsg").css("color", "red");
             $("#addHLTattributesMsg").text('Unrecognized WktGeometry type');
-            return;
+            buttonEnabled=false;
+            //return;
         }
 
         // Count the number of opening and closing parentheses to validate structure
@@ -919,7 +922,8 @@ function checkWellFormedWKT() {
 
             $("#addHLTattributesMsg").css("color", "red");
             $("#addHLTattributesMsg").text('Parenthesis doesn\'t match');
-            return;
+            buttonEnabled=false;
+            //return;
         }
 
         // Check if coordinates within parentheses are valid
@@ -930,17 +934,28 @@ function checkWellFormedWKT() {
                 if (coords.length !== 2 || isNaN(parseFloat(coords[0])) || isNaN(parseFloat(coords[1]))) {
                     $("#addHLTattributesMsg").css("color", "red");
                     $("#addHLTattributesMsg").text('Coordinates are not valid');
-                    return;
+                    buttonEnabled=false;
+                    //return;
                 }
             }
 
         }
     // If all checks pass, return true
-    $("#addHLTattributesMsg").css("color", 'rgb(51, 122, 183)');
-    $("#addHLTattributesMsg").text('Ok');
+    if(buttonEnabled){
+
+        $("#addHLTattributesMsg").css("color", 'rgb(51, 122, 183)');
+        $("#addHLTattributesMsg").text('Ok');
+        $("#addNewDeviceConfirmBtn").attr("disabled", false);
+
+    }else{
+
+        $("#addNewDeviceConfirmBtn").attr("disabled", true);
+
+    }
 
 }
 function checkWellFormedWKTedit() {
+    var buttonEnabled=true;
     var wkt = $("#wktGeometryTextM").val();
     console.log(wkt)
     // Regular expression to match WKT Geometry types
@@ -953,13 +968,15 @@ function checkWellFormedWKTedit() {
     if (wkt=="") {
         $("#editHLTattributesMsg").css("color", "red");
         $("#editHLTattributesMsg").text('Please insert a valid geometry');
-        return;
+            buttonEnabled=false;
+        //return;
     }
 
     if (!wkt.match(wktTypes)) {
         $("#editHLTattributesMsg").css("color", "red");
         $("#editHLTattributesMsg").text('Unrecognized WktGeometry type');
-        return;
+        buttonEnabled=false;
+        //return;
     }
 
     // Count the number of opening and closing parentheses to validate structure
@@ -970,7 +987,8 @@ function checkWellFormedWKTedit() {
 
         $("#editHLTattributesMsg").css("color", "red");
         $("#editHLTattributesMsg").text('Parenthesis doesn\'t match');
-        return;
+        //return;
+        buttonEnabled=false;
     }
 
     // Check if coordinates within parentheses are valid
@@ -981,13 +999,22 @@ function checkWellFormedWKTedit() {
             if (coords.length !== 2 || isNaN(parseFloat(coords[0])) || isNaN(parseFloat(coords[1]))) {
                 $("#editHLTattributesMsg").css("color", "red");
                 $("#editHLTattributesMsg").text('Coordinates are not valid');
-                return;
+                //return;
+                buttonEnabled=false;
             }
         }
 
     }
-    // If all checks pass, return true
-    $("#editHLTattributesMsg").css("color", 'rgb(51, 122, 183)');
-    $("#editHLTattributesMsg").text('Ok');
+    if(buttonEnabled){
+
+        $("#editHLTattributesMsg").css("color", 'rgb(51, 122, 183)');
+        $("#editHLTattributesMsg").text('Ok');
+        $("#editDeviceConfirmBtn").attr("disabled", false);
+
+    }else {
+
+        $("#editDeviceConfirmBtn").attr("disabled", true);
+
+    }
 
 }

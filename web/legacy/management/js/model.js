@@ -1388,6 +1388,7 @@ $(document).ready(function ()
                         $('#addModelModalTabs').hide();
                         $('#addModelModalBody').hide();
                         $('#addModelModal div.modalCell').hide();
+                        $("#addModelModal").modal('hide');
                         //$('#addContextBrokerModalFooter').hide();
                         $('#addNewModelCancelBtn').hide();
                         $('#addNewModelConfirmBtn').hide();
