@@ -1811,6 +1811,7 @@ if (($hide_menu != "hide")) {
                                                     <option value="READ_ACCESS">READ_ACCESS</option>
                                                     <option value="READ_WRITE">READ_WRITE</option>
                                                     <option value="MODIFY">MODIFY</option>
+                                                    <option value="WRITE_ONLY">WRITE_ONLY</option>
                                                 </select>
                                             </div>
                                             <span class="col-xs-12 input-group-btn" style="width:100%">
@@ -1859,6 +1860,7 @@ if (($hide_menu != "hide")) {
                                                         <option value="READ_ACCESS">READ_ACCESS</option>
                                                         <option value="READ_WRITE">READ_WRITE</option>
                                                         <option value="MODIFY">MODIFY</option>
+                                                        <option value="WRITE_ONLY">WRITE_ONLY</option>
                                                     </select>
                                                 </div>
                                                 <span class="col-xs-12 input-group-btn" style="width:100%">
