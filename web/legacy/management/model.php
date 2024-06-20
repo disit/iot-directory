@@ -655,6 +655,7 @@ if (($hide_menu != "hide")) {
                                                 <option value="Building">Building 3D</option>
                                                 <option value="Floor">Floor</option>
                                                 <option value="Cycling_paths">Cycling Path</option>
+                                                <option value="Entity_group">Entity Group</option>
                                             </select>
                                         <div class="modalFieldLabelCnt">Select HLT</div>
                                         <div id="addHLTattributesMsg" class="modalFieldMsgCnt">&nbsp;</div>
@@ -989,7 +990,9 @@ if (($hide_menu != "hide")) {
                                                 <option value="Building_plant">Building plant</option>
                                                 <option value="Building">Building 3D</option>
                                                 <option value="Floor">Floor</option>
-                                                <option value="Cycling_paths">Cycling Path</option>                                        </select>
+                                                <option value="Cycling_paths">Cycling Path</option>
+                                                <option value="Entity_group">Entity Group</option>
+                                        </select>
                                         <div class="modalFieldLabelCnt">Select HLT</div>
                                         <div id="addHLTattributesMsg" class="modalFieldMsgCnt">&nbsp;</div>
                                     </div>

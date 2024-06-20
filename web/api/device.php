@@ -2134,13 +2134,23 @@ else if ($action == "add_delegation") {
                         $q1 = "SELECT * FROM event_values WHERE cb = '$cb' and device='$id'";
                         $values = mysqli_query($link, $q1);
 
-                        //delegate any values of this device
-                        while ($value = mysqli_fetch_assoc($values)) {
-                            delegateDeviceValue($uri . "/" . $value["value_name"], $cb, $value["value_name"], $username, $delegated_user, $delegated_group, $accessToken, $k1, $k2, $result, $kind);
-                        }
-
                         //delegate the device
                         delegateDeviceValue($eId, $cb, NULL, $username, $delegated_user, $delegated_group, $accessToken, $k1, $k2, $result, $kind);
+                        if($result["status"]=='ok'){
+
+                            //delegate any values of this device
+
+                            while ($value = mysqli_fetch_assoc($values)) {
+                                delegateDeviceValue($uri . "/" . $value["value_name"], $cb, $value["value_name"], $username, $delegated_user, $delegated_group, $accessToken, $k1, $k2, $result, $kind);
+                                if ($result["status"]!='ok')
+                                {
+                                    break;
+                                }
+                            }
+                        }
+
+
+
                     } else {
                         $result["status"] = 'ko';
                         $result["msg"] = '\n the function delegate_value has been called without specifying mandatory parameters';

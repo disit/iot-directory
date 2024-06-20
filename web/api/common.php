@@ -762,15 +762,15 @@ function delegateDeviceValue($elementId, $contextbroker, $value_name, $user, $us
                     json_encode($msg);
         } else {
             $result["status"] = 'ko';
-            $result["error_msg"] .= "Error in the delegation. ";
+            $result["error_msg"] = "Error in the delegation: ". $local_result;
             $result["msg"] .= "\n error in the delegation";
             $result["log"] .= "\n error in the delegation" . $url . " result " . $local_result . " msg " . json_encode($msg);
         }
     } catch (Exception $ex) {
         $result["status"] = 'ko';
-        $result["error_msg"] .= 'Error in the delegation of the sensor. ';
-        $result["msg"] .= '\n error in the delegation of the sensor ';
-        $result["log"] .= '\n error in the delegation of the sensor ' . $ex;
+        $result["error_msg"] .= 'Error in the delegation, exception occurred. ';
+        $result["msg"] .= '\n error in the delegation, exception occurred.';
+        $result["log"] .= '\n error in the delegation, exception occurred.' . $ex;
     }
 }
 
