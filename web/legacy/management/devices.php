@@ -868,14 +868,15 @@ if (($hide_menu != "hide")) {
                                             <option value="iot_device_entity">IOT Device/entity</option>
                                             <option value="Heatmap">Heatmap</option>
                                             <option value="Traffic_flow">Traffic flow</option>
-                                            <option value="OriginDestinationMatrix">Origin Destination Matrix</option>
+                                            <option value="Origin_destination_matrix">Origin Destination Matrix</option>
                                             <option value="Trajectory_path">Trajectory path</option>
                                             <option value="Gardens">Garden</option>
                                             <option value="Building_plant">Building plant</option>
-                                            <option value="Building">Building 3D</option>
+                                            <option value="Building3D">Building 3D</option>
                                             <option value="Floor">Floor</option>
                                             <option value="Cycling_paths">Cycling Path</option>
                                             <option value="Entity_group">Entity Group</option>
+                                            <option value="Typical_time_trend">Typical time trend</option>
                                         </select>
                                         <div class="modalFieldLabelCnt">Select HLT</div>
 
@@ -883,7 +884,7 @@ if (($hide_menu != "hide")) {
                                 </div>
                                 <div class="row">
                                     <div class="col-xs-12 col-md-12 modalCell">
-                                        <textarea id="wktGeometryText" name="wktGeometry" rows="4" cols="0" style="max-width: 100%;min-width:100%" disabled></textarea>
+                                        <textarea id="wktGeometryText" name="wktGeometry" rows="4" cols="0" style="max-width: 100%;min-width:100%"></textarea>
                                         <label for="wktGeometryText" style="display:block">wktGeometry</label>
                                         <div id="addHLTattributesMsg" class="modalFieldMsgCnt">&nbsp;</div>
                                     </div>
@@ -1402,7 +1403,7 @@ if (($hide_menu != "hide")) {
                                             <option value="iot_device_entity">IOT Device/entity</option>
                                             <option value="Heatmap">Heatmap</option>
                                             <option value="Traffic_flow">Traffic flow</option>
-                                            <option value="OriginDestinationMatrix">Origin Destination Matrix</option>
+                                            <option value="Origin_destination_matrix">Origin Destination Matrix</option>
                                             <option value="Trajectory_path">Trajectory path</option>
                                             <option value="Gardens">Garden</option>
                                             <option value="Building_plant">Building plant</option>
@@ -1410,6 +1411,7 @@ if (($hide_menu != "hide")) {
                                             <option value="Floor">Floor</option>
                                             <option value="Cycling_paths">Cycling Path</option>
                                             <option value="Entity_group">Entity Group</option>
+                                            <option value="Typical_time_trend">Typical time trend</option>
                                         </select>
                                         <div class="modalFieldLabelCnt">Select HLT</div>
                                     </div>
@@ -1817,7 +1819,7 @@ if (($hide_menu != "hide")) {
                                                 </select>
                                             </div>
                                             <span class="col-xs-12 input-group-btn" style="width:100%">
-                                                <button type="button" id="newDelegationConfirmBtn" class="btn confirmBtn disabled" style="margin:10px 0;width:100%">Confirm</button>
+                                                <button type="button" id="newDelegationConfirmBtn" class="btn confirmBtn" style="margin:10px 0;width:100%" disabled>Confirm</button>
                                             </span>
                                             <div class="col-xs-12 centerWithFlex delegationsModalMsg" id="newDelegatedMsg">
                                                 Delegated username can't be empty

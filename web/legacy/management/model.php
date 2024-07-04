@@ -648,7 +648,7 @@ if (($hide_menu != "hide")) {
                                                 <option value="iot_device_entity">IOT Device/entity</option>
                                                 <option value="Heatmap">Heatmap</option>
                                                 <option value="Traffic_flow">Traffic flow</option>
-                                                <option value="OriginDestinationMatrix">Origin Destination Matrix</option>
+                                                <option value="Origin_destination_matrix">Origin Destination Matrix</option>
                                                 <option value="Trajectory_path">Trajectory path</option>
                                                 <option value="Gardens">Garden</option>
                                                 <option value="Building_plant">Building plant</option>
@@ -656,6 +656,7 @@ if (($hide_menu != "hide")) {
                                                 <option value="Floor">Floor</option>
                                                 <option value="Cycling_paths">Cycling Path</option>
                                                 <option value="Entity_group">Entity Group</option>
+                                                <option value="Typical_time_trend">Typical time trend</option>
                                             </select>
                                         <div class="modalFieldLabelCnt">Select HLT</div>
                                         <div id="addHLTattributesMsg" class="modalFieldMsgCnt">&nbsp;</div>
@@ -984,7 +985,7 @@ if (($hide_menu != "hide")) {
                                                 <option value="iot_device_entity">IOT Device/entity</option>
                                                 <option value="Heatmap">Heatmap</option>
                                                 <option value="Traffic_flow">Traffic flow</option>
-                                                <option value="OriginDestinationMatrix">Origin Destination Matrix</option>
+                                                <option value="Origin_destination_matrix">Origin Destination Matrix</option>
                                                 <option value="Trajectory_path">Trajectory path</option>
                                                 <option value="Gardens">Garden</option>
                                                 <option value="Building_plant">Building plant</option>
@@ -992,6 +993,7 @@ if (($hide_menu != "hide")) {
                                                 <option value="Floor">Floor</option>
                                                 <option value="Cycling_paths">Cycling Path</option>
                                                 <option value="Entity_group">Entity Group</option>
+                                                <option value="Typical_time_trend">Typical time trend</option>
                                         </select>
                                         <div class="modalFieldLabelCnt">Select HLT</div>
                                         <div id="addHLTattributesMsg" class="modalFieldMsgCnt">&nbsp;</div>

@@ -17,7 +17,8 @@ var  addDeviceConditionsArray = new Array();
 	addDeviceConditionsArray['kind'] = false;
 	addDeviceConditionsArray['format'] = false;
 	addDeviceConditionsArray['protocol'] = false;
-	
+    addDeviceConditionsArray['wkt']=false;
+
 	addMyDeviceConditionsArray['deviceModel'] = false;
 	addMyDeviceConditionsArray['oneAttribute'] = false;
 	addMyDeviceConditionsArray['attributeWithName'] = false;
@@ -38,7 +39,8 @@ function showAddDeviceModal()
 	addDeviceConditionsArray['kind'] = false;
 	addDeviceConditionsArray['format'] = false;
 	addDeviceConditionsArray['protocol'] = false;
-	
+    addDeviceConditionsArray['wkt']=false;
+
 	
 	
 	
@@ -141,6 +143,7 @@ function showAddDeviceModal()
 	checkSelectionProtocol();
 	checkSelectionFormat();
 	checkUri();
+    checkWellFormedWKT();
     $("#addDeviceModal").modal('show');
 
 }
@@ -159,6 +162,7 @@ function checkEverything(){
 	checkSelectionProtocol();
 	checkSelectionFormat();
 	checkUri();
+    checkWellFormedWKT();
 }
 
 function showAddMyDeviceModal()
@@ -900,16 +904,17 @@ function checkWellFormedWKT() {
     var coordinatePair = /\(\s*([\d\.-]+)\s+([\d\.-]+)\s*\)/g;
 
     // Check if the WKT string starts with a valid Geometry type
-    if (!$.trim($("#wktGeometryText").val())) {
-            $("#addHLTattributesMsg").css("color", "red");
-            $("#addHLTattributesMsg").text('Please insert a valid geometry');
-            buttonEnabled=false;
-            //return;
-    }
+    // if (!$.trim($("#wktGeometryText").val())) {
+    //         $("#addHLTattributesMsg").css("color", "red");
+    //         $("#addHLTattributesMsg").text('Please insert a valid geometry');
+    //         buttonEnabled=false;
+    //         //return;
+    // }
 
         if ( $("#wktGeometryText").val() && !wkt.match(wktTypes) ){
             $("#addHLTattributesMsg").css("color", "red");
             $("#addHLTattributesMsg").text('Unrecognized WktGeometry type');
+            addDeviceConditionsArray['wkt']=false;
             buttonEnabled=false;
             //return;
         }
@@ -922,6 +927,7 @@ function checkWellFormedWKT() {
 
             $("#addHLTattributesMsg").css("color", "red");
             $("#addHLTattributesMsg").text('Parenthesis doesn\'t match');
+            addDeviceConditionsArray['wkt']=false;
             buttonEnabled=false;
             //return;
         }
@@ -934,6 +940,7 @@ function checkWellFormedWKT() {
                 if (coords.length !== 2 || isNaN(parseFloat(coords[0])) || isNaN(parseFloat(coords[1]))) {
                     $("#addHLTattributesMsg").css("color", "red");
                     $("#addHLTattributesMsg").text('Coordinates are not valid');
+                    addDeviceConditionsArray['wkt']=false;
                     buttonEnabled=false;
                     //return;
                 }
@@ -945,11 +952,7 @@ function checkWellFormedWKT() {
 
         $("#addHLTattributesMsg").css("color", 'rgb(51, 122, 183)');
         $("#addHLTattributesMsg").text('Ok');
-        $("#addNewDeviceConfirmBtn").attr("disabled", false);
-
-    }else{
-
-        $("#addNewDeviceConfirmBtn").attr("disabled", true);
+        addDeviceConditionsArray['wkt']=true;
 
     }
 
@@ -965,14 +968,14 @@ function checkWellFormedWKTedit() {
     var coordinatePair = /\(\s*([\d\.-]+)\s+([\d\.-]+)\s*\)/g;
 
     // Check if the WKT string starts with a valid Geometry type
-    if (wkt=="") {
-        $("#editHLTattributesMsg").css("color", "red");
-        $("#editHLTattributesMsg").text('Please insert a valid geometry');
-            buttonEnabled=false;
-        //return;
-    }
+    // if (wkt=="") {
+    //     $("#editHLTattributesMsg").css("color", "red");
+    //     $("#editHLTattributesMsg").text('Please insert a valid geometry');
+    //         buttonEnabled=false;
+    //     //return;
+    // }
 
-    if (!wkt.match(wktTypes)) {
+    if ( $("#wktGeometryText").val() && !wkt.match(wktTypes) ){
         $("#editHLTattributesMsg").css("color", "red");
         $("#editHLTattributesMsg").text('Unrecognized WktGeometry type');
         buttonEnabled=false;

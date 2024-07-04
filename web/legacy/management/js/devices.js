@@ -1897,28 +1897,13 @@ $(document).ready(function () {
 
     $("#addHLTTabDevice").off("click");
     $("#addHLTTabDevice").on('click keyup', function () {
-        if( $("#selectHLT").val() == "iot_device_entity" ){
-            $('#wktGeometryText').prop('disabled', true);
-            //$("#addHLTattributesMsg").css("color", "red");
-            //$("#addHLTattributesMsg").text('');
-        }else{
-            $('#wktGeometryText').prop('disabled', false);
-            checkWellFormedWKT();
-
-        }
+        checkWellFormedWKT();
     });
     $("#selectHLT").on('click keyup change', function () {
 
-        if( $("#selectHLT").val() === "iot_device_entity" ){
-            $('#wktGeometryText').prop('disabled', true);
-                $("#addHLTattributesMsg").css("color", "rgb(51, 122, 183)");
-                $("#addHLTattributesMsg").text('When "IOT Device/Entity" is selected, the wktGeometry is discarded');
-            $("#addNewDeviceConfirmBtn").attr("disabled", false);
-        }else{
-            $('#wktGeometryText').prop('disabled', false);
             $("#addHLTattributesMsg").css("color", "red");
             $("#addHLTattributesMsg").text('Please insert a valid geometry');
-        }
+
     });
 
 
@@ -2006,6 +1991,12 @@ $(document).ready(function () {
         var servP = $(this).attr('data-servicePath');
         var hlt = $(this).attr('data-hlt');
         var wktGeometry = $(this).attr('data-wktGeometry');
+        if(hlt == "null"){
+            hlt='iot_device_entity';
+        }
+        if(wktGeometry == "null"){
+            wktGeometry='';
+        }
         //console.log(key1 + key2);
 
         $("#editDeviceGenerateKeyBtn").hide();
@@ -2149,16 +2140,13 @@ $(document).ready(function () {
             var wktGeometry= $(this).attr('data-wktGeometry');
             if(hlt == "null"){
                 hlt='iot_device_entity';
+            }
+            if(wktGeometry == "null"){
                 wktGeometry='';
              }
             //else{
             //     $('#selectHLTM').val(hlt);
             // }
-            if(hlt === "iot_device_entity"){
-                $('#wktGeometryTextM').attr('disabled',true);
-            }else{
-                $('#wktGeometryTextM').attr('disabled',false);
-            }
 
 
             fillMultiTenancyFormSection($(this).attr('data-service'), $(this).attr('data-servicePath'), contextbroker, 'device');
@@ -2376,29 +2364,15 @@ $(document).ready(function () {
     $("#editHLTTabDevice").off("click");
     $("#editHLTTabDevice").on('click keyup', function () {
         //$('#selectHLTM').trigger("change");
-        if( $("#selectHLTM").val() == "iot_device_entity" ){
-            $('#wktGeometryTextM').prop('disabled', true);
-        }else{
-            $('#wktGeometryTextM').prop('disabled', false);
             checkWellFormedWKTedit();
-
-        }
     });
     $("#selectHLTM").on('click keyup change', function () {
-        if( $("#selectHLTM").val() == "iot_device_entity" ){
-            $('#wktGeometryTextM').prop('disabled', true);
-            //if( $.trim($("#wktGeometryTextM").val())) {
-                $("#editHLTattributesMsg").css("color", "rgb(51, 122, 183)");
-                $("#editHLTattributesMsg").text('When "IOT Device/Entity" is selected, the wktGeometry is discarded');
 
-            $("#editDeviceConfirmBtn").attr("disabled", false);
-        }else{
-            $('#wktGeometryTextM').prop('disabled', false);
             $("#editHLTattributesMsg").css("color", "red");
             $("#editHLTattributesMsg").text('Please insert a valid geometry');
 
             checkWellFormedWKTedit();
-        }
+
     });
 //End Related to Edit Device
 
@@ -3127,9 +3101,7 @@ $(document).ready(function () {
                 var TempModel = $('#selectModelDevice').val();
             }
 
-            if($('#selectHLT').val()=='iot_device_entity'){
-                $('#wktGeometryText').val("")
-            }
+
 
             $.ajax({
                 url: "../api/device.php",
@@ -3202,7 +3174,7 @@ $(document).ready(function () {
                         $('#selectSubnature').trigger("change");
                         $('#selectHLT').val("iot_device_entity");
                         $('#selectHLT').trigger("change");
-                        $('wktGeometryTextM').val("");
+                        $('#wktGeometryTextM').val("");
                         $("#addNewStaticBtn").hide();
                         removeStaticAttributes();
                         $("#addDeviceKoModal").modal('show');
@@ -3525,9 +3497,7 @@ $(document).ready(function () {
                 if (servicePath[servicePath.length - 1] === "/" && servicePath.length > 1)
                     servicePath = servicePath.substr(0, servicePath.length - 1);
             }
-            if($('#selectHLTM').val()=="iot_device_entity"){
-                $('#wktGeometryTextM').val("")
-            }
+
 
             $.ajax({
                 url: "../api/device.php",
@@ -3975,19 +3945,19 @@ $(document).ready(function () {
         {
             $('#newDelegatedMsg').css('color', '#f3cf58');
             $('#newDelegatedMsg').html('Delegated username can\'t be empty');
-            $('#newDelegationConfirmBtn').addClass('disabled');
+            $('#newDelegationConfirmBtn').prop('disabled',true);
         } else
         {
             $('#newDelegatedMsg').css('color', 'white');
             $('#newDelegatedMsg').html('User can be delegated');
-            $('#newDelegationConfirmBtn').removeClass('disabled');
+            $('#newDelegationConfirmBtn').prop('disabled',false);
             $('#delegationsTable tbody tr').each(function (i)
             {
                 if ($(this).attr('data-delegated').trim() === $('#newDelegation').val())
                 {
                     $('#newDelegatedMsg').css('color', '#f3cf58');
                     $('#newDelegatedMsg').html('User already delegated');
-                    $('#newDelegationConfirmBtn').addClass('disabled');
+                    $('#newDelegationConfirmBtn').prop('disabled',true);
                 }
             });
         }
@@ -4625,7 +4595,7 @@ function changeVisibility(id, contextbroker, dev_organization, visibility, uri, 
                     $('#newDelegation').addClass('disabled');
                     $('#newDelegatedMsg').css('color', 'white');
                     $('#newDelegatedMsg').html('New delegation added correctly');
-                    $('#newDelegationConfirmBtn').addClass('disabled');
+                    $('#newDelegationConfirmBtn').prop('disabled',true);
                     setTimeout(function ()
                     {
                         $('#newDelegation').removeClass('disabled');
@@ -4639,7 +4609,7 @@ function changeVisibility(id, contextbroker, dev_organization, visibility, uri, 
                     $('#newDelegation').addClass('disabled');
                     $('#newDelegatedMsg').css('color', '#f3cf58');
                     $('#newDelegatedMsg').html(data["msg"]);
-                    $('#newDelegationConfirmBtn').addClass('disabled');
+                    $('#newDelegationConfirmBtn').prop('disabled',true);
                     setTimeout(function ()
                     {
                         $('#newDelegation').removeClass('disabled');
@@ -4655,7 +4625,7 @@ function changeVisibility(id, contextbroker, dev_organization, visibility, uri, 
                 $('#newDelegation').addClass('disabled');
                 $('#newDelegatedMsg').css('color', '#f3cf58');
                 $('#newDelegatedMsg').html(errorMsg);
-                $('#newDelegationConfirmBtn').addClass('disabled');
+                $('#newDelegationConfirmBtn').prop('disabled',true);
                 setTimeout(function ()
                 {
                     $('#newDelegation').removeClass('disabled');
