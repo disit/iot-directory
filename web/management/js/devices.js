@@ -1787,6 +1787,7 @@ $(document).ready(function () {
         $('#selectSubnatureM').prop('disabled', mode);
         $('#selectSubnatureM').prop('disabled', mode);
         document.getElementById("isMobileTickM").disabled = mode;
+        document.getElementById("isCertifiedTickM").disabled = mode;
         $('.modalInputTxt').attr('readonly', mode);
         $('.modalFieldCnt').prop('disabled', mode);
         $('.Select_onlyread').prop('disabled', mode);
@@ -2896,7 +2897,7 @@ $(document).ready(function () {
                     edgegateway_type: $("#selectEdgeGatewayType").val(), //DEPRECATED
                     edgegateway_uri: $("#inputEdgeGatewayUri").val(), //DEPRECATED
                     subnature: $('#selectSubnature').val(),
-                    static_attributes: JSON.stringify(retrieveStaticAttributes("addlistStaticAttributes", false, "isMobileTick")),
+                    static_attributes: JSON.stringify(retrieveStaticAttributes("addlistStaticAttributes", false, "isMobileTick","isCertifiedTick")),
                     service: service,
                     servicePath: servicePath
                 },
@@ -3280,7 +3281,7 @@ $(document).ready(function () {
                     edgegateway_type: $("#selectEdgeGatewayTypeM").val(), //DEPRECATED
                     edgegateway_uri: $("#inputEdgeGatewayUriM").val(), //DEPRECATED
                     subnature: $('#selectSubnatureM').val(),
-                    static_attributes: JSON.stringify(retrieveStaticAttributes("editlistStaticAttributes", false, "isMobileTickM")),
+                    static_attributes: JSON.stringify(retrieveStaticAttributes("editlistStaticAttributes", false, "isMobileTickM","isCertifiedTickM")),
                     service: service,
                     servicePath: servicePath
                 },

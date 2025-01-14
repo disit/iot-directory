@@ -1328,7 +1328,7 @@ $(document).ready(function ()
                     hc: $('#selectHCModel').val(),
                     hv: $('#inputHVModel').val(),
                     subnature: $('#selectSubnature').val(),
-                    static_attributes: JSON.stringify(retrieveStaticAttributes("addlistStaticAttributes", false, "isMobileTick")),
+                    static_attributes: JSON.stringify(retrieveStaticAttributes("addlistStaticAttributes", false, "isMobileTick", "isCertifiedTick")),
                     service: service,
                     servicePath: servicePath,
                     token: sessionToken
@@ -1541,6 +1541,7 @@ $(document).ready(function ()
         $('#inputHVModelM').attr('readonly', mode);
         $('#selectSubnatureM').prop('disabled', mode);
         document.getElementById("isMobileTickM").disabled = mode;
+        document.getElementById("isCertifiedTickM").disabled = mode;
     }
 
     // START VIEW MODEL
@@ -1956,7 +1957,7 @@ $(document).ready(function ()
                     hc: $('#selectHCModelM').val(),
                     hv: $('#inputHVModelM').val(),
                     subnature: $('#selectSubnatureM').val(),
-                    static_attributes: JSON.stringify(retrieveStaticAttributes("editlistStaticAttributes", false, "isMobileTickM")),
+                    static_attributes: JSON.stringify(retrieveStaticAttributes("editlistStaticAttributes", false, "isMobileTickM", "isCertifiedTickM")),
                     service: service,
                     servicePath: servicePath,
                     token: sessionToken

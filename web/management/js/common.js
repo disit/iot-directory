@@ -527,6 +527,7 @@ function subnatureChanged(edit, staticAttributes) {
 
     removeStaticAttributes(edit);
     updateIsMobile(edit, staticAttributes);//isMobile attributes is done separatly
+    updateIsCertified(edit, staticAttributes);
 
 
     //get new subnature that has been selected
@@ -741,7 +742,7 @@ function createRowElem(initialValueDictiornary, initialValue, currentDictionaryS
 
 //called on edit + add
 //if all is true, it return also the entryes that have no value... to be used to present a new valid entry
-function retrieveStaticAttributes(source, all, isMobileTick) {
+function retrieveStaticAttributes(source, all, isMobileTick, isCertifiedTick) {
     var staticArr = $('#' + source + ' div[name="additionalRow"]').find("select");
     var staticArr2 = $('#' + source + ' div[name="additionalRow"]').find("input");
     var staticValues = [];
@@ -760,6 +761,12 @@ function retrieveStaticAttributes(source, all, isMobileTick) {
     if ((isMobileTick !== undefined) && $('#' + isMobileTick).is(':checked')) {			//management of the isMobile attributes is done differently
         var array = [];
         array.push("http://www.disit.org/km4city/schema#isMobile");
+        array.push("true");
+        staticValues.push(array);
+    }
+    if ((isCertifiedTick !== undefined) && $('#' + isCertifiedTick).is(':checked')){
+        var array= [];
+        array.push("http://www.disit.org/km4city/schema#isCertified")
         array.push("true");
         staticValues.push(array);
     }
@@ -1779,7 +1786,28 @@ function checkIsMobile(staticAttributes) {
         }
     return false;
 }
+//------------------------------------------------------------------------------------------
+function updateIsCertified(edit, staticAttributes) {
+    var element = "#isCertifiedTick";
+    if (edit)
+        element = "#isCertifiedTickM"
 
+    if (checkIsCertified(staticAttributes))
+        $(element).prop('checked', true);
+    else
+        $(element).prop('checked', false);
+}
+
+function checkIsCertified(staticAttributes) {
+    if (staticAttributes)
+        for (let i = 0; i < staticAttributes.length; i++) {
+            if ((staticAttributes[i][0] == "http://www.disit.org/km4city/schema#isCertified") &&
+                    (staticAttributes[i][1] == "true"))
+                return true;
+        }
+    return false;
+}
+//--------------------------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------------------------------------------------------ INFO LABEL
 function getInfoCert(privatekey, visibility, created, id, contextbroker, certificate, sha) {
     var txtCert = "";

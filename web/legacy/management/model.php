@@ -616,6 +616,14 @@ if (($hide_menu != "hide")) {
                                         </div>
                                     </div>
                                 </div>
+                                <div class="row" <?php echo enableIsCertified(); ?>>
+                                    <div class="col-xs-12 col-md-8 modalCell">
+                                        <div class="custom-control custom-checkbox">
+                                            <input type="checkbox" class="custom-control-input" id="isCertifiedTick">
+                                            <label class="custom-control-label" for="isCertifiedTick">Certified</label>
+                                        </div>
+                                    </div>
+                                </div>
                                 <div class="row">
                                     <div class="col-xs-12 col-md-8 modalCell">
                                         <div class="modalFieldCnt">
@@ -657,6 +665,9 @@ if (($hide_menu != "hide")) {
                                                 <option value="Cycling_paths">Cycling Path</option>
                                                 <option value="Entity_group">Entity Group</option>
                                                 <option value="Typical_time_trend">Typical time trend</option>
+                                                <option value="Scenario">Scenario</option>
+                                                <option value="Vector_field">Vector Field</option>
+                                                <option value="Parking_slot">Parking slot</option>
                                             </select>
                                         <div class="modalFieldLabelCnt">Select HLT</div>
                                         <div id="addHLTattributesMsg" class="modalFieldMsgCnt">&nbsp;</div>
@@ -951,6 +962,14 @@ if (($hide_menu != "hide")) {
                                         </div>
                                     </div>
                                 </div>
+                                <div class="row" <?php echo enableIsCertified(); ?>>
+                                    <div class="col-xs-12 col-md-8 modalCell">
+                                        <div class="custom-control custom-checkbox">
+                                            <input type="checkbox" disabled class="custom-control-input" id="isCertifiedTickM">
+                                            <label class="custom-control-label" for="isCertifiedTickM">Certified</label>
+                                        </div>
+                                    </div>
+                                </div>
 
                                 <div class="row">
                                     <div class="col-xs-12 col-md-6 modalCell">
@@ -994,6 +1013,9 @@ if (($hide_menu != "hide")) {
                                                 <option value="Cycling_paths">Cycling Path</option>
                                                 <option value="Entity_group">Entity Group</option>
                                                 <option value="Typical_time_trend">Typical time trend</option>
+                                            <option value="Scenario">Scenario</option>
+                                            <option value="Vector_field">Vector Field</option>
+                                            <option value="Parking_slot">Parking slot</option>
                                         </select>
                                         <div class="modalFieldLabelCnt">Select HLT</div>
                                         <div id="addHLTattributesMsg" class="modalFieldMsgCnt">&nbsp;</div>

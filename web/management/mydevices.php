@@ -521,6 +521,16 @@ if (isset($_SESSION['refreshToken'])) {
 											</div>
 										</div>
 									</div>
+                                    <!------------------------>
+                                    <div class="row">
+										<div class="col-xs-12 col-md-8 modalCell" >
+											<div class="custom-control custom-checkbox">
+												<input type="checkbox" class="custom-control-input" id="isCertifiedTick">
+												<label class="custom-control-label" for="isCertifiedTick">Certified</label>
+											</div>
+										</div>
+									</div>
+                                    <!------------------------>
 									<div class="row">
 										<div class="col-xs-12 col-md-6 modalCell">
 											<div class="modalFieldCnt">

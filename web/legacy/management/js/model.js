@@ -1370,7 +1370,7 @@ $(document).ready(function ()
                     hc: $('#selectHCModel').val(),
                     hv: $('#inputHVModel').val(),
                     subnature: $('#selectSubnature').val(),
-                    static_attributes: JSON.stringify(retrieveStaticAttributes("addlistStaticAttributes", false, "isMobileTick")),
+                    static_attributes: JSON.stringify(retrieveStaticAttributes("addlistStaticAttributes", false, "isMobileTick", "isCertifiedTick")),
                     service: service,
                     servicePath: servicePath,
                     HLT: $('#selectHLT').val(),
@@ -1590,6 +1590,7 @@ $(document).ready(function ()
         $('#selectSubnatureM').prop('disabled', mode);
         $('#selectHLTM').prop('disabled', mode);
         document.getElementById("isMobileTickM").disabled = mode;
+        document.getElementById("isCertifiedTickM").disabled = mode;
     }
 
     // START VIEW MODEL

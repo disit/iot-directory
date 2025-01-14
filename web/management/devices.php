@@ -835,6 +835,14 @@ if (($hide_menu != "hide")) {
                                 </div>
                                 <div class="row">
                                     <div class="col-xs-12 col-md-8 modalCell">
+                                        <div class="custom-control custom-checkbox">
+                                            <input type="checkbox" class="custom-control-input" id="isCertifiedTick">
+                                            <label class="custom-control-label" for="isCertifiedTick">Certified</label>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="row">
+                                    <div class="col-xs-12 col-md-8 modalCell">
                                         <div class="modalFieldCnt">
                                             <div class="modalFieldLabelCnt">Subnature</div>
                                             <select id="selectSubnature" name="selectSubnature" class="modalInputTxt">
@@ -1312,6 +1320,14 @@ if (($hide_menu != "hide")) {
                                         <div class="custom-control custom-checkbox">
                                             <input type="checkbox" class="custom-control-input" id="isMobileTickM">
                                             <label class="custom-control-label" for="isMobileTickM">Device in Mobility</label>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="row">
+                                    <div class="col-xs-12 col-md-8 modalCell" >
+                                        <div class="custom-control custom-checkbox">
+                                            <input type="checkbox" class="custom-control-input" id="isCertifiedTickM">
+                                            <label class="custom-control-label" for="isCertifiedTickM">Certified</label>
                                         </div>
                                     </div>
                                 </div>	

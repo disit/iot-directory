@@ -404,12 +404,12 @@ if (($hide_menu != "hide")) {
                                                     <th data-cellTitle="devicetype">Device Type</th>
                                                     <th data-cellTitle="model">Model</th>
                                                     <th data-cellTitle="ownership">Ownership</th>
-                                                    
                                                     <th data-cellTitle="status">Status</th>							
                                                     <th data-cellTitle="edit">Edit</th>
                                                     <th data-cellTitle="delete">Delete</th>		
                                                     <th data-cellTitle="location">Location</th>
                                                     <th data-cellTitle="check">View</th>									
+                                                    <th data-cellTitle="retry">Retry</th>
                                                 </tr>
                                             </thead>
                                         </table>
@@ -421,6 +421,87 @@ if (($hide_menu != "hide")) {
                 </div>
             </div>
         </div>
+        </div>
+
+
+
+        <div class="modal fade" id="retryDeviceModal" tabindex="-1" role="dialog" aria-labelledby="retryDeviceModalLabel" aria-hidden="true">
+            <div class="modal-dialog modal-lg" role="document">
+                <div class="modal-content">
+
+                    <div id="retryHeaderModal" class="modalHeader centerWithFlex"></div>
+
+                    <div id="retryDeviceModalBody" class="modal-body modalBody">
+                        <b style="color: red">THIS FUNCTION IS IN DEVELOPMENT</b>
+                        <br>
+                        <br>
+                        Snap4City reported the following errors:
+                        <br>
+                        <br>
+                        <div class="row"">
+                            <div id="dbReporting"></div>
+                        </div>
+                        <div class="row">
+                            <div id="kbReporting"></div>
+                        </div>
+                        <div class="row">
+                            <div id="brokerReporting"></div>
+                        </div>
+                    <div class="row">
+                        <div id="UNrecoverableMessage"><br>some of this are <b>Unrecoverable</b>.<br>Please delete the device and insert it again.</div>
+                        <div id="recoverableMessage"><br>some of this are <b>Recoverable</b>.</div>
+                    </div>
+                    <div class="row">
+                        <div id="UNrecoverableMessageOWN"><br><b>You can't recover the device because you are not the owner<b></div>
+                        <div id="recoverableMessageOWN"><br><b>You can try to recover the device<b></div>
+                    </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" id="retryDeviceCancelBtn" class="btn cancelBtn" data-dismiss="modal">Cancel</button>
+                        <button type="button" id="retryDeviceBtn" class="btn confirmBtn internalLink" data-dismiss="modal"  disabled>Retry</button>
+                    </div>
+                </div>
+            </div>
+            </div>
+
+
+
+        <div class="modal fade" id="retryDeviceResultModal" tabindex="-1" role="dialog" aria-labelledby="retryDeviceResultModalLabel" aria-hidden="true">
+            <div class="modal-dialog modal-lg" role="document">
+                <div class="modal-content">
+
+                    <div id="retryHeaderResultModal" class="modalHeader centerWithFlex"></div>
+
+                    <div id="retryDeviceResultModalBody" class="modal-body modalBody">
+                        <b style="color: red">THIS FUNCTION IS IN DEVELOPMENT</b>
+                        <br>
+                        <br>
+                        <br>
+                        <br>
+                        <div class="row"">
+                            <div id="dbReportingResult"></div>
+                        </div>
+                        <div class="row">
+                            <div id="kbReportingResult"></div>
+                        </div>
+                        <div class="row">
+                            <div id="brokerReportingResult"></div>
+                        </div>
+
+                    <div class="row">
+                        <div id="retryResultMsgOk"><br>Device recovered succesfully</div>
+                        <div id="retryResultMsgError"><br>Device not recovered</div>
+                    </div>
+
+                </div>
+                <div class="modal-footer">
+                    <button type="button" id="retryDeviceResultBtn" class="btn confirmBtn internalLink" data-dismiss="modal" onclick="location.reload()">Ok</button>
+                    </div>
+                </div>
+            </div>
+            </div>
+        </div>
+
 
 
 
@@ -838,6 +919,14 @@ if (($hide_menu != "hide")) {
                                         </div>
                                     </div>
                                 </div>
+                                <div class="row" <?php echo enableIsCertified(); ?> >
+                                    <div class="col-xs-12 col-md-8 modalCell">
+                                        <div class="custom-control custom-checkbox">
+                                            <input type="checkbox" class="custom-control-input" id="isCertifiedTick">
+                                            <label class="custom-control-label" for="isCertifiedTick">Certified</label>
+                                        </div>
+                                    </div>
+                                </div>
                                 <div class="row">
                                     <div class="col-xs-12 col-md-8 modalCell">
                                         <div class="modalFieldCnt">
@@ -877,6 +966,9 @@ if (($hide_menu != "hide")) {
                                             <option value="Cycling_paths">Cycling Path</option>
                                             <option value="Entity_group">Entity Group</option>
                                             <option value="Typical_time_trend">Typical time trend</option>
+                                            <option value="Scenario">Scenario</option>
+                                            <option value="Vector_field">Vector Field</option>
+                                            <option value="Parking_slot">Parking slot</option>
                                         </select>
                                         <div class="modalFieldLabelCnt">Select HLT</div>
 
@@ -1351,6 +1443,14 @@ if (($hide_menu != "hide")) {
                                             <label class="custom-control-label" for="isMobileTickM">Device in Mobility</label>
                                         </div>
                                     </div>
+                                </div>
+                                <div class="row" <?php echo enableIsCertified(); ?> >
+                                    <div class="col-xs-12 col-md-8 modalCell" >
+                                        <div class="custom-control custom-checkbox">
+                                            <input type="checkbox" class="custom-control-input" id="isCertifiedTickM">
+                                            <label class="custom-control-label" for="isCertifiedTickM">Certified</label>
+                                        </div>
+                                    </div>
                                 </div>	
                                 <div class="row">
                                     <div class="col-xs-12 col-md-6 modalCell">
@@ -1412,6 +1512,9 @@ if (($hide_menu != "hide")) {
                                             <option value="Cycling_paths">Cycling Path</option>
                                             <option value="Entity_group">Entity Group</option>
                                             <option value="Typical_time_trend">Typical time trend</option>
+                                            <option value="Scenario">Scenario</option>
+                                            <option value="Vector_field">Vector Field</option>
+                                            <option value="Parking_slot">Parking slot</option>
                                         </select>
                                         <div class="modalFieldLabelCnt">Select HLT</div>
                                     </div>

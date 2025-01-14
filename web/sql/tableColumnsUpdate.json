@@ -1,0 +1,18 @@
+{
+  "devices": [{
+      "wktGeometry": {"type": "MEDIUMTEXT", "extra": "NULL DEFAULT NULL"},
+      "hlt": {"type": "VARCHAR(30)", "extra": "NULL DEFAULT NULL"},
+      "is_in_kb": {"type": "VARCHAR(45)", "extra": "NULL DEFAULT NULL"},
+      "is_in_db": {"type": "VARCHAR(45)", "extra": "NULL DEFAULT NULL"},
+      "is_in_broker": {"type": "VARCHAR(45)", "extra": "NULL DEFAULT NULL"}
+    }
+  ],
+  "deleted_devices": [{
+      "wktGeometry": {"type": "MEDIUMTEXT", "extra": "NULL DEFAULT NULL"},
+      "hlt": {"type": "VARCHAR(30)", "extra": "NULL DEFAULT NULL"},
+      "is_in_kb": {"type": "VARCHAR(45)", "extra": "NULL DEFAULT NULL"},
+      "is_in_db": {"type": "VARCHAR(45)", "extra": "NULL DEFAULT NULL"},
+      "is_in_broker": {"type": "VARCHAR(45)", "extra": "NULL DEFAULT NULL"}
+    }
+  ]
+}

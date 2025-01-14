@@ -2420,7 +2420,7 @@ $(document).ready(function () {
                     edgegateway_type: $("#selectEdgeGatewayTypeM").val(),
                     edgegateway_uri: $("#inputEdgeGatewayUriM").val(),
                     subnature: $('#selectSubnatureM').val(),
-                    static_attributes: JSON.stringify(retrieveStaticAttributes("editlistStaticAttributes", false, "isMobileTickM")),
+                    static_attributes: JSON.stringify(retrieveStaticAttributes("editlistStaticAttributes", false, "isMobileTickM","isCertifiedTickM")),
                     service: service,
                     servicePath: servicePath
                 },

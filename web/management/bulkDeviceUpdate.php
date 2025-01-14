@@ -1189,6 +1189,14 @@ else
                                     </div>
                                 </div>
                                 <div class="row">
+                                    <div class="col-xs-12 col-md-8 modalCell">
+                                        <div class="custom-control custom-checkbox">
+                                            <input type="checkbox" class="custom-control-input" id="isCertifiedTickM">
+                                            <label class="custom-control-label" for="isCertifiedTickM">Certified</label>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="row">
                                     <div class="col-xs-12 col-md-6 modalCell">
                                         <div class="modalFieldLabelCnt">Subnature</div>
                                         <div class="modalFieldCnt">

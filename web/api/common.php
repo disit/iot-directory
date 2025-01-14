@@ -80,7 +80,8 @@ function insert_device($link, $id, $devicetype, $contextbroker, $kind, $protocol
         $k1 = guidv4();
     if (($k2 == null) || ($k2 == ""))
         $k2 = guidv4();
-
+if(canBeRegistered($id, $devicetype, $contextbroker, $kind, $protocol, $format, $macaddress, $model, $producer, $latitude, $longitude,
+        $visibility, $frequency, $listAttributes, $subnature, $staticAttributes, $result)){
     checkRegisterOwnerShipObject($accessToken, 'IOTID', $result);
     if ($result["status"] == 'ok') {
         $selectDevicesDeleted = "SELECT contextBroker, id
@@ -129,29 +130,16 @@ function insert_device($link, $id, $devicetype, $contextbroker, $kind, $protocol
                         }
                     }
                 } catch (Exception $sace) {
-                    $result["status"] == 'ko';
+                        $result["status"] = 'ko';
                     $result["error_msg"] .= "An error occurred while validating the static attributes: " . ($sace->getMessage());
                     $result["msg"] .= "\n An error occurred while validating the static attributes: " . ($sace->getMessage());
                     $result["log"] .= "\r\n An error occurred while validating the static attributes: " . ($sace->getMessage());
+                        //query di errore qui non ha senso perchè è un controllo PRIMA di scrivere il device nel db, se fallisce questo non scrivo nulla
                 }
                 if ($result["status"] == 'ko')
                     return $result;
-                // End of the check of the static attributes
+                    //query di errore qui non ha senso perchè è un controllo PRIMA di scrivere il device nel db, se fallisce questo non scrivo nulla
 
-                if (!isset($shouldbeRegistered)) {
-                    registerKB($link, $id, $devicetype, $contextbroker, $kind, $protocol,
-                            $format, $macaddress, $model, $producer, $latitude, $longitude, $visibility,
-                            $frequency, $listAttributes, $subnature, $staticAttributes, $result, 'yes', $organization, $kbUrl, $service, $servicePath, $accessToken,$wktGeometry,$hlt);
-                } else {
-                    registerKB($link, $id, $devicetype, $contextbroker, $kind, $protocol,
-                            $format, $macaddress, $model, $producer, $latitude, $longitude, $visibility,
-                            $frequency, $listAttributes, $subnature, $staticAttributes, $result, $shouldbeRegistered, $organization, $kbUrl, $service, $servicePath, $accessToken,$wktGeometry,$hlt);
-                }
-
-                if ($result["status"] == 'ko')
-                    return $result;
-
-                //TODO check if needed
                 $syntaxRes = 0;
                 if ($protocol == 'ngsi w/MultiService') {
                     if (strlen($servicePath) > 0 && $servicePath{0} != "/") {//TODO: do we need to insert this if in any other place?
@@ -180,8 +168,12 @@ function insert_device($link, $id, $devicetype, $contextbroker, $kind, $protocol
 
                     $r = mysqli_query($link, $q);
                     if ($r) {
-                        $result["msg"] .= "\n Device $contextbroker/$id correctly inserted with uri " . $result["content"];
-                        $result["log"] .= "\r\n Device $contextbroker/$id correctly inserted with uri" . $result["content"] . "\r\n";
+                            $result["msg"] .= "\n Device $contextbroker/$id correctly inserted in db";
+                            $result["log"] .= "\r\n Device $contextbroker/$id correctly inserted in db \r\n";
+
+                            $q = "UPDATE devices SET is_in_db = 'success' WHERE id = '$id'";
+                            mysqli_query($link, $q);
+                            // inserimento ha avuto successo, scrivo nel db che l'inserimento è stato effettuato correttamente
 
                         // information to be passed to the interface
                         $result["visibility"] = $visibility;
@@ -213,6 +205,16 @@ function insert_device($link, $id, $devicetype, $contextbroker, $kind, $protocol
                             $ownmsg["elementDetails"]["contextbroker"] = $contextbroker;
                             // $result["msg"] .= json_encode($ownmsg);
                             // $result["log"] .= json_encode($ownmsg);
+
+                                //check if a device is certified
+                                $param = str_replace( array( '\\', '"' , '[',']' ), '', $staticAttributes);
+                                $param=explode(",",$param);
+                                foreach ($param as $key => $value){
+                                    if($value =="http://www.disit.org/km4city/schema#isCertified"){
+                                        $ownmsg["elementDetails"]["Certified"]= "true";
+                                    }
+                                }
+
                             registerOwnerShipDevice($eId, $ownmsg, $accessToken, $result);
                         }
                         // $result["msg"] .= "passata richiesta di update k1 e k2 ";
@@ -244,9 +246,9 @@ function insert_device($link, $id, $devicetype, $contextbroker, $kind, $protocol
                                     $ok = false;
                                 }
                             } catch (Exception $eeee) {
-                                $result["error_msg"] .= "Attribute $att->value_name was not inserted. ";
-                                $result["msg"] .= "<br/> attribute $att->value_name was not inserted <br/>" . generateErrorMessage($link);
-                                $result["log"] .= "\r\n attribute $att->value_name was not inserted $insertquery " . generateErrorMessage($link);
+                                    $result["error_msg"] .= "Attribute $att->value_name was not inserted because of an exception. ";
+                                    $result["msg"] .= "<br/> attribute $att->value_name was not inserted because of an exception. <br/>" . generateErrorMessage($link);
+                                    $result["log"] .= "\r\n attribute $att->value_name was not inserted because of an exception: $insertquery " . generateErrorMessage($link);
                                 $ok = false;
                             }
                             $b++;
@@ -256,31 +258,78 @@ function insert_device($link, $id, $devicetype, $contextbroker, $kind, $protocol
                             $result["status"] = 'ok';
                         } else {
                             $result["status"] = 'ko';
+                                $q= "select id from devices where id ='$id';";
+                                $r = mysqli_query($link, $q);
+                                if(mysqli_num_rows($r) == 0){
+                                    $q = "UPDATE devices SET is_in_db = 'event_values_error' WHERE id = '$id';";
+                                    mysqli_query($link, $q);
+                                }
                         }
                     } else {
                         $result["status"] = 'ko';
                         $result["error_msg"] .= "Problem in inserting the device $id in the database. ";
-                        $result["msg"] .= "\n Problem in inserting the device $id:  <br/>" . generateErrorMessage($link);
-                        $result["log"] .= "\r\n Problem in inserting the device $id:  $q  " . generateErrorMessage($link);
+                            $result["msg"] .= "\n Problem in inserting the device $id  in the database. :  <br/>" . generateErrorMessage($link);
+                            $result["log"] .= "\r\n Problem in inserting the device $id  in the database. :  $q  " . generateErrorMessage($link);
+                            //se il database non mi risponde è inutile che provi a scrivere l'errore del device perchè non ho il device nel db
                     }
                 } else {
                     $result["status"] = 'ko';
                     $result["error_msg"] = $servicePath . " is NOT a valid servicePath";
+                    }
+                    if (!isset($shouldbeRegistered)) {
+                        registerKB($link, $id, $devicetype, $contextbroker, $kind, $protocol,
+                                $format, $macaddress, $model, $producer, $latitude, $longitude, $visibility,
+                                $frequency, $listAttributes, $subnature, $staticAttributes, $result, 'yes', $organization, $kbUrl, $service, $servicePath, $accessToken,$wktGeometry,$hlt);
+                    } else {
+                        registerKB($link, $id, $devicetype, $contextbroker, $kind, $protocol,
+                                $format, $macaddress, $model, $producer, $latitude, $longitude, $visibility,
+                                $frequency, $listAttributes, $subnature, $staticAttributes, $result, $shouldbeRegistered, $organization, $kbUrl, $service, $servicePath, $accessToken,$wktGeometry,$hlt);
+                    }
+
+                    if ($result["status"] == 'ko')
+                        return $result;
+
+                    $q = "UPDATE devices SET uri = '" . $result['content'] . "' WHERE id = '$id'";
+                    $r = mysqli_query($link, $q);
+                    if(!$r) {
+                        $result["status"] = 'ko';
+                        $result["error_msg"] .= "Uri generated but not inserted in the database. ";
+                        $result["msg"] .= "\n Uri generated but not inserted in the database:  <br/>" . generateErrorMessage($link);
+                        $result["log"] .= "\r\n Uri generated but not inserted in the database:  $q  " . generateErrorMessage($link);
+                        $q = "UPDATE devices SET is_in_db = 'uri_generated_but_not_inserted' WHERE id = '$id'";
+                        mysqli_query($link, $q);
+                    }else{
+                        $result["status"] = 'ok';
+                        $result["error_msg"] .= "Inserted the device uri in the database. ";
+                        $result["msg"] .= "\n Inserted the device uri in the database  <br/>";
+                        $result["log"] .= "\r\n Inserted the device uri in the database.  $q  ";
+
                 }
             } else {
                 $result["status"] = 'ko';
                 $result["error_msg"] .= "Problem in inserting the device $id, device name already exists in deleted devices. ";
                 $result["msg"] .= "\n Problem in inserting the device $id, device name already exists in deleted devices";
                 $result["log"] .= "\r\n Problem in inserting the device $id, device name already exists in deleted devices";
+                    //non ha senso la query perchè se entro in questo else vuol dire che un device con lo stesso nome è presente nei deleted device,
+                    //di conseguenza non scrive nulla nella tabella devices
             }
         } else {
             $result["status"] = 'ko';
-            $result["error_msg"] .= "Problem in inserting the device $id, related to the deleted_devices table. ";
-            $result["msg"] .= "\n Problem in inserting the device $id, related to the deleted_devices table:  <br/>" . generateErrorMessage($link);
-            $result["log"] .= "\r\n Problem in inserting the device $id, related to the deleted_devices table:   " . generateErrorMessage($link);
+                $result["error_msg"] .= "Problem in inserting the device $id, cannot communicate with the db. ";
+                $result["msg"] .= "\n Problem in inserting the device $id, cannot communicate with the db:  <br/>" . generateErrorMessage($link);
+                $result["log"] .= "\r\n Problem in inserting the device $id, cannot communicate with the db:  " . generateErrorMessage($link);
+                //scrittura del codice d'errore inutile perchè se fallisce questo ciclo vuol dire che il db non ha risposto
+                //alla prima query, per cui nessuna scrittura di device è stata effettuata
         }
     } else {
         // limits reached, error message are already thrown  
+    }
+    } else {
+        $result["error_msg"] .= "Missing some device data ";
+        $result["msg"] .= "\n Missing some device data, device not saved";
+        $result["log"] .= "\n Missing some device data, please check the input fields";
+        $result["status"] = 'ko';
+        //scrittura nel db inutile perchè se "CanBeRegistered()" ritorna falso nessuna scrittura sul db è effettuata
     }
 }
 
@@ -392,10 +441,19 @@ function create_datatable_data($link, $request, $query, $where) {
     }
 
     if (isset($request["order"])) {
+        $orderColumn=$columns[$request['order']['0']['column']]['name'];
+        if($orderColumn=="retry"){
+            //echo $query;
+            $query .= ' ORDER BY (is_in_kb = FALSE OR is_in_db = FALSE OR is_in_broker = FALSE)  ' . $request['order']['0']['dir'] . '	';
+        }else {
+
         $query .= ' ORDER BY ' . $columns[$request['order']['0']['column']]['name'] . ' ' . $request['order']['0']['dir'] . '	';
     }
 
     // echo $query;
+    }
+
+
     $result = mysqli_query($link, $query);
     $GLOBALS['DataTableQuery'] = $query;
     return $result;
@@ -900,6 +958,16 @@ function getUserDelegatedDevice($token, $user, $type, &$result) {
                                 }
                             }
                             break;
+                        case "WRITE_ONLY":
+                            if ($lists[$i]->kind == "WRITE_ONLY") {
+                                if (isset($lists[$i]->delegationDetails)) {
+                                    $delegationDetails = json_decode($lists[$i]->delegationDetails);
+                                    $mykeys[$a] = array("usernameDelegator" => $lists[$i]->usernameDelegator, "delegationId" => $lists[$i]->id, "kind" => $kind, "k1" => $delegationDetails->k1, "k2" => $delegationDetails->k2, "delegationKind" => $lists[$i]->kind);
+                                } else {
+                                    $mykeys[$a] = array("usernameDelegator" => $lists[$i]->usernameDelegator, "delegationId" => $lists[$i]->id, "kind" => $kind, "k1" => "", "k2" => "", "delegationKind" => $lists[$i]->kind);
+                                }
+                            }
+                            break;
                     }
                 } else {
                     if (isset($lists[$i]->delegationDetails)) {
@@ -1070,6 +1138,11 @@ function getDelegatedObject($token, $user, $object, &$result) {
                             break;
                         case "READ_WRITE":
                             if ($lists[$i]->kind == "MODIFY") {
+                                $mykeys[$a] = array("usernameDelegator" => $lists[$i]->usernameDelegator, "delegationId" => $lists[$i]->id, "kind" => 'specific', "delegationKind" => $lists[$i]->kind);
+                            }
+                            break;
+                        case "WRITE_ONLY":
+                            if ($lists[$i]->kind == "WRITE_ONLY") {
                                 $mykeys[$a] = array("usernameDelegator" => $lists[$i]->usernameDelegator, "delegationId" => $lists[$i]->id, "kind" => 'specific', "delegationKind" => $lists[$i]->kind);
                             }
                             break;
@@ -1481,7 +1554,7 @@ function retrieveAvailableStaticAttribute($subnature, &$result) {
 
 /* * ***FUNCTIONS FOR THE REGISTRATION OF A DEVICE IN THE CONTEXT BROKER AND IN THE KNOWLEDGE BASE ****** */
 
-function insert_ngsi($name, $type, $contextbroker, $kind, $protocol, $format, $model, $latitude, $longitude, $visibility, $frequency,
+function insert_ngsi($link, $name, $type, $contextbroker, $kind, $protocol, $format, $model, $latitude, $longitude, $visibility, $frequency,
         $listnewAttributes, $ip, $port, &$result, $service = "", $servicePath = "") {
     $res = "ok";
     $msg_orion = array();
@@ -1528,16 +1601,27 @@ function insert_ngsi($name, $type, $contextbroker, $kind, $protocol, $format, $m
             CURLOPT_POSTFIELDS => json_encode($msg_orion)
         ));
 
+        $retries=0;
+        $response_orion = FALSE;
+        while($response_orion === FALSE && $retries<3){
         // Send the request
+            if($retries!==0){
+                usleep(10000);
+            }
         $response_orion = curl_exec($ch);
+            $retries++;
+        }
 
+        //echo("<script>console.log($response_orion);</script>");
         // Check for errors
         if ($response_orion === FALSE) {
             // die(curl_error($ch));
-            $result["error_msg"] .= "Error in the connection with the ngsi context broker. In function  insert_ngsi() ";
-            $result["msg"] .= "\n error in the connection with the ngsi context broker. In function  insert_ngsi()";
-            $result["log"] .= "\n error in the connection with the ngsi context broker. In function  insert_ngsi()";
+            $result["error_msg"] .= "Error in the connection with the ngsi context broker. Context Broker didn't respond.";
+            $result["msg"] .= "\n error in the connection with the ngsi context broker. Context Broker didn't respond.";
+            $result["log"] .= "\n error in the connection with the ngsi context broker. Context Broker didn't respond.";
             $res = 'ko';
+            $q = "UPDATE devices SET is_in_broker = 'broker_didnt_respond' WHERE id = '$name'";
+            mysqli_query($link, $q);
         } else {
             // Decode the response
             $responseData = json_decode($response_orion, TRUE);
@@ -1545,13 +1629,17 @@ function insert_ngsi($name, $type, $contextbroker, $kind, $protocol, $format, $m
             $result["msg"] .= '\n response from the ngsi context broker ';
             $result["log"] .= '\n response from the ngsi context broker ' . $response_orion;
             $res = 'ok';
+            $q = "UPDATE devices SET is_in_broker = 'success' WHERE id = '$name'";
+            mysqli_query($link, $q);
         }
     } catch (Exception $ex) {
         $result["status"] = 'ko';
-        $result["error_msg"] .= 'Error in connecting with the ngsi context broker. ';
-        $result["msg"] .= ' error in connecting with the ngsi context broker ';
-        $result["log"] .= ' error in connecting with the ngsi context broker ' . $ex;
+        $result["error_msg"] .= ' Exception when communicating with the ngsi context broker. ';
+        $result["msg"] .= ' Exception when communicating with the ngsi context broker ';
+        $result["log"] .= ' Exception when communicating with the ngsi context broker ' . $ex->getMessage();
         $res = "ko";
+        $q = "UPDATE devices SET is_in_broker = 'broker_exception' WHERE id = '$name'";
+        mysqli_query($link, $q);
     }
     return $res;
 }
@@ -1753,6 +1841,7 @@ function registerKB($link, $name, $type, $contextbroker, $kind, $protocol, $form
         $organization, $kbUrl = "", $service = "", $servicePath = "", $accessToken, $wktGeometry="",$hlt) {
     $result["status"] = 'ok';
 
+    //vedere se questa la posso togliere visto che la chiamo in "insert_device()"
     if (canBeRegistered($name, $type, $contextbroker, $kind, $protocol, $format, $macaddress, $model, $producer, $latitude, $longitude,
                     $visibility, $frequency, $listnewAttributes, $subnature, $staticAttributes, $result)) {
         $query = "SELECT * from contextbroker WHERE name = '$contextbroker'";
@@ -1848,34 +1937,51 @@ function registerKB($link, $name, $type, $contextbroker, $kind, $protocol, $form
                     'ignore_errors' => true
                 )
             );
+            $retries=0;
+            $status="0";
+            while($status !== "200" && $retries < 3) {
+                if($retries !== 0){
+                    usleep(10000);
+                }
             $context = stream_context_create($options);
             $local_result = @file_get_contents($url, false, $context);
 
             $status_line = $http_response_header[0];
             preg_match('{HTTP\/\S*\s(\d{3})}', $status_line, $match);
             $status = $match[1];
-
+                $retries++;
+            }
             if ($status !== "200") {
                 $result["status"] = 'ko';
                 $result["content"] = "";
                 $result["msg"] .= "\n no URI has been generated by the KB";
                 $result["log"] .= "\n no URI has been generated by the KB. Error: " . $status . " " . $local_result;
                 $res = 'ko'; //uri has not been generated
+
+                $q= "select is_in_kb from devices where id ='$name';";
+                $r = mysqli_query($link, $q);
+                $row = mysqli_fetch_assoc($r);
+                if($row['is_in_kb'] == null ) {
+                    $q = "UPDATE devices SET is_in_kb = 'no_uri_generated_by_kb' WHERE id = '$name'";
+                    $r = mysqli_query($link, $q);
+                }
             } else {
                 $result["status"] = 'ok';
                 $result["content"] = $local_result;
                 $result["msg"] .= "\n an URI has been generated by the KB: " . $local_result . " from: " . $url . " organization: " . $organization;
                 $result["log"] .= "\n an URI has been generated by the KB: " . $local_result . " from: " . $url . " organization: " . $organization;
+                $q = "UPDATE devices SET is_in_kb = 'success' WHERE id = '$name'";
+                $r = mysqli_query($link, $q);
 
                 // registration of the device in the corresponding context broker
                 if (!isset($shouldbeRegistered) || (isset($shouldbeRegistered) && $shouldbeRegistered == 'yes')) {
                     switch ($protocol) {
                         case "ngsi":
-                            $res = insert_ngsi($name, $type, $contextbroker, $kind, $protocol, $format, $model, $latitude, $longitude,
+                            $res = insert_ngsi($link,$name, $type, $contextbroker, $kind, $protocol, $format, $model, $latitude, $longitude,
                                     $visibility, $frequency, $listnewAttributes, $ip, $port, $result);
                             break;
                         case "ngsi w/MultiService":
-                            $res = insert_ngsi($name, $type, $contextbroker, $kind, $protocol, $format, $model, $latitude, $longitude,
+                            $res = insert_ngsi($link,$name, $type, $contextbroker, $kind, $protocol, $format, $model, $latitude, $longitude,
                                     $visibility, $frequency, $listnewAttributes, $ip, $port, $result, $service, $servicePath);
                         case "mqtt":
                             $res = insert_mqtt($name, $type, $contextbroker, $kind, $protocol, $format, $latitude, $longitude,
@@ -1894,8 +2000,15 @@ function registerKB($link, $name, $type, $contextbroker, $kind, $protocol, $form
             $result["status"] = 'ko';
             $result["error_msg"] .= 'Error in connecting with KB. ';
             $result["msg"] .= '\n error in connecting with KB ';
-            $result["log"] .= '\n error in connecting with KB ' . $ex;
+            $result["log"] .= '\n error in connecting with KB ' . $ex->getMessage();
             $res = 'ko'; //uri has not been generated
+            $q= "select is_in_kb from devices where id ='$name';";
+            $r = mysqli_query($link, $q);
+            $row = mysqli_fetch_assoc($r);
+            if($row['is_in_kb'] == null ) {
+                $q = "UPDATE devices SET is_in_kb = 'error_connecting_to_kb' WHERE id = '$name'";
+                mysqli_query($link, $q);
+            }
         }
 
         if ($res == "ok") {
@@ -1906,6 +2019,15 @@ function registerKB($link, $name, $type, $contextbroker, $kind, $protocol, $form
             $result["error_msg"] .= "No registration in the context broker. Error in registerKB() ";
             $result["msg"] .= "\n no registration in the context broker";
             $result["log"] .= "\n no registration in the context broker";
+
+            $q= "select is_in_broker from devices where id ='$name';";
+            $r = mysqli_query($link, $q);
+            $row = mysqli_fetch_assoc($r);
+            if($row['is_in_broker'] == null ) {
+                $q = "UPDATE devices SET is_in_broker = 'error_in_registration_broker' WHERE id = '$name'";
+                $r = mysqli_query($link, $q);
+            }
+
         } else {// the value is no -- no registration in the context broker
             $result["status"] = 'ok';
             $result["msg"] .= "\n no registration in the context broker is required";
@@ -1917,6 +2039,8 @@ function registerKB($link, $name, $type, $contextbroker, $kind, $protocol, $form
         $result["msg"] .= "\n error in the validation w.r.t. the KB";
         $result["log"] .= "\n error in the validation w.r.t. the KB";
         $result["status"] = 'ko';
+        $q = "UPDATE devices SET is_in_kb = 'error_wrt_kb' WHERE id = '$name'";
+        mysqli_query($link, $q);
         return 1;
     }
 }
@@ -1924,7 +2048,7 @@ function registerKB($link, $name, $type, $contextbroker, $kind, $protocol, $form
 // end of function registerKB
 // ****FUNCTIONS FOR THE MODIFICATION OF THE REGISTRATION OF A DEVICE IN THE KNOWLEDGE BASE AND IN THE CONTEXT BROKER ****************** 
 
-function update_ngsi($name, $type, $contextbroker, $kind, $protocol, $format, $model, $latitude, $longitude, $visibility, $frequency,
+function update_ngsi($link,$name, $type, $contextbroker, $kind, $protocol, $format, $model, $latitude, $longitude, $visibility, $frequency,
         $listnewAttributes, $deletedAttributes, $ip, $port, $uri, $staticAttributes, &$result, $service = "", $servicePath = "") {
     $res = "ok";
     $msg_orion = array();
@@ -1992,6 +2116,8 @@ function update_ngsi($name, $type, $contextbroker, $kind, $protocol, $format, $m
             $result["msg"] .= "\n error in the connection with the ngsi context broker";
             $result["log"] .= "\n error in the connection with the ngsi context broker" . curl_error($ch);
             $res = 'ko';
+            $q = "UPDATE devices SET is_in_broker = 'error_in_connecting_ngsi' WHERE id = '$name'";
+            $r = mysqli_query($link, $q);
         } else {
             //eventually remove attributes TODO uniform with above
             $b = 0;
@@ -2018,6 +2144,8 @@ function update_ngsi($name, $type, $contextbroker, $kind, $protocol, $format, $m
                     $result["msg"] .= "\n error in the DELETE connection with the ngsi context broker";
                     $result["log"] .= "\n error in the DELETE connection with the ngsi context broker" . curl_error($ch);
                     $res = 'ko';
+                    $q = "UPDATE devices SET is_in_broker = 'error_in_connecting_ngsi' WHERE id = '$name'";
+                    $r = mysqli_query($link, $q);
                     break;
                 }
                 $b++;
@@ -2025,9 +2153,11 @@ function update_ngsi($name, $type, $contextbroker, $kind, $protocol, $format, $m
 
             if ($response_orion !== FALSE) {
                 $result["status"] = 'ok';
-                $result["msg"] .= '\n response from the ngsi context broker ';
-                $result["log"] .= '\n response from the ngsi context broker ' . $response_orion;
+                $result["msg"] .= "\n response from the ngsi context broker ";
+                $result["log"] .= "\n response from the ngsi context broker \"" . $response_orion . "\"";
                 $res = 'ok';
+                $q = "UPDATE devices SET is_in_broker = 'success' WHERE id = '$name'";
+                $r = mysqli_query($link, $q);
             }
         }
     } catch (Exception $ex) {
@@ -2102,7 +2232,7 @@ function updateKB($link, $name, $type, $contextbroker, $kind, $protocol, $format
         $msg["broker"]["created"] = $rowCB["created"];
         $msg["subnature"] = $subnature;
         $msg["highleveltype"] = $hlt;
-        $msg["wktgeometry"] = $wktGeometry;
+        $msg["wktGeometry"] = $wktGeometry;
 
         foreach (json_decode(stripcslashes($staticAttributes)) as $stAtt) {
             $msg[$stAtt[0]] = $stAtt[1];
@@ -2163,21 +2293,26 @@ function updateKB($link, $name, $type, $contextbroker, $kind, $protocol, $format
                 $result["msg"] = "\n no URI has been generated by the KB";
                 $result["log"] .= "\n no URI has been generated by the KB. Error: " . $status . " " . $local_result;
                 $res = 'ko'; //uri has not been generated
+                $q = "UPDATE devices SET is_in_kb = 'no_uri_generated_by_kb' WHERE id = '$name'";
+                $r = mysqli_query($link, $q);
             } else {
                 $result["status"] = 'ok';
                 $result["content"] = $local_result;
                 $result["msg"] = "\n an URI has been generated by the KB";
                 $result["log"] .= "\n an URI has been generated by the KB" . $local_result;
 
+                $q = "UPDATE devices SET is_in_kb = 'success' WHERE id = '$name'";
+                $r = mysqli_query($link, $q);
+
                 /* update of the device in the corresponding context broker */
                 if ($rowCB["kind"] != 'external') {
                     switch ($protocol) {
                         case "ngsi":
-                            $res = update_ngsi($name, $type, $contextbroker, $kind, $protocol, $format, $model, $latitude, $longitude, $visibility, $frequency,
+                            $res = update_ngsi($link,$name, $type, $contextbroker, $kind, $protocol, $format, $model, $latitude, $longitude, $visibility, $frequency,
                                     $attributes, $deletedAttributes, $ip, $port, $uri, $staticAttributes, $result);
                             break;
                         case "ngsi w/MultiService":
-                            $res = update_ngsi($name, $type, $contextbroker, $kind, $protocol, $format, $model, $latitude, $longitude, $visibility, $frequency,
+                            $res = update_ngsi($link,$name, $type, $contextbroker, $kind, $protocol, $format, $model, $latitude, $longitude, $visibility, $frequency,
                                     $attributes, $deletedAttributes, $ip, $port, $uri, $staticAttributes, $result, $service, $servicePath);
                             break;
                         case "mqtt":
@@ -2199,16 +2334,22 @@ function updateKB($link, $name, $type, $contextbroker, $kind, $protocol, $format
             $result["msg"] .= ' error in connecting with KB ';
             $result["log"] .= ' error in connecting with KB ' . $ex;
             $res = 'ko'; //uri has not been generated
+            $q = "UPDATE devices SET is_in_kb = 'error_connecting_to_kb' WHERE id = '$name'";
+            $r = mysqli_query($link, $q);
         }
 
         if ($res == "ok") {
             $result["msg"] .= "\n ok updated in the context broker";
             $result["log"] .= "\n ok updated in the context broker";
+            $q = "UPDATE devices SET is_in_broker = 'success' WHERE id = '$name'";
+            $r = mysqli_query($link, $q);
         } elseif ($res == "ko") {
             $result["status"] = 'ko';
             $result["error_msg"] .= "Error in update the context broker. ";
             $result["msg"] .= "\n Error in update the context broker";
             $result["log"] .= "\n no update in the context broker";
+            $q = "UPDATE devices SET is_in_broker = 'error_updating_broker' WHERE id = '$name'";
+            $r = mysqli_query($link, $q);
         } else { // the value is no -- no registration in the context broker
             $result["msg"] .= "\n context broker external, not updated";
             $result["log"] .= "\n context broker external, not updated";
@@ -2218,6 +2359,8 @@ function updateKB($link, $name, $type, $contextbroker, $kind, $protocol, $format
         $result["msg"] .= "\n error in the validation w.r.t. the KB";
         $result["log"] .= "\n error in the validation w.r.t. the KB";
         $result["status"] = 'ko';
+        $q = "UPDATE devices SET is_in_kb = 'error_wrt_kb' WHERE id = '$name'";
+        $r = mysqli_query($link, $q);
     }
     return 1;
 }
@@ -2270,8 +2413,8 @@ function delete_ngsi($name, $type, $contextbroker, $kind, $protocol, $format, $m
             // Decode the response
             $responseData = json_decode($response_orion, TRUE);
             $result["status"] = 'ok';
-            $result["msg"] .= '\n response from the ngsi context broker ';
-            $result["log"] .= '\n response from the ngsi context broker ' . $response_orion;
+            $result["msg"] .= "\n response from the ngsi context broker ";
+            $result["log"] .= "\n response from the ngsi context broker \"" . $response_orion . "\"";
             $res = 'ok';
         }
     } catch (Exception $ex) {
@@ -2294,9 +2437,114 @@ function delete_amqp($name, $type, $contextbroker, $kind, $protocol, $format, $l
     return "ok";
 }
 
-function deleteKB($link, $name, $contextbroker, $kbUrl = "", &$result, $service = "", $servicePath = "", $accessToken) {
-    $result["status"] = 'ok';
+function delete_from_opensearch($serviceUri, $organization, &$result) {
+    $index = $GLOBALS['openSearchDeviceStateIndex'];
+    if(!$index) {        
+        $res = $result["status"] = 'ko';
+        $result["msg"] .= "\n error no openSearchDeviceStateIndex defined, cannot delete $serviceUri from opensearch";
+        $result["log"] .= "\n error no openSearchDeviceStateIndex defined, cannot delete $serviceUri from opensearch";
+} else {
+        $res = delete_from_opensearch_index($serviceUri, $index, $result);
+        if($res == 'ok') {
+            $index = $GLOBALS['openSearchFullDeviceStateIndex_'.$organization];
+            if(!$index) {
+                $index = $GLOBALS['openSearchFullDeviceStateIndex'];
+                if(!$index) {
+                    $res = $result["status"] = 'ok';
+                    $result["msg"] .= "\n no openSearchFullDeviceStateIndex defined, cannot delete $serviceUri from opensearch";
+                    $result["log"] .= "\n no openSearchFullDeviceStateIndex defined, cannot delete $serviceUri from opensearch";        
+                }
+            } 
+            if($index) {
+                $res = delete_from_opensearch_index($serviceUri, $index, $result);
+            }
+        }
+    }
+    return $res;
+}
 
+function delete_from_opensearch_index($serviceUri, $index, &$result) {
+    $res = "ok";
+
+    $url_opensearch = "https://".$GLOBALS['openSearchHostIP'].':'.$GLOBALS['openSearchPort'].'/'.$index.'/_delete_by_query';
+
+    $username = $GLOBALS['openSearchUser'];
+    $password = $GLOBALS['openSearchPwd'];
+    try {
+        // Setup cURL
+        $ch = curl_init($url_opensearch);
+
+        $query = '{
+              "query": {
+                "bool": {
+                  "must": [
+                    { "terms": {"serviceUri.keyword": ["' . $serviceUri . '"]} }
+                  ]
+                }
+              }
+            }';
+
+        curl_setopt_array($ch, array(             
+            //switches the request type from get to post
+            CURLOPT_POST=>true,
+             
+            //attach the encoded string in the post field using CURLOPT_POSTFIELDS
+            CURLOPT_POSTFIELDS=>$query,
+             
+            //setting curl option RETURNTRANSFER to true 
+            //so that it returns the response
+            //instead of outputting it 
+            CURLOPT_RETURNTRANSFER=>true,
+             
+            //Using the CURLOPT_HTTPHEADER set the Content-Type to application/json
+            CURLOPT_HTTPHEADER=>array('Content-Type:application/json'),
+
+            CURLOPT_SSL_VERIFYPEER=> false,
+            CURLOPT_SSL_VERIFYHOST=> false
+        ));
+
+        if($username) {
+            curl_setopt($ch, CURLOPT_USERPWD, "$username:$password");
+        }
+
+        // Send the request
+        $response_opensearch = curl_exec($ch);
+
+        // Check for errors
+        if ($response_opensearch === FALSE) {
+            // die(curl_error($ch));
+            $result["msg"] .= "\n error sending to $url_opensearch : ".curl_error($ch);
+            $result["log"] .= "\n error sending to $url_opensearch : ".curl_error($ch);
+            $res = 'ko';
+        } else {
+            // Decode the response
+            //$responseData = json_decode($response_opensearch, TRUE);
+            $http_status = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+            if($http_status == 200) {
+                $result["status"] = 'ok';
+                $result["msg"] .= "\n response from opensearch ";
+                $result["log"] .= "\n response from opensearch $url_opensearch " . $response_opensearch;
+                $res = 'ok';
+            } else {
+                $result["status"] = 'ko';
+                $result["msg"] .= "\n error response $http_status from opensearch deleting $serviceUri ";
+                $result["log"] .= "\n error response $url_opensearch $http_status from opensearch deleting $serviceUri " . $response_opensearch;
+                $res = 'ko';
+            }
+        }
+    } catch (Exception $ex) {
+        $result["status"] = 'ko';
+        $result["error_msg"] .= " Error in connecting with opensearch. ";
+        $result["msg"] .= " Error in connecting with opensearch. ";
+        $result["log"] .= " Error in connecting with opensearch. " . $ex;
+        $res = "ko";
+    }
+    return $res;
+}
+
+function deleteKB($link, $name, $contextbroker, $kbUrl = "", &$result, $service = "", $servicePath = "", $accessToken) {
+    $res = $result["status"] = 'ok';
+    
     $listnewAttributes = generateAttributes($link, $name, $contextbroker);
 
     $query = "SELECT d.organization, d.uri, d.id, d.devicetype AS entityType, d.kind, d.format, d.macaddress, d.model, d.producer, d.protocol, d.longitude,d.subnature, d.static_attributes, 
@@ -2447,27 +2695,51 @@ function deleteKB($link, $name, $contextbroker, $kbUrl = "", &$result, $service 
                 $result["msg"] .= "\n the device has been deleted from the KB";
                 $result["log"] .= "\n the device has been deleted from the KB";
 
-                if ($row["cbkind"] != 'external') {
-                    switch ($protocol) {
-                        case "ngsi":
-                            $res = delete_ngsi($name, $type, $contextbroker, $kind, $protocol, $format, $model, $latitude, $longitude,
-                                    $visibility, $frequency, $listnewAttributes, $ip, $port, $uri, $result);
-                            break;
-                        case "ngsi w/MultiService":
-                            $res = delete_ngsi($name, $type, $contextbroker, $kind, $protocol, $format, $model, $latitude, $longitude,
-                                    $visibility, $frequency, $listnewAttributes, $ip, $port, $uri, $result, $service, $servicePath);
-                            break;
-                        case "mqtt":
-                            $res = delete_mqtt($name, $type, $contextbroker, $kind, $protocol, $format, $latitude, $longitude, $visibility,
-                                    $frequency, $listnewAttributes, $ip, $port, $uri, $result);
-                            break;
-                        case "amqp":
-                            $res = delete_amqp($name, $type, $contextbroker, $kind, $protocol, $format, $latitude, $longitude, $visibility, $frequency,
-                                    $listnewAttributes, $ip, $port, $uri, $result);
-                            break;
-                    }
+                //delete from opensearch indexes
+                if(isset($GLOBALS['useOpenSearch']) && $GLOBALS['useOpenSearch'] == 'yes') {
+                    $res = delete_from_opensearch($uri, $organization, $result);
                 } else {
-                    $res = 'no'; //should not be registered
+                    $result["msg"] .= "\n useOpenSearch not set to yes, skipping delete from opensearch of $uri";
+                    $result["log"] .= "\n useOpenSearch not set to yes, skipping delete from opensearch of $uri";    
+                }
+
+                if($res == 'ok') {
+                    if ($row["cbkind"] != 'external') {
+                        switch ($protocol) {
+                            case "ngsi":
+                                $res = delete_ngsi($name, $type, $contextbroker, $kind, $protocol, $format, $model, $latitude, $longitude,
+                                        $visibility, $frequency, $listnewAttributes, $ip, $port, $uri, $result);
+                                break;
+                            case "ngsi w/MultiService":
+                                $res = delete_ngsi($name, $type, $contextbroker, $kind, $protocol, $format, $model, $latitude, $longitude,
+                                        $visibility, $frequency, $listnewAttributes, $ip, $port, $uri, $result, $service, $servicePath);
+                                break;
+                            case "mqtt":
+                                $res = delete_mqtt($name, $type, $contextbroker, $kind, $protocol, $format, $latitude, $longitude, $visibility,
+                                        $frequency, $listnewAttributes, $ip, $port, $uri, $result);
+                                break;
+                            case "amqp":
+                                $res = delete_amqp($name, $type, $contextbroker, $kind, $protocol, $format, $latitude, $longitude, $visibility, $frequency,
+                                        $listnewAttributes, $ip, $port, $uri, $result);
+                                break;
+                        }
+                    } else {
+                        $res = 'no'; //should not be registered
+                    }
+                    if ($res == 'ok') {
+                        $result["msg"] .= "\n ok deletion from the context broker";
+                        $result["log"] .= "\n ok deletion from the context broker";
+                    } elseif ($res == "ko") {
+                        $result["status"] = 'ko';
+                        $result["error_msg"] .= "No deletion from the context broker. ";
+                        $result["msg"] .= "\n no deletion from the context broker";
+                        $result["log"] .= "\n no deletion from the context broker";
+                    } else {// the value is no -- no registration in the context broker
+                        $result["status"] = 'ok';
+                        $result["msg"] .= "\n no registration in the context broker is required";
+                        $result["log"] .= "\n no registration in the context broker is required";
+                    }
+            
                 }
             }
         } catch (Exception $ex) {
@@ -2478,19 +2750,6 @@ function deleteKB($link, $name, $contextbroker, $kbUrl = "", &$result, $service 
             $res = 'ko'; //uri has not been generated
         }
 
-        if ($res == 'ok') {
-            $result["msg"] .= "\n ok deletion from the context broker";
-            $result["log"] .= "\n ok deletion from the context broker";
-        } elseif ($res == "ko") {
-            $result["status"] = 'ko';
-            $result["error_msg"] .= "No deletion from the context broker. ";
-            $result["msg"] .= "\n no deletion from the context broker";
-            $result["log"] .= "\n no deletion from the context broker";
-        } else {// the value is no -- no registration in the context broker
-            $result["status"] = 'ok';
-            $result["msg"] .= "\n no registration in the context broker is required";
-            $result["log"] .= "\n no registration in the context broker is required";
-        }
     } else {
         $result["error_msg"] .= "Error in the validation w.r.t. the KB. ";
         $result["msg"] .= "\n error in the validation w.r.t. the KB";
@@ -3333,7 +3592,7 @@ function enforcementRights($username, $token, $role, $elementId, $elementType, $
                 $toreturn = true;
             } else {
                 checkDelegationObject($username, $token, $elementId, $elementType, $result);
-                $toreturn = $result["delegationKind"] == "READ_WRITE" || $result["delegationKind"] == "MODIFY";
+                $toreturn = $result["delegationKind"] == "READ_WRITE" || $result["delegationKind"] == "MODIFY" || $result["delegationKind"]=="WRITE_ONLY";
                 $result["delegationKind"] = $result["delegationKind"];
             }
         } else if ($action == "read") {

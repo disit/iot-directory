@@ -481,7 +481,7 @@ function format(d) {
         if ((loggedRole == "RootAdmin") || (loggedRole == "ToolAdmin") || d.visibility.substring(0, 5) == "MyOwn") {
             return a +b+ aa + c;
         }
-        if (d.delegationKind === 'READ_WRITE' || d.delegationKind === 'MODIFY') {
+        if (d.delegationKind === 'READ_WRITE' || d.delegationKind === 'MODIFY' || d.delegationKind === 'WRITE_ONLY') {
             return a + b + c;
         }
     }
@@ -507,14 +507,14 @@ function fetch_data(destroyOld, selected = null) {
         {
             mydata = {action: "get_all_device_admin", token: sessionToken, no_columns: ["position", "d.visibility", "status1", "edit", "delete", "map", "check"]};
         } else if (selected == 'delegated') {
-            mydata = {action: "get_all_device_admin", delegated: true, token: sessionToken, no_columns: ["position", "d.visibility", "status1", "edit", "delete", "map", "check"]};
+            mydata = {action: "get_all_device_admin", delegated: true, token: sessionToken, no_columns: ["position", "d.visibility", "status1", "edit", "delete", "map", "check","retry"]};
         } else if (selected == 'public') {
             mydata = {action: "get_all_device_admin", public: true, token: sessionToken, no_columns: ["position", "d.visibility", "status1", "edit", "delete", "map", "check"]};
         } else if (selected == 'own') {
-            mydata = {action: "get_all_device_admin", own: true, token: sessionToken, no_columns: ["position", "d.visibility", "status1", "edit", "delete", "map", "check"]};
+            mydata = {action: "get_all_device_admin", own: true, token: sessionToken, no_columns: ["position", "d.visibility", "status1", "edit", "delete", "map", "check","retry"]};
         } else
         {
-            mydata = {action: "get_all_device_admin", own: true, token: sessionToken, select: selected, no_columns: ["position", "d.visibility", "status1", "edit", "delete", "map", "check"]};
+            mydata = {action: "get_all_device_admin", own: true, token: sessionToken, select: selected, no_columns: ["position", "d.visibility", "status1", "edit", "delete", "map", "check","retry"]};
         }
         
         var COL_CAST=[
@@ -640,6 +640,7 @@ function fetch_data(destroyOld, selected = null) {
                 data: null,
                 "name": "check",
                 "orderable": false,
+                className: "center",
                 render: function (d) {
                     return '<button type="button" class="viewDashBtn" ' +
                             'data-id="' + d.id + '" ' +
@@ -670,21 +671,68 @@ function fetch_data(destroyOld, selected = null) {
                             'data-static-attributes="' + btoa(unescape(encodeURIComponent(d.staticAttributes))) + '" ' +
                             'data-status1="' + d.status1 + '">View</button>';
                 }
+            },{
+                data: null,
+                "name": "retry",
+                "orderable": true,
+                render: function (d) {
+                    if(d.is_in_kb == null || d.is_in_db == null || d.is_in_broker == null) {
+                        //caso per retrocompatibilità
+                        return "";
+                    }else if(d.is_in_kb == "success" && d.is_in_db == "success" && d.is_in_broker == "success"){
+                        //caso insermento corretto
+                        return "";
+                    }else if (d.is_in_kb != "success" || d.is_in_db != "success" || d.is_in_broker != "success"){
+                        return '<button type="button" class="retryDashBtn" ' +
+                            'data-id="' + d.id + '" ' +
+                            'data-contextBroker="' + d.contextBroker + '" ' +
+                            'data-organization="' + d.organization + '" ' +
+                            'data-kind="' + d.kind + '" ' +
+                            'data-model="' + d.model + '" ' +
+                            'data-devicetype="' + d.devicetype + '" ' +
+                            'data-uri="' + d.uri + '" ' +
+                            'data-visibility="' + d.visibility + '" ' +
+                            'data-frequency="' + d.frequency + '" ' +
+                            'data-format="' + d.format + '" ' +
+                            'data-ownership="' + d.ownership + '" ' +
+                            'data-protocol="' + d.protocol + '" ' +
+                            'data-macaddress="' + d.macaddress + '" ' +
+                            'data-producer="' + d.producer + '" ' +
+                            'data-longitude="' + d.longitude + '" ' +
+                            'data-latitude="' + d.latitude + '" ' +
+                            'data-edgegateway_type="' + d.edgegateway_type + '" ' +
+                            'data-edgegateway_uri="' + d.edgegateway_uri + '" ' +
+                            'data-k1="' + d.k1 + '" ' +
+                            'data-k2="' + d.k2 + '" ' +
+                            'data-subnature="' + d.subnature + '" ' +
+                            'data-service="' + d.service + '" ' +
+                            'data-servicePath="' + d.servicePath + '" ' +
+                            'data-hlt="' + d.hlt + '" ' +
+                            'data-wktGeometry="' + d.wktGeometry + '" ' +
+                            'data-is_in_db="' + d.is_in_db + '" ' +
+                            'data-is_in_kb="' + d.is_in_kb + '" ' +
+                            'data-is_in_broker="' + d.is_in_broker + '" ' +
+                            'data-static-attributes="' + btoa(unescape(encodeURIComponent(d.staticAttributes))) + '" ' +
+                            'data-status1="' + d.status1 + '">retry</button>';
+                    }else{
+                        return "";
+                    }
+                }
             }
         ];    
     } else {
         if (selected == null)//TODO uniform these below calls
         {
-            mydata = {action: "get_all_device", token: sessionToken, no_columns: ["position", "d.visibility", "status1", "edit", "delete", "map", "check"]};
+            mydata = {action: "get_all_device", token: sessionToken, no_columns: ["position", "d.visibility", "status1", "edit", "delete", "map", "check","retry"]};
         } else if (selected == 'delegated') {
             mydata = {action: "get_all_device", delegated: true, token: sessionToken, no_columns: ["position", "d.visibility", "status1", "edit", "delete", "map", "check"]};
         } else if (selected == 'public') {
             mydata = {action: "get_all_device", public: true, token: sessionToken, no_columns: ["position", "d.visibility", "status1", "edit", "delete", "map", "check"]};
         } else if (selected == 'own') {
-            mydata = {action: "get_all_device", own: true, token: sessionToken, no_columns: ["position", "d.visibility", "status1", "edit", "delete", "map", "check"]};
+            mydata = {action: "get_all_device", own: true, token: sessionToken, no_columns: ["position", "d.visibility", "status1", "edit", "delete", "map", "check","retry"]};
         } else
         {
-            mydata = {action: "get_all_device", own: true, token: sessionToken, select: selected, no_columns: ["position", "d.visibility", "status1", "edit", "delete", "map", "check"]};
+            mydata = {action: "get_all_device", own: true, token: sessionToken, select: selected, no_columns: ["position", "d.visibility", "status1", "edit", "delete", "map", "check","retry"]};
         }
           
         var COL_CAST=[
@@ -836,6 +884,53 @@ function fetch_data(destroyOld, selected = null) {
                             'data-wktGeometry="' + d.wktGeometry + '" ' +
                             'data-static-attributes="' + btoa(unescape(encodeURIComponent(d.staticAttributes))) + '" ' +
                             'data-status1="' + d.status1 + '">View</button>';
+                }
+            },{
+                data: null,
+                "name": "retry",
+                "orderable": true,
+                render: function (d) {
+                    if(d.is_in_kb == null || d.is_in_db == null || d.is_in_broker == null) {
+                        //caso per retrocompatibilità
+                        return "";
+                    }else if(d.is_in_kb == "success" && d.is_in_db == "success" && d.is_in_broker == "success"){
+                        //caso insermento corretto
+                        return "";
+                    }else if (d.is_in_kb != "success" || d.is_in_db != "success" || d.is_in_broker != "success"){
+                        return '<button type="button" class="retryDashBtn" ' +
+                            'data-id="' + d.id + '" ' +
+                            'data-contextBroker="' + d.contextBroker + '" ' +
+                            'data-organization="' + d.organization + '" ' +
+                            'data-kind="' + d.kind + '" ' +
+                            'data-model="' + d.model + '" ' +
+                            'data-devicetype="' + d.devicetype + '" ' +
+                            'data-uri="' + d.uri + '" ' +
+                            'data-visibility="' + d.visibility + '" ' +
+                            'data-frequency="' + d.frequency + '" ' +
+                            'data-format="' + d.format + '" ' +
+                            'data-ownership="' + d.ownership + '" ' +
+                            'data-protocol="' + d.protocol + '" ' +
+                            'data-macaddress="' + d.macaddress + '" ' +
+                            'data-producer="' + d.producer + '" ' +
+                            'data-longitude="' + d.longitude + '" ' +
+                            'data-latitude="' + d.latitude + '" ' +
+                            'data-edgegateway_type="' + d.edgegateway_type + '" ' +
+                            'data-edgegateway_uri="' + d.edgegateway_uri + '" ' +
+                            'data-k1="' + d.k1 + '" ' +
+                            'data-k2="' + d.k2 + '" ' +
+                            'data-subnature="' + d.subnature + '" ' +
+                            'data-service="' + d.service + '" ' +
+                            'data-servicePath="' + d.servicePath + '" ' +
+                            'data-hlt="' + d.hlt + '" ' +
+                            'data-wktGeometry="' + d.wktGeometry + '" ' +
+                            'data-is_in_db="' + d.is_in_db + '" ' +
+                            'data-is_in_kb="' + d.is_in_kb + '" ' +
+                            'data-is_in_broker="' + d.is_in_broker + '" ' +
+                            'data-static-attributes="' + btoa(unescape(encodeURIComponent(d.staticAttributes))) + '" ' +
+                            'data-status1="' + d.status1 + '">retry</button>';
+                    }else{
+                        return "";
+                    }
                 }
             }
         ];
@@ -1948,6 +2043,7 @@ $(document).ready(function () {
         $('#selectHLTM').prop('disabled', mode);
         $('#wktGeometryTextM').attr('disabled', mode);
         document.getElementById("isMobileTickM").disabled = mode;
+        document.getElementById("isCertifiedTickM").disabled = mode;
         $('.modalInputTxt').attr('readonly', mode);
         $('.modalFieldCnt').prop('disabled', mode);
         $('.Select_onlyread').prop('disabled', mode);
@@ -2376,6 +2472,231 @@ $(document).ready(function () {
     });
 //End Related to Edit Device
 
+    //RETRY BUTTON IN DATATABLE
+    $('#devicesTable tbody').on('click', 'button.retryDashBtn', function () {
+        var is_in_db=this.dataset.is_in_db;
+        var is_in_kb=this.dataset.is_in_kb;
+        var is_in_broker=this.dataset.is_in_broker;
+        var visibility=this.dataset.visibility;
+        var device_id=this.dataset.id;
+        var organization=this.dataset.organization;
+        var cb=this.dataset.contextbroker;
+
+
+        var isRecoverableArray = [];
+        isRecoverableArray.push(true,true,true);
+
+
+        //successo
+                if(is_in_db=="success"){
+                    var htmlDb="<b style='color: green'>"+ is_in_db +"</b>";
+                }else{
+                    //errore non recuperabile
+                    if(is_in_db == "event_value_error"){
+                        var htmlDb="<b style='color: red'>"+ is_in_db +" (Unrecoverable)</b>";
+                        isRecoverableArray[0] = false;
+                    }else{
+                        //errore recuperabile
+                        var htmlDb="<b style='color: red'>"+ is_in_db +"</b>";
+                    }
+                }
+                if(is_in_kb=="success"){
+                    var htmlKb="<b style='color: green'>"+ is_in_kb +"</b>";
+                }else{
+                    if(is_in_kb =="no_uri_generated_by_kb" || is_in_kb == "error_wrt_kb" ){
+                        var htmlKb="<b style='color: red'>"+ is_in_kb +"(Unrecoverable)</b>";
+                        isRecoverableArray[1] = false;
+                    }else{
+                        var htmlKb="<b style='color: red'>"+ is_in_kb +"</b>";
+                    }
+                }
+                if(is_in_broker=="success"){
+                    var htmlBroker="<b style='color: green'>"+ is_in_broker +"</b>";
+                }else{
+                    if(is_in_broker=="error_in_registration_broker" || is_in_broker=="broker_exception"){
+                        var htmlBroker="<b style='color: red'>"+ is_in_broker +"(Unrecoverable)</b>";
+                        isRecoverableArray[2] = false;
+                    }else {
+                        var htmlBroker = "<b style='color: red'>" + is_in_broker + "</b>";
+                    }
+                }
+            if(visibility=="MyOwnPrivate" || visibility=="MyOwnPrivate"){
+                //my device, but not recoverable
+            if(isRecoverableArray[0] == false || isRecoverableArray[1]==false ||isRecoverableArray[2]==false){
+                $('#retryDeviceModal').modal('show');
+                $('#UNrecoverableMessage').show();
+                    $('#UNrecoverableMessageOWN').hide()
+                $('#recoverableMessage').hide();
+                    $('#recoverableMessageOWN').hide()
+                    $('#retryDeviceBtn').prop("enabled", true);
+                $('#retryHeaderModal').html("Error not recoverable");
+                $('#dbReporting').html("<b>Database: </b> "+ htmlDb);
+                $('#kbReporting').html("<b>Kb: </b> "+ htmlKb);
+                $('#brokerReporting').html("<b>Broker: </b> "+ htmlBroker);
+            }else{
+                    //my device recoverable
+                $('#retryDeviceModal').modal('show');
+                $('#UNrecoverableMessage').hide();
+                $('#recoverableMessage').show();
+                    $('#recoverableMessageOWN').show();
+                    $('#UNrecoverableMessageOWN').hide();
+                    $('#retryDeviceBtn').prop("disabled", false);
+                    $('#retryHeaderModal').html("Error recoverable");
+                    $('#dbReporting').html("<b>Database: </b> " + htmlDb);
+                    $('#kbReporting').html("<b>Kb: </b> " + htmlKb);
+                    $('#brokerReporting').html("<b>Broker: </b> " + htmlBroker);
+                }
+            }else{
+                //not mydevice not recoverable
+                if(isRecoverableArray[0] == false || isRecoverableArray[1]==false ||isRecoverableArray[2]==false){
+                    $('#retryDeviceModal').modal('show');
+                    $('#UNrecoverableMessage').show();
+                    $('#recoverableMessage').hide();
+                    $('#UNrecoverableMessageOWN').hide();
+                    $('#recoverableMessageOWN').hide();
+                    $('#retryDeviceBtn').prop("disabled",true);
+                    $('#retryHeaderModal').html("Error not recoverable");
+                    $('#dbReporting').html("<b>Database: </b> "+ htmlDb);
+                    $('#kbReporting').html("<b>Kb: </b> "+ htmlKb);
+                    $('#brokerReporting').html("<b>Broker: </b> "+ htmlBroker);
+
+                }else{
+                    //not my device recoverable
+                    $('#retryDeviceModal').modal('show');
+                    $('#UNrecoverableMessage').hide();
+                    $('#recoverableMessage').show();
+                    $('#UNrecoverableMessageOWN').show();
+                    $('#recoverableMessageOWN').hide();
+                $('#retryDeviceBtn').prop("disabled",false);
+                $('#retryHeaderModal').html("Error recoverable");
+                $('#dbReporting').html("<b>Database: </b> "+ htmlDb);
+                $('#kbReporting').html("<b>Kb: </b> "+ htmlKb);
+                $('#brokerReporting').html("<b>Broker: </b> "+ htmlBroker);
+            }
+            }
+            $('#retryDeviceBtn').off("click")
+            $('#retryDeviceBtn').on("click",function () {
+            //Funzione per chiamata di retry
+            console.log("retryclicked")
+            console.log(this)
+            //da vedere come recuperare solo l'uri dalla service map
+            $.ajax({
+                url: "../api/device.php",
+                data: {
+                    action: "retry_insertion",
+                    is_in_db: is_in_db,
+                    is_in_kb: is_in_kb,
+                    is_in_broker: is_in_broker,
+                    //attributes: JSON.stringify(mynewAttributesSaveas),
+                    id: device_id,
+                    // model: $('#selectModelDevice').val(),
+                    // mac: $('#inputMacDevice').val(),
+                    // edgegateway_uri: $('#inputEdgeGatewayUri').val(),
+                    // frequency: $('#inputFrequencyDevice').val(),
+                    // latitude: $('#inputLatitudeDevice').val(),
+                    // longitude: $('#inputLongitudeDevice').val(),
+                    // type: $('#inputTypeDevice').val(),
+                    // kind: $('#selectKindDevice').val(),
+                    // producer: $('#inputProducerDevice').val(),
+                    // frequency: $('#inputFrequencyDevice').val(),
+                    // edgegateway_type: $('#selectEdgeGatewayType').val(),
+                    contextbroker: cb,
+                    organization: organization,
+                    // protocol: $('#selectProtocolDevice').val(),
+                    // format: $('#selectFormatDevice').val(),
+                    // k1: $('#KeyOneDeviceUser').val(),
+                    // k2: $('#KeyTwoDeviceUser').val(),
+                    // subnature: $('#selectSubnature').val(),
+                    // static_attributes: JSON.stringify(retrieveStaticAttributes("editlistStaticAttributes", false, "isMobileTick"/*,"isCertifiedTick"*/)),
+                    service: $('#selectService').val(),
+                    servicePath: $('#inputServicePathModel').val(),
+                    token: sessionToken
+                },
+                type: "POST",
+                async: true,
+                dataType: "JSON",
+                timeout: 0,
+                success: function (mydata){
+                    if (mydata["status"] === 'ok') {
+                        console.log(mydata)
+                        $('#retryDeviceModal').modal("hide")
+                        $('#retryDeviceResultModal').modal("show")
+                        $('#retryHeaderResultModal').html("Error recovered succesfully.");
+                        $('#retryResultMsgOk').show()
+                        $('#retryResultMsgError').hide()
+
+
+                        if(mydata["is_in_db"]=="success"){
+                            var newStatus="<b style='color: green'>" + mydata["is_in_db"] + "</b>";
+                        }else{
+                            var newStatus="<b style='color: red'>" + mydata["is_in_db"] + "</b>";
+                        }
+                        if(is_in_db=="success"){
+                            var oldStatus="<b style='color: green'>" + is_in_db + "</b>";
+                        }else{
+                            var oldStatus="<b style='color: red'>" + is_in_db + "</b>";
+                        }
+                        $('#dbReportingResult').html("<b>Database: </b> " + oldStatus +" -> "+ newStatus);
+
+                        if(mydata["is_in_kb"]=="success"){
+                            var newStatus="<b style='color: green'>" + mydata["is_in_kb"] + "</b>";
+                        }else{
+                            var newStatus="<b style='color: red'>" + mydata["is_in_kb"] + "</b>";
+                        }
+                        if(is_in_kb=="success"){
+                            var oldStatus="<b style='color: green'>" + is_in_kb + "</b>";
+                        }else{
+                            var oldStatus="<b style='color: red'>" + is_in_kb + "</b>";
+                        }
+                        $('#kbReportingResult').html("<b>KB: </b> " + oldStatus +" -> "+ newStatus);
+
+                        if(mydata["is_in_broker"]=="success"){
+                            var newStatus="<b style='color: green'>" + mydata["is_in_broker"] + "</b>";
+                        }else{
+                            var newStatus="<b style='color: red'>" + mydata["is_in_broker"] + "</b>";
+                        }
+                        if(is_in_broker=="success"){
+                            var oldStatus="<b style='color: green'>" + is_in_broker + "</b>";
+                        }else{
+                            var oldStatus="<b style='color: red'>" + is_in_broker + "</b>";
+                        }
+                        $('#brokerReportingResult').html("<b>Broker: </b> " + oldStatus +" -> "+ newStatus);
+
+
+
+
+
+                    }
+                    if (mydata["status"] === 'ko') {
+
+                        $('#retryDeviceModal').modal("hide")
+                        $('#retryDeviceResultModal').modal("show")
+                        $('#retryHeaderResultModal').html("Error not recovered.");
+                        $('#retryResultMsgError').show()
+                        $('#retryResultMsgOk').hide()
+                    }
+
+                },
+                error: function (mydata) {
+                    //Generic error, print the response from the ajax query
+                    $('#retryDeviceModal').modal("hide")
+                    $('#retryDeviceResultModal').modal("show")
+                    $('#retryHeaderResultModal').html("Error during recovery");
+                    $('#retryResultMsgError').html("Something went wrong during recovery.")
+                    $('#retryResultMsgError').show()
+                    $('#retryResultMsgOk').hide()
+                }
+            });
+
+
+
+        });
+            get_form(true);
+            //$("#editDeviceConfirmBtn").hide();
+            //$("#addAttrMBtn").hide();
+        //$("#editDeviceModal").modal('show');
+            //$("#editDeviceModalLabel").html("View device -  " + $(this).attr("data-id"));
+    });
 
 
 
@@ -3126,7 +3447,7 @@ $(document).ready(function () {
                     edgegateway_type: $("#selectEdgeGatewayType").val(), //DEPRECATED
                     edgegateway_uri: $("#inputEdgeGatewayUri").val(), //DEPRECATED
                     subnature: $('#selectSubnature').val(),
-                    static_attributes: JSON.stringify(retrieveStaticAttributes("addlistStaticAttributes", false, "isMobileTick")),
+                    static_attributes: JSON.stringify(retrieveStaticAttributes("addlistStaticAttributes", false, "isMobileTick","isCertifiedTick")),
                     service: service,
                     servicePath: servicePath,
                     hlt: $('#selectHLT').val(),
@@ -3525,7 +3846,7 @@ $(document).ready(function () {
                     edgegateway_type: $("#selectEdgeGatewayTypeM").val(), //DEPRECATED
                     edgegateway_uri: $("#inputEdgeGatewayUriM").val(), //DEPRECATED
                     subnature: $('#selectSubnatureM').val(),
-                    static_attributes: JSON.stringify(retrieveStaticAttributes("editlistStaticAttributes", false, "isMobileTickM")),
+                    static_attributes: JSON.stringify(retrieveStaticAttributes("editlistStaticAttributes", false, "isMobileTickM","isCertifiedTickM")),
                     service: service,
                     servicePath: servicePath,
                     hlt: $('#selectHLTM').val(),

@@ -838,7 +838,7 @@ $(document).ready(function ()
         gb_k1 = document.getElementById('KeyOneDeviceUser').value;
         gb_k2 = document.getElementById('KeyTwoDeviceUser').value;
         gb_subnature = document.getElementById('selectSubnature').value;
-        gb_staticAttributes = JSON.stringify(retrieveStaticAttributes("addlistStaticAttributes", false, "isMobileTick"));                //not use model, but use overriding	
+        gb_staticAttributes = JSON.stringify(retrieveStaticAttributes("addlistStaticAttributes", false, "isMobileTick","isCertifiedTick"));                //not use model, but use overriding
 
         if (nameOpt[selectednameOpt].attributes.data_kind.value != 'NATIVE') {
             var version = nameOpt[selectednameOpt].attributes['data-version'].value;

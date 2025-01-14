@@ -427,10 +427,32 @@ else if ($action == "get_all_models_DataTable") {
                         $ownmsg["elementName"] = $eId;
                         $ownmsg["elementUrl"] = $eId;
                         $ownmsg["elementType"] = "ModelID";
+			            $ownmsg["elementDetails"] = array();
+
+
+                        $param = str_replace( array( '\\', '"' , '[',']' ), '', $staticAttributes);
+                        $param=explode(",",$param);
+                        foreach ($param as $key => $value){
+                            if($value =="http://www.disit.org/km4city/schema#isCertified"){
+                                $ownmsg["elementDetails"]["Certified"] = "true";
+                            }
+                        }
+
+
 
                         registerOwnerShipObject($ownmsg, $accessToken, 'ModelID', $result);
                         if ($result["status"] == 'ok') {
                             logAction($link, $username, 'model', 'insert', $name, $organization, 'Registering the ownership of model', 'success');
+                            if($ownmsg["elementDetails"]["Certified"]== "true"){
+                                $bc_result = modelBcCertification($name,$type,$frequency,$kind,$protocol,$format,$producer,$subnature,$staticAttributes,$service,$servicePath,$listAttributes,$organization,$accessToken);
+                                if($bc_result == '200'){
+                                    $result['msg']="OK - model certification";
+                                }else{
+                                    $result['msg'] = "error during certification";
+                                    $result["error_msg"] .= "Error communicating with the blockchain";
+                                    $result["log"] = "Blockchain returned HTTP error code : " . $bc_result ."\r\n";
+                                }
+                            }
                         } else {
                             logAction($link, $username, 'model', 'insert', $name, $organization, 'Registering the ownership of model', 'faliure');
                         }
@@ -866,4 +888,64 @@ if ($action == "delete") {
     echo json_encode($result);
 }
 
+function modelBcCertification($name,$type,$frequency,$kind,$protocol,$format,$producer,$subnature,$staticAttributes,$service,$servicePath,$listAttributes,$organization,$accessToken){
+    if(isset($GLOBALS['blockchainApiBaseUrl'])) {
+        $blockchainApiBaseUrl = $GLOBALS['blockchainApiBaseUrl'];
+    } else {            
+        error_log("IOT-DIR-BC ERROR model.php missing blockchainApiBaseUrl in configuration");
+        return -1;
+    }
     
+    $listAttributes = str_replace( '\\', '', $listAttributes);
+    $staticAttributes = str_replace( '\\', '', $staticAttributes);
+
+    $bcmessage = array(
+        'name' => $name,
+        'type' => $type,
+        'frequency'=> $frequency,
+        'kind'=> $kind,
+        'protocol'=> $protocol,
+        'format'=> $format,
+        'producer'=> $producer,
+        'subnature'=> $subnature,
+        'static_attributes'=> $staticAttributes,
+        'service'=> $service,
+        'servicePath'=> $servicePath,
+        'strDev' => $listAttributes,
+        'organization' => $organization
+    );
+
+    $bcmessage=json_encode($bcmessage);
+    $bearer="Bearer ".$accessToken;
+    $headers = array(
+        'Content-Type: application/json',
+        'Content-Length: ' . strlen($bcmessage),
+        'authorization: '. $bearer
+    );
+
+    $ch = curl_init();
+    $urlBc = $blockchainApiBaseUrl . "/api/addmodel/";
+    curl_setopt($ch, CURLOPT_URL, $urlBc);
+    curl_setopt($ch, CURLOPT_POST, true);
+    curl_setopt($ch, CURLOPT_POSTFIELDS, $bcmessage);
+    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+    curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
+    $response_bc = curl_exec($ch);
+
+    if(curl_errno($ch)){
+        error_log("IOT-DIR-BC ERROR model.php sending POST $urlBc ".$bcmessage." : ".curl_error($ch));
+        //echo 'Request Error:' . curl_error($ch);
+        $result = 0;
+    } else {
+        $response_bc = json_decode($response_bc);
+        $result = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        if($result != 200) {
+            error_log("IOT-DIR-BC ERROR model.php sending POST $urlBc ".$bcmessage." : CODE " . $result . " " . $response_bc);
+        }
+    }
+    curl_close($ch);
+    return $result;
+}
+
+
+

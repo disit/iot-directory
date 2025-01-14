@@ -215,7 +215,7 @@ if ($action == "insert") {
         if (isset($_REQUEST['wktGeometry']))
             $wktGeometry = mysqli_real_escape_string($link, $_REQUEST['wktGeometry']);
         else
-            $wktGeometry = "";
+            $wktGeometry = null;
 
         $listAttributes = json_decode($_REQUEST['attributes']);
 
@@ -264,6 +264,26 @@ if ($action == "insert") {
 
             if ($result["status"] == "ok") {
                 logAction($link, $username, 'device', 'insert', $id . " " . $contextbroker, $organization, '', 'success');
+                $certificationCheck = $staticAttributes;
+
+                $certificationCheck = str_replace( '\\', '', $certificationCheck);
+                $certificationCheck = str_replace( '[', '', $certificationCheck);
+                $certificationCheck = str_replace( ']', '', $certificationCheck);
+                $staticAttributesArray = explode(',',$certificationCheck);
+
+                for($i = 0; $i < sizeof($staticAttributesArray); $i++){
+                    if($staticAttributesArray[$i] == '"http://www.disit.org/km4city/schema#isCertified"'){
+                        $bc_result = deviceBcCertification($id,$devicetype,$frequency,$kind,$protocol,$format,$producer,$subnature,$staticAttributes,$service,$servicePath,$listAttributes,$organization,$accessToken,$contextbroker);
+
+                        if($bc_result == '200'){
+                            $result['msg']="OK - Device certification";
+                        }else{
+                            $result['msg'] = "error during certification";
+                            $result["error_msg"] .= "Error communicating with the blockchain";
+                            $result["log"] = "Blockchain returned HTTP error code : " . $bc_result ."\r\n";
+                        }
+                    }
+                }
 
                 $q = "SELECT count(*) FROM temporary_devices WHERE contextBroker = '$contextbroker' AND id='$id'";
                 $rcount = mysqli_query($link, $q);
@@ -319,7 +339,7 @@ if ($action == "insert") {
         if (isset($_REQUEST['wktGeometry']))
             $wktGeometry=mysqli_real_escape_string($link, $_REQUEST['wktGeometry']);
         else
-            $wktGeometry="";
+            $wktGeometry=null;
 
         if (isset($_REQUEST['mac']))
             $macaddress = mysqli_real_escape_string($link, $_REQUEST['mac']);
@@ -529,6 +549,10 @@ if ($action == "insert") {
                         if ($r) {
                             $result["msg"] .= "\n Device $contextbroker/$id correctly updated";
                             $result["log"] .= "\r\n Device $contextbroker/$id correctly updated";
+
+                            $q = "UPDATE devices SET is_in_db = true WHERE id = '$id'";
+                            $r = mysqli_query($link, $q);
+
                             if ($result["status"] == "ok") {
                                 logAction($link, $username, 'device', 'update', $id . " " . $contextbroker, $organization, '', 'success');
                             }
@@ -550,6 +574,15 @@ if ($action == "insert") {
                             if ($edgegateway_uri != "")
                                 $ownmsg["elementDetails"]["edgegateway_uri"] = $edgegateway_uri;
                             $ownmsg["elementDetails"]["contextbroker"] = $contextbroker;
+
+
+                            $param = str_replace( array( '\\', '"' , '[',']' ), '', $staticAttributes);
+                            $param=explode(",",$param);
+                            foreach ($param as $key => $value){
+                            if($value =="http://www.disit.org/km4city/schema#isCertified"){
+                                $ownmsg["elementDetails"]["Certified"]= "true";
+                             }
+                            }
 
                             if ($hasOwnership) {
                                 registerOwnerShipDevice($eId, $ownmsg, $accessToken, $result);
@@ -652,6 +685,8 @@ if ($action == "insert") {
                             $result["error_msg"] .= "Problem in updating the device value $id. ";
                             $result["msg"] .= "\n Problem in updating the device value $id:" . generateErrorMessage($link);
                             $result["log"] .= "\n Problem in updating the device value $id:" . $q . " " . generateErrorMessage($link);
+                            $q = "UPDATE devices SET is_in_db = false WHERE id = '$id'";
+                            $r = mysqli_query($link, $q);
                             my_log($result);
                             mysqli_close($link);
                         }
@@ -694,7 +729,7 @@ if ($action == "insert") {
             $result["status"] = "ko";
             $result['msg'] = "Unrecognized contextbroker/protocol";
             $result["error_msg"] .= "Problem in delete device (Unrecognized contextbroker/protocol)";
-            $result["log"] = "action=delete - error Unrecognized contextbroker/protocol\r\n";
+            $result["log"] = "action=delete - error Unrecognized contextbroker/protocol $cb\r\n";
         } else {
             //id management
             if ($protocol == "ngsi w/MultiService")
@@ -716,57 +751,59 @@ if ($action == "insert") {
                     $result["error_msg"] .= "Problem in delete device (Not ownership or enough right to delete)";
                     $result["log"] = "action=delete - error Not ownership or enough right to delete\r\n";
                 } else {
+                    $result["log"] = "action=delete id: $id cb: $cb org: $dev_organization ";
                     deleteKB($link, $id, $cb, retrieveKbUrl($organizationApiURI, $dev_organization), $result, $service, $servicePath, $accessToken);
 
-                    if ($result["status"] == 'ko')
-                        $result["error_msg"] = $result["error_msg"];
+                    if ($result["status"] == 'ok') {
+                        removeOwnerShipDevice($eId, $accessToken, $result);
+                        if($result["status"] == 'ok') {
+                            //unique name for deleted devices
+                            $milliseconds = round(microtime(true) * 1000);
+                            $deleted_id = $id . "_" . $milliseconds;
 
-                    //unique name for deleted devices
-                    $milliseconds = round(microtime(true) * 1000);
-                    $deleted_id = $id . "_" . $milliseconds;
+                            $q0 = "UPDATE devices SET id= '$deleted_id' WHERE id = '$id' and contextBroker='$cb';";
+                            $q1 = "UPDATE event_values SET device='$deleted_id' WHERE device = '$id' and cb='$cb';";
 
-                    $q0 = "UPDATE devices SET id= '$deleted_id' WHERE id = '$id' and contextBroker='$cb';";
-                    $q1 = "UPDATE event_values SET device='$deleted_id' WHERE device = '$id' and cb='$cb';";
+                            $id = $deleted_id;
 
-                    $id = $deleted_id;
+                            $q2 = "UPDATE devices SET deleted = '" . date("Y/m/d") . "' WHERE id = '$id' and contextBroker='$cb';";
 
-                    $q2 = "UPDATE devices SET deleted = '" . date("Y/m/d") . "' WHERE id = '$id' and contextBroker='$cb';";
+                            $q3 = "INSERT INTO deleted_devices select * from devices WHERE id = '$id' and contextBroker='$cb'and deleted IS NOT NULL;";
+                            $q4 = "INSERT INTO deleted_event_values (select cb,device,value_name,data_type,value_type,editable,value_unit,healthiness_criteria,
+                                value_refresh_rate, different_values,value_bounds, event_values.order, real_time_flag from event_values where device = '$id' and cb='$cb' );";
 
-                    $q3 = "INSERT INTO deleted_devices select * from devices WHERE id = '$id' and contextBroker='$cb'and deleted IS NOT NULL;";
-                    $q4 = "INSERT INTO deleted_event_values (select cb,device,value_name,data_type,value_type,editable,value_unit,healthiness_criteria,
-						value_refresh_rate, different_values,value_bounds, event_values.order, real_time_flag from event_values where device = '$id' and cb='$cb' );";
+                            $q5 = "DELETE FROM event_values WHERE device = '$id' and cb='$cb';";
+                            $q6 = "DELETE FROM devices WHERE id = '$id' and contextBroker='$cb';";
 
-                    $q5 = "DELETE FROM event_values WHERE device = '$id' and cb='$cb';";
-                    $q6 = "DELETE FROM devices WHERE id = '$id' and contextBroker='$cb';";
-
-                    $r0 = mysqli_query($link, $q0);
-                    if ($r0) {
-                        $r1 = mysqli_query($link, $q1);
-                        if ($r1) {
-                            $r2 = mysqli_query($link, $q2);
-                            if ($r2) {
-                                $r3 = mysqli_query($link, $q3);
-                                if ($r3) {
-                                    $r4 = mysqli_query($link, $q4);
-                                    if ($r4) {
-                                        $r5 = mysqli_query($link, $q5);
-                                        if ($r5) {
-                                            $r6 = mysqli_query($link, $q6);
+                            $r0 = mysqli_query($link, $q0);
+                            if ($r0) {
+                                $r1 = mysqli_query($link, $q1);
+                                if ($r1) {
+                                    $r2 = mysqli_query($link, $q2);
+                                    if ($r2) {
+                                        $r3 = mysqli_query($link, $q3);
+                                        if ($r3) {
+                                            $r4 = mysqli_query($link, $q4);
+                                            if ($r4) {
+                                                $r5 = mysqli_query($link, $q5);
+                                                if ($r5) {
+                                                    $r6 = mysqli_query($link, $q6);
+                                                }
+                                            }
                                         }
                                     }
                                 }
                             }
+                            if ((isset($r6)) && ($r6)) {
+                                logAction($link, $username, 'device', 'delete', $id . " " . $cb, $organization, '', 'success');
+                                $result["status"] = 'ok';
+                            } else {
+                                logAction($link, $username, 'device', 'delete', $id . " " . $cb, $organization, '', 'faliure');
+                                $result["status"] = 'ko';
+                                $result["msg"] .= "\n Problem in deleting the device $id: " . generateErrorMessage($link);
+                                $result["log"] .= "\n Problem in deleting the device $id: " . generateErrorMessage($link);
+                            }
                         }
-                    }
-                    if ((isset($r6)) && ($r6)) {
-                        logAction($link, $username, 'device', 'delete', $id . " " . $cb, $organization, '', 'success');
-                        $result["status"] = 'ok';
-                        removeOwnerShipDevice($eId, $accessToken, $result);
-                    } else {
-                        logAction($link, $username, 'device', 'delete', $id . " " . $cb, $organization, '', 'faliure');
-                        $result["status"] = 'ko';
-                        $result["msg"] .= "\n Problem in deleting the device $id: " . generateErrorMessage($link);
-                        $result["log"] .= "\n Problem in deleting the device $id: " . generateErrorMessage($link);
                     }
                 }
             }
@@ -1001,6 +1038,16 @@ else if ($action == 'change_visibility') {
                         if ($edgegateway_uri != "")
                             $ownmsg["elementDetails"]["edgegateway_uri"] = $edgegateway_uri;
                         $ownmsg["elementDetails"]["contextbroker"] = $cb;
+
+                        //check if a device is certified
+                        $param = str_replace( array( '\\', '"' , '[',']' ), '', $staticAttributes);
+                        $param=explode(",",$param);
+                            foreach ($param as $key => $value){
+                                if($value =="http://www.disit.org/km4city/schema#isCertified"){
+                                    $ownmsg["elementDetails"]["Certified"]= "true";
+                                }
+                            }
+
                         registerOwnerShipDevice($eId, $ownmsg, $accessToken, $result); //delete old ownership
                         unset($ownmsg["deleted"]);
                         $ownmsg["username"] = $newuser;
@@ -1383,6 +1430,13 @@ else if ($action == 'change_visibility') {
                 } else {
                     // la prende dal common.php
                     get_device_data($link, $id, $type, $cb, $service, $servicePath, $version, $result);
+                    if($result["delegationKind"]=="WRITE_ONLY"){
+                        //I valori del device vengono sostituiti con HIDDEN
+                        $data_array = json_decode($result["content"], true);
+                        $obfuscated_data = obfuscate_data_values($data_array);
+                        $obfuscated_json = json_encode($obfuscated_data, JSON_PRETTY_PRINT);
+                        $result["content"]=$obfuscated_json;
+                    }
                 }
             }
         }
@@ -1570,7 +1624,8 @@ else if ($action == 'change_visibility') {
        $target_model= mysqli_real_escape_string($link, $_REQUEST['model']);
        $flag_mod=true;
    }   
-
+    if(isset($_REQUEST['only_certified']))
+        $certified_flag=true;
 
     $ownDevices = getOwnerShipDevice($accessToken, $result);
     getDelegatedDevice($accessToken, $username, $result);
@@ -1579,7 +1634,7 @@ else if ($action == 'change_visibility') {
 				CASE WHEN mandatoryproperties AND mandatoryvalues THEN \"active\" ELSE \"idle\" END AS status1, 
 				d.`macaddress`, d.`model`, d.`producer`, d.`longitude`, d.`latitude`, d.`protocol`, d.`format`, d.`visibility`, 
 				d.`frequency`, d.`created`, d.`privatekey`, d.`certificate`,d.`organization`, cb.`accesslink`, cb.`accessport`, cb.`version`,
-				cb.`sha`, d.`subnature`, d.`static_attributes`,d.`service`, d.`servicePath`,d.`hlt`,d.`wktGeometry` FROM `devices` d JOIN `contextbroker` cb ON (d.contextBroker=cb.name)";
+				cb.`sha`, d.`subnature`, d.`static_attributes`,d.`service`, d.`servicePath`,d.`hlt`,d.`wktGeometry`,d.`is_in_kb`,d.`is_in_db`,d.`is_in_broker` FROM `devices` d JOIN `contextbroker` cb ON (d.contextBroker=cb.name)";
 
     if ($Sel_Time) {
         $start_int = mysqli_real_escape_string($link, $_REQUEST['start_time']);
@@ -1592,6 +1647,9 @@ else if ($action == 'change_visibility') {
     }else if ($flag_mod && $Sel_Time){
         $q .= "AND  d.model = '$target_model' ";
     }
+
+    if($certified_flag)
+        $q .= "WHERE d.static_attributes LIKE '%isCertified%'";
 
     if (count($selection) != 0) {
         $a = 0;
@@ -1678,6 +1736,9 @@ else if ($action == 'change_visibility') {
                     $rec["certificate"] = "";
                     $rec["edgegateway_type"] = "";
                     $rec["edgegateway_uri"] = "";
+                    $rec["is_in_kb"] = $row["is_in_kb"];
+                    $rec["is_in_db"] = $row["is_in_db"];
+                    $rec["is_in_broker"] = $row["is_in_broker"];
                     $rec["url"] = get_LDgraph_link($logUriLD, $organizationApiURI, $row["organization"], $row["uri"]);
                     $rec["m_url"] = get_ServiceMap_link($row["uri"], $organizationApiURI, $row["organization"]);
 
@@ -1767,7 +1828,7 @@ else if ($action == "get_all_device_admin") {
     $q = "SELECT d.`contextBroker`, d.`id`, d.`uri`, d.`devicetype`, d.`kind`, 
 	    	  CASE WHEN mandatoryproperties AND mandatoryvalues THEN \"active\" ELSE \"idle\" END AS status1, 
 		      d.`macaddress`, d.`model`, d.`producer`, d.`longitude`, d.`latitude`, d.`protocol`, d.`format`, d.`visibility`, d.`organization`,
-		      d.`frequency`, d.`created`, d.`privatekey`, d.`certificate`, cb.`accesslink`,  cb.`accessport`,cb.`sha`, d.`subnature`, d.`static_attributes`, d.`service`, d.`servicePath` 
+		      d.`frequency`, d.`created`, d.`privatekey`, d.`certificate`, cb.`accesslink`,  cb.`accessport`,cb.`sha`, d.`subnature`, d.`static_attributes`, d.`service`, d.`servicePath` ,d.`is_in_kb`,d.`is_in_db`,d.`is_in_broker`
 			  FROM `devices` d JOIN `contextbroker` cb ON (d.contextBroker=cb.name) ";
 
     if (count($selection) != 0) {
@@ -1856,6 +1917,9 @@ else if ($action == "get_all_device_admin") {
                     $rec["servicePath"] = $row["servicePath"];
                     $rec["url"] = get_LDgraph_link($logUriLD, $organizationApiURI, $row["organization"], $row["uri"]);
                     $rec["m_url"] = get_ServiceMap_link($row["uri"], $organizationApiURI, $row["organization"]);
+                    $rec["is_in_kb"]=$row["is_in_kb"];
+                    $rec["is_in_db"]=$row["is_in_db"];
+                    $rec["is_in_broker"]=$row["is_in_broker"];
 
                     if ($row["protocol"] == "ngsi w/MultiService") {
                         $rec["id"] = explode(".", $row["id"])[2];
@@ -2147,9 +2211,8 @@ else if ($action == "add_delegation") {
                                     break;
                                 }
                             }
+
                         }
-
-
 
                     } else {
                         $result["status"] = 'ko';
@@ -2252,7 +2315,98 @@ else if ($action == "add_delegation") {
     }
     my_log($result);
     mysqli_close($link);
+}else if ($action == "retry_insertion") {
+
+    $token = $_REQUEST["token"];
+    $id = $_REQUEST["id"];
+    $result["log"].=$id;
+    $organization = $_REQUEST["organization"];
+    $result["log"].=$organization;
+    $cb = $_REQUEST["contextbroker"];
+    $eid = $organization . ":" . $cb . ":" . $id;
+    //controlla che il device sia di proprietà di chi richiede il retry
+    getOwnerShipDevice($accessToken, $result, $eid);
+
+    //se non ritorna nulla il device non è mio
+    if (!empty($result["keys"])) {
+
+        //se nelle chiavi restituite da "getOwnershipDevice", cè il dispositivo con cui sto provando a fare il retry
+        //allora è mio e posso continuare
+        $keys = array_keys($result["keys"]);
+
+        foreach ($keys as $devEid) {
+
+            if ($devEid == $eid) {
+                //il device è mio posso provare il retry
+                $result["log"].=$_REQUEST['is_in_db'];
+                //caso errore is_in_db (Database)
+                if (isset($_REQUEST['is_in_db']) && $_REQUEST['is_in_db'] != "success") {
+                    $is_in_db = $_REQUEST['is_in_db'];
+
+                    //caso "uri_generated_but_not_inserted"
+                    if ($is_in_db == "uri_generated_but_not_inserted") {
+                        $result["log"].="entrato";
+                        if (isset($_REQUEST['id']) && isset($_REQUEST['organization']) && isset($_REQUEST['contextbroker'])) {
+                            uri_not_inserted_recovery($id, $organization, $cb, $result, $link);
+                        }
+                    }
+                }
+                //caso errore is_in_kb (Knowledge Base)
+                if (isset($_REQUEST['is_in_kb']) && $_REQUEST['is_in_kb'] != "success") {
+                    $is_in_kb = $_REQUEST['is_in_kb'];
+                    //....gestire casi kb
+                }
+                //caso errore is_in_broker (broker)
+                if (isset($_REQUEST['is_in_broker']) && $_REQUEST['is_in_broker'] != "success") {
+                    $is_in_kb = $_REQUEST['is_in_broker'];
+                    //....gestire casi broker
+                }
+
+            } else {
+                //non è mio il device non posso fare retry
+            }
+        }
+   } else {
+        $result["msg"].= "tornato vuoto keys";
+
+      //non è mio il device non posso fare retry
 }
+
+
+
+//
+//        }
+//    }
+//    if(isset($_REQUEST['is_in_kb']) && $_REQUEST['is_in_kb'] != "success"){
+//        $is_in_kb = $_REQUEST['is_in_kb'];
+//        kb_conn_error_recovery();
+//    }
+//    if(isset($_REQUEST['is_in_broker']) && $_REQUEST['is_in_broker'] != "success"){
+//        $is_in_broker = $_REQUEST['is_in_broker'];
+//        broker_conn_error_recovery($_REQUEST,$link,$username,$role,$token,$result);
+//
+//    }
+//
+//
+//    $result["msg"] .= empty($is_in_broker);
+//    $result["msg"] .= $_REQUEST['contextbroker'];
+//    $result["msg"] .= $_REQUEST['organization'];
+//    $result["msg"] .= $_REQUEST['id'];
+//        $result["status"] = $_REQUEST['is_in_kb'];
+//        $result["status"] .= $_REQUEST['is_in_db'];
+//    $result["status"] .= $_REQUEST['is_in_broker'];
+//    if(isset($_REQUEST['is_in_kb'])){
+//        $error_to_recover=$_REQUEST['error_to_recover'];
+//    }
+    //$result["status"]="ok";
+
+    my_log($result);
+    return $result;
+
+}
+
+
+
 /* used by nodered, is it still supported?
   else if ($action=="get_config_data")
   {
@@ -2578,4 +2732,281 @@ else if ($action == "add_delegation") {
 
 function compare_values($obj_a, $obj_b) {
     return strcasecmp($obj_a->value_name, $obj_b->value_name);
+}
+
+function deviceBcCertification($name,$type,$frequency,$kind,$protocol,$format,$producer,$subnature,$staticAttributes,$service,$servicePath,$listAttributes,$organization,$accessToken,$contextbroker){
+        if(isset($GLOBALS['blockchainApiBaseUrl'])) {
+            $blockchainApiBaseUrl = $GLOBALS['blockchainApiBaseUrl'];
+        } else {
+            error_log("IOT-DIR-BC ERROR device.php missing blockchainApiBaseUrl in configuration");
+            return -1;
+        }
+        $listAttributes = str_replace( '\\', '', $listAttributes);
+        $staticAttributes = str_replace( '\\', '', $staticAttributes);
+
+        $bcmessage = array(
+            'name' => $name,
+            'type' => $type,
+            'contextbroker' => $contextbroker,
+            'frequency'=> $frequency,
+            'kind'=> $kind,
+            'protocol'=> $protocol,
+            'format'=> $format,
+            'producer'=> $producer,
+            'subnature'=> $subnature,
+            'static_attributes'=> $staticAttributes,
+            'service'=> $service,
+            'servicePath'=> $servicePath,
+            'strDev' => $listAttributes,
+            'organization' => $organization
+        );
+
+        $bcmessage=json_encode($bcmessage);
+        $bearer='Bearer '.$accessToken;
+        $headers = array(
+            'Content-Type: application/json',
+            'Content-Length: ' . strlen($bcmessage),
+            'authorization: '. $bearer
+        );
+
+        $ch = curl_init();
+        $urlBc= $blockchainApiBaseUrl . '/api/adddevice/';
+        curl_setopt($ch, CURLOPT_URL, $urlBc);
+        curl_setopt($ch, CURLOPT_POST, true);
+        curl_setopt($ch, CURLOPT_POSTFIELDS, $bcmessage);
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
+        $response_bc = curl_exec($ch);
+
+        if(curl_errno($ch)){
+            error_log("IOT-DIR-BC ERROR device.php sending POST $urlBc ".$bcmessage." : ".curl_error($ch));
+            //echo 'Request Error:' . curl_error($ch);
+            $result = 0;
+        } else {
+            $response_bc = json_decode($response_bc);
+            $result = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+            if($result != 200) {
+                error_log("IOT-DIR-BC ERROR device.php sending POST $urlBc ".$bcmessage." : CODE " . $result . " " . $response_bc);
+            }
+        }
+        curl_close($ch);
+        return $result;
+
+}
+
+function obfuscate_data_values($json_data) {
+    //oscura i dati del payload di un device se la delega è WRITE_ONLY
+    foreach ($json_data as $key => &$value) {
+        if (is_array($value) && array_key_exists("value", $value)) {
+            $value["value"] = "HIDDEN";
+        }
+    }
+    return $json_data;
+}
+
+
+
+function uri_not_inserted_recovery($id,$organization,$contextbroker,&$result,$link){
+      try {
+      $generated_uri="http://www.disit.org/km4city/resource/iot/" . $contextbroker . "/" .$organization."/".$id;
+
+      //TODO:da sostituire prima parte dell url con $GLOBALS["superservicemapURI"]
+
+      $SSM_url="http://dashboard/superservicemap/"."api/v1?serviceUri=".$generated_uri;
+
+      //chiamata alla service map
+        $ch = curl_init();
+        curl_setopt($ch, CURLOPT_URL, $SSM_url);
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        curl_exec($ch);
+        $result_code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+
+        //400 -> device non trovato
+        //401-> non autorizzato ma ha trovato il device
+        //altri codici-> riprovare
+        if($result_code == 400){
+            $result['error_msg'] .= "Device not found in ServiceMap";
+            $result['log'] .= "Device not found in ServiceMap";
+            $result['msg'] .= "Error not recoverable";
+            $result['status'] = 'ko' ;
+            $result["is_in_db"]="Device not found in the Service map";
+
+        }else if($result_code==401){
+            $result['log'] .= "Device found in ServiceMap, ";
+            $q = "UPDATE devices SET uri='$generated_uri' WHERE id='$id' and contextBroker='$contextbroker' and organization='$organization'";
+            if(executeQueryWithRetries($link, $q)){
+                $result['log'] .= "Uri inserted in DB, ";
+                $q = "UPDATE devices SET is_in_db='success' WHERE id='$id' and contextBroker='$contextbroker' and organization='$organization'";
+                if(executeQueryWithRetries($link, $q)){
+                    $result["log"] .= "Uri recovered, ";
+                    $result['status'] = 'ok' ;
+                    $result["is_in_db"]="success";
+
+                }else{
+                    $result["error_msg"] .= "Timeout inserting uri in db, ";
+                    $result['status'] = 'ko' ;
+                    $result["is_in_db"] ="Timeout inserting uri in db";
+                }
+
+            }else{
+                $result["error_msg"] .= "Timeout inserting uri in db, ";
+                $result['status'] = 'ko' ;
+                $result["is_in_db"] = "Timeout inserting uri in db";
+            }
+            //mysqli_close($link);
+        }else{
+            //ne 400 ne 401
+            $result["log"] .= "ServiceMap is unavailable, ";
+            $result['status'] = 'ko' ;
+            $result["is_in_db"]="Service map unavailable";
+        }
+      }catch (Exception $e){
+          $result["error_msg"].=$e;
+          $result["is_in_db"]="Something went wrong";
+      }
+    return $result;
+}
+
+
+function kb_conn_error_recovery(){
+    return 0;
+}
+
+
+
+//function broker_conn_error_recovery($req,$link,$username,$role,$accessToken,&$result){
+//    try {
+//        $id = $req['id'];
+//        if (isset($req['id'])) {
+//            $name = $req['id'];
+//            $id = $req['id'];
+//        }
+//        if (isset($req['devicetype'])) {
+//            $type = $req['devicetype'];
+//        }
+//        if (isset($req['contextbroker'])) {
+//            $contextbroker = $req['contextbroker'];
+//        }
+//        if (isset($req['kind'])) {
+//            $kind = $req['kind'];
+//        }
+//        if (isset($req['protocol'])) {
+//            $protocol = $req['protocol'];
+//        }
+//        if (isset($req['format'])) {
+//            $format = $req['format'];
+//        }
+//        if (isset($req['model'])) {
+//            $model = $req['model'];
+//        }
+//        if (isset($req['latitude'])) {
+//            $latitude = $req['latitude'];
+//        }
+//        if (isset($req['longitude'])) {
+//            $longitude = $req['longitude'];
+//        }
+//        if (isset($req['visibility'])) {
+//            $visibility = $req['visibility'];
+//        }
+//        if (isset($req['frequency'])) {
+//            $frequency = $req['frequency'];
+//        }
+//        if (isset($req['service'])) {
+//            $service = $req['service'];
+//        }
+//        if (isset($req['servicepath'])) {
+//            $servicePath = $req['servicepath'];
+//        }
+//        $query = "SELECT * from contextbroker WHERE name = '$contextbroker'";
+//        $r = mysqli_query($link, $query);
+//        if (!$r) {//row should also be NOT empty since enforcement has been already made in the api
+//            $result["status"] = 'ko';
+//            $result["error_msg"] .= "Error in reading data from context broker.";
+//            $result["msg"] .= ' error in reading data from context broker ' . mysqli_error($link);
+//            $result["log"] .= ' error in reading data from context broker ' . mysqli_error($link) . $query;
+//            return 1;
+//        }
+//        $rowCB = mysqli_fetch_assoc($r);
+//        if ($rowCB["kind"] == 'external')
+//
+//            $ip = $rowCB["ip"];
+//        $port = $rowCB["port"];
+//
+//
+////        if ($protocol == "ngsi w/MultiService")
+////            $id = $service . "." . $servicePath . "." . $id;
+//        get_device($username, $role, $id, $contextbroker, $accessToken, $link, $result);
+//
+////    if (empty($result["content"])) {
+////        $result["status"] = "ko";
+////        $result['msg'] = "Unrecognized device";
+////        $result["error_msg"] .= "Problem in get_device_attribute (Unrecognized device)";
+////        $result["log"] = "action=get_device_attributes - error Unrecognized device\r\n";
+////    } else {
+////        $dev_organization = $result["content"]["organization"];
+////        $eId = $dev_organization . ":" . $contextbroker . ":" . $id;
+////
+////        if (!enforcementRights($username, $accessToken, $role, $eId, 'IOTID', 'read', $result)) {
+////            $result["status"] = "ko";
+////            $result['msg'] = "Not ownership or enough right to update";
+////            $result["error_msg"] .= "Problem in get device attributes (Not ownership or enough right to update)";
+////            $result["log"] = "action=get_device_attributes - error Not ownership or enough right to update\r\n";
+////        } else {
+////            $q1 = "SELECT * FROM event_values WHERE cb = '$contextbroker' AND device = '$id'";
+////            $r1 = mysqli_query($link, $q1);
+////            $attributes = array();
+////            if ($r1) {
+////                while ($row = mysqli_fetch_assoc($r1)) {
+////                    $rec = array();
+////                    $rec["cb"] = $row["cb"];
+////                    $rec["device"] = $row["device"];
+////                    $rec["value_name"] = $row["value_name"];
+////                    $rec["data_type"] = $row["data_type"];
+////                    $rec["value_type"] = $row["value_type"];
+////                    $rec["editable"] = $row["editable"];
+////                    $rec["value_unit"] = $row["value_unit"];
+////                    $rec["order"] = $row["order"];
+////                    $rec["healthiness_criteria"] = $row["healthiness_criteria"];
+////                    $rec["real_time_flag"]=$row["real_time_flag"];
+////                    if ($rec["healthiness_criteria"] == "refresh_rate")
+////                        $rec["healthiness_value"] = $row["value_refresh_rate"];
+////                    if ($rec["healthiness_criteria"] == "different_values")
+////                        $rec["healthiness_value"] = $row["different_values"];
+////                    if ($rec["healthiness_criteria"] == "within_bounds")
+////                        $rec["healthiness_value"] = $row["value_bounds"];
+////                    array_push($attributes, $rec);
+////                }
+////                $result['status'] = 'ok';
+////                $result['content'] = $attributes;
+////                $result['log'] .= "\n\r action:get_device_attributes. access to " . $q1;
+////            } else {
+////                $result['status'] = 'ko';
+////                $result['msg'] = 'Error: errors in reading data about devices. <br/>' . generateErrorMessage($link);
+////                $result['log'] .= '\n\naction:get_device_attributes. Error: errors in reading data about devices. ' . generateErrorMessage($link);
+////            }
+////        }
+//
+//
+////    insert_ngsi($link, $name, $type, $contextbroker, $kind, $protocol, $format, $model, $latitude, $longitude, $visibility, $frequency,
+////        $listnewAttributes, $ip, $port, &$result, $service = "", $servicePath = "");
+//        //return 0;
+//    }catch(Exception $e){
+//        $result["log"].= debug_print_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS);
+//    }
+//}
+//function broker_excp_error_recovery(){
+//    return 0;
+//}
+
+function executeQueryWithRetries($link, $query, $retries = 3, $delay = 1000000) {
+    $attempts = 0;
+    while ($attempts < $retries) {
+        $result = mysqli_query($link, $query);
+        if ($result) {
+            return $result;
+        }
+        $attempts++;
+        usleep($delay); // wait for the specified delay in microseconds (1 second = 1,000,000 microseconds)
+    }
+    return false;
 }

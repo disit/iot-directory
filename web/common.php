@@ -8,3 +8,9 @@ function manageLegacy() {
 		exit;
 	}
 }
+
+function enableIsCertified() {
+	if(isset($GLOBALS['blockchainEnabled']) && $GLOBALS['blockchainEnabled']) 
+		return '';
+	return "style='display:none' ";
+}
