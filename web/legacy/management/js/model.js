@@ -1332,6 +1332,7 @@ $(document).ready(function ()
             $("#addModelModalTabs").hide();
             $('#addModelModalBody').hide();
             $('#addModelModal div.modalCell').hide();
+            $('#addModelModalBodyResult').show();
             $('#addNewModelCancelBtn').hide();
             $('#addNewModelConfirmBtn').hide();
             $('#addNewModelOkBtn').hide();
@@ -1388,7 +1389,7 @@ $(document).ready(function ()
                         $('#addModelModalTabs').hide();
                         $('#addModelModalBody').hide();
                         $('#addModelModal div.modalCell').hide();
-                        $("#addModelModal").modal('hide');
+                        //$("#addModelModal").modal('hide');
                         //$('#addContextBrokerModalFooter').hide();
                         $('#addNewModelCancelBtn').hide();
                         $('#addNewModelConfirmBtn').hide();
@@ -1435,7 +1436,7 @@ $(document).ready(function ()
                         $('#addNewModelOkBtn').show();
                         $('#addModelOkMsg').show();
                         $('#addModelOkIcon').show();
-                        $("#addModelModal").modal('hide');
+                        //$("#addModelModal").modal('hide');
                         $('#dashboardTotNumberCnt .pageSingleDataCnt').html(parseInt($('#dashboardTotNumberCnt .pageSingleDataCnt').html()) + 1);
                         $('#modelTable').DataTable().destroy();
                         fetch_data(true);

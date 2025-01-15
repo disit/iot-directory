@@ -95,7 +95,7 @@ if ($result["status"] != "ok") {
     $result["status"] = "ko";
     $result['msg'] = "Cannot retrieve user information";
     $result["error_msg"] .= "Problem in insert context broker (Cannot retrieve user information)";
-    $result["log"] = "action=insert - error Cannot retrieve user information\r\n";
+    $result["log"] = "model.php action=insert - error Cannot retrieve user information\r\n";
     my_log($result);
     mysqli_close($link);
     exit();
@@ -419,6 +419,10 @@ else if ($action == "get_all_models_DataTable") {
 							'$listAttributes', '$edgegateway_type', '$organization', 'private', '$subnature', '$staticAttributes', $service, $servicePath, '$HLT')";
                     $r = mysqli_query($link, $q);
 
+                    if(mysqli_errno($link) == 1062){
+                        $result["error_msg"] .= "A model with this name already exist, please chose another one.";
+                    }
+
                     if ($r) {
                         $result["status"] = 'ok';
                         $result["log"] = "action=insert " . $q . " \r\n";
@@ -459,10 +463,15 @@ else if ($action == "get_all_models_DataTable") {
 
                         logAction($link, $username, 'model', 'insert', $name, $organization, '', 'success');
                     } else {
-                        logAction($link, $username, 'model', 'insert', $name, $organization, 'An error occurred when registering the Model', 'faliure');
                         $result["status"] = 'ko';
-                        $result["msg"] = "Error: An error occurred when registering the Model $name. <br/>" . mysqli_error($link) . ' Please enter again the Model';
+                        $result["msg"] = "Error: An error occurred when registering the Model $name : " . mysqli_error($link) . " Please enter again the Model". $r;
                         $result["log"] = "action=insert -" . $q . " error " . mysqli_error($link) . "\r\n";
+                        if(mysqli_errno($link) == 1062){
+                            logAction($link, $username, 'model', 'insert', $name, $organization, 'Tried to insert a duplicate name for model', 'faliure');
+                        }else {
+                            $result["error_msg"]="Problems with the database";
+                            logAction($link, $username, 'model', 'insert', $name, $organization, 'An error occurred when registering the Model', 'faliure');
+                        }
                     }
                 } else {
                     $result["status"] = 'ko';
@@ -946,6 +955,4 @@ function modelBcCertification($name,$type,$frequency,$kind,$protocol,$format,$pr
     curl_close($ch);
     return $result;
 }
-
-
 

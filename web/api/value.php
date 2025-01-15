@@ -94,7 +94,7 @@ if ($result["status"] != "ok") {
 	$result["status"] = "ko";
 	$result['msg'] = "Cannot retrieve user information";
 	$result["error_msg"] .= "Problem in insert context broker (Cannot retrieve user information)";
-	$result["log"] = "action=insert - error Cannot retrieve user information\r\n";
+	$result["log"] = "value.php action=insert - error Cannot retrieve user information\r\n";
 	my_log($result);
 	mysqli_close($link);
 	exit();

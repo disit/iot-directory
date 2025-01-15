@@ -72,6 +72,7 @@ class DataComparator {
 
         $results = @file_get_contents($encodedQuery);
         if ($results === false) {
+echo $query;
             return false;
     }
 
@@ -82,14 +83,14 @@ class DataComparator {
     }
 
     private function fetchDBData($offset) {
-        $query = sprintf(
-            "SELECT uri FROM iotdb.devices WHERE organization = '%s' LIMIT %d OFFSET %d",
-            $this->organization,
-            $this->batchSize,
-            $offset
-        );
-
-
+//        $query = sprintf(
+//            "SELECT uri FROM iotdb.devices WHERE organization = '%s' LIMIT %d OFFSET %d",
+//            $this->organization,
+//            $this->batchSize,
+//            $offset
+//        );
+        $query ="SELECT uri FROM iotdb.devices WHERE organization='".$this->organization."' LIMIT ".$this->batchSize." OFFSET ".$offset;
+        echo ("FETCHDBDATA query: ".$query."<br>");
         $result = mysqli_query($this->link, $query);
         if (!$result) {
 echo mysqli_error($this->link);
@@ -126,7 +127,7 @@ echo mysqli_error($this->link);
     public function handleDbWithoutURI(&$results) {
         $noURIArray = [];
         $query ="SELECT contextBroker,id,organization FROM iotdb.devices WHERE uri is null AND organization='".$this->organization."'";
-
+        echo ("handleDbWithoutURI query: ".$query."<br>");
 
         $result = mysqli_query($this->link, $query);
         if (!$result) {
@@ -164,19 +165,19 @@ echo mysqli_error($this->link);
     }
 
     private function buildSPARQLQuery($offset) {
-        return "SELECT DISTINCT ?s { 
-            ?s a sosa:Sensor option (inference \"urn:ontology\").
+        return "SELECT ?s { 
+            #?s a sosa:Sensor option (inference \"urn:ontology\").
             ?s schema:name ?n.
             ?s <http://purl.oclc.org/NET/UNIS/fiware/iot-lite#exposedBy> ?broker.
             ?broker <http://schema.org/name> ?brokerName.
             ?s km4c:organization \"".$this->organization."\".
-            OPTIONAL {?s km4c:model ?model.}
-            OPTIONAL {?s km4c:isMobile ?mobile.}
-            ?s a ?sType.
-            ?sType rdfs:subClassOf* ?sCategory.
-            ?sCategory rdfs:subClassOf km4c:Service.
+            #OPTIONAL {?s km4c:model ?model.}
+            #OPTIONAL {?s km4c:isMobile ?mobile.}
+            #?s a ?sType.
+            #?sType rdfs:subClassOf* ?sCategory.
+            #?sCategory rdfs:subClassOf km4c:Service.
         }
-        ORDER BY ?s
+        #ORDER BY ?s
         OFFSET " . ($offset + 1) . "
         LIMIT " . $this->batchSize;
     }
@@ -275,7 +276,7 @@ $startTime = new DateTime(null, new DateTimeZone('Europe/Rome'));
 $start_scritp_time = $startTime->format('c');
 $start_scritp_time_string = explode("+", $start_scritp_time);
 $start_time_ok = str_replace("T", " ", $start_scritp_time_string[0]);
-echo("*** Starting IOT_Device_Update_DashboardWizard SCRIPT at: ".$start_time_ok."\n");
+echo("*** Starting IOT_Device_Update_DashboardWizard SCRIPT at: ".$start_time_ok."<br>");
 
 
 
@@ -285,7 +286,7 @@ echo("*** Starting IOT_Device_Update_DashboardWizard SCRIPT at: ".$start_time_ok
 //$rsIP = mysqli_query($link, $queryIP);
 
 $kbInfo=get_organization_info($organizationApiURI,$_GET["organization"]);
-echo $organizationApiURI." ".json_encode($kbInfo);
+echo $organizationApiURI." ".json_encode($kbInfo)."<br>";
 $kbHostIp=$kbInfo['kbIP'];
 echo ("KBURL: ".$kbHostIp. "</br>");
 

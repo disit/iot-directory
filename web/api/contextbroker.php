@@ -95,7 +95,7 @@ if ($result["status"] != "ok") {
     $result["status"] = "ko";
     $result['msg'] = "Cannot retrieve user information";
     $result["error_msg"] .= "Problem in insert context broker (Cannot retrieve user information)";
-    $result["log"] = "action=insert - error Cannot retrieve user information\r\n";
+    $result["log"] = "contextbroker.php action=$action - error Cannot retrieve user information $accessToken \r\n";
     my_log($result);
     mysqli_close($link);
     echo json_encode($result);

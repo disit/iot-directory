@@ -473,7 +473,7 @@ function simple_log($result) {
         $result["error_msg"] = "\n Unable to open LOG file. Please contact an administrator";
     } else {
         flock($fp, LOCK_EX);
-        $output = date("Y-m-d h:i:sa") . ": " . $result["log"] . "\r\n";
+        $output = date("Y-m-d h:i:sa") . ": " . $result["log"] . "----" .$result["error_msg"]. "\r\n" ;
         fwrite($fp, $output);
         unset($result["log"]);
         flock($fp, LOCK_UN);

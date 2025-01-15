@@ -678,7 +678,8 @@ if (($hide_menu != "hide")) {
 
                     </div>
 
-
+                    </div>
+                        <div id="addModelModalBodyResult" class="modal-body modalBody">
                     <div class="row" id="addModelLoadingMsg">
                         <div class="col-xs-12 centerWithFlex">Adding Model, please wait</div>
                     </div>
@@ -704,8 +705,8 @@ if (($hide_menu != "hide")) {
                         <button type="button" id="addNewModelOkBtn" class="btn cancelBtn" data-dismiss="modal" style="display:none">Ok</button>
                         <button type="text" id="addNewModelConfirmBtn" name="addNewModelConfirmBtn" class="btn confirmBtn internalLink">Confirm</button>
                     </div>
+                        </div>
 
-                </div>
             </div>
             </div>
         </div>
