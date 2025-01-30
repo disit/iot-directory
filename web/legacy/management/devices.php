@@ -391,7 +391,8 @@ if (($hide_menu != "hide")) {
                                             <div id="displayDevicesMap" class="pull-right"><button type="button" class="btn btn-primary btn-round"><span class="glyphicon glyphicon-globe" style="font-size:36px; color: #0000ff"></span></button></div>
                                         </div>
                                         <div class="col-xs-12 col-md-6 modalCell" style= "background-color: rgb(241, 245, 244);">
-                                            <div class="pull-right "><button id="importDeviceBtn" class="btn btn-primary" style="margin-left:3px" >Import New Device</button></div><div><div class="pull-right "><button id="addDeviceBtn"  class="btn btn-primary">Add new device</button></div></div>
+                                            <div class="pull-right "><button id="importDeviceBtn" class="btn btn-primary" style="margin-left:3px" >Import New Device</button></div><div><div class="pull-right "><button id="addDeviceBtn"  class="btn btn-primary">Add new device</button></div>
+                                            </div>
                                         </div>
                                     </div>
                                     <div >

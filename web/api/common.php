@@ -289,20 +289,20 @@ if(canBeRegistered($id, $devicetype, $contextbroker, $kind, $protocol, $format, 
                     if ($result["status"] == 'ko')
                         return $result;
 
-                    $q = "UPDATE devices SET uri = '" . $result['content'] . "' WHERE id = '$id'";
+                    $q = "UPDATE devices SET uri = '" . $result['content'] . "' WHERE id = '$id' AND contextBroker='$contextbroker' AND organization='$organization'";
                     $r = mysqli_query($link, $q);
                     if(!$r) {
                         $result["status"] = 'ko';
                         $result["error_msg"] .= "Uri generated but not inserted in the database. ";
                         $result["msg"] .= "\n Uri generated but not inserted in the database:  <br/>" . generateErrorMessage($link);
-                        $result["log"] .= "\r\n Uri generated but not inserted in the database:  $q  " . generateErrorMessage($link);
+                        $result["log"] .= "\r\n Uri generated but not inserted in the database: " . generateErrorMessage($link);
                         $q = "UPDATE devices SET is_in_db = 'uri_generated_but_not_inserted' WHERE id = '$id'";
                         mysqli_query($link, $q);
                     }else{
                         $result["status"] = 'ok';
-                        $result["error_msg"] .= "Inserted the device uri in the database. ";
+                        //$result["error_msg"] .= "Inserted the device uri in the database. ";
                         $result["msg"] .= "\n Inserted the device uri in the database  <br/>";
-                        $result["log"] .= "\r\n Inserted the device uri in the database.  $q  ";
+                        $result["log"] .= "\r\n Inserted the device uri in the database.";
 
                 }
             } else {

@@ -182,6 +182,55 @@ echo mysqli_error($this->link);
         LIMIT " . $this->batchSize;
     }
 
+    public function handleOwnership(&$result){
+        //questo confronta quelli SENZA uri nel db ma con la entry e che sono presenti anche in KB
+        $query ="SELECT elementUrl FROM profiledb.ownership where elementType='IOTID' and deleted is null";
+
+        //query alla owneship
+        $queryResult = mysqli_query($this->link, $query);
+        $queryResult = mysqli_fetch_all($queryResult,MYSQLI_ASSOC);
+        //echo var_dump($queryResult[0]);
+        $queryResult = array_column($queryResult, 'elementUrl');
+
+        //recupera i device senza uri ma in kb e db
+        foreach ($result["noURIbutInKBandDB"] as $key => $KBandDBitem){
+            $KBandDBitem = "http://www.disit.org/km4city/resource/iot/" . $KBandDBitem;
+            $noUriButKBandDB[]= $KBandDBitem;
+        }
+
+
+        //rimuove i duplicati tra i senza uri ma in db e kb e la ownership
+        $this->removeDuplicates($noUriButKBandDB,$queryResult);
+       // array_merge($result, ["notInOwnershipButInKBandDB" => $noUriButKBandDB]);
+
+
+        $onlyDBNotinOwnership=$result["uniqueInDB"];
+        //rimuove i duplicati solo nel db e la ownership
+        $this->removeDuplicates($onlyDBNotinOwnership,$queryResult);
+
+        $onlyKBNotinOwnership=$result["uniqueInKB"];
+        //rimuove i duplicati solo nel db e la ownership
+        $this->removeDuplicates($onlyKBNotinOwnership,$queryResult);
+
+        $noURIOnlyDBNotOwnership=$result["noURIonlyinDB"];
+        //rimuove i duplicati solo nel db e la ownership
+        $this->removeDuplicates($noURIOnlyDBNotOwnership,$queryResult);
+
+        return array_merge($result, ["notInOwnershipOnlyinDb" => $onlyDBNotinOwnership],
+            ["notInOwnershipButInKBandDB" => $noUriButKBandDB],["notInOwnershipOnlyinKB" => $onlyKBNotinOwnership],
+                ["noURIOnlyDBNotOwnership" => $noURIOnlyDBNotOwnership]
+            );
+
+
+        //da fare quelli solo nel db e nella ownership
+        //da fare quelli solo in kb e nella ownership
+
+
+
+
+    }
+
+
     public function displayResults($results) {
         if (!empty($results['uniqueInDB'])) {
             $countDB = count($results['uniqueInDB']);
@@ -209,6 +258,35 @@ echo mysqli_error($this->link);
             $countNoURI = count($results['noURIonlyinDB']);
             echo "<h3>Items without URI and only in DB: ($countNoURI):</h3>";
             foreach ($results['noURIonlyinDB'] as $item) {
+                echo htmlspecialchars(trim($item)) . "<br>";
+            }
+        }
+        if (!empty($results['notInOwnershipButInKBandDB'])) {
+            $notInOwnership = count($results['notInOwnershipButInKBandDB']);
+            echo "<h3>Not in ownership but in KB and DB (Recoverable)($notInOwnership):</h3>";
+            foreach ($results['notInOwnershipButInKBandDB'] as $item) {
+                echo htmlspecialchars(trim($item)) . "<br>";
+            }
+        }
+        if (!empty($results['notInOwnershipOnlyinDb'])) {
+            $notInOwnershipOnlyDB = count($results['notInOwnershipOnlyinDb']);
+            echo "<h3>Not in ownership and only in DB ($notInOwnershipOnlyDB):</h3>";
+            foreach ($results['notInOwnershipOnlyinDb'] as $item) {
+                echo htmlspecialchars(trim($item)) . "<br>";
+            }
+        }
+
+        if (!empty($results['notInOwnershipOnlyinKB'])) {
+            $notInOwnershipOnlyKB = count($results['notInOwnershipOnlyinKB']);
+            echo "<h3>Not in ownership and only in KB ($notInOwnershipOnlyKB):</h3>";
+            foreach ($results['notInOwnershipOnlyinKB'] as $item) {
+                echo htmlspecialchars(trim($item)) . "<br>";
+            }
+        }
+        if (!empty($results['noURIOnlyDBNotOwnership'])) {
+            $noURIOnlyDBNotOwnership = count($results['noURIOnlyDBNotOwnership']);
+            echo "<h3>No URI not in ownership only in DB ($noURIOnlyDBNotOwnership):</h3>";
+            foreach ($results['noURIOnlyDBNotOwnership'] as $item) {
                 echo htmlspecialchars(trim($item)) . "<br>";
             }
         }
@@ -285,16 +363,14 @@ echo("*** Starting IOT_Device_Update_DashboardWizard SCRIPT at: ".$start_time_ok
 //$queryIP = "SELECT DISTINCT kbIP FROM Dashboard.Organizations;";
 //$rsIP = mysqli_query($link, $queryIP);
 
-$kbInfo=get_organization_info($organizationApiURI,$_GET["organization"]);
-echo $organizationApiURI." ".json_encode($kbInfo)."<br>";
-$kbHostIp=$kbInfo['kbIP'];
-echo ("KBURL: ".$kbHostIp. "</br>");
+$queryIP = "SELECT DISTINCT kbIP FROM Dashboard.Organizations;";
+$rsIP = mysqli_query($link, $queryIP);
 
-if($kbHostIp) {
+if($rsIP) {
     $totCount = 0;
-//    while ($rowIP = mysqli_fetch_assoc($rsIP)) {
+    while ($rowIP = mysqli_fetch_assoc($rsIP)) {
 
-        //$kbHostIp = $rowIP['kbIP'];
+        $kbHostIp = $rowIP['kbIP'];
 
         echo("</br>--------- Ingestion IOT for kbIP: " . $kbHostIp . "</br>");
         try {
@@ -302,11 +378,12 @@ if($kbHostIp) {
 
             $results = $comparator->compareData();
             $results = $comparator ->handleDbWithoutURI($results);
+            $results = $comparator ->handleOwnership($results);
             $comparator->displayResults($results);
 
         } catch (Exception $e) {
             echo "Error: " . htmlspecialchars($e->getMessage());
-//}
+        }
     }
 }
 
