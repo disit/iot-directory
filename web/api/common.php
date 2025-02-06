@@ -184,39 +184,6 @@ if(canBeRegistered($id, $devicetype, $contextbroker, $kind, $protocol, $format, 
                         // end of information to be passed to the interface
                         // $result["msg"] .= "prima della richiesta di update k1 e k2 ";
                         // $result["log"] .= "prima della richiesta di update k1 e k2";
-
-                        if ($accessToken != "") {
-                            $ownmsg = array();
-                            $eId = $organization . ":" . $contextbroker . ":" . $id;
-                            $ownmsg["elementId"] = $eId;
-                            $ownmsg["elementName"] = $id;
-                            $ownmsg["elementUrl"] = $result["content"];
-                            $ownmsg["elementDetails"] = array();
-                            $ownmsg["elementDetails"]["k1"] = $k1;
-                            $ownmsg["elementDetails"]["k2"] = $k2;
-                            if ($publickey != "") {
-                                $pub_key_str = str_replace("\n", "", file_get_contents($pathCertificate . "/public/" . $publickey));
-                                $ownmsg["elementDetails"]["publickey"] = substr($pub_key_str, 26, 216);
-                            }
-                            if ($edgegateway_type != "")
-                                $ownmsg["elementDetails"]["edgegateway_type"] = $edgegateway_type;
-                            if ($edgegateway_uri != "")
-                                $ownmsg["elementDetails"]["edgegateway_uri"] = $edgegateway_uri;
-                            $ownmsg["elementDetails"]["contextbroker"] = $contextbroker;
-                            // $result["msg"] .= json_encode($ownmsg);
-                            // $result["log"] .= json_encode($ownmsg);
-
-                                //check if a device is certified
-                                $param = str_replace( array( '\\', '"' , '[',']' ), '', $staticAttributes);
-                                $param=explode(",",$param);
-                                foreach ($param as $key => $value){
-                                    if($value =="http://www.disit.org/km4city/schema#isCertified"){
-                                        $ownmsg["elementDetails"]["Certified"]= "true";
-                                    }
-                                }
-
-                            registerOwnerShipDevice($eId, $ownmsg, $accessToken, $result);
-                        }
                         // $result["msg"] .= "passata richiesta di update k1 e k2 ";
                         // $result["log"] .= "passata richiesta di update k1 e k2 ";
                         $ok = true;
@@ -288,6 +255,44 @@ if(canBeRegistered($id, $devicetype, $contextbroker, $kind, $protocol, $format, 
 
                     if ($result["status"] == 'ko')
                         return $result;
+
+                    if ($accessToken != "") {
+                        $ownmsg = array();
+                        $eId = $organization . ":" . $contextbroker . ":" . $id;
+                        $ownmsg["elementId"] = $eId;
+                        $ownmsg["elementName"] = $id;
+                        $ownmsg["elementUrl"] = $result["content"];
+                        $ownmsg["elementDetails"] = array();
+                        $ownmsg["elementDetails"]["k1"] = $k1;
+                        $ownmsg["elementDetails"]["k2"] = $k2;
+                        if ($publickey != "") {
+                            $pub_key_str = str_replace("\n", "", file_get_contents($pathCertificate . "/public/" . $publickey));
+                            $ownmsg["elementDetails"]["publickey"] = substr($pub_key_str, 26, 216);
+                        }
+                        if ($edgegateway_type != "")
+                            $ownmsg["elementDetails"]["edgegateway_type"] = $edgegateway_type;
+                        if ($edgegateway_uri != "")
+                            $ownmsg["elementDetails"]["edgegateway_uri"] = $edgegateway_uri;
+                        $ownmsg["elementDetails"]["contextbroker"] = $contextbroker;
+                        // $result["msg"] .= json_encode($ownmsg);
+                        // $result["log"] .= json_encode($ownmsg);
+
+                        //check if a device is certified
+                        $param = str_replace( array( '\\', '"' , '[',']' ), '', $staticAttributes);
+                        $param=explode(",",$param);
+                        foreach ($param as $key => $value){
+                            if($value =="http://www.disit.org/km4city/schema#isCertified"){
+                                $ownmsg["elementDetails"]["Certified"]= "true";
+                            }
+                        }
+
+                        registerOwnerShipDevice($eId, $ownmsg, $accessToken, $result);
+                    }
+
+
+
+
+
 
                     $q = "UPDATE devices SET uri = '" . $result['content'] . "' WHERE id = '$id' AND contextBroker='$contextbroker' AND organization='$organization'";
                     $r = mysqli_query($link, $q);
