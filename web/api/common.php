@@ -81,7 +81,7 @@ function insert_device($link, $id, $devicetype, $contextbroker, $kind, $protocol
     if (($k2 == null) || ($k2 == ""))
         $k2 = guidv4();
 if(canBeRegistered($id, $devicetype, $contextbroker, $kind, $protocol, $format, $macaddress, $model, $producer, $latitude, $longitude,
-        $visibility, $frequency, $listAttributes, $subnature, $staticAttributes, $result)){
+        $visibility, $frequency, $listAttributes, $subnature, $staticAttributes, $result,$link,$organization)){
     checkRegisterOwnerShipObject($accessToken, 'IOTID', $result);
     if ($result["status"] == 'ok') {
         $selectDevicesDeleted = "SELECT contextBroker, id
@@ -1750,7 +1750,7 @@ function canBeModified($name, $type, $contextbroker, $kind, $protocol, $format, 
 }
 
 function canBeRegistered($name, $type, $contextbroker, $kind, $protocol, $format, $macaddress, $model, $producer, $latitude, $longitude,
-        $visibility, $frequency, $listnewAttributes, $subnature, $staticAttr, &$result) {
+        $visibility, $frequency, $listnewAttributes, $subnature, $staticAttr, &$result,$link="",$organization="") {
     $error = false;
     if ($name == null || $name == "") {
         $error = true;
@@ -1834,7 +1834,38 @@ function canBeRegistered($name, $type, $contextbroker, $kind, $protocol, $format
             $result["log"] .= "\n healthiness_criteria for attribute $att->value_name not specified";
         }
     }
+        // Ensure $link and $organization are not empty before proceeding
+       if (!empty($link) && !empty($organization) && !empty($contextbroker)) {
 
+            // Execute the query
+            //$queryResult = $link->query("SELECT organization FROM iotdb.contextbroker WHERE name = ?", [$contextbroker]);
+            $query = "SELECT organization FROM iotdb.contextbroker WHERE name = '$contextbroker'";
+            $queryResult = mysqli_query($link, $query);
+
+            if ($queryResult===false) {
+                $error = true;
+                $result["error_msg"] .= "Cannot check if broker belongs to the organization: ". $organization;
+                $result["msg"] .= "\n Cannot check if broker belongs to the organization: " . $organization;
+                $result["log"] .= "Cannot check if broker belongs to the organization: ". $organization;
+            } else {
+                while ($row = mysqli_fetch_assoc($queryResult)) {
+                    // Check if $row contains a value for 'organization'
+                    if ($row['organization'] == $organization) {
+                        $result["log"] .= $organization. " belongs to ".$contextbroker. "ok. \n";
+                    } else {
+                        // If no 'organization' found in the row
+                        $error = true;
+                        $result["log"] .= "No 'organization' named ".$organization . " found for " . $contextbroker ." \n";
+                    }
+                }
+            }
+        } else {
+            // Handle the case where $link or $organization is empty
+            $error = true;
+            $result["error_msg"] .= "Cannot check if broker belongs to the organization: ". $organization;
+            $result["msg"] .= "\n Cannot check if broker belongs to the organization: " . $organization;
+            $result["log"] .= "Cannot check if broker belongs to the organization: ". $organization;
+        }
 
     if ($error)
         return false;
@@ -1848,7 +1879,7 @@ function registerKB($link, $name, $type, $contextbroker, $kind, $protocol, $form
 
     //vedere se questa la posso togliere visto che la chiamo in "insert_device()"
     if (canBeRegistered($name, $type, $contextbroker, $kind, $protocol, $format, $macaddress, $model, $producer, $latitude, $longitude,
-                    $visibility, $frequency, $listnewAttributes, $subnature, $staticAttributes, $result)) {
+                    $visibility, $frequency, $listnewAttributes, $subnature, $staticAttributes, $result,$link,$organization)) {
         $query = "SELECT * from contextbroker WHERE name = '$contextbroker'";
         $r = mysqli_query($link, $query);
         if (!$r) {//row should also be NOT empty since enforcement has been already made in the api 
@@ -2191,7 +2222,7 @@ function updateKB($link, $name, $type, $contextbroker, $kind, $protocol, $format
     $result["status"] = 'ok';
 
     if (canBeRegistered($name, $type, $contextbroker, $kind, $protocol, $format, $macaddress, $model, $producer, $latitude, $longitude,
-                    $visibility, $frequency, $attributes, $subnature, $staticAttributes, $result)) {
+                    $visibility, $frequency, $attributes, $subnature, $staticAttributes, $result,$link,$organization)) {
         $query = "SELECT * from contextbroker WHERE name = '$contextbroker'";
         $r = mysqli_query($link, $query);
         if (!$r) { //row should also be NOT empty since enforcement has been already made in the api

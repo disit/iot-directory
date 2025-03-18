@@ -2399,6 +2399,17 @@ a.moduleLink:hover
     text-transform: uppercase;
 }
 
+.retryDashBtn
+{
+    height: 20px;
+    background-color: rgba(255, 0, 0, 1);
+    border: none;
+    color: white;
+    font-family: 'Montserrat';
+    font-weight: bold;
+    text-transform: uppercase;
+}
+
 .viewDashBtnCard
 {
     height: 100%;
@@ -2434,6 +2445,37 @@ a.moduleLink:hover
 {
     height: 20px;
     background-color: #008000;
+    border: none;
+    color: white;
+    font-family: 'Montserrat';
+    font-weight: bold;
+    text-transform: uppercase;
+}
+
+.report_button
+{
+    height: 20px;
+    background-color: #008000;
+    border: none;
+    color: white;
+    font-family: 'Montserrat';
+    font-weight: bold;
+    text-transform: uppercase;
+}
+.report_button_disabled
+{
+    height: 20px;
+    background-color: dimgrey;
+    border: none;
+    color: white;
+    font-family: 'Montserrat';
+    font-weight: bold;
+    text-transform: uppercase;
+}
+.report_button_error
+{
+    height: 20px;
+    background-color: #ff3333;
     border: none;
     color: white;
     font-family: 'Montserrat';

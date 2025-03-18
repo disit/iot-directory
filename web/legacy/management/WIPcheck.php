@@ -12,159 +12,61 @@
    GNU Affero General Public License for more details.
    You should have received a copy of the GNU Affero General Public License
    along with this program.  If not, see <http://www.gnu.org/licenses/>. */
-#edooooooooo
-class DataComparator {
-    private $link;
+
+class UriComparison {
     private $kbHostIp;
-    private $batchSize;
+    private $batchSize = 1000;
+    private $link;
+    private $organization;
 
-    public function __construct($dbConnection, $kbHostIp, $batchSize = 500) {
-        $this->link = $dbConnection;
+    /**
+     * Constructor initializes connections and configurations
+     *
+     * @param string $kbHostIp The host IP/URL for the knowledge base
+     * @param mysqli $dbConnection Active MySQL connection
+     * @param string $organization Organization identifier for filtering database results
+     */
+    public function __construct(string $kbHostIp, mysqli $dbConnection, string $organization) {
         $this->kbHostIp = $kbHostIp;
-        $this->batchSize = $batchSize;
-        $this->organization= $_GET['organization'];
-}
-
-    public function compareData() {
-        $bufferDB = [];
-        $bufferKB = [];
-        $offset = 0;
-
-        do {
-            // Fetch KB data
-            $kbData = $this->fetchKBData($offset);
-            if ($kbData === false) {
-                throw new Exception("Failed to fetch KB data");
+        $this->link = $dbConnection;
+        $this->organization = $organization;
+        $this->link->set_charset("utf8mb4");
     }
 
-            // Fetch DB data
-            $dbData = $this->fetchDBData($offset);
-            if ($dbData === false) {
-                throw new Exception("Failed to fetch DB data");
-    }
+    /**
+     * Fetches ownership URIs from the profiledb database
+     *
+     * @return array List of URIs from ownership records
+     * @throws Exception If there's an error with the database query
+     */
+    public function fetchOwnershipData(): array {
+        // Query to get non-deleted IOT device URIs from ownership table
+        $query = "SELECT elementUrl FROM profiledb.ownership 
+                 WHERE elementType = 'IOTID' AND deleted IS NULL";
 
-            // Add new items to buffers
-            $bufferDB = array_merge($bufferDB, $dbData);
-            $bufferKB = array_merge($bufferKB, $kbData);
-
-            $offset += $this->batchSize;
-
-            // Break if both sources are exhausted
-            if (empty($kbData) && empty($dbData)) {
-                break;
-    }
-
-        } while (true);
-
-        // Process final arrays to remove matching items
-        $this->removeDuplicates($bufferDB, $bufferKB);
-
-        return [
-            'uniqueInDB' => array_values(array_filter($bufferDB)),
-            'uniqueInKB' => array_values(array_filter($bufferKB))
-        ];
-    }
-
-    private function fetchKBData($offset) {
-        $query = $this->buildSPARQLQuery($offset);
-        $encodedQuery = $this->kbHostIp . "/sparql?default-graph-uri=&query=" .
-            urlencode($query) . "&format=application%2Fsparql-results%2Bjson&timeout=0&debug=on";
-
-        $results = @file_get_contents($encodedQuery);
-        if ($results === false) {
-echo $query;
-            return false;
-    }
-
-        $decodedResults = json_decode($results, true);
-        return array_map(function($item) {
-            return $item['s']['value'];
-        }, $decodedResults['results']['bindings']);
-    }
-
-    private function fetchDBData($offset) {
-//        $query = sprintf(
-//            "SELECT uri FROM iotdb.devices WHERE organization = '%s' LIMIT %d OFFSET %d",
-//            $this->organization,
-//            $this->batchSize,
-//            $offset
-//        );
-        $query ="SELECT uri FROM iotdb.devices WHERE organization='".$this->organization."' LIMIT ".$this->batchSize." OFFSET ".$offset;
-        echo ("FETCHDBDATA query: ".$query."<br>");
-        $result = mysqli_query($this->link, $query);
+        try {
+            // Execute the query
+            $result = $this->link->query($query);
         if (!$result) {
-echo mysqli_error($this->link);
-    return false;
-}
-
-        return array_column(mysqli_fetch_all($result, MYSQLI_ASSOC), 'uri');
-}
-
-    private function removeDuplicates(&$dbArray, &$kbArray) {
-        foreach ($dbArray as $key => $dbItem) {
-            $dbItem = trim($dbItem);
-            if (empty($dbItem)) {
-                unset($dbArray[$key]);
-                continue;
-}
-
-            foreach ($kbArray as $kbKey => $kbItem) {
-                $kbItem = trim($kbItem);
-                if (empty($kbItem)) {
-                    unset($kbArray[$kbKey]);
-                    continue;
-}
-
-                if ($dbItem === $kbItem) {
-                    unset($dbArray[$key]);
-                    unset($kbArray[$kbKey]);
-            break;
-        }
-            }
+                throw new Exception("Failed to execute ownership query: " . $this->link->error);
         }
 
-    }
-    public function handleDbWithoutURI(&$results) {
-        $noURIArray = [];
-        $query ="SELECT contextBroker,id,organization FROM iotdb.devices WHERE uri is null AND organization='".$this->organization."'";
-        echo ("handleDbWithoutURI query: ".$query."<br>");
+            // Fetch all results and extract URIs
+            $ownershipData = $result->fetch_all(MYSQLI_ASSOC);
+            $ownershipUris = array_column($ownershipData, 'elementUrl');
 
-        $result = mysqli_query($this->link, $query);
-        if (!$result) {
-            return false;
-        }
-        $result=mysqli_fetch_all($result, MYSQLI_ASSOC);
-        foreach ($result as $key => $noURIitem) {
-            array_push($noURIArray,$result[$key]["contextBroker"]."/".$result[$key]["organization"]."/".$result[$key]["id"]);
-        }
+            // Free the result set
+            $result->free();
 
-        $filtered_noURI = array_values(array_filter($noURIArray));
+            return array_unique($ownershipUris);
 
-        $uniqueInKBsubstr=[];
-
-        foreach ($results["uniqueInKB"] as $key => $uniqueKBitem) {
-            // Find the position of 'iot/' in the URI
-            $pos = strpos($uniqueKBitem, 'iot/');
-
-            // Check if 'iot/' is found
-            if ($pos !== false) {
-                // Extract the substring starting from 'iot/' and take the last part
-                $lastPart = substr($uniqueKBitem, $pos + 4);
-                //$lastPart = substr($lastPart, strrpos($lastPart, '/') + 1); // Extract after the last '/'
-                array_push($uniqueInKBsubstr,$lastPart);
+        } catch (Exception $e) {
+            error_log("Error in fetchOwnershipData: " . $e->getMessage());
+            throw $e;
         }
     }
-
-        $noURIbutInKBandDB = (array_intersect($filtered_noURI, $uniqueInKBsubstr));
-        $noURIonlyinDB = array_diff($filtered_noURI, $uniqueInKBsubstr);
-
-
-        return array_merge($results, ["noURIbutInKBandDB" => $noURIbutInKBandDB],["noURIonlyinDB" => $noURIonlyinDB]);
-
-
-    }
-
-    private function buildSPARQLQuery($offset) {
+    private function buildSPARQLQuery(int $offset): string {
+        // Note: You'll need to customize this query based on your KB structure
         return "SELECT ?s { 
             #?s a sosa:Sensor option (inference \"urn:ontology\").
             ?s schema:name ?n.
@@ -180,117 +82,279 @@ echo mysqli_error($this->link);
         #ORDER BY ?s
         OFFSET " . ($offset + 1) . "
         LIMIT " . $this->batchSize;
+        //return "SELECT DISTINCT ?s WHERE { ?s ?p ?o } LIMIT {$this->batchSize} OFFSET {$offset}";
     }
 
-    public function handleOwnership(&$result){
-        //questo confronta quelli SENZA uri nel db ma con la entry e che sono presenti anche in KB
-        $query ="SELECT elementUrl FROM profiledb.ownership where elementType='IOTID' and deleted is null";
+    public function fetchReconstructableUris(): array {
 
-        //query alla owneship
-        $queryResult = mysqli_query($this->link, $query);
-        $queryResult = mysqli_fetch_all($queryResult,MYSQLI_ASSOC);
-        //echo var_dump($queryResult[0]);
-        $queryResult = array_column($queryResult, 'elementUrl');
+        //magari fare la stessa query per recuperare quelli con gli uri mancanti dalla ownwership
+        //
+        // Query to get entries without URIs but with enough information to reconstruct them
+        $query = "SELECT contextBroker, organization, id FROM iotdb.devices 
+                 WHERE uri IS NULL AND organization = ? 
+                 AND contextBroker IS NOT NULL AND id IS NOT NULL";
 
-        //recupera i device senza uri ma in kb e db
-        foreach ($result["noURIbutInKBandDB"] as $key => $KBandDBitem){
-            $KBandDBitem = "http://www.disit.org/km4city/resource/iot/" . $KBandDBitem;
-            $noUriButKBandDB[]= $KBandDBitem;
+        try {
+            $stmt = $this->link->prepare($query);
+            if (!$stmt) {
+                throw new Exception("Failed to prepare reconstructable query: " . $this->link->error);
         }
 
+            // Bind the organization parameter
+            $stmt->bind_param("s", $this->organization);
 
-        //rimuove i duplicati tra i senza uri ma in db e kb e la ownership
-        $this->removeDuplicates($noUriButKBandDB,$queryResult);
-       // array_merge($result, ["notInOwnershipButInKBandDB" => $noUriButKBandDB]);
+            if (!$stmt->execute()) {
+                throw new Exception("Failed to execute reconstructable query: " . $stmt->error);
+            }
 
+            $result = $stmt->get_result();
+            if (!$result) {
+                throw new Exception("Failed to get reconstructable results: " . $stmt->error);
+            }
 
-        $onlyDBNotinOwnership=$result["uniqueInDB"];
-        //rimuove i duplicati solo nel db e la ownership
-        $this->removeDuplicates($onlyDBNotinOwnership,$queryResult);
+            // Fetch all results
+            $reconstructableRecords = $result->fetch_all(MYSQLI_ASSOC);
 
-        $onlyKBNotinOwnership=$result["uniqueInKB"];
-        //rimuove i duplicati solo nel db e la ownership
-        $this->removeDuplicates($onlyKBNotinOwnership,$queryResult);
+            // Reconstruct URIs using the pattern: contextBroker/organization/id
+            $reconstructedUris = [];
+            foreach ($reconstructableRecords as $record) {
+                if (isset($record['contextBroker'], $record['organization'], $record['id'])) {
+                    $reconstructedUris[] = sprintf("%s/%s/%s/%s",
+                        "http://www.disit.org/km4city/resource/iot",
+                        $record['contextBroker'],
+                        $record['organization'],
+                        $record['id']
+                    );
+                }
+            }
 
-        $noURIOnlyDBNotOwnership=$result["noURIonlyinDB"];
-        //rimuove i duplicati solo nel db e la ownership
-        $this->removeDuplicates($noURIOnlyDBNotOwnership,$queryResult);
+            $stmt->close();
+            return array_unique($reconstructedUris);
 
-        return array_merge($result, ["notInOwnershipOnlyinDb" => $onlyDBNotinOwnership],
-            ["notInOwnershipButInKBandDB" => $noUriButKBandDB],["notInOwnershipOnlyinKB" => $onlyKBNotinOwnership],
-                ["noURIOnlyDBNotOwnership" => $noURIOnlyDBNotOwnership]
+        } catch (Exception $e) {
+            error_log("Error in fetchReconstructableUris: " . $e->getMessage());
+            throw $e;
+        }
+    }
+
+    /**
+     * Compare URIs from all sources automatically, including reconstructable URIs
+     * This method now automatically fetches ownership data as well
+     *
+     * @return array List of URIs with their presence status in each system
+     */
+    public function compareAllSourcesComplete(): array {
+        try {
+            // Fetch URIs from all sources
+            $databaseUris = $this->fetchAllDBData();
+            $reconstructableUris = $this->fetchReconstructableUris();
+            $knowledgebaseUris = $this->fetchAllKBData();
+            $ownershipUris = $this->fetchOwnershipData();
+
+            // Perform the comparison with all sources
+            return $this->compareUriLists(
+                $databaseUris,
+                $knowledgebaseUris,
+                $ownershipUris,
+                $reconstructableUris
             );
-
-
-        //da fare quelli solo nel db e nella ownership
-        //da fare quelli solo in kb e nella ownership
-
-
-
-
-    }
-
-
-    public function displayResults($results) {
-        if (!empty($results['uniqueInDB'])) {
-            $countDB = count($results['uniqueInDB']);
-            echo "<h3>Items only in Database ($countDB):</h3>";
-            foreach ($results['uniqueInDB'] as $item) {
-                echo htmlspecialchars(trim($item)) . "<br>";
+        } catch (Exception $e) {
+            error_log("Error in compareAllSourcesComplete: " . $e->getMessage());
+            throw $e;
         }
     }
 
-        if (!empty($results['uniqueInKB'])) {
-            $countKB = count($results['uniqueInKB']);
-            echo "<h3>Items only in Knowledge Base ($countKB):</h3>";
-            foreach ($results['uniqueInKB'] as $item) {
-                echo htmlspecialchars(trim($item)) . "<br>";
+    /**
+     * Fetches URIs from the database with pagination
+     *
+     * @param int $offset Starting offset for the query
+     * @return array List of URIs from the database
+     * @throws Exception If there's an error with the database query
+     */
+    public function fetchDBData(int $offset): array {
+        // Prepare the query using a prepared statement to prevent SQL injection
+        $query = "SELECT uri FROM iotdb.devices WHERE organization = ? LIMIT ? OFFSET ?";
+
+        try {
+            $stmt = $this->link->prepare($query);
+            if (!$stmt) {
+                throw new Exception("Failed to prepare database query: " . $this->link->error);
             }
-        }
-        if (!empty($results['noURIbutInKBandDB'])) {
-            $countNoURI = count($results['noURIbutInKBandDB']);
-            echo "<h3>Items without URI but in DB and in KB: ($countNoURI):</h3>";
-            foreach ($results['noURIbutInKBandDB'] as $item) {
-                echo htmlspecialchars(trim($item)) . "<br>";
+
+            // Bind parameters safely
+            $stmt->bind_param("sii", $this->organization, $this->batchSize, $offset);
+
+            // Execute the query
+            if (!$stmt->execute()) {
+                throw new Exception("Failed to execute database query: " . $stmt->error);
             }
-        }
-        if (!empty($results['noURIonlyinDB'])) {
-            $countNoURI = count($results['noURIonlyinDB']);
-            echo "<h3>Items without URI and only in DB: ($countNoURI):</h3>";
-            foreach ($results['noURIonlyinDB'] as $item) {
-                echo htmlspecialchars(trim($item)) . "<br>";
+
+            // Get the results
+            $result = $stmt->get_result();
+            if (!$result) {
+                throw new Exception("Failed to get query results: " . $stmt->error);
             }
+
+            // Fetch all URIs as an associative array and extract the 'uri' column
+            $uris = array_column($result->fetch_all(MYSQLI_ASSOC), 'uri');
+
+            $stmt->close();
+            return $uris;
+
+        } catch (Exception $e) {
+            error_log("Error in fetchDBData: " . $e->getMessage());
+            throw $e;
         }
-        if (!empty($results['notInOwnershipButInKBandDB'])) {
-            $notInOwnership = count($results['notInOwnershipButInKBandDB']);
-            echo "<h3>Not in ownership but in KB and DB (Recoverable)($notInOwnership):</h3>";
-            foreach ($results['notInOwnershipButInKBandDB'] as $item) {
-                echo htmlspecialchars(trim($item)) . "<br>";
-            }
+    }
+
+    /**
+     * Fetches all URIs from the database using pagination
+     *
+     * @return array Complete list of URIs from the database
+     */
+    public function fetchAllDBData(): array {
+        $allUris = [];
+        $offset = 0;
+
+        try {
+            while (true) {
+                $uris = $this->fetchDBData($offset);
+                if (empty($uris)) {
+                    break;
         }
-        if (!empty($results['notInOwnershipOnlyinDb'])) {
-            $notInOwnershipOnlyDB = count($results['notInOwnershipOnlyinDb']);
-            echo "<h3>Not in ownership and only in DB ($notInOwnershipOnlyDB):</h3>";
-            foreach ($results['notInOwnershipOnlyinDb'] as $item) {
-                echo htmlspecialchars(trim($item)) . "<br>";
+                $allUris = array_merge($allUris, $uris);
+                $offset += $this->batchSize;
+    }
+
+            return array_unique($allUris);
+        } catch (Exception $e) {
+            error_log("Error in fetchAllDBData: " . $e->getMessage());
+            throw $e;
             }
         }
 
-        if (!empty($results['notInOwnershipOnlyinKB'])) {
-            $notInOwnershipOnlyKB = count($results['notInOwnershipOnlyinKB']);
-            echo "<h3>Not in ownership and only in KB ($notInOwnershipOnlyKB):</h3>";
-            foreach ($results['notInOwnershipOnlyinKB'] as $item) {
-                echo htmlspecialchars(trim($item)) . "<br>";
+    public function fetchKBData(int $offset): array {
+        $query = $this->buildSPARQLQuery($offset);
+        $encodedQuery = $this->kbHostIp . "/sparql?default-graph-uri=&query=" .
+            urlencode($query) . "&format=json";
+
+        // Use a try-catch block for better error handling
+        try {
+            $sparqlResults = @file_get_contents($encodedQuery);
+            if ($sparqlResults === false) {
+                throw new Exception("Failed to fetch data from SPARQL endpoint");
+            }
+
+            $decodedResults = json_decode($sparqlResults, true);
+            if (json_last_error() !== JSON_ERROR_NONE) {
+                throw new Exception("Failed to decode SPARQL results: " . json_last_error_msg() . $encodedQuery);
+        }
+
+            // Extract URIs from the results
+            $uris = [];
+            if (isset($decodedResults['results']['bindings'])) {
+                foreach ($decodedResults['results']['bindings'] as $binding) {
+                    if (isset($binding['s']['value'])) {
+                        $uris[] = $binding['s']['value'];
             }
         }
-        if (!empty($results['noURIOnlyDBNotOwnership'])) {
-            $noURIOnlyDBNotOwnership = count($results['noURIOnlyDBNotOwnership']);
-            echo "<h3>No URI not in ownership only in DB ($noURIOnlyDBNotOwnership):</h3>";
-            foreach ($results['noURIOnlyDBNotOwnership'] as $item) {
-                echo htmlspecialchars(trim($item)) . "<br>";
+            }
+
+            return $uris;
+        } catch (Exception $e) {
+            // Log the error or handle it as needed
+            error_log("Error in fetchKBData: " . $e->getMessage());
+
+            throw $e;
+        }
+    }
+
+    /**
+     * Fetches all URIs from the knowledge base using pagination
+     *
+     * @return array Complete list of URIs from the knowledge base
+     */
+    public function fetchAllKBData(): array {
+        $allUris = [];
+        $offset = 0;
+
+        while (true) {
+            $uris = $this->fetchKBData($offset);
+            if (empty($uris)) {
+                break;
+            }
+            $allUris = array_merge($allUris, $uris);
+            $offset += $this->batchSize;
+            }
+
+        return array_unique($allUris);
+        }
+
+
+    /**
+     * Compare URIs from all sources automatically
+     *
+     * @param array $ownershipUris URIs from ownership records
+     * @param array $reconstructableUris Optional list of URIs that can be reconstructed
+     * @return array List of URIs with their presence status in each system
+     */
+    public function compareAllSources(array $ownershipUris, array $reconstructableUris = []): array {
+        try {
+            // Fetch both DB and KB data automatically
+            $databaseUris = $this->fetchAllDBData();
+            $knowledgebaseUris = $this->fetchAllKBData();
+
+            return $this->compareUriLists($databaseUris, $knowledgebaseUris, $ownershipUris, $reconstructableUris);
+        } catch (Exception $e) {
+            error_log("Error in compareAllSources: " . $e->getMessage());
+            throw $e;
             }
         }
 
+    public function handleMissingUri(){
+
+            }
+
+    public function compareUriLists(
+        array $databaseUris,
+        array $knowledgebaseUris,
+        array $ownershipUris,
+        array $reconstructableUris = []
+    ): array {
+        // Previous implementation remains the same
+        $dbSet = array_flip($databaseUris);
+        $kbSet = array_flip($knowledgebaseUris);
+        $ownSet = array_flip($ownershipUris);
+        $reconstructableSet = array_flip($reconstructableUris);
+
+        $allUris = array_unique(array_merge(
+            $databaseUris,
+            $knowledgebaseUris,
+            $ownershipUris,
+            $reconstructableUris
+        ));
+        //echo var_dump($allUris);
+
+        $brokenUris = [];
+
+        foreach ($allUris as $uri) {
+            if (isset($dbSet[$uri]) && isset($kbSet[$uri]) && isset($ownSet[$uri])) {
+                continue;
+        }
+
+            $status = [
+                'uri' => $uri,
+                'in_database' => isset($dbSet[$uri]),
+                'in_knowledgebase' => isset($kbSet[$uri]),
+                'in_ownership' => isset($ownSet[$uri]),
+                'is_reconstructable' => isset($reconstructableSet[$uri]),
+                'has_uri' => isset($dbSet[$uri]) || isset($reconstructableSet[$uri])
+            ];
+
+            $brokenUris[] = $status;
+        }
+
+        return $brokenUris;
     }
 }
 
@@ -303,6 +367,19 @@ require '../../sso/autoload.php';
 use Jumbojett\OpenIDConnectClient;
 #error_reporting(E_ERROR);
 session_start();
+
+//ricontrollare sia root admin
+
+if ($_SESSION[loggedRole] !== 'RootAdmin') {
+    $result['status'] = 'ko';
+    $result['msg'] = 'unauthorized';
+    $result['error_msg'] = 'you are not Root';
+    $result['log'] = 'Please log as an admin';
+    echo json_encode($result);
+    die();
+}
+
+
 
 
 
@@ -321,6 +398,8 @@ $encrDelGroupCpls = [];         // MOD OWN-DEL
 
 $genFileContent = parse_ini_file("../../conf/environment.ini");
 $personalDataFileContent = parse_ini_file("../../../dashboardSmartCity/conf/personalData.ini");
+$serviceURIFileContent = parse_ini_file("../../conf/serviceURI.ini");
+
 $env = $genFileContent['environment']['value'];
 
 $host_PD= $personalDataFileContent["host_PD"][$env];
@@ -329,9 +408,7 @@ $client_id= $personalDataFileContent["client_id_PD"][$genFileContent['environmen
 $client_secret= $personalDataFileContent["client_secret_PD"][$genFileContent['environment']['value']];
 $username= $personalDataFileContent["usernamePD"][$genFileContent['environment']['value']];
 $password= $personalDataFileContent["passwordPD"][$genFileContent['environment']['value']];
-
-$orgServiceUri=parse_ini_file("../../conf/serviceURI.ini");
-$organizationApiURI= $orgServiceUri["organizationApiURI"][$env];
+$organizationServiceURI = $serviceURIFileContent["organizationApiURI"][$env];
 
 
 $generalFileContent = parse_ini_file("../../conf/general.ini");
@@ -344,52 +421,201 @@ $processId = 1;     // 0 = SELECT & UPDATE; 1 = UPSERT
 $link = mysqli_connect($host, $usernamedb, $passworddb);
 error_reporting(E_ALL);
 ini_set('display_errors', 1);
-//mysqli_select_db($link, $dbname);
+error_reporting(E_ERROR | E_PARSE);
 
 
-
-
-
-$startTime = new DateTime(null, new DateTimeZone('Europe/Rome'));
-$start_scritp_time = $startTime->format('c');
-$start_scritp_time_string = explode("+", $start_scritp_time);
-$start_time_ok = str_replace("T", " ", $start_scritp_time_string[0]);
-echo("*** Starting IOT_Device_Update_DashboardWizard SCRIPT at: ".$start_time_ok."<br>");
-
-
-
-
-
-//$queryIP = "SELECT DISTINCT kbIP FROM Dashboard.Organizations;";
-//$rsIP = mysqli_query($link, $queryIP);
-
-$queryIP = "SELECT DISTINCT kbIP FROM Dashboard.Organizations;";
-$rsIP = mysqli_query($link, $queryIP);
-
-if($rsIP) {
-    $totCount = 0;
-    while ($rowIP = mysqli_fetch_assoc($rsIP)) {
-
-        $kbHostIp = $rowIP['kbIP'];
-
-        echo("</br>--------- Ingestion IOT for kbIP: " . $kbHostIp . "</br>");
-        try {
-            $comparator = new DataComparator($link, $kbHostIp);
-
-            $results = $comparator->compareData();
-            $results = $comparator ->handleDbWithoutURI($results);
-            $results = $comparator ->handleOwnership($results);
-            $comparator->displayResults($results);
-
-        } catch (Exception $e) {
-            echo "Error: " . htmlspecialchars($e->getMessage());
-        }
-    }
+if (isset($_REQUEST['action']) && !empty($_REQUEST['action'])) {
+    $action = $_REQUEST['action'];
+} else {
+    $result['status'] = 'ko';
+    $result['msg'] = 'action not present';
+    $result['error_msg'] = 'action not present';
+    $result['log'] = 'WIPcheck.php action not present';
+    my_log($result);
+    mysqli_close($link);
+    exit();
 }
 
 
-$endTime = new DateTime(null, new DateTimeZone('Europe/Rome'));
-$end_scritp_time = $endTime->format('c');
-$end_scritp_time_string = explode("+", $end_scritp_time);
-$end_time_ok = str_replace("T", " ", $end_scritp_time_string[0]);
-echo("End IOT_Device_Update_DashboardWizard SCRIPT at: ".$end_time_ok);
+if($action=="check_devices"){
+
+    Global $apiResult;
+    $apiResult=[];
+    $apiResult["status"]='ok';
+
+    $kbUrl = preg_replace('/\/api\/v1\//', '',  $_REQUEST['kbUrl']);
+
+        try {
+        // Set up database connection with access to both iotdb and profiledb
+        $dbConnection = $link;
+        if ($dbConnection->connect_error) {
+            throw new Exception("Database connection failed: " . $dbConnection->connect_error);
+        }
+
+        // Initialize the comparison class
+        $comparison = new UriComparison(
+            $kbUrl,
+            $dbConnection,
+            $_REQUEST['organization']
+        );
+
+        // Get comparison results from all sources
+        $results = $comparison->compareAllSourcesComplete();
+
+        // Process and display the results in a clear, organized way
+
+
+        foreach ($results as $result) {
+            $apiResult['result'][$result['uri']] = [
+                'database_record' => (bool)$result['in_database'],
+                'knowledge_base' => (bool)$result['in_knowledgebase'],
+                'ownership_record' => (bool)$result['in_ownership'],
+                'is_reconstructable' => $result['is_reconstructable'] ?? false,
+                'has_uri' => $result['has_uri'] ?? true,
+                'action_taken' => ''
+            ];
+        }
+
+
+        $sql="TRUNCATE TABLE iotdb.devicecheck";
+        if ($link->query($sql) !== TRUE) {
+            $apiResult['error']=$link->error;
+        }
+
+
+        $values = [];
+        $date = new DateTime();
+
+
+        $formatted_date = $date->format('Y-m-d H:i:s');
+        foreach ($apiResult["result"] as $uri => $value) {
+
+
+                // Escape variables to protect against SQL injection
+                $uri = $link->real_escape_string($uri);
+                $checkdate = $link->real_escape_string($formatted_date);
+                $organization = $link->real_escape_string($_REQUEST['organization']);
+
+                // Correctly access the values in $value
+                $isInDB = $link->real_escape_string($value['database_record'] ? 'true' : 'false');
+                $isInKB = $link->real_escape_string($value['knowledge_base'] ? 'true' : 'false');
+                $isInOwnership = $link->real_escape_string($value['ownership_record'] ? 'true' : 'false');
+                $haveURI = $link->real_escape_string($value['has_uri'] ? 'true' : 'false');
+
+                // Prepare the values for SQL insertion
+                $values[] = "('$uri', '-', '$checkdate', '$organization', '-', $isInDB, $isInKB, $isInOwnership, $haveURI)";
+
+        }
+
+        $sql = "INSERT INTO iotdb.devicecheck (uri, problem, checkdate, organization, log, isInDB, isInKB, isInOwnership, haveURI) VALUES " . implode(", ", $values);
+
+        if ($link->query($sql) !== TRUE) {
+            $apiResult['error'] .= $link->error;
+        }
+
+
+
+
+
+        // Close the database connection when done
+        $link->close();
+        echo json_encode($apiResult);
+
+        } catch (Exception $e) {
+        echo "Error: " . $e->getMessage() . "\n";
+        error_log("URI comparison error: " . $e->getMessage());
+        }
+
+} else if($action=="checkLastRun"){
+    //action per vedere se cè una last run (DOVREBBE ESSERE OK)
+    Global $apiResult;
+    $apiResult=[];
+    $apiResult["status"]='ok';
+    if (isset($_REQUEST['organization'])) {
+        $organization = $_REQUEST['organization'];
+
+
+        //$organization='http://virtuoso-kb:8890';
+
+
+        $query = $link->prepare("SELECT checkdate FROM iotdb.devicecheck WHERE organization=? LIMIT 1");
+
+        if ($query === false) {
+            $apiResult["status"] = 'ko';
+            $apiResult["message"] = "Error in query preparation: " . $link->error;
+            echo json_encode($apiResult);
+            exit();
+    }
+
+        $query->bind_param('s', $organization);
+
+
+        if (!$query->execute()) {
+            $apiResult["status"] = 'ko';
+            $apiResult["message"] = "Error in query execution: " . $query->error;
+            echo json_encode($apiResult);
+            exit();
+        }
+
+        $result = $query->get_result();
+
+        if ($result->num_rows > 0) {
+
+            $result = mysqli_fetch_row($result);
+            $apiResult["status"]='ok';
+            $apiResult["lastcheck"]=$result[0];
+        }else{
+            $apiResult["status"]='ok';
+            $apiResult["lastcheck"]=null;
+        }
+
+        $query->close();
+        echo json_encode($apiResult);
+
+}
+
+
+
+} else if ($action == "recoverLastRun") {
+    Global $apiResult;
+    $apiResult = [];  // Initialize the API result array
+    $apiResult["status"] = 'ok';
+
+    if (isset($_REQUEST['organization'])) {
+        $organization = $_REQUEST['organization'];
+
+        // Query to select all the necessary fields
+        $sql = "
+            SELECT uri, problem, isInDB, isInKB, isInOwnership, haveURI
+            FROM iotdb.devicecheck
+            WHERE organization = '" . $link->real_escape_string($organization) . "'
+        ";
+
+        $devices = [];
+        $result = $link->query($sql);
+
+        // If the query returns results
+        if ($result->num_rows > 0) {
+            while ($row = $result->fetch_assoc()) {
+                $uri = $row['uri'];
+                $problem = $row['problem'];
+
+                // Rebuild the structure for the result array
+
+                if (!isset($apiResult['result'][$uri])) {
+                    $apiResult['result'][$uri] = [
+                        'database_record' => (bool)$row['isInDB'],
+                        'knowledge_base' => (bool)$row['isInKB'],
+                        'ownership_record' => (bool)$row['isInOwnership'],
+                        'is_reconstructable' => $row['is_reconstructable'] ?? false,
+                        'has_uri' => $row['haveURI'] ?? true,
+                        'action_taken' => ''  // Assuming no action has been taken
+                    ];
+                }
+
+                $apiResult['result'][$uri]['problem'] = $problem;
+            }
+        }
+    }
+    echo json_encode($apiResult);
+}

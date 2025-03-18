@@ -6018,6 +6018,9 @@ button.close {
     .modal-lg {
         width: 900px;
     }
+    .modal-lg-deviceCheck {
+        width: 1400px;
+    }
 }
 
 /*Aggiunto da me*/

@@ -221,6 +221,8 @@ if ($action == "insert") {
 
         $protocol = getProtocol($contextbroker, $link);
 
+
+
         if (empty($protocol)) { //it also ensure the contextbroker name is valid
             $result["status"] = "ko";
             $result['msg'] = "Unrecognized contextbroker/protocol";

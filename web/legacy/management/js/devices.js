@@ -4363,6 +4363,389 @@ $(document).ready(function () {
             }
         });
     });
+
+    $('#checkDeviceBtn').off('click');
+    $('#checkDeviceBtn').on('click', function (events, handler) {
+
+        $("#LoadingGifCheck").hide();
+        $("#devicesCheckTable").hide();
+        $("#previousRunBtn").show();
+        $("#applySelected").hide()
+        $("#selectCheckOrganization").show()
+        console.log(loggedRole);
+
+        if(loggedRole === "RootAdmin") {
+            $('#checkDeviceModal').modal('show');
+            $("#chooseOrgLabel").show();
+            $("#runCheckBtn").prop("disabled", true);
+            let orgArray = [];
+            let kbUrlArray = [];
+
+            //chiamata per la lista delle org, ne ritorna una sola da vedere
+            $.ajax({
+                url: "../../dashboardSmartCity/api/organizations.php",
+                data: {
+
+                    token: sessionToken,
+                },
+                type: "GET",
+                async: true,
+                datatype: 'json',
+                success: function (data) {
+
+                    data = JSON.parse(data)
+
+                    data.forEach(item => {
+                        orgArray.push(item.organizationName);
+                        kbUrlArray.push(item.kbUrl);
+
+                    });
+
+                    //popola il dropdown delle organizzazioni
+                    var $dropdown = $("#selectCheckOrganization");
+                    $.each(orgArray, function () {
+                        $dropdown.append($("<option />").val(this).text(this));
+                    });
+
+
+                },
+
+                error: function (data) {
+                    console.log("failed to get organization" + JSON.stringify(data));
+                }
+            });
+
+            //Ablita il tasto "RUN" se una org è selezionata
+            $('#selectCheckOrganization').off('keyup change').on('keyup change', function () {
+                //se cambio org resetta il tasto dell'ultima run
+                $('#previousRunBtn')
+                    .prop("disabled",true)
+                    .html("No previous run found")
+                ;
+                if ($("#selectCheckOrganization").val() !== "Select an organization to check") {
+                    $("#runCheckBtn").prop("disabled", false)
+
+                    //chiamata api al db per vedere se esiste un check già fatto
+                    $.ajax({
+                        url: "../legacy/management/WIPcheck.php",
+                        data: {
+                            token: sessionToken,
+                            organization: $("#selectCheckOrganization").val(),
+                            action: "checkLastRun"
+                        },
+                        type: "GET",
+                        async: false,
+                        dataType: 'json',
+                        success: function (data) {
+                            if (data.status === 'ok' && data.lastcheck !== null) {
+
+                                //scrive orario dell'ultimo check e abilita il bottone
+                                $('#previousRunBtn').html("Load previous check : " + data.lastcheck);
+                                $('#previousRunBtn').prop("disabled", false)
+                            } else {
+                                console.log("checknotfound")
+                            }
+
+                        },
+                        error: function (data) {
+
+                        }
+                    });
+                }
+            });
+
+            //Recupera l'ultimo controllo dal DB
+            $('#previousRunBtn').off('click');
+            $('#previousRunBtn').on('click', function () {
+                $.ajax({
+                    url: "../legacy/management/WIPcheck.php",
+                    data: {
+                        token: sessionToken,
+                        organization: $("#selectCheckOrganization").val(),
+                        action: "recoverLastRun"
+                    },
+                    type: "GET",
+                    async: false,
+                    dataType: 'json',
+                    success: function (data) {
+
+
+                        $("#LoadingGifCheck").hide()
+                        $("#chooseOrgLabel").hide()
+                        $("#devicesCheckTable").show()
+                        $("#previousRunBtn").hide()
+                        $("#selectCheckOrganization").hide()
+                        $("#runCheckBtn").hide()
+                        $("#applySelected").show()
+
+                        populateDeviceCheckTable(data);
+
+
+                    },
+                    error: function (data) {
+
+                    }
+                });
+            });
+
+
+            //se clicco CLOSE il modal si resetta
+            $('#cancelCheckBtn').off('click');
+            $('#cancelCheckBtn').on('click', function () {
+                $('#selectCheckOrganization')
+                    .find('option')
+                    .remove()
+                    .end()
+                    .append('<option value="Select an organization to check" disabled>Select an organization to check</option>')
+                    .val('Select an organization to check')
+                ;
+                $('#checkDeviceModal').on('hidden.bs.modal', function () {
+                    $(this).find('form').trigger('reset');
+                })
+
+                $('#previousRunBtn').html("No previous run found").prop('disabled',true);
+
+
+                if ($.fn.dataTable.isDataTable('#devicesCheckTable')) {
+                    $('#devicesCheckTable').DataTable().clear().destroy();
+                }
+
+
+
+                $('#runCheckBtn').show();
+                $("#selectCheckOrganization").show()
+                $("#chooseOrgLabel").html("Choose an organization")
+                $("#LoadingGifCheck").hide()
+                $("#applySelected").prop("disabled",true)
+
+            });
+
+            $('#runCheckBtn').off('click');
+            $('#runCheckBtn').on('click', function () {
+                $('#runCheckBtn').hide();
+                $("#selectCheckOrganization").hide()
+                $("#chooseOrgLabel").html("Please wait, this operation could require some time.")
+                $("#LoadingGifCheck").show()
+                let organization = $("#selectCheckOrganization").val();
+                let index = orgArray.indexOf(organization)
+                let kbUrl = kbUrlArray[index]
+
+                //chiamata a WipCheck.php
+                $.ajax({
+                    url: "../legacy/management/WIPcheck.php",
+                    data: {
+                        token: sessionToken,
+                        organization: organization,
+                        kbUrl: kbUrl,
+                        action: "check_devices"
+                    },
+                    type: "GET",
+                    async: false,
+                    dataType: 'json',
+                    success: function (data) {
+
+                        if(data["status"]==="ok") {
+
+
+                            $("#LoadingGifCheck").hide()
+                            $("#chooseOrgLabel").hide()
+                            $("#devicesCheckTable").show()
+                            $("#selectCheckOrganization").hide()
+                            $('#previousRunBtn').hide()
+                            $("#runCheckBtn").hide()
+                            $("#applySelected").show()
+
+                            populateDeviceCheckTable(data)
+
+                        }else{
+                            let error = data["status"] + " " + data["msg"] + " " +data["error_msg"] + " " +data["log"]
+                            $("#chooseOrgLabel").html(`<b style="color:red">Error: ${error} </b>`);
+                            $("#LoadingGifCheck").hide()
+                            $("#devicesCheckTable").hide()
+                        }
+
+                    },
+
+                    error: function (data) {
+
+                        $("#devicesCheckTable").hide()
+                        let error = data["status"] + " " + data["msg"] + " " +data["error_msg"] + " " +data["log"]
+                        $("#chooseOrgLabel").html(`<b style="color:red">Error: ${error} </b>`);
+
+                    }
+                });
+
+            });
+
+        }else{
+            //se non rootadmin mostra modal con messaggio d'errore
+            $('#checkDeviceModalNoRoot').modal('show');
+        }
+    });
+
+    //Attiva/disattiva "Apply selected" se almeno un checkbox è attivato
+    $('#devicesCheckTable').off('click');
+    $('#devicesCheckTable').on('keuyp change', function () {
+        if (isAtLeastOneCheckboxSelected()) {
+            $("#applySelected").prop("disabled",false)
+        }else{
+            $("#applySelected").prop("disabled",true)
+        }
+    });
+
+
+    // bottone "Apply selected"
+    $('#applySelected').on('click', function() {
+
+            let selectedInfo = []
+            let table = $('#devicesCheckTable').DataTable();
+
+            // ciclo su tutte le colonne
+            table.rows().every(function() {
+                const row = $(this.node());
+                const uri = row.find('td').first().text(); // recupera uri
+
+                // vedo cosa è selezionato
+                const retryChecked = row.find('.retryCheckbox').prop('checked');
+                const deleteChecked = row.find('.deleteCheckbox').prop('checked');
+
+
+                selectedInfo.push({
+                    uri: uri,
+                    retryChecked: retryChecked,
+                    deleteChecked: deleteChecked
+                });
+            });
+
+            // solo le colonne dove uno dei due è selezionato e non sono entrambi selezionati
+            selectedInfo = selectedInfo.filter(info => (info.retryChecked || info.deleteChecked) && !(info.retryChecked && info.deleteChecked));
+            alert("This function is in development")
+            // tutti gli oggetti spuntati
+            console.log(selectedInfo);
+
+    });
+
+    //controllo se almeno un checkbox è selezionato
+    function isAtLeastOneCheckboxSelected() {
+
+        const selectedCheckboxes = $('#devicesCheckTable input[type="checkbox"]:checked');
+
+        //ritorna numero di checkbox selezionati
+        return selectedCheckboxes.length > 0;
+    }
+
+    function populateDeviceCheckTable(data) {
+        let rows = [];
+
+        let uriArray = data.result;
+        console.log(data.result)
+        const getIcon = (value) => value ?
+            '<span style="color: forestgreen">✓</span>' :
+            '<span style="color: red">✗</span>';
+
+        Object.entries(uriArray).forEach(([uri, details]) => {
+            // Skip empty uri
+            console.log(uri)
+            if (!uri) return;
+
+            // Extract the part after "iot/"
+            const truncUri = uri.match(/.*iot\/(.*)/)?.[1] ?? uri;
+
+            const row = `
+                <tr>
+                    <td>...${truncUri}</td>
+                    <td style="text-align: center">${getIcon(details.database_record)}</td>
+                    <td style="text-align: center">${getIcon(details.knowledge_base)}</td>
+                    <td style="text-align: center">${getIcon(details.ownership_record)}</td>
+                    <td style="text-align: center">${getIcon(details.has_uri)}</td>
+                    <td><input type="checkbox" class="retryCheckbox"></td>
+                    <td><input type="checkbox" class="deleteCheckbox"></td>
+                    <td style="text-align: center">${(details.action_taken)}</td>
+                </tr>
+            `;
+                    rows.push(row);
+        });
+
+
+        // inserisce le righe
+        $('#deviceRows').html(rows.join(''));
+
+        //inizializza datatable
+        let table = $('#devicesCheckTable').DataTable({
+            "columnDefs": [
+                {"targets": [5, 6], "orderable": false} // Disabling order for retry and delete columns
+            ]
+        });
+
+
+
+        // gestisce i select all per le colonna retry
+        $('#retryAllCheckbox').on('change', function () {
+            const isChecked = $(this).prop('checked');
+
+            // per ogni riga
+            table.rows().nodes().to$().each(function () {
+                const row = $(this);
+                const deleteCheckbox = row.find('.deleteCheckbox');
+
+                // se uno dei due è selezionato disabilita l'altro
+                if (deleteCheckbox.prop('checked')) {
+                    row.find('.retryCheckbox').prop('checked', false).prop('disabled', true);
+                } else {
+                    row.find('.retryCheckbox').prop('checked', isChecked).prop('disabled', false);
+                }
+            });
+
+            // disabilita tutti i delete se retry all è selezionato
+            if (isChecked) {
+                table.rows().nodes().to$().find('.deleteCheckbox').prop('disabled', true);
+            } else {
+                // riabilita i delete se deselezionato
+                table.rows().nodes().to$().find('.deleteCheckbox').prop('disabled', false);
+            }
+
+
+            checkSelectAll(table);
+        });
+
+        // gestisce i select all per le colonna delete
+        $('#deleteAllCheckbox').on('change', function () {
+            const isChecked = $(this).prop('checked');
+
+
+            table.rows().nodes().to$().each(function () {
+                const row = $(this);
+                const retryCheckbox = row.find('.retryCheckbox');
+
+                // se uno dei due è selezionato disabilita l'altro
+                if (retryCheckbox.prop('checked')) {
+                    row.find('.deleteCheckbox').prop('checked', false).prop('disabled', true);
+                } else {
+                    row.find('.deleteCheckbox').prop('checked', isChecked).prop('disabled', false);
+                }
+            });
+
+            // disabilita retry se deleteall è selezionato
+            if (isChecked) {
+                table.rows().nodes().to$().find('.retryCheckbox').prop('disabled', true);
+            } else {
+                // riabilita se tolgo la spunta
+                table.rows().nodes().to$().find('.retryCheckbox').prop('disabled', false);
+            }
+
+            checkSelectAll(table);
+        });
+
+
+        // funzione per controllare se i checkbox non disabilitati sono tutti selezionati su una colonna
+        function checkSelectAll(table) {
+            const allRetryChecked = table.rows().nodes().to$().find('.retryCheckbox:enabled').length === table.rows().nodes().to$().find('.retryCheckbox:enabled:checked').length;
+            const allDeleteChecked = table.rows().nodes().to$().find('.deleteCheckbox:enabled').length === table.rows().nodes().to$().find('.deleteCheckbox:enabled:checked').length;
+
+            $('#retryAllCheckbox').prop('checked', allRetryChecked);
+            $('#deleteAllCheckbox').prop('checked', allDeleteChecked);
+        }
+    }
 }); // end of ready-state
 function activateStub(cb, deviceName, ipa, protocol, user, accesslink, accessport, model, edge_type, edge_uri, path, apikey, kind, latid, longi, deviceService, deviceServicePath)
 {

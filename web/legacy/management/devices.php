@@ -391,8 +391,19 @@ if (($hide_menu != "hide")) {
                                             <div id="displayDevicesMap" class="pull-right"><button type="button" class="btn btn-primary btn-round"><span class="glyphicon glyphicon-globe" style="font-size:36px; color: #0000ff"></span></button></div>
                                         </div>
                                         <div class="col-xs-12 col-md-6 modalCell" style= "background-color: rgb(241, 245, 244);">
-                                            <div class="pull-right "><button id="importDeviceBtn" class="btn btn-primary" style="margin-left:3px" >Import New Device</button></div><div><div class="pull-right "><button id="addDeviceBtn"  class="btn btn-primary">Add new device</button></div>
+                                            <div class="pull-right ">
+                                                <button id="importDeviceBtn" class="btn btn-primary" style="margin-left:3px" >Import New Device</button>
                                             </div>
+                                                <div class="pull-right ">
+                                                    <button id="addDeviceBtn"  class="btn btn-primary" style="margin-left:3px">Add new device</button>
+                                                </div>
+                                            <?php if ($_SESSION['loggedRole'] == "RootAdmin" ) { ?>
+                                            <div class="pull-left">
+                                                <button id="checkDeviceBtn" class="btn btn-primary">Check devices</button>
+                                            </div>
+                                            <?php } ?>
+
+
                                         </div>
                                     </div>
                                     <div >
@@ -2006,6 +2017,82 @@ if (($hide_menu != "hide")) {
                 </div>
             </div>
         </div>
+
+
+        <!--check device modal-->
+        <div class="modal fade" id="checkDeviceModal" tabindex="-1" role="dialog" aria-hidden="true" data-keyboard="false" data-backdrop="static">
+            <div class="modal-dialog modal-lg-deviceCheck" role="document">
+                <div class="modal-content">
+
+                    <div id="checkDeviceModal" class="modalHeader centerWithFlex">Devices check</div>
+
+
+                    <div  class="modal-body modalBody">
+
+                        <select id="selectCheckOrganization" name="selectCheckOrganization" class="modalInputTxt" style="font-weight: normal">
+                            <option selected="true" disabled >Select an organization to check</option>
+                        </select>
+                        <div class="modalFieldLabelCnt" id="chooseOrgLabel">Choose an organization</div>
+
+
+                        <div class="col-xs-12 centerWithFlex" ><i id="LoadingGifCheck" class="fa fa-circle-o-notch fa-spin" style="font-size:36px;" ></i></div></div>
+
+                    <div >
+                        <table id="devicesCheckTable" class="table table-bordered table-striped nowrap" cellspacing="0"  width="100%">
+                            <thead>
+                            <tr style="background: rgb(0, 162, 211); color: rgb(255, 255, 255); font-size: 1em;">
+                                <th data-cellTitle="DeviceId">Device Id</th>
+<!--                                <th data-cellTitle="Problem">Problem</th>-->
+                                <th data-cellTitle="isInDB">DB</th>
+                                <th data-cellTitle="isInKB">KB</th>
+                                <th data-cellTitle="isInOwn">Ownership</th>
+                                <th data-cellTitle="haveUri">have URI</th>
+                                <th data-cellTitle="MarkAsRetry">Mark as <b style="color: black">Retry</b> (Select all: <input type="checkbox" id="retryAllCheckbox">)</th>
+                                <th data-cellTitle="MarkAsDelete">Mark as <b style="color: black">Delete</b> (Select all: <input type="checkbox" id="deleteAllCheckbox">)</th>
+                                <th data-cellTitle="action">Action taken</th>
+
+                            </tr>
+                            </thead>
+                            <tbody id="deviceRows">
+
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <div class="modal-footer d-flex justify-content-between align-items-center">
+                        <button id="cancelCheckBtn" type="button" class="btn cancelBtn" data-dismiss="modal">Close</button>
+                        <button id="runCheckBtn" type="button" class="btn btn-primary">Run</button>
+                        <button id="previousRunBtn" type="button" class="btn btn-primary pull-left" disabled>No previous run found</button>
+
+                        <button id="applySelected" type="button" class="btn btn-primary mx-auto" disabled>Apply selected</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        </div>
+
+        <!--check device modal not RootAdmin-->
+        <div class="modal fade" id="checkDeviceModalNoRoot" tabindex="-1" role="dialog" aria-hidden="true">
+            <div class="modal-dialog modal-lg" role="document">
+                <div class="modal-content">
+
+                    <div id="checkDeviceModal" class="modalHeader centerWithFlex">Devices check</div>
+
+
+                    <div  class="modal-body modalBody">
+
+
+                        <div class="modalFieldLabelCnt">You don't have enough permissions to run this action</div>
+
+
+                        <div class="modal-footer">
+                            <button id="cancelCheckBtn" type="button" class="btn cancelBtn" data-dismiss="modal">Close</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <!-- Modal for Ownership Visibility and Delegations All the three Tab -- Just in Case
         <div class="modal fade" id="delegationsModal" tabindex="-1" role="dialog" aria-labelledby="modalAddWidgetTypeLabel" aria-hidden="true">
                 <div class="modal-dialog" role="document">

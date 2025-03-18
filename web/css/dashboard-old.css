@@ -2338,6 +2338,17 @@ a.moduleLink:hover
     font-weight: bold;
     text-transform: uppercase;
 }
+.retryDashBtn
+{
+    height: 20px;
+    background-color: rgba(255, 0, 0, 1);
+    border: none;
+    color: white;
+    font-family: 'Montserrat';
+    font-weight: bold;
+    text-transform: uppercase;
+}
+
 
 .delDashBtn
 {
