@@ -2020,7 +2020,7 @@ if (($hide_menu != "hide")) {
 
 
         <!--check device modal-->
-        <div class="modal fade" id="checkDeviceModal" tabindex="-1" role="dialog" aria-hidden="true" data-keyboard="false" data-backdrop="static">
+        <div class="modal fade" id="checkDeviceModal" tabindex="-2" role="dialog" aria-hidden="true" data-keyboard="false" data-backdrop="static">
             <div class="modal-dialog modal-lg-deviceCheck" role="document">
                 <div class="modal-content">
 
@@ -2047,8 +2047,8 @@ if (($hide_menu != "hide")) {
                                 <th data-cellTitle="isInKB">KB</th>
                                 <th data-cellTitle="isInOwn">Ownership</th>
                                 <th data-cellTitle="haveUri">have URI</th>
-                                <th data-cellTitle="MarkAsRetry">Mark as <b style="color: black">Retry</b> (Select all: <input type="checkbox" id="retryAllCheckbox">)</th>
-                                <th data-cellTitle="MarkAsDelete">Mark as <b style="color: black">Delete</b> (Select all: <input type="checkbox" id="deleteAllCheckbox">)</th>
+                                <th data-cellTitle="MarkAsRetry"><div style="max-width: 170px; overflow: auto; white-space: nowrap;  word-wrap: break-word; font-size:10px">Mark as <b style="color: black">Retry</b> (Select all: <input type="checkbox" id="retryAllCheckbox">)</div></th>
+                                <th data-cellTitle="MarkAsDelete"><div style="max-width: 170px; overflow: auto; white-space: nowrap;  word-wrap: break-word; font-size:10px">Mark as <b style="color: black">Delete</b> (Select all: <input type="checkbox" id="deleteAllCheckbox">)</div></th>
                                 <th data-cellTitle="action">Action taken</th>
 
                             </tr>
@@ -2069,11 +2069,11 @@ if (($hide_menu != "hide")) {
                 </div>
             </div>
         </div>
-        </div>
+<!--        </div>-->
 
         <!--check device modal not RootAdmin-->
         <div class="modal fade" id="checkDeviceModalNoRoot" tabindex="-1" role="dialog" aria-hidden="true">
-            <div class="modal-dialog modal-lg" role="document">
+            <div class="modal-dialog modal-lg-deviceCheck" role="document">
                 <div class="modal-content">
 
                     <div id="checkDeviceModal" class="modalHeader centerWithFlex">Devices check</div>
@@ -2092,6 +2092,52 @@ if (($hide_menu != "hide")) {
                 </div>
             </div>
         </div>
+
+
+        <!--check device modal-->
+        <div class="modal fade" id="checkDeviceModalResult" tabindex="-1" role="dialog" aria-hidden="true" data-keyboard="false" data-backdrop="static">
+            <div class="modal-dialog modal-lg-deviceCheck" role="document">
+                <div class="modal-content">
+
+                    <div id="checkDeviceModalResult" class="modalHeader centerWithFlex">Devices recovery result</div>
+                    <div  class="modal-body modalBody">
+
+                        <div class="col-xs-12 centerWithFlex" ><i id="LoadingGifCheckResult" class="fa fa-circle-o-notch fa-spin" style="font-size:36px;" ></i></div>
+                    </div>
+
+                    <div>
+                        <table id="devicesCheckTableResult" class="table table-bordered table-striped nowrap" cellspacing="0"  width="100%">
+                            <thead>
+                            <tr style="background: rgb(0, 162, 211); color: rgb(255, 255, 255); font-size: 1em;">
+                                <th data-cellTitle="DeviceId">Device Id</th>
+                                <th data-cellTitle="isInDB">DB</th>
+                                <th data-cellTitle="isInKB">KB</th>
+                                <th data-cellTitle="isInOwn">Ownership</th>
+                                <th data-cellTitle="haveUri">URI</th>
+                                <th data-cellTitle="action">Action taken</th>
+                            </tr>
+                            </thead>
+                            <tbody id="deviceRowsResult">
+
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <div class="modal-footer d-flex justify-content-between align-items-center">
+                        <button id="cancelResultBtn" type="button" class="btn cancelBtn" data-dismiss="modal">Close</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        </div>
+
+
+
+
+
+
+
+
 
         <!-- Modal for Ownership Visibility and Delegations All the three Tab -- Just in Case
         <div class="modal fade" id="delegationsModal" tabindex="-1" role="dialog" aria-labelledby="modalAddWidgetTypeLabel" aria-hidden="true">

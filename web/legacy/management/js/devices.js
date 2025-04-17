@@ -4492,6 +4492,9 @@ $(document).ready(function () {
             //se clicco CLOSE il modal si resetta
             $('#cancelCheckBtn').off('click');
             $('#cancelCheckBtn').on('click', function () {
+                console.log("clicked")
+                $("#chooseOrgLabel").html("Choose an organization")
+                console.log($("#chooseOrgLabel"))
                 $('#selectCheckOrganization')
                     .find('option')
                     .remove()
@@ -4609,20 +4612,121 @@ $(document).ready(function () {
                 const retryChecked = row.find('.retryCheckbox').prop('checked');
                 const deleteChecked = row.find('.deleteCheckbox').prop('checked');
 
+                let isInDb;
+                let isInKb;
+                let isInOwn;
+                let haveUri;
+
+                if($(row.find('td')[1]).text() === "✗"){
+                      isInDb=false;
+                }else{
+                      isInDb=true;
+                }
+
+                if($(row.find('td')[2]).text() === "✗"){
+                      isInKb=false;
+                }else{
+                      isInKb=true;
+                }
+
+                if($(row.find('td')[3]).text() === "✗"){
+                      isInOwn=false;
+                }else{
+                      isInOwn=true;
+                }
+
+                if($(row.find('td')[4]).text() === "✗"){
+                      haveUri=false;
+                }else{
+                      haveUri=true;
+                }
+
+
 
                 selectedInfo.push({
                     uri: uri,
                     retryChecked: retryChecked,
-                    deleteChecked: deleteChecked
+                    deleteChecked: deleteChecked,
+                    isInDb: isInDb,
+                    isInKb:isInKb,
+                    isInOwn:isInOwn,
+                    haveUri:haveUri
                 });
             });
 
             // solo le colonne dove uno dei due è selezionato e non sono entrambi selezionati
             selectedInfo = selectedInfo.filter(info => (info.retryChecked || info.deleteChecked) && !(info.retryChecked && info.deleteChecked));
-            alert("This function is in development")
+
             // tutti gli oggetti spuntati
             console.log(selectedInfo);
+            //console.log(JSON.stringify(selectedInfo))
 
+            $("#cancelCheckBtn").click()
+            // $("#checkDeviceModal").modal("hide")
+            // $("#cancelCheckBtn").click()
+
+            $("#checkDeviceModalResult").modal("show")
+            $("#LoadingGifCheckResult").show()
+
+            let k1key = generateUUID()
+            let k2key = generateUUID()
+
+
+            $.ajax({
+                url: "../legacy/management/WIPcheck.php",
+                data: {
+                    token: sessionToken,
+                    organization: organization,
+                    kbUrl: kbUrl,
+                    selectedInfo:JSON.stringify(selectedInfo),
+                    k1: k1key,
+                    k2: k2key,
+                    action: "applyRecoverDelete"
+                },
+                type: "GET",
+                async: false,
+                dataType: 'json',
+                success: function (data) {
+
+                    if(data["status"]==="ok") {
+
+                        $("#LoadingGifCheckResult").hide()
+                        //$("#chooseOrgLabel").hide()
+                        //$("#devicesCheckTableResult").show()
+                        //$("#selectCheckOrganization").hide()
+                        //$('#previousRunBtn').hide()
+                        //$("#runCheckBtn").hide()
+                        //$("#applySelected").show()
+
+                        populateDeviceResultTable(data)
+
+                    }else{
+                        console.log("ciao")
+                        // let error = data["status"] + " " + data["msg"] + " " +data["error_msg"] + " " +data["log"]
+                        // $("#chooseOrgLabel").html(`<b style="color:red">Error: ${error} </b>`);
+                        // $("#LoadingGifCheck").hide()
+                        // $("#devicesCheckTable").hide()
+                    }
+
+                },
+
+                error: function (data) {
+                    console.log("not ciao")
+                    // $("#devicesCheckTable").hide()
+                    // let error = data["status"] + " " + data["msg"] + " " +data["error_msg"] + " " +data["log"]
+                    // $("#chooseOrgLabel").html(`<b style="color:red">Error: ${error} </b>`);
+
+                }
+            });
+
+
+    });
+
+    //cancella tabella dei risultati se chiudo il modal
+    $("#cancelResultBtn").off('click');
+    $("#cancelResultBtn").on('click', function(){
+        $('#devicesCheckTableResult').DataTable().destroy();
+        $('#deviceRowsResult').empty();
     });
 
     //controllo se almeno un checkbox è selezionato
@@ -4651,18 +4755,48 @@ $(document).ready(function () {
             // Extract the part after "iot/"
             const truncUri = uri.match(/.*iot\/(.*)/)?.[1] ?? uri;
 
-            const row = `
+            let row;
+            if(details.database_record==true && details.knowledge_base==true && details.ownership_record==true && details.has_uri==true){
+                row = `
                 <tr>
-                    <td>...${truncUri}</td>
+                    <td><div font-size:12px">...${truncUri}</div></td>
+                    <td style="text-align: center">${getIcon(details.database_record)}</td>
+                    <td style="text-align: center">${getIcon(details.knowledge_base)}</td>
+                    <td style="text-align: center">${getIcon(details.ownership_record)}</td>
+                    <td style="text-align: center">${getIcon(details.has_uri)}</td>
+                    <td><input type="checkbox" class="retryCheckbox" disabled></td>
+                    <td><input type="checkbox" class="deleteCheckbox" disabled></td>
+                    <td style="text-align: center">Device working</td>
+                </tr>
+            `;
+            }else if(details.database_record==false && details.knowledge_base==false && details.ownership_record==false && details.has_uri==false){
+                row = `
+                <tr>
+                    <td><div font-size:12px">...${truncUri}</div></td>
+                    <td style="text-align: center">${getIcon(details.database_record)}</td>
+                    <td style="text-align: center">${getIcon(details.knowledge_base)}</td>
+                    <td style="text-align: center">${getIcon(details.ownership_record)}</td>
+                    <td style="text-align: center">${getIcon(details.has_uri)}</td>
+                    <td><input type="checkbox" class="retryCheckbox" disabled></td>
+                    <td><input type="checkbox" class="deleteCheckbox" disabled></td>
+                    <td style="text-align: center">Device deleted</td>
+                </tr>
+            `;
+            } else{
+            row = `
+                <tr>
+                    <td><div font-size:12px">...${truncUri}</div></td>
                     <td style="text-align: center">${getIcon(details.database_record)}</td>
                     <td style="text-align: center">${getIcon(details.knowledge_base)}</td>
                     <td style="text-align: center">${getIcon(details.ownership_record)}</td>
                     <td style="text-align: center">${getIcon(details.has_uri)}</td>
                     <td><input type="checkbox" class="retryCheckbox"></td>
                     <td><input type="checkbox" class="deleteCheckbox"></td>
-                    <td style="text-align: center">${(details.action_taken)}</td>
+                    <td style="text-align: center"><div style="max-width: 180px; overflow: auto; white-space: nowrap;  word-wrap: break-word; font-size:12px">${(details.action_taken)}</div></td>
                 </tr>
             `;
+            }
+
                     rows.push(row);
         });
 
@@ -4746,7 +4880,53 @@ $(document).ready(function () {
             $('#deleteAllCheckbox').prop('checked', allDeleteChecked);
         }
     }
-}); // end of ready-state
+ // end of ready-state
+
+
+    function populateDeviceResultTable(data){
+
+        let rows = [];
+        console.log(data)
+        let uriArray = data.opResult;
+        console.log(data.opResult)
+        const getIcon = (value) => value ?
+            '<span style="color: forestgreen">✓</span>' :
+            '<span style="color: red">✗</span>';
+
+
+        uriArray.forEach(function(row) {
+
+            let actionContent = row[5];
+
+            // Create a scrollable wrapper for the Action column if the content is long
+            actionContent = `<div style="max-width: 300px; overflow: auto; white-space: nowrap; word-wrap: break-word;">${actionContent}</div>`;
+
+
+            // Create a table row from the values in the row array
+            var tableRow = `
+                <tr>
+                    <td><div font-size:12px">${row[0]}</div></td> <!-- Device ID -->
+                    <td>${getIcon(row[1])}</td> <!-- DB (boolean) -->
+                    <td>${getIcon(row[2])}</td> <!-- KB (boolean) -->
+                    <td>${getIcon(row[3])}</td> <!-- Ownership (boolean) -->
+                    <td>${getIcon(row[4])}</td> <!-- URI -->
+                    <td>${actionContent}</td> <!-- Action -->
+                </tr>
+            `;
+            // Append the row to the table body
+            $('#deviceRowsResult').append(tableRow);
+        });
+
+        // After populating the table, initialize the DataTable
+        $('#devicesCheckTableResult').DataTable({
+            destroy: true,  // Allows re-initialization of the table
+            responsive: true,
+            autoWidth: false
+        });
+    }
+});
+
+
 function activateStub(cb, deviceName, ipa, protocol, user, accesslink, accessport, model, edge_type, edge_uri, path, apikey, kind, latid, longi, deviceService, deviceServicePath)
 {
     //console.log("log "+ cb + " "+ipa+" "+accesslink+" "+accessport+" "+model+ " api "+ apikey + " organization "+ organization + " kind "+kind);
