@@ -1579,10 +1579,11 @@ function deleteOwnershipEntry($selectedDevice, $link, &$apiResult){
         $stmt->execute();
         $result = $stmt->get_result();
 
+        $role=$_SESSION[loggedUsername];
         //se esiste ed è unica posso cancellarlo
         if ($result->num_rows == 1) {
-            $stmt = $dbConnection->prepare("DELETE FROM $ownershipdburl WHERE elementId=?");
-            $stmt->bind_param("s", $elementId);
+            $stmt = $dbConnection->prepare("UPDATE $ownershipdburl SET deleted = NOW(),deletedBy = ? WHERE elementId = ?");
+            $stmt->bind_param("ss", $role,$elementId);
             $stmt->execute();
             $apiResult["log"] .= "\n deleted from ownership\n";
             $apiResult["actionTaken"] .= "\n deleted from ownership\n";
