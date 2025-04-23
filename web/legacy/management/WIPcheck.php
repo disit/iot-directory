@@ -42,22 +42,35 @@ class UriComparison {
     public function fetchOwnershipData(): array {
         // Query to get non-deleted IOT device URIs from ownership table
         $query = "SELECT elementUrl FROM profiledb.ownership 
-                 WHERE elementType = 'IOTID' AND deleted IS NULL";
+             WHERE elementType = 'IOTID' AND deleted IS NULL
+             AND elementId REGEXP ?";
+
+        // Create pattern that matches exact organization name at start followed by colon
+        $organizationPattern = "^" . $this->organization . ":";
 
         try {
-            // Execute the query
-            $result = $this->link->query($query);
+            $stmt = $this->link->prepare($query);
+            if (!$stmt) {
+                throw new Exception("Failed to prepare ownership query: " . $this->link->error);
+            }
+
+            // Bind the organization pattern parameter
+            $stmt->bind_param("s", $organizationPattern);
+
+            if (!$stmt->execute()) {
+                throw new Exception("Failed to execute ownership query: " . $stmt->error);
+            }
+
+            $result = $stmt->get_result();
         if (!$result) {
-                throw new Exception("Failed to execute ownership query: " . $this->link->error);
+                throw new Exception("Failed to get ownership results: " . $stmt->error);
         }
 
             // Fetch all results and extract URIs
             $ownershipData = $result->fetch_all(MYSQLI_ASSOC);
             $ownershipUris = array_column($ownershipData, 'elementUrl');
 
-            // Free the result set
-            $result->free();
-
+            $stmt->close();
             return array_unique($ownershipUris);
 
         } catch (Exception $e) {

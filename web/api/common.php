@@ -158,13 +158,13 @@ if(canBeRegistered($id, $devicetype, $contextbroker, $kind, $protocol, $format, 
                 }
                 if ($syntaxRes == 0) {
 
-                    if ($result["status"] == 'ok' && $result["content"] == null) {
+//                        if ($result["status"] == 'ok' && $result["content"] == null) {
                         $q = "INSERT INTO devices(id, devicetype, contextBroker,  kind, protocol, format, macaddress, model, producer, latitude, longitude, visibility, frequency, privatekey, certificate, organization, subnature, static_attributes, service, servicePath, wktGeometry, hlt) " .
                                 "VALUES('$id', '$devicetype', '$contextbroker', '$kind', '$protocol', '$format', '$macaddress', '$model', '$producer', '$latitude', '$longitude', '$visibility', '$frequency', '$privatekey','$certificate', '$organization', '$subnature', '$staticAttributes', $service, $servicePath,CASE WHEN '$wktGeometry' = '' THEN NULL ELSE '$wktGeometry' END, '$hlt')";
-                    } else {
-                        $q = "INSERT INTO devices(id, devicetype, contextBroker,  kind, protocol, format, macaddress, model, producer, latitude, longitude,uri, visibility,  frequency, privatekey, certificate, mandatoryproperties,mandatoryvalues, organization, subnature, static_attributes, service, servicePath,wktGeometry,hlt) " .
-                                "VALUES('$id', '$devicetype', '$contextbroker', '$kind', '$protocol', '$format', '$macaddress', '$model', '$producer', '$latitude', '$longitude', '" . $result["content"] . "', '$visibility', '$frequency', '$privatekey','$certificate',1,1, '$organization', '$subnature', '$staticAttributes', $service, $servicePath,CASE WHEN '$wktGeometry' = '' THEN NULL ELSE '$wktGeometry' END, '$hlt')";
-                    }
+//                        } else {
+//                            $q = "INSERT INTO devices(id, devicetype, contextBroker,  kind, protocol, format, macaddress, model, producer, latitude, longitude,uri, visibility,  frequency, privatekey, certificate, mandatoryproperties,mandatoryvalues, organization, subnature, static_attributes, service, servicePath,wktGeometry,hlt) " .
+//                                "VALUES('$id', '$devicetype', '$contextbroker', '$kind', '$protocol', '$format', '$macaddress', '$model', '$producer', '$latitude', '$longitude', '" . $result["content"] . "', '$visibility', '$frequency', '$privatekey','$certificate',1,1, '$organization', '$subnature', '$staticAttributes', $service, $servicePath,CASE WHEN '$wktGeometry' = '' THEN NULL ELSE '$wktGeometry' END, '$hlt')";
+//                        }
 
                     $r = mysqli_query($link, $q);
                     if ($r) {
