@@ -444,7 +444,7 @@ class UriComparison {
 
             $results[] = $status;
         }
-        $myfile = fopen("WIPcheckDump.txt", "w") or die("Unable to open file!");
+        $myfile = fopen("/tmp/WIPcheckDump.txt", "w") or die("Unable to open file!");
 // Convert array to JSON format for better readability
         $jsonResults = json_encode($results, JSON_PRETTY_PRINT);
         fwrite($myfile, $jsonResults);
@@ -1433,7 +1433,8 @@ function retryOwnershipEntry($selectedDevice,$DBlink,$k1,$k2,&$apiResult)
     //hard-coded ma mi servovono obbligatoriamente per riprovare l'inserimento della ownership
     $elementType="IOTID";
     $currentDate = date("Y-m-d H:i:s");
-    $username='RootAdmin';
+
+    $username=$_SESSION[loggedUsername];
     $elementDetails = array(
         "k1" => $k1,
         "k2" => $k2,
@@ -1450,7 +1451,7 @@ function retryOwnershipEntry($selectedDevice,$DBlink,$k1,$k2,&$apiResult)
         }
 
         //controllo che manchi tutta la entry e non solo l'uri nella ownership
-        $query = "SELECT elementName FROM $ownershipdburl WHERE elementId=? ";
+        $query = "SELECT elementName FROM $ownershipdburl WHERE elementId=? AND deleted IS NULL";
         $stmt = $dbConnection->prepare($query);
         $stmt->bind_param("s", $elementId);
         $stmt->execute();
