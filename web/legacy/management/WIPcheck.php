@@ -34,13 +34,14 @@ class UriComparison {
     }
 
     /**
-     * Fetches ownership URIs from the profiledb database
+     * Fetches ownership URIs from the profiledb database for the specific organization
      *
-     * @return array List of URIs from ownership records
+     * @return array List of URIs from ownership records for the current organization
      * @throws Exception If there's an error with the database query
      */
     public function fetchOwnershipData(): array {
         // Query to get non-deleted IOT device URIs from ownership table
+        // Using REGEXP for exact organization match at the beginning of elementId
         $query = "SELECT elementUrl FROM profiledb.ownership 
              WHERE elementType = 'IOTID' AND deleted IS NULL
              AND elementId REGEXP ?";
@@ -93,62 +94,62 @@ class UriComparison {
             #?sCategory rdfs:subClassOf km4c:Service.
         }
         #ORDER BY ?s
-        OFFSET " . ($offset + 1) . "
+        OFFSET " . ($offset) . "
         LIMIT " . $this->batchSize;
         //return "SELECT DISTINCT ?s WHERE { ?s ?p ?o } LIMIT {$this->batchSize} OFFSET {$offset}";
     }
 
-    public function fetchReconstructableUris(): array {
-
-        //magari fare la stessa query per recuperare quelli con gli uri mancanti dalla ownwership
+//    public function fetchReconstructableUris(): array {
+//
+//        //magari fare la stessa query per recuperare quelli con gli uri mancanti dalla ownwership
+//        //
+//        // Query to get entries without URIs but with enough information to reconstruct them
+//        $query = "SELECT contextBroker, organization, id FROM iotdb.devices
+//                 WHERE uri IS NULL AND organization = ?
+//                 AND contextBroker IS NOT NULL AND id IS NOT NULL";
+//
+//        try {
+//            $stmt = $this->link->prepare($query);
+//            if (!$stmt) {
+//                throw new Exception("Failed to prepare reconstructable query: " . $this->link->error);
+//            }
+//
+//            // Bind the organization parameter
+//            $stmt->bind_param("s", $this->organization);
+//
+//            if (!$stmt->execute()) {
+//                throw new Exception("Failed to execute reconstructable query: " . $stmt->error);
+//            }
+//
+//            $result = $stmt->get_result();
+//            if (!$result) {
+//                throw new Exception("Failed to get reconstructable results: " . $stmt->error);
+//            }
+//
+//            // Fetch all results
+//            $reconstructableRecords = $result->fetch_all(MYSQLI_ASSOC);
+//
+//            // Reconstruct URIs using the pattern: contextBroker/organization/id
+//            $reconstructedUris = [];
+//            foreach ($reconstructableRecords as $record) {
+//                if (isset($record['contextBroker'], $record['organization'], $record['id'])) {
+//                    $reconstructedUris[] = sprintf("%s/%s/%s/%s",
+//                        "http://www.disit.org/km4city/resource/iot",
+//                        $record['contextBroker'],
+//                        $record['organization'],
+//                        $record['id']
+//                    );
+//                }
+//            }
         //
-        // Query to get entries without URIs but with enough information to reconstruct them
-        $query = "SELECT contextBroker, organization, id FROM iotdb.devices 
-                 WHERE uri IS NULL AND organization = ? 
-                 AND contextBroker IS NOT NULL AND id IS NOT NULL";
-
-        try {
-            $stmt = $this->link->prepare($query);
-            if (!$stmt) {
-                throw new Exception("Failed to prepare reconstructable query: " . $this->link->error);
-        }
-
-            // Bind the organization parameter
-            $stmt->bind_param("s", $this->organization);
-
-            if (!$stmt->execute()) {
-                throw new Exception("Failed to execute reconstructable query: " . $stmt->error);
-            }
-
-            $result = $stmt->get_result();
-            if (!$result) {
-                throw new Exception("Failed to get reconstructable results: " . $stmt->error);
-            }
-
-            // Fetch all results
-            $reconstructableRecords = $result->fetch_all(MYSQLI_ASSOC);
-
-            // Reconstruct URIs using the pattern: contextBroker/organization/id
-            $reconstructedUris = [];
-            foreach ($reconstructableRecords as $record) {
-                if (isset($record['contextBroker'], $record['organization'], $record['id'])) {
-                    $reconstructedUris[] = sprintf("%s/%s/%s/%s",
-                        "http://www.disit.org/km4city/resource/iot",
-                        $record['contextBroker'],
-                        $record['organization'],
-                        $record['id']
-                    );
-                }
-            }
-
-            $stmt->close();
-            return array_unique($reconstructedUris);
-
-        } catch (Exception $e) {
-            error_log("Error in fetchReconstructableUris: " . $e->getMessage());
-            throw $e;
-        }
-    }
+//            $stmt->close();
+//            return array_unique($reconstructedUris);
+//
+//        } catch (Exception $e) {
+//            error_log("Error in fetchReconstructableUris: " . $e->getMessage());
+//            throw $e;
+//        }
+//    }
 
     /**
      * Compare URIs from all sources automatically, including reconstructable URIs
@@ -159,8 +160,9 @@ class UriComparison {
     public function compareAllSourcesComplete(): array {
         try {
             // Fetch URIs from all sources
-            $databaseUris = $this->fetchAllDBData();
-            $reconstructableUris = $this->fetchReconstructableUris();
+            $reconstructedUris=[];
+            $databaseUris = $this->fetchAllDBData($reconstructedUris);
+//            $reconstructableUris = $this->fetchReconstructableUris();
             $knowledgebaseUris = $this->fetchAllKBData();
             $ownershipUris = $this->fetchOwnershipData();
 
@@ -169,7 +171,7 @@ class UriComparison {
                 $databaseUris,
                 $knowledgebaseUris,
                 $ownershipUris,
-                $reconstructableUris
+                $reconstructedUris
             );
         } catch (Exception $e) {
             error_log("Error in compareAllSourcesComplete: " . $e->getMessage());
@@ -184,10 +186,49 @@ class UriComparison {
      * @return array List of URIs from the database
      * @throws Exception If there's an error with the database query
      */
-    public function fetchDBData(int $offset): array {
+//    public function fetchDBData(int $offset): array {
+//        //TODO:controllare anche l'id eventualmente ricostruirlo e metterlo in reconstructed uri
+//        // Prepare the query using a prepared statement to prevent SQL injection
+//        $query = "SELECT uri FROM iotdb.devices WHERE organization = ? LIMIT ? OFFSET ?";
+//
+//        try {
+//            $stmt = $this->link->prepare($query);
+//            if (!$stmt) {
+//                throw new Exception("Failed to prepare database query: " . $this->link->error);
+//            }
+//
+//            // Bind parameters safely
+//            $stmt->bind_param("sii", $this->organization, $this->batchSize, $offset);
+//
+//
+//
+//            // Execute the query
+//            if (!$stmt->execute()) {
+//                throw new Exception("Failed to execute database query: " . $stmt->error);
+//            }
+//
+//            // Get the results
+//            $result = $stmt->get_result();
+//
+//            if (!$result) {
+//                throw new Exception("Failed to get query results: " . $stmt->error);
+//            }
+//
+//            // Fetch all URIs as an associative array and extract the 'uri' column
+//            $uris = array_column($result->fetch_all(MYSQLI_ASSOC), 'uri');
+//
+//            $stmt->close();
+//            return $uris;
+//
+//        } catch (Exception $e) {
+//            error_log("Error in fetchDBData: " . $e->getMessage());
+//            throw $e;
+//        }
+//    }
+    public function fetchDBData(int $offset,&$reconstructedUris): array {
+        //TODO:controllare anche l'id eventualmente ricostruirlo e metterlo in reconstructed uri
         // Prepare the query using a prepared statement to prevent SQL injection
-        $query = "SELECT uri FROM iotdb.devices WHERE organization = ? LIMIT ? OFFSET ?";
-
+        $query = "SELECT uri, id,contextBroker FROM iotdb.devices WHERE organization = ? LIMIT ? OFFSET ?";
         try {
             $stmt = $this->link->prepare($query);
             if (!$stmt) {
@@ -208,8 +249,23 @@ class UriComparison {
                 throw new Exception("Failed to get query results: " . $stmt->error);
             }
 
-            // Fetch all URIs as an associative array and extract the 'uri' column
-            $uris = array_column($result->fetch_all(MYSQLI_ASSOC), 'uri');
+            $uris = [];
+            while ($row = $result->fetch_assoc()) {
+
+                // Se c'è l'id ma non l'uri, lo ricostruisco e lo aggiungo sia agli uri che ai recostructed uri
+                if (!empty($row['id']) && (empty($row['uri']) || $row['uri'] === null)) {
+
+                    $rebuiltUri="http://www.disit.org/km4city/resource/iot/".$row["contextBroker"]."/".$this->organization."/".$row["id"];
+
+                    $uris[] = $rebuiltUri;
+                    $reconstructedUris[] = $rebuiltUri;
+                }
+
+                // Only add uri to results if it's not empty
+                if (!empty($row['uri'])) {
+                    $uris[] = $row['uri'];
+                }
+            }
 
             $stmt->close();
             return $uris;
@@ -225,13 +281,13 @@ class UriComparison {
      *
      * @return array Complete list of URIs from the database
      */
-    public function fetchAllDBData(): array {
+    public function fetchAllDBData(&$reconstructedUris): array {
         $allUris = [];
         $offset = 0;
 
         try {
             while (true) {
-                $uris = $this->fetchDBData($offset);
+                $uris = $this->fetchDBData($offset,$reconstructedUris);
                 if (empty($uris)) {
                     break;
         }
@@ -304,70 +360,97 @@ class UriComparison {
         }
 
 
-    /**
-     * Compare URIs from all sources automatically
-     *
-     * @param array $ownershipUris URIs from ownership records
-     * @param array $reconstructableUris Optional list of URIs that can be reconstructed
-     * @return array List of URIs with their presence status in each system
-     */
-    public function compareAllSources(array $ownershipUris, array $reconstructableUris = []): array {
-        try {
-            // Fetch both DB and KB data automatically
-            $databaseUris = $this->fetchAllDBData();
-            $knowledgebaseUris = $this->fetchAllKBData();
+//    /**
+//     * Compare URIs from all sources automatically
+//     *
+//     * @param array $ownershipUris URIs from ownership records
+//     * @param array $reconstructableUris Optional list of URIs that can be reconstructed
+//     * @return array List of URIs with their presence status in each system
+//     */
+//    public function compareAllSources(array $ownershipUris, array $reconstructableUris = []): array {
+//        try {
+//            // Fetch both DB and KB data automatically
+//            $databaseUris = $this->fetchAllDBData();
+//            $knowledgebaseUris = $this->fetchAllKBData();
+//
+//            return $this->compareUriLists($databaseUris, $knowledgebaseUris, $ownershipUris, $reconstructableUris);
+//        } catch (Exception $e) {
+//            error_log("Error in compareAllSources: " . $e->getMessage());
+//            throw $e;
+//        }
+//    }
 
-            return $this->compareUriLists($databaseUris, $knowledgebaseUris, $ownershipUris, $reconstructableUris);
-        } catch (Exception $e) {
-            error_log("Error in compareAllSources: " . $e->getMessage());
-            throw $e;
-            }
-        }
+//    public function handleMissingUri(){
+//
+//    }
 
-    public function handleMissingUri(){
 
-            }
-
+    //TODO: da vedere come fare, perchè forse merita togliere uri e devo aggiungere il controllo col broker
     public function compareUriLists(
         array $databaseUris,
         array $knowledgebaseUris,
         array $ownershipUris,
-        array $reconstructableUris = []
+        array $reconstructedUris
     ): array {
-        // Previous implementation remains the same
+        // Create lookup arrays for faster checks
         $dbSet = array_flip($databaseUris);
         $kbSet = array_flip($knowledgebaseUris);
         $ownSet = array_flip($ownershipUris);
-        $reconstructableSet = array_flip($reconstructableUris);
+        $reconstructedSet = array_flip($reconstructedUris);
 
+        // Combine all URIs to process
         $allUris = array_unique(array_merge(
             $databaseUris,
             $knowledgebaseUris,
-            $ownershipUris,
-            $reconstructableUris
-        ));
-        //echo var_dump($allUris);
+            $ownershipUris
 
-        $brokenUris = [];
+        ));
+
+        //con AllUris trovo gli uri univoci, ovvero che sono salvati almeno in un posto
+        //poi ciclo su essi e guardo dove sono presenti, se ci sono allora lì l'inserimento è andato a buon fine.
+        //TODO: potrei prendere la lista degli univoci e poi fare le chiamate per controllare anche il broker
+        $results = [];
 
         foreach ($allUris as $uri) {
-            if (isset($dbSet[$uri]) && isset($kbSet[$uri]) && isset($ownSet[$uri])) {
+            $inDatabase = isset($dbSet[$uri]);
+            $inKnowledgebase = isset($kbSet[$uri]);
+            $inOwnership = isset($ownSet[$uri]);
+            $isReconstructed = isset($reconstructedSet[$uri]);
+
+            // Skip URIs that are present in all three main systems
+            if ($inDatabase && $inKnowledgebase && $inOwnership) {
+                continue;
+            }
+
+            // Skip URIs that are missing from all three main systems
+            if (!$inDatabase && !$inKnowledgebase && !$inOwnership) {
                 continue;
         }
+            if($inDatabase){
+                $isReconstructed = !$isReconstructed;
+            }else{
+                $isReconstructed=false;
+            }
 
+            // Create status object with consistent property names
+            // At this point, we know the URI is partially present (in at least one system but not all)
             $status = [
                 'uri' => $uri,
-                'in_database' => isset($dbSet[$uri]),
-                'in_knowledgebase' => isset($kbSet[$uri]),
-                'in_ownership' => isset($ownSet[$uri]),
-                'is_reconstructable' => isset($reconstructableSet[$uri]),
-                'has_uri' => isset($dbSet[$uri]) || isset($reconstructableSet[$uri])
+                'in_database' => $inDatabase,
+                'in_knowledgebase' => $inKnowledgebase,
+                'in_ownership' => $inOwnership,
+                'has_uri' => $isReconstructed // Consistent naming with API output
             ];
 
-            $brokenUris[] = $status;
+            $results[] = $status;
         }
+        $myfile = fopen("WIPcheckDump.txt", "w") or die("Unable to open file!");
+// Convert array to JSON format for better readability
+        $jsonResults = json_encode($results, JSON_PRETTY_PRINT);
+        fwrite($myfile, $jsonResults);
+        fclose($myfile);
 
-        return $brokenUris;
+        return $results;
     }
 }
 
@@ -507,8 +590,8 @@ if($action=="check_devices"){
                 'database_record' => (bool)$result['in_database'],
                 'knowledge_base' => (bool)$result['in_knowledgebase'],
                 'ownership_record' => (bool)$result['in_ownership'],
-                'is_reconstructable' => $result['is_reconstructable'] ?? false,
-                'has_uri' => (bool)$result['have_uri'],
+                //'is_reconstructable' => $result['is_reconstructable'] ?? false,
+                'has_uri' => (bool)$result['has_uri'],
                 'action_taken' => ''
             ];
         }
