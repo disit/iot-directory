@@ -4616,6 +4616,7 @@ $(document).ready(function () {
                 let isInKb;
                 let isInOwn;
                 let haveUri;
+                let isInBroker;
 
                 if($(row.find('td')[1]).text() === "✗"){
                       isInDb=false;
@@ -4640,6 +4641,11 @@ $(document).ready(function () {
                 }else{
                       haveUri=true;
                 }
+                if($(row.find('td')[5]).text() === "✗"){
+                    isInBroker=false;
+                }else{
+                    isInBroker=true;
+                }
 
 
 
@@ -4650,7 +4656,8 @@ $(document).ready(function () {
                     isInDb: isInDb,
                     isInKb:isInKb,
                     isInOwn:isInOwn,
-                    haveUri:haveUri
+                    haveUri:haveUri,
+                    isInBroker:isInBroker
                 });
             });
 
@@ -4756,7 +4763,7 @@ $(document).ready(function () {
             const truncUri = uri.match(/.*iot\/(.*)/)?.[1] ?? uri;
 
             let row;
-            if(details.database_record==true && details.knowledge_base==true && details.ownership_record==true && details.has_uri==true){
+            if(details.database_record==true && details.knowledge_base==true && details.ownership_record==true && details.has_uri==true && details.broker_record==true){
                 row = `
                 <tr>
                     <td><div font-size:12px">...${truncUri}</div></td>
@@ -4764,12 +4771,13 @@ $(document).ready(function () {
                     <td style="text-align: center">${getIcon(details.knowledge_base)}</td>
                     <td style="text-align: center">${getIcon(details.ownership_record)}</td>
                     <td style="text-align: center">${getIcon(details.has_uri)}</td>
+                    <td style="text-align: center">${getIcon(details.broker_record)}</td>
                     <td><input type="checkbox" class="retryCheckbox" disabled></td>
                     <td><input type="checkbox" class="deleteCheckbox" disabled></td>
                     <td style="text-align: center">Device working</td>
                 </tr>
             `;
-            }else if(details.database_record==false && details.knowledge_base==false && details.ownership_record==false && details.has_uri==false){
+            }else if(details.database_record==false && details.knowledge_base==false && details.ownership_record==false && details.has_uri==false && details.broker_record==false){
                 row = `
                 <tr>
                     <td><div font-size:12px">...${truncUri}</div></td>
@@ -4777,6 +4785,7 @@ $(document).ready(function () {
                     <td style="text-align: center">${getIcon(details.knowledge_base)}</td>
                     <td style="text-align: center">${getIcon(details.ownership_record)}</td>
                     <td style="text-align: center">${getIcon(details.has_uri)}</td>
+                    <td style="text-align: center">${getIcon(details.broker_record)}</td>
                     <td><input type="checkbox" class="retryCheckbox" disabled></td>
                     <td><input type="checkbox" class="deleteCheckbox" disabled></td>
                     <td style="text-align: center">Device deleted</td>
@@ -4790,6 +4799,7 @@ $(document).ready(function () {
                     <td style="text-align: center">${getIcon(details.knowledge_base)}</td>
                     <td style="text-align: center">${getIcon(details.ownership_record)}</td>
                     <td style="text-align: center">${getIcon(details.has_uri)}</td>
+                    <td style="text-align: center">${getIcon(details.broker_record)}</td>
                     <td><input type="checkbox" class="retryCheckbox"></td>
                     <td><input type="checkbox" class="deleteCheckbox"></td>
                     <td style="text-align: center"><div style="max-width: 180px; overflow: auto; white-space: nowrap;  word-wrap: break-word; font-size:12px">${(details.action_taken)}</div></td>
@@ -4807,7 +4817,7 @@ $(document).ready(function () {
         //inizializza datatable
         let table = $('#devicesCheckTable').DataTable({
             "columnDefs": [
-                {"targets": [5, 6], "orderable": false} // Disabling order for retry and delete columns
+                {"targets": [6, 7], "orderable": false} // Disabling order for retry and delete columns
             ]
         });
 
@@ -4910,6 +4920,7 @@ $(document).ready(function () {
                     <td>${getIcon(row[2])}</td> <!-- KB (boolean) -->
                     <td>${getIcon(row[3])}</td> <!-- Ownership (boolean) -->
                     <td>${getIcon(row[4])}</td> <!-- URI -->
+                    <td>${getIcon(row[5])}</td> <!--broker-->
                     <td>${actionContent}</td> <!-- Action -->
                 </tr>
             `;

@@ -2047,6 +2047,7 @@ if (($hide_menu != "hide")) {
                                 <th data-cellTitle="isInKB">KB</th>
                                 <th data-cellTitle="isInOwn">Ownership</th>
                                 <th data-cellTitle="haveUri">have URI</th>
+                                <th data-cellTitle="isInBroker">Broker</th>
                                 <th data-cellTitle="MarkAsRetry"><div style="max-width: 170px; overflow: auto; white-space: nowrap;  word-wrap: break-word; font-size:10px">Mark as <b style="color: black">Retry</b> (Select all: <input type="checkbox" id="retryAllCheckbox">)</div></th>
                                 <th data-cellTitle="MarkAsDelete"><div style="max-width: 170px; overflow: auto; white-space: nowrap;  word-wrap: break-word; font-size:10px">Mark as <b style="color: black">Delete</b> (Select all: <input type="checkbox" id="deleteAllCheckbox">)</div></th>
                                 <th data-cellTitle="action">Action taken</th>
@@ -2114,6 +2115,7 @@ if (($hide_menu != "hide")) {
                                 <th data-cellTitle="isInKB">KB</th>
                                 <th data-cellTitle="isInOwn">Ownership</th>
                                 <th data-cellTitle="haveUri">URI</th>
+                                <th data-cellTitle="isInBroker">Broker</th>
                                 <th data-cellTitle="action">Action taken</th>
                             </tr>
                             </thead>

@@ -186,48 +186,8 @@ class UriComparison {
      * @return array List of URIs from the database
      * @throws Exception If there's an error with the database query
      */
-//    public function fetchDBData(int $offset): array {
-//        //TODO:controllare anche l'id eventualmente ricostruirlo e metterlo in reconstructed uri
-//        // Prepare the query using a prepared statement to prevent SQL injection
-//        $query = "SELECT uri FROM iotdb.devices WHERE organization = ? LIMIT ? OFFSET ?";
-//
-//        try {
-//            $stmt = $this->link->prepare($query);
-//            if (!$stmt) {
-//                throw new Exception("Failed to prepare database query: " . $this->link->error);
-//            }
-//
-//            // Bind parameters safely
-//            $stmt->bind_param("sii", $this->organization, $this->batchSize, $offset);
-//
-//
-//
-//            // Execute the query
-//            if (!$stmt->execute()) {
-//                throw new Exception("Failed to execute database query: " . $stmt->error);
-//            }
-//
-//            // Get the results
-//            $result = $stmt->get_result();
-//
-//            if (!$result) {
-//                throw new Exception("Failed to get query results: " . $stmt->error);
-//            }
-//
-//            // Fetch all URIs as an associative array and extract the 'uri' column
-//            $uris = array_column($result->fetch_all(MYSQLI_ASSOC), 'uri');
-//
-//            $stmt->close();
-//            return $uris;
-//
-//        } catch (Exception $e) {
-//            error_log("Error in fetchDBData: " . $e->getMessage());
-//            throw $e;
-//        }
-//    }
     public function fetchDBData(int $offset,&$reconstructedUris): array {
-        //TODO:controllare anche l'id eventualmente ricostruirlo e metterlo in reconstructed uri
-        // Prepare the query using a prepared statement to prevent SQL injection
+
         $query = "SELECT uri, id,contextBroker FROM iotdb.devices WHERE organization = ? LIMIT ? OFFSET ?";
         try {
             $stmt = $this->link->prepare($query);
@@ -385,7 +345,70 @@ class UriComparison {
 //    }
 
 
-    //TODO: da vedere come fare, perchè forse merita togliere uri e devo aggiungere il controllo col broker
+public function fetchBrokerData(String $uri){
+    $pattern = '/iot\/([^\/]+)\/([^\/]+)\/([^\/]+)$/';
+    $matches = [];
+
+    if (preg_match($pattern, $uri, $matches)){
+        $contextbroker=$matches[1];
+        $organization=$matches[2];
+        $deviceId=$matches[3];
+    }
+
+
+    $query = "SELECT port,ip from iotdb.contextbroker WHERE name = '$contextbroker' AND organization='$organization'";
+    $r = mysqli_query($this->link, $query);
+    if (!$r) {//row should also be NOT empty since enforcement has been already made in the api
+        $result["status"] = 'ko';
+        $result["error_msg"] .= "Error in reading data from context broker.";
+        $result["msg"] .= ' error in reading data from context broker ' . mysqli_error($this->link);
+        $result["log"] .= ' error in reading data from context broker ' . mysqli_error($this->link) . $query;
+
+    }
+    $rowCB = mysqli_fetch_assoc($r);
+    if ($rowCB["kind"] == 'external')
+        $shouldbeRegistered = 'no';
+    $ip = $rowCB["ip"];
+    $port = $rowCB["port"];
+
+    $url = 'http://'.$ip.':'.$port.'/v2/entities/'.$deviceId;
+
+// Initialize cURL session
+    $curl = curl_init();
+
+// Set cURL options
+    curl_setopt_array($curl, [
+        CURLOPT_URL => $url,
+        CURLOPT_RETURNTRANSFER => true,
+        CURLOPT_NOBODY => false,     // We want the body too, for error messages
+        CURLOPT_TIMEOUT => 10,
+        CURLOPT_CUSTOMREQUEST => "GET",
+        // Add any required headers
+        CURLOPT_HTTPHEADER => [
+            "Accept: application/json",
+        ],
+    ]);
+
+// Execute the request
+    $response = curl_exec($curl);
+
+// Get the HTTP response code
+    $httpCode = curl_getinfo($curl, CURLINFO_HTTP_CODE);
+
+// Close cURL session
+    curl_close($curl);
+
+
+// Optionally check if it's a success code
+    if ($httpCode == 200) {
+        //deviceTrovato
+        return true;
+    } else {
+        //device non trovato
+        return false;
+    }
+    }
+
     public function compareUriLists(
         array $databaseUris,
         array $knowledgebaseUris,
@@ -432,6 +455,10 @@ class UriComparison {
                 $isReconstructed=false;
             }
 
+
+            $inBroker=$this->fetchBrokerData($uri);
+
+
             // Create status object with consistent property names
             // At this point, we know the URI is partially present (in at least one system but not all)
             $status = [
@@ -439,7 +466,8 @@ class UriComparison {
                 'in_database' => $inDatabase,
                 'in_knowledgebase' => $inKnowledgebase,
                 'in_ownership' => $inOwnership,
-                'has_uri' => $isReconstructed // Consistent naming with API output
+                'has_uri' => $isReconstructed,
+                'in_broker'=> $inBroker
             ];
 
             $results[] = $status;
@@ -590,8 +618,8 @@ if($action=="check_devices"){
                 'database_record' => (bool)$result['in_database'],
                 'knowledge_base' => (bool)$result['in_knowledgebase'],
                 'ownership_record' => (bool)$result['in_ownership'],
-                //'is_reconstructable' => $result['is_reconstructable'] ?? false,
                 'has_uri' => (bool)$result['has_uri'],
+                'broker_record'=>(bool)$result['in_broker'],
                 'action_taken' => ''
             ];
         }
@@ -621,13 +649,15 @@ if($action=="check_devices"){
                 $isInKB = $link->real_escape_string($value['knowledge_base'] ? 'true' : 'false');
                 $isInOwnership = $link->real_escape_string($value['ownership_record'] ? 'true' : 'false');
                 $haveURI = $link->real_escape_string($value['has_uri'] ? 'true' : 'false');
+                $isInBroker = $link->real_escape_string($value['broker_record'] ? 'true' : 'false');
+
 
                 // Prepare the values for SQL insertion
-                $values[] = "('$uri', '$checkdate', '$organization', '-', $isInDB, $isInKB, $isInOwnership, $haveURI)";
+                $values[] = "('$uri', '$checkdate', '$organization', '-', $isInDB, $isInKB, $isInOwnership, $haveURI,$isInBroker)";
 
         }
 
-        $sql = "INSERT INTO iotdb.devicecheck (uri, checkdate, organization, log, isInDB, isInKB, isInOwnership, haveURI) VALUES " . implode(", ", $values);
+        $sql = "INSERT INTO iotdb.devicecheck (uri, checkdate, organization, log, isInDB, isInKB, isInOwnership, haveURI,isInBroker) VALUES " . implode(", ", $values);
 
         if ($link->query($sql) !== TRUE) {
             $apiResult['error'] .= $link->error;
@@ -706,7 +736,7 @@ if($action=="check_devices"){
 
         // Query to select all the necessary fields
         $sql = "
-            SELECT uri, isInDB, isInKB, isInOwnership, haveURI,log
+            SELECT uri, isInDB, isInKB, isInOwnership, haveURI,log,isInBroker
             FROM iotdb.devicecheck
             WHERE organization = '" . $link->real_escape_string($organization) . "'
         ";
@@ -728,6 +758,7 @@ if($action=="check_devices"){
                         'knowledge_base' => (bool)$row['isInKB'],
                         'ownership_record' => (bool)$row['isInOwnership'],
                         'is_reconstructable' => $row['is_reconstructable'] ?? false,
+                        'broker_record'=>(bool)$row['isInBroker'],
                         'has_uri' => (bool)$row['haveURI'],
                         'action_taken' => $row["log"]  // Assuming no action has been taken
                     ];
@@ -765,7 +796,7 @@ if($action=="check_devices"){
                 //caso RETRY
                 if ($selectedInfo[$i]["retryChecked"] == true && $selectedInfo[$i]["deleteChecked"] == false) {
 
-                    $resultArray = [$selectedInfo[$i]["uri"], $selectedInfo[$i]["isInDb"], $selectedInfo[$i]["isInKb"], $selectedInfo[$i]["isInOwn"], $selectedInfo[$i]["haveUri"], ""];
+                    $resultArray = [$selectedInfo[$i]["uri"], $selectedInfo[$i]["isInDb"], $selectedInfo[$i]["isInKb"], $selectedInfo[$i]["isInOwn"], $selectedInfo[$i]["haveUri"], "",$selectedInfo[$i]["isInBroker"]];
 
                     $delete=false;
 
@@ -1708,7 +1739,11 @@ function deleteOwnershipEntry($selectedDevice, $link, &$apiResult){
 
 }
 
-function deleteUriEntry()
+function deleteBrokerEntry()
+{
+
+}
+function retryBrokerEntry()
 {
 
 }

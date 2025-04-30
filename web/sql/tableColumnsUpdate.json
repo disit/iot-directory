@@ -14,5 +14,9 @@
       "is_in_db": {"type": "VARCHAR(45)", "extra": "NULL DEFAULT NULL"},
       "is_in_broker": {"type": "VARCHAR(45)", "extra": "NULL DEFAULT NULL"}
     }
+  ],
+  "devicecheck": [{
+    "isInBroker": {"type": "TINYINT(4)", "extra": "NULL DEFAULT NULL"}
+    }
   ]
 }
