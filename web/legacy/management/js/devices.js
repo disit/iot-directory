@@ -985,7 +985,7 @@ function NewValuesOnDevice(strID) {
     $('#NewValuesInputConfirmButton').show();
     $("#InsertDeviceModalTabs").show();
     $("#GETimeStamp").show();
-    var strID = "#" + strID;
+    var strID = "#" + strID.replaceAll(":","\\:");
     var Nid = $(strID).attr('data-id');
     var Ntype = $(strID).attr('data-devicetype');
     var Ncb = $(strID).attr('data-contextbroker');
@@ -4392,8 +4392,8 @@ $(document).ready(function () {
                 async: true,
                 datatype: 'json',
                 success: function (data) {
-
-                    data = JSON.parse(data)
+                    if(typeof data === 'string' || data instanceof String)
+                        data = JSON.parse(data)
 
                     data.forEach(item => {
                         orgArray.push(item.organizationName);
@@ -4695,7 +4695,7 @@ $(document).ready(function () {
                 dataType: 'json',
                 success: function (data) {
 
-                    if(data["status"]==="ok") {
+                    // if(data["status"]==="ok") {
 
                         $("#LoadingGifCheckResult").hide()
                         //$("#chooseOrgLabel").hide()
@@ -4707,18 +4707,20 @@ $(document).ready(function () {
 
                         populateDeviceResultTable(data)
 
-                    }else{
-                        console.log("ciao")
-                        // let error = data["status"] + " " + data["msg"] + " " +data["error_msg"] + " " +data["log"]
-                        // $("#chooseOrgLabel").html(`<b style="color:red">Error: ${error} </b>`);
-                        // $("#LoadingGifCheck").hide()
-                        // $("#devicesCheckTable").hide()
-                    }
+                    // }else{
+                    //
+                    //     $("#LoadingGifCheckResult").hide()
+                    //     // let error = data["status"] + " " + data["msg"] + " " +data["error_msg"] + " " +data["log"]
+                    //     // $("#chooseOrgLabel").html(`<b style="color:red">Error: ${error} </b>`);
+                    //     // $("#LoadingGifCheck").hide()
+                    //     // $("#devicesCheckTable").hide()
+                    //     populateDeviceResultTable(data)
+                    // }
 
                 },
 
                 error: function (data) {
-                    console.log("not ciao")
+                    console.log("error in apply recover delete")
                     // $("#devicesCheckTable").hide()
                     // let error = data["status"] + " " + data["msg"] + " " +data["error_msg"] + " " +data["log"]
                     // $("#chooseOrgLabel").html(`<b style="color:red">Error: ${error} </b>`);
@@ -4749,7 +4751,7 @@ $(document).ready(function () {
         let rows = [];
 
         let uriArray = data.result;
-        console.log(data.result)
+        //console.log(data.result)
         const getIcon = (value) => value ?
             '<span style="color: forestgreen">✓</span>' :
             '<span style="color: red">✗</span>';
@@ -4906,7 +4908,12 @@ $(document).ready(function () {
 
         uriArray.forEach(function(row) {
 
-            let actionContent = row[5];
+
+            let actionContent = row[6];
+            if(actionContent===''){
+                console.log("no action taken");
+                actionContent="ERROR: "+ row[6];
+            }
 
             // Create a scrollable wrapper for the Action column if the content is long
             actionContent = `<div style="max-width: 300px; overflow: auto; white-space: nowrap; word-wrap: break-word;">${actionContent}</div>`;
