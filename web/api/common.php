@@ -1,5 +1,38 @@
 <?php
+/* Snap4City: IoT-Directory
+  Copyright (C) 2017 DISIT Lab https://www.disit.org - University of Florence
 
+  This program is free software; you can redistribute it and/or
+  modify it under the terms of the GNU General Public License
+  as published by the Free Software Foundation; either version 2
+  of the License, or (at your option) any later version.
+  This program is distributed in the hope that it will be useful,
+  but WITHOUT ANY WARRANTY; without even the implied warranty of
+  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+  GNU General Public License for more details.
+  You should have received a copy of the GNU General Public License
+  along with this program; if not, write to the Free Software
+  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA. */
+  
+function get_request_headers() {
+    $headers = getallheaders();
+  
+    $normalizedHeaders = [];
+    foreach ($headers as $key => $value) {
+        // Spezza il nome in parole separate da trattino
+        $parts = explode('-', strtolower($key));
+    
+        // Maiuscola per ogni parola
+        $parts = array_map('ucfirst', $parts);
+    
+        // Ricompone il nome
+        $normalizedKey = implode('-', $parts);
+    
+        $normalizedHeaders[$normalizedKey] = $value;
+    }
+    return $normalizedHeaders;
+}
+  
 function MAke_PROP($TOTatr, $link) {
     $attributes = array();
     foreach ($TOTatr as $key => $val) {       

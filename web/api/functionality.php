@@ -55,7 +55,7 @@ else
     exit();
 }
 
-$headers = apache_request_headers();
+$headers = get_request_headers();
 if (isset($headers['Authorization']) && strlen($headers['Authorization'])>8 )
 {
 	$_REQUEST['token']=substr($headers['Authorization'],7);
