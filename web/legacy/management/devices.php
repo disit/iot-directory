@@ -2060,6 +2060,11 @@ if (($hide_menu != "hide")) {
                         </table>
                     </div>
 
+                    <div class="col-xs-12 col-md-3 modalCell" id="ownNameDiv" hidden>
+                        <input type="text" id="ownName" name="ownName" class="modalInputTxt">
+                        <div class="modalFieldLabelCnt" id="chooseOrgLabel">Input an account name for the ownership:</div>
+
+                    </div>
                     <div class="modal-footer d-flex justify-content-between align-items-center">
                         <button id="cancelCheckBtn" type="button" class="btn cancelBtn" data-dismiss="modal">Close</button>
                         <button id="runCheckBtn" type="button" class="btn btn-primary">Run</button>

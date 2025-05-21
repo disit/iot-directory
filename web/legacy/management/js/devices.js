@@ -4457,6 +4457,7 @@ $(document).ready(function () {
             //Recupera l'ultimo controllo dal DB
             $('#previousRunBtn').off('click');
             $('#previousRunBtn').on('click', function () {
+                $("#ownNameDiv").show();
                 $.ajax({
                     url: "../legacy/management/WIPcheck.php",
                     data: {
@@ -4507,7 +4508,8 @@ $(document).ready(function () {
                 })
 
                 $('#previousRunBtn').html("No previous run found").prop('disabled',true);
-
+                $("#ownNameDiv").hide()
+                $("#ownName").val("")
 
                 if ($.fn.dataTable.isDataTable('#devicesCheckTable')) {
                     $('#devicesCheckTable').DataTable().clear().destroy();
@@ -4529,6 +4531,7 @@ $(document).ready(function () {
                 $("#selectCheckOrganization").hide()
                 $("#chooseOrgLabel").html("Please wait, this operation could require some time.")
                 $("#LoadingGifCheck").show()
+                $("#ownNameDiv").show()
                 let organization = $("#selectCheckOrganization").val();
                 let index = orgArray.indexOf(organization)
                 let kbUrl = kbUrlArray[index]
@@ -4664,6 +4667,8 @@ $(document).ready(function () {
             // solo le colonne dove uno dei due è selezionato e non sono entrambi selezionati
             selectedInfo = selectedInfo.filter(info => (info.retryChecked || info.deleteChecked) && !(info.retryChecked && info.deleteChecked));
 
+            let userForOwnership=$('#ownName').val();
+
             // tutti gli oggetti spuntati
             console.log(selectedInfo);
             //console.log(JSON.stringify(selectedInfo))
@@ -4688,6 +4693,7 @@ $(document).ready(function () {
                     selectedInfo:JSON.stringify(selectedInfo),
                     k1: k1key,
                     k2: k2key,
+                    userForOwnership: userForOwnership,
                     action: "applyRecoverDelete"
                 },
                 type: "GET",

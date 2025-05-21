@@ -40,9 +40,10 @@ class UriComparison {
      * @throws Exception If there's an error with the database query
      */
     public function fetchOwnershipData(): array {
+        global $ownershipdburl;
         // Query to get non-deleted IOT device URIs from ownership table
         // Using REGEXP for exact organization match at the beginning of elementId
-        $query = "SELECT elementUrl FROM profiledb.ownership 
+        $query = "SELECT elementUrl FROM $ownershipdburl
              WHERE elementType = 'IOTID' AND deleted IS NULL
              AND elementId REGEXP ?";
 
@@ -765,9 +766,14 @@ if($action=="check_devices"){
     echo json_encode($apiResult);
 }else if ($action == "applyRecoverDelete") {
     global $apiResult;
+    global $userforOwnership;
     $apiResult = [];  // Initialize the API result array
     $apiResult["status"] = 'ok';
     $apiResult["opResult"] = [];
+
+
+    $userforOwnership=$_REQUEST['userForOwnership'];
+
 
     $kbUrl = $_REQUEST['kbUrl'];
     //echo $_REQUEST['kbUrl'];
@@ -961,8 +967,9 @@ function AllAroundRetry($selectedDevice,$link,$accessToken,$kbUrl,&$apiResult,&$
                     $apiResult["log"].='missing in ownership, ';
 
                     //CHECK SE NELLA OWN MANCA SOLO L'URI O TUTTA LA ENTRY
+                    global $ownershipdburl;
                     $elementId=$organization.":".$broker.":".$deviceId;
-                    $stmt = $dbConnection->prepare("SELECT elementUrl FROM profiledb.ownership 
+                    $stmt = $dbConnection->prepare("SELECT elementUrl FROM $ownershipdburl 
                  WHERE elementType = 'IOTID' AND deleted IS NULL
                     AND elementId =?");
                     $stmt->bind_param("s", $elementId);
@@ -982,10 +989,15 @@ function AllAroundRetry($selectedDevice,$link,$accessToken,$kbUrl,&$apiResult,&$
                         //Sistemo le variabili necessarie per l'inserimento intero nella ownership
                         try{
                             global $ownershipdburl;
+                            global $userforOwnership;
                             $elementType = 'IOTID';
                             $currentDate = date("Y-m-d H:i:s");
 
+                            if($userforOwnership=="") {
                             $username = $_SESSION[loggedUsername];
+                            }else{
+                                $username=$userforOwnership;
+                            }
                             $k1 = $_REQUEST["k1"];
                             $k2 = $_REQUEST["k2"];
                             $elementDetails = array(
@@ -1087,9 +1099,9 @@ function AllAroundRetry($selectedDevice,$link,$accessToken,$kbUrl,&$apiResult,&$
                     $resultArray[4]=true;
                     $resultArray[1]=true;
                     $elementId=$organization.":".$broker.":".$deviceId;
-
+                    global $ownershipdburl;
                     //guardo nella ownership se manca tutta la entry o solo uri
-                    $stmt = $dbConnection->prepare("SELECT elementUrl FROM profiledb.ownership 
+                    $stmt = $dbConnection->prepare("SELECT elementUrl FROM $ownershipdburl 
                  WHERE elementType = 'IOTID' AND deleted IS NULL
                     AND elementId =?");
                     $stmt->bind_param("s", $elementId);
@@ -1108,10 +1120,15 @@ function AllAroundRetry($selectedDevice,$link,$accessToken,$kbUrl,&$apiResult,&$
 
                         //Sistemo le variabili necessarie per l'inserimento intero nella ownership
                         global $ownershipdburl;
+                        global $userforOwnership;
                         $elementType='IOTID';
                         $currentDate = date("Y-m-d H:i:s");
 
+                        if($userforOwnership=="") {
                         $username=$_SESSION[loggedUsername];
+                        }else{
+                            $username=$userforOwnership;
+                        }
                         $k1=$_REQUEST["k1"];
                         $k2=$_REQUEST["k2"];
                         $elementDetails = array(
@@ -1201,7 +1218,7 @@ function AllAroundRetry($selectedDevice,$link,$accessToken,$kbUrl,&$apiResult,&$
                 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////
-                $evnt_values_check=checkEventValues($dbConnection,$broker,$deviceId);
+                $evnt_values_check=checkEventValues($dbConnection,$broker,$deviceId,$uri);
                 if($evnt_values_check[1]){
                     $apiResult["log"].='event_values ok, ';
                     $listnewAttributes = $evnt_values_check[0];
@@ -1220,7 +1237,7 @@ function AllAroundRetry($selectedDevice,$link,$accessToken,$kbUrl,&$apiResult,&$
 
                         $resultBrok=[];
                         $brokerResp = insert_ngsi($dbConnectionBrok, $deviceId, $type, $broker, $kind, $protocol, $format, $model, $latitude, $longitude,
-                            $visibility, $frequency, $listnewAttributes, $ip, $port, $result);
+                            $visibility, $frequency, $listnewAttributes, $ip, $port, $resultBrok);
                         if($brokerResp=='ok'){
                             $apiResult['actionTaken'].='inserted in broker, ';
                             $resultArray[5]=true;
@@ -1247,7 +1264,7 @@ function AllAroundRetry($selectedDevice,$link,$accessToken,$kbUrl,&$apiResult,&$
         }else{
             $apiResult["log"].='entry missing from the kb, ';
 
-            $evnt_values_check=checkEventValues($dbConnection,$broker,$deviceId);
+            $evnt_values_check=checkEventValues($dbConnection,$broker,$deviceId,$uri);
             if($evnt_values_check[1]){
                 try {
                     $apiResult["log"] .= 'event_values recovered, ';
@@ -1414,10 +1431,10 @@ function AllAroundDelete($selectedDevice,$link,$accessToken,$kbUrl,&$apiResult,&
                 if($selectedDevice["haveURI"]){
                     //se è presente nel db e ha l'uri posso recuperarlo e inseririrlo nella ownership
                     try{
-
+                        global $ownershipdburl;
                         //Controllo la ownership per vedere se manca tutta la entry o manca solo l'URI
                         $elementId=$organization.":".$broker.":".$deviceId;
-                        $stmt = $dbConnection->prepare("SELECT elementUrl FROM profiledb.ownership 
+                        $stmt = $dbConnection->prepare("SELECT elementUrl FROM $ownershipdburl 
                  WHERE elementType = 'IOTID' AND deleted IS NULL
                     AND elementId =?");
                         $stmt->bind_param("s", $elementId);
@@ -1436,10 +1453,15 @@ function AllAroundDelete($selectedDevice,$link,$accessToken,$kbUrl,&$apiResult,&
 
                         try{
                             global $ownershipdburl;
+                            global $userforOwnership;
                             $elementType = 'IOTID';
                             $currentDate = date("Y-m-d H:i:s");
 
+                            if($userforOwnership=="") {
                             $username = $_SESSION[loggedUsername];
+                            }else{
+                                $username=$userforOwnership;
+                            }
                             $k1 = $_REQUEST["k1"];
                             $k2 = $_REQUEST["k2"];
                             $elementDetails = array(
@@ -1534,10 +1556,15 @@ function AllAroundDelete($selectedDevice,$link,$accessToken,$kbUrl,&$apiResult,&
 
                         try {
                             global $ownershipdburl;
+                            global $userforOwnership;
                             $elementType = 'IOTID';
                             $currentDate = date("Y-m-d H:i:s");
 
+                            if($userforOwnership=="") {
                             $username = $_SESSION[loggedUsername];
+                            }else{
+                                $username=$userforOwnership;
+                            }
                             $k1 = $_REQUEST["k1"];
                             $k2 = $_REQUEST["k2"];
                             $elementDetails = array(
@@ -1653,7 +1680,7 @@ function AllAroundDelete($selectedDevice,$link,$accessToken,$kbUrl,&$apiResult,&
             $service = $row['service'];
             $servicePath = $row['servicePath'];
             $brokerAddress = recoverBrokerAddress($dbConnection, $broker, $organization);
-            $evnt_values_check = checkEventValues($dbConnection, $broker, $deviceId);
+            $evnt_values_check = checkEventValues($dbConnection, $broker, $deviceId,$uri);
 
 
 
@@ -1751,8 +1778,24 @@ function AllAroundDelete($selectedDevice,$link,$accessToken,$kbUrl,&$apiResult,&
 
 }
 
-function checkEventValues($dbConnection,$contextbroker,$deviceId){
+function checkEventValues($dbConnection,$contextbroker,$deviceId,$uri){
+
     try {
+        $query = "SELECT id FROM iotdb.devices WHERE uri = ? ";
+
+        $stmt = $dbConnection->prepare($query);
+
+        $stmt->bind_param("s", $uri);
+
+        $stmt->execute();
+        $result = $stmt->get_result();
+
+
+        if ($row = $result->fetch_assoc()) {
+            $deviceId = $row['id'];
+        }
+
+
         $query = "SELECT * FROM iotdb.event_values WHERE cb = ? AND device = ?";
 
         $stmt = $dbConnection->prepare($query);
