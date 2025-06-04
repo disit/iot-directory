@@ -552,7 +552,7 @@ if ($action == "insert") {
                             $result["msg"] .= "\n Device $contextbroker/$id correctly updated";
                             $result["log"] .= "\r\n Device $contextbroker/$id correctly updated";
 
-                            $q = "UPDATE devices SET is_in_db = true WHERE id = '$id'";
+                            $q = "UPDATE devices SET is_in_db = 'success' WHERE id = '$id'";
                             $r = mysqli_query($link, $q);
 
                             if ($result["status"] == "ok") {
@@ -687,7 +687,7 @@ if ($action == "insert") {
                             $result["error_msg"] .= "Problem in updating the device value $id. ";
                             $result["msg"] .= "\n Problem in updating the device value $id:" . generateErrorMessage($link);
                             $result["log"] .= "\n Problem in updating the device value $id:" . $q . " " . generateErrorMessage($link);
-                            $q = "UPDATE devices SET is_in_db = false WHERE id = '$id'";
+                            $q = "UPDATE devices SET is_in_db = 'problem_updating_device_value' WHERE id = '$id'";
                             $r = mysqli_query($link, $q);
                             my_log($result);
                             mysqli_close($link);

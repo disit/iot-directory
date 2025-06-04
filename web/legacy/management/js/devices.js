@@ -679,10 +679,10 @@ function fetch_data(destroyOld, selected = null) {
                     if(d.is_in_kb == null || d.is_in_db == null || d.is_in_broker == null) {
                         //caso per retrocompatibilità
                         return "";
-                    }else if(d.is_in_kb == "success" && d.is_in_db == "success" && d.is_in_broker == "success"){
+                    }else if(d.is_in_kb == "success" && (d.is_in_db == "success" || d.is_in_db=="1") && d.is_in_broker == "success"){
                         //caso insermento corretto
                         return "";
-                    }else if (d.is_in_kb != "success" || d.is_in_db != "success" || d.is_in_broker != "success"){
+                    }else if (d.is_in_kb != "success" || (d.is_in_db != "success" && d.is_in_db!="1") || d.is_in_broker != "success"){
                         return '<button type="button" class="retryDashBtn" ' +
                             'data-id="' + d.id + '" ' +
                             'data-contextBroker="' + d.contextBroker + '" ' +
@@ -893,10 +893,10 @@ function fetch_data(destroyOld, selected = null) {
                     if(d.is_in_kb == null || d.is_in_db == null || d.is_in_broker == null) {
                         //caso per retrocompatibilità
                         return "";
-                    }else if(d.is_in_kb == "success" && d.is_in_db == "success" && d.is_in_broker == "success"){
+                    }else if(d.is_in_kb == "success" && (d.is_in_db == "success" || d.is_in_db=="1") && d.is_in_broker == "success"){
                         //caso insermento corretto
                         return "";
-                    }else if (d.is_in_kb != "success" || d.is_in_db != "success" || d.is_in_broker != "success"){
+                    }else if (d.is_in_kb != "success" || (d.is_in_db != "success" && d.is_in_db!="1")|| d.is_in_broker != "success"){
                         return '<button type="button" class="retryDashBtn" ' +
                             'data-id="' + d.id + '" ' +
                             'data-contextBroker="' + d.contextBroker + '" ' +
@@ -2488,7 +2488,7 @@ $(document).ready(function () {
 
 
         //successo
-                if(is_in_db=="success"){
+                if(is_in_db == "success" || is_in_db=="1"){
                     var htmlDb="<b style='color: green'>"+ is_in_db +"</b>";
                 }else{
                     //errore non recuperabile
@@ -2626,12 +2626,12 @@ $(document).ready(function () {
                         $('#retryResultMsgError').hide()
 
 
-                        if(mydata["is_in_db"]=="success"){
+                        if(mydata["is_in_db"]=="success"  || mydata["is_in_db"]=="1"){
                             var newStatus="<b style='color: green'>" + mydata["is_in_db"] + "</b>";
                         }else{
                             var newStatus="<b style='color: red'>" + mydata["is_in_db"] + "</b>";
                         }
-                        if(is_in_db=="success"){
+                        if(is_in_db=="success" || is_in_db=="1"){
                             var oldStatus="<b style='color: green'>" + is_in_db + "</b>";
                         }else{
                             var oldStatus="<b style='color: red'>" + is_in_db + "</b>";
