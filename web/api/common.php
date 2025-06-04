@@ -320,6 +320,14 @@ if(canBeRegistered($id, $devicetype, $contextbroker, $kind, $protocol, $format, 
                         }
 
                         registerOwnerShipDevice($eId, $ownmsg, $accessToken, $result);
+                        if($result["status"]=='ok'){
+                            $q = "UPDATE devices SET is_in_own = 'success' WHERE id = '$id';";
+                            mysqli_query($link, $q);
+                        }else{
+                            $q = "UPDATE devices SET is_in_own = 'ownership_error' WHERE id = '$id';";
+                            mysqli_query($link, $q);
+                        }
+
                     }
 
 
