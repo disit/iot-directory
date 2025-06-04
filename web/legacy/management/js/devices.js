@@ -676,13 +676,14 @@ function fetch_data(destroyOld, selected = null) {
                 "name": "retry",
                 "orderable": true,
                 render: function (d) {
-                    if(d.is_in_kb == null || d.is_in_db == null || d.is_in_broker == null) {
+
+                    if(d.is_in_kb == null || d.is_in_db == null || d.is_in_broker == null || d.is_in_own==null) {
                         //caso per retrocompatibilità
                         return "";
-                    }else if(d.is_in_kb == "success" && (d.is_in_db == "success" || d.is_in_db=="1") && d.is_in_broker == "success"){
+                    }else if(d.is_in_kb == "success" && (d.is_in_db == "success" || d.is_in_db=="1") && d.is_in_broker == "success" && d.is_in_own == "success"){
                         //caso insermento corretto
                         return "";
-                    }else if (d.is_in_kb != "success" || (d.is_in_db != "success" && d.is_in_db!="1") || d.is_in_broker != "success"){
+                    }else if (d.is_in_kb != "success" || (d.is_in_db != "success" && d.is_in_db!="1") || d.is_in_broker != "success" || d.is_in_broker != "success"){
                         return '<button type="button" class="retryDashBtn" ' +
                             'data-id="' + d.id + '" ' +
                             'data-contextBroker="' + d.contextBroker + '" ' +
@@ -712,6 +713,7 @@ function fetch_data(destroyOld, selected = null) {
                             'data-is_in_db="' + d.is_in_db + '" ' +
                             'data-is_in_kb="' + d.is_in_kb + '" ' +
                             'data-is_in_broker="' + d.is_in_broker + '" ' +
+                            'data-is_in_own="' + d.is_in_own + '" ' +
                             'data-static-attributes="' + btoa(unescape(encodeURIComponent(d.staticAttributes))) + '" ' +
                             'data-status1="' + d.status1 + '">retry</button>';
                     }else{
@@ -890,13 +892,14 @@ function fetch_data(destroyOld, selected = null) {
                 "name": "retry",
                 "orderable": true,
                 render: function (d) {
-                    if(d.is_in_kb == null || d.is_in_db == null || d.is_in_broker == null) {
+
+                    if(d.is_in_kb == null || d.is_in_db == null || d.is_in_broker == null || d.is_in_own == null ) {
                         //caso per retrocompatibilità
                         return "";
-                    }else if(d.is_in_kb == "success" && (d.is_in_db == "success" || d.is_in_db=="1") && d.is_in_broker == "success"){
+                    }else if(d.is_in_kb == "success" && (d.is_in_db == "success" || d.is_in_db=="1") && d.is_in_broker == "success" && d.is_in_own == "success"){
                         //caso insermento corretto
                         return "";
-                    }else if (d.is_in_kb != "success" || (d.is_in_db != "success" && d.is_in_db!="1")|| d.is_in_broker != "success"){
+                    }else if (d.is_in_kb != "success" || (d.is_in_db != "success" && d.is_in_db!="1") || d.is_in_broker != "success" || d.is_in_own != "success"){
                         return '<button type="button" class="retryDashBtn" ' +
                             'data-id="' + d.id + '" ' +
                             'data-contextBroker="' + d.contextBroker + '" ' +
@@ -926,6 +929,7 @@ function fetch_data(destroyOld, selected = null) {
                             'data-is_in_db="' + d.is_in_db + '" ' +
                             'data-is_in_kb="' + d.is_in_kb + '" ' +
                             'data-is_in_broker="' + d.is_in_broker + '" ' +
+                            'data-is_in_own="' + d.is_in_own + '" ' +
                             'data-static-attributes="' + btoa(unescape(encodeURIComponent(d.staticAttributes))) + '" ' +
                             'data-status1="' + d.status1 + '">retry</button>';
                     }else{
@@ -2477,6 +2481,7 @@ $(document).ready(function () {
         var is_in_db=this.dataset.is_in_db;
         var is_in_kb=this.dataset.is_in_kb;
         var is_in_broker=this.dataset.is_in_broker;
+        var is_in_own=this.dataset.is_in_own;
         var visibility=this.dataset.visibility;
         var device_id=this.dataset.id;
         var organization=this.dataset.organization;
@@ -2484,7 +2489,7 @@ $(document).ready(function () {
 
 
         var isRecoverableArray = [];
-        isRecoverableArray.push(true,true,true);
+        isRecoverableArray.push(true,true,true,true);
 
 
         //successo
@@ -2520,6 +2525,22 @@ $(document).ready(function () {
                         var htmlBroker = "<b style='color: red'>" + is_in_broker + "</b>";
                     }
                 }
+                if(is_in_own=="success"){
+                    var htmlOwn="<b style='color: green'>"+ is_in_own +"</b>";
+                }else{
+                    if(is_in_own =="ownership_error" ){
+                        var htmlOwn="<b style='color: red'>"+ is_in_own +"</b>";
+                        //isRecoverableArray[1] = false;
+                    }else{
+                        var htmlOwn="<b style='color: red'>"+ is_in_own +"</b>";
+                    }
+                }
+
+
+
+
+
+
             if(visibility=="MyOwnPrivate" || visibility=="MyOwnPrivate"){
                 //my device, but not recoverable
             if(isRecoverableArray[0] == false || isRecoverableArray[1]==false ||isRecoverableArray[2]==false){
@@ -2533,6 +2554,7 @@ $(document).ready(function () {
                 $('#dbReporting').html("<b>Database: </b> "+ htmlDb);
                 $('#kbReporting').html("<b>Kb: </b> "+ htmlKb);
                 $('#brokerReporting').html("<b>Broker: </b> "+ htmlBroker);
+                    $('#ownershipReporting').html("<b>Ownership: </b> " + htmlOwn);
             }else{
                     //my device recoverable
                 $('#retryDeviceModal').modal('show');
@@ -2545,6 +2567,7 @@ $(document).ready(function () {
                     $('#dbReporting').html("<b>Database: </b> " + htmlDb);
                     $('#kbReporting').html("<b>Kb: </b> " + htmlKb);
                     $('#brokerReporting').html("<b>Broker: </b> " + htmlBroker);
+                    $('#ownershipReporting').html("<b>Ownership: </b> " + htmlOwn);
                 }
             }else{
                 //not mydevice not recoverable
@@ -2559,6 +2582,7 @@ $(document).ready(function () {
                     $('#dbReporting').html("<b>Database: </b> "+ htmlDb);
                     $('#kbReporting').html("<b>Kb: </b> "+ htmlKb);
                     $('#brokerReporting').html("<b>Broker: </b> "+ htmlBroker);
+                    $('#ownershipReporting').html("<b>Ownership: </b> " + htmlOwn);
 
                 }else{
                     //not my device recoverable
@@ -2572,6 +2596,7 @@ $(document).ready(function () {
                 $('#dbReporting').html("<b>Database: </b> "+ htmlDb);
                 $('#kbReporting').html("<b>Kb: </b> "+ htmlKb);
                 $('#brokerReporting').html("<b>Broker: </b> "+ htmlBroker);
+                    $('#ownershipReporting').html("<b>Ownership: </b> " + htmlOwn);
             }
             }
             $('#retryDeviceBtn').off("click")
@@ -2587,6 +2612,7 @@ $(document).ready(function () {
                     is_in_db: is_in_db,
                     is_in_kb: is_in_kb,
                     is_in_broker: is_in_broker,
+                    is_in_own:is_in_own,
                     //attributes: JSON.stringify(mynewAttributesSaveas),
                     id: device_id,
                     // model: $('#selectModelDevice').val(),
@@ -2662,6 +2688,17 @@ $(document).ready(function () {
                         }
                         $('#brokerReportingResult').html("<b>Broker: </b> " + oldStatus +" -> "+ newStatus);
 
+                        if(mydata["is_in_own"]=="success"){
+                            var newStatus="<b style='color: green'>" + mydata["is_in_own"] + "</b>";
+                        }else{
+                            var newStatus="<b style='color: red'>" + mydata["is_in_own"] + "</b>";
+                        }
+                        if(is_in_own=="success"){
+                            var oldStatus="<b style='color: green'>" + is_in_own + "</b>";
+                        }else{
+                            var oldStatus="<b style='color: red'>" + is_in_own + "</b>";
+                        }
+                        $('#ownershipReportingResult').html("<b>Ownership: </b> " + oldStatus +" -> "+ newStatus);
 
 
 

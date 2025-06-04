@@ -460,6 +460,9 @@ if (($hide_menu != "hide")) {
                             <div id="brokerReporting"></div>
                         </div>
                     <div class="row">
+                        <div id="ownershipReporting"></div>
+                    </div>
+                    <div class="row">
                         <div id="UNrecoverableMessage"><br>some of this are <b>Unrecoverable</b>.<br>Please delete the device and insert it again.</div>
                         <div id="recoverableMessage"><br>some of this are <b>Recoverable</b>.</div>
                     </div>
