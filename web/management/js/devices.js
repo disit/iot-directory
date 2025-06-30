@@ -1325,6 +1325,11 @@ function CreateJsonNewValue(someData, NameAttrUp, old) {
                 a = toISOString(a);
                 break;
             case "json":
+                if (a == ""){
+                    a = "{}";
+                }
+                a = JSON.parse(a);
+                break;
             case "collection":
             case "set":
             case "vector":

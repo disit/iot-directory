@@ -552,15 +552,13 @@ $oidc->providerConfigParam(array(
     'token_endpoint' => $keycloakHostUri . '/auth/realms/master/protocol/openid-connect/token',
     'userinfo_endpoint' => $keycloakHostUri . '/auth/realms/master/protocol/openid-connect/userinfo'
 ));
-$accessToken1 ="";
+$accessToken ="";
 if (isset($_REQUEST['token'])) {
 
     $mctime = microtime(true);
     $tkn = $oidc->refreshToken($_REQUEST['token']);
     error_log("---- device.php:" . (microtime(true) - $mctime));
-
-    $accessToken1 = $tkn->access_token;
-
+    $accessToken = $tkn->access_token;
 }
 
 
@@ -783,7 +781,7 @@ if($action=="check_devices"){
 
     //se manca il token non faccio nulla
     if (isset($_REQUEST["token"])) {
-        $accessToken = $_REQUEST["token"];
+
 
         //ricevo selectedInfo che contiene i dati dei device che ho selezionato dal front end
         //Esempio [String uri,bool retryChecked,bool deleteChecked, bool isinDB, bool isinKB, bool isinOwn, bool haveUri]

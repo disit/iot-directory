@@ -1600,7 +1600,7 @@ else if ($action == 'change_visibility') {
     }
     my_log($result);
 }  else if ($action == "get_all_device") {
-    
+    try {
     if (isset($_REQUEST['length']))
         $length = mysqli_real_escape_string($link, $_REQUEST['length']);
     else
@@ -1810,8 +1810,11 @@ else if ($action == 'change_visibility') {
         //$output = format_result($draw, $selectedrows + 1, $selectedrows + 1, $data, "", "\r\n action=get_all_device \r\n", 'ok');
         logAction($link, $username, 'device', 'get_all_device', '', $organization, '', 'success');
     } else {
-        logAction($link, $username, 'device', 'get_all_device', '', $organization, 'Error: errors in reading data about devices.', 'faliure');
-        $output = format_result($_REQUEST["draw"], 0, 0, $data, 'Error: errors in reading data about devices. <br/>' . generateErrorMessage($link), '\n\r Error: errors in reading data about devices.' . generateErrorMessage($link), 'ko');
+            logAction($link, $username, 'device', 'get_all_device', '', $organization, 'Error: devices database didnt respond.', 'failure');
+            $output = format_result($_REQUEST["draw"], 0, 0, $data, 'devices database didnt respond. <br/>' . generateErrorMessage($link), '\n\r Error: devices database didnt respond.' . generateErrorMessage($link), 'ko');
+        }
+    }catch (Exception $e){
+        $output = format_result($_REQUEST["draw"], 0, 0, $data, 'Exception during devices loading. <br/>' . generateErrorMessage($link), '\n\r Exception during devices loading' . generateErrorMessage($link), 'ko');
     }
     my_log($output);
     mysqli_close($link);
