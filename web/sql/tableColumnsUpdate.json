@@ -18,7 +18,8 @@
     }
   ],
   "devicecheck": [{
-    "isInBroker": {"type": "TINYINT(4)", "extra": "NULL DEFAULT NULL"}
+    "isInBroker": {"type": "TINYINT(4)", "extra": "NULL DEFAULT NULL"},
+    "haveURI_own": {"type": "TINYINT(4)", "extra": "NULL DEFAULT NULL"}
     }
   ]
 }

@@ -144,6 +144,12 @@ CREATE TABLE `deleted_devices` (
   `service` varchar(25) DEFAULT NULL,
   `servicePath` varchar(96) DEFAULT NULL,
   `real_time_flag` varchar(50) DEFAULT NULL,
+  `hlt` varchar(45) DEFAULT NULL,
+  `wktgeometry` MEDIUMTEXT DEFAULT NULL,
+  `is_in_kb` varchar(45) DEFAULT NULL,
+  `is_in_db` varchar(45) DEFAULT NULL,
+  `is_in_broker` varchar(45) DEFAULT NULL,
+  `is_in_own` varchar(45) DEFAULT NULL,
   PRIMARY KEY (`id`,`contextBroker`),
   KEY `contextBroker` (`contextBroker`),
   KEY `protocol` (`protocol`),
@@ -200,6 +206,9 @@ CREATE TABLE `devices` (
   `service` varchar(25) DEFAULT NULL,
   `servicePath` varchar(96) DEFAULT NULL,
   `wktGeometry` mediumtext DEFAULT NULL,
+  `is_in_kb` tinytext DEFAULT NULL,
+  `is_in_db` tinytext DEFAULT NULL,
+  `is_in_broker` tinytext DEFAULT NULL,
   PRIMARY KEY (`id`,`contextBroker`),
   KEY `contextBroker` (`contextBroker`),
   KEY `protocol` (`protocol`),
@@ -208,6 +217,21 @@ CREATE TABLE `devices` (
   CONSTRAINT `devices_ibfk_2` FOREIGN KEY (`protocol`) REFERENCES `protocols` (`name`) ON DELETE CASCADE ON UPDATE CASCADE,
   CONSTRAINT `devices_ibfk_3` FOREIGN KEY (`format`) REFERENCES `formats` (`name`) ON DELETE CASCADE ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CREATE TABLE `devicecheck` (
+   `id` int(11) NOT NULL AUTO_INCREMENT,
+   `uri` varchar(100) NOT NULL,
+   `problem` varchar(60) NOT NULL,
+   `checkdate` datetime NOT NULL,
+   `organization` varchar(65) DEFAULT NULL,
+   `log` varchar(145) DEFAULT NULL,
+   `isInDB` tinyint(4) DEFAULT NULL,
+   `isInKB` tinyint(4) DEFAULT NULL,
+   `isInOwnership` tinyint(4) DEFAULT NULL,
+   `haveURI` tinyint(4) DEFAULT NULL,
+    PRIMARY KEY (`id`)
+) ENGINE=InnoDB AUTO_INCREMENT=124 DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci
+
 
 CREATE TABLE `edgegatewaytype` (
   `name` varchar(20) NOT NULL,

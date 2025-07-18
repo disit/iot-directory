@@ -4420,7 +4420,7 @@ $(document).ready(function () {
 
             //chiamata per la lista delle org, ne ritorna una sola da vedere
             $.ajax({
-                url: "../../dashboardSmartCity/api/organizations.php",
+                url: organization_url,
                 data: {
 
                     token: sessionToken,
@@ -4515,9 +4515,15 @@ $(document).ready(function () {
                         $("#selectCheckOrganization").hide()
                         $("#runCheckBtn").hide()
                         $("#applySelected").show()
+                        $("#ownName").show()
+                        $("#chooseOwnNameLabel").show()
+
 
                         populateDeviceCheckTable(data);
 
+                        $("#checkDeviceModal .modalHeader").text(function(index, currentText) {
+                            return currentText +": "+ organization;
+                        });
 
                     },
                     error: function (data) {
@@ -4530,45 +4536,60 @@ $(document).ready(function () {
             //se clicco CLOSE il modal si resetta
             $('#cancelCheckBtn').off('click');
             $('#cancelCheckBtn').on('click', function () {
-                console.log("clicked")
-                $("#chooseOrgLabel").html("Choose an organization")
-                console.log($("#chooseOrgLabel"))
+                console.log("clicked");
+                $("#checkDeviceModal .modalHeader").text("Devices check")
+
+                // Reset label
+                $("#chooseOrgLabel").html("Choose an organization");
+
+                // Reset select box
                 $('#selectCheckOrganization')
                     .find('option')
                     .remove()
                     .end()
                     .append('<option value="Select an organization to check" disabled>Select an organization to check</option>')
-                    .val('Select an organization to check')
-                ;
-                $('#checkDeviceModal').on('hidden.bs.modal', function () {
-                    $(this).find('form').trigger('reset');
-                })
+                    .val('Select an organization to check');
 
+                // Clear input and hide name div
+                $("#ownNameDiv").hide();
+                $("#ownName").val("");
+
+                // Reset run button
                 $('#previousRunBtn').html("No previous run found").prop('disabled',true);
-                $("#ownNameDiv").hide()
-                $("#ownName").val("")
+                $('#runCheckBtn').show();
+                $('#applySelected').hide();
+                $('#devicesCheckTable').hide();
 
+                // Hide spinner
+                $("#LoadingGifCheck").hide();
+
+                // Reset DataTable
                 if ($.fn.dataTable.isDataTable('#devicesCheckTable')) {
                     $('#devicesCheckTable').DataTable().clear().destroy();
                 }
 
+                // Disable apply button
+                $("#applySelected").prop("disabled", true);
 
-
-                $('#runCheckBtn').show();
-                $("#selectCheckOrganization").show()
-                $("#chooseOrgLabel").html("Choose an organization")
-                $("#LoadingGifCheck").hide()
-                $("#applySelected").prop("disabled",true)
-
+                // Reset form on modal close
+                $('#checkDeviceModal').on('hidden.bs.modal', function () {
+                    $(this).find('form').trigger('reset');
+                });
             });
+
 
             $('#runCheckBtn').off('click');
             $('#runCheckBtn').on('click', function () {
                 $('#runCheckBtn').hide();
                 $("#selectCheckOrganization").hide()
-                $("#chooseOrgLabel").html("Please wait, this operation could require some time.")
                 $("#LoadingGifCheck").show()
                 $("#ownNameDiv").show()
+                $("#previousRunBtn").hide()
+                $("#ownName").hide()
+                $("#chooseOrgLabel").hide()
+                $("#chooseOwnNameLabel").hide()
+                $("#loadingLabel").show()
+
                 let organization = $("#selectCheckOrganization").val();
                 let index = orgArray.indexOf(organization)
                 let kbUrl = kbUrlArray[index]
@@ -4583,10 +4604,10 @@ $(document).ready(function () {
                         action: "check_devices"
                     },
                     type: "GET",
-                    async: false,
+                    async: true,
                     dataType: 'json',
                     success: function (data) {
-
+                        if ($('#checkDeviceModal').is(':visible')) {
                         if(data["status"]==="ok") {
 
 
@@ -4597,24 +4618,44 @@ $(document).ready(function () {
                             $('#previousRunBtn').hide()
                             $("#runCheckBtn").hide()
                             $("#applySelected").show()
+                                    $("#ownName").show()
+                                    $("#chooseOwnNameLabel").show()
+                                    $("#loadingLabel").hide()
 
                             populateDeviceCheckTable(data)
 
+                                    $("#checkDeviceModal .modalHeader").text(function(index, currentText) {
+                                        return currentText +": "+ organization;
+                                    });
+
                         }else{
+                                    if(!data["msg"]){
+                                        data["msg"]=""
+                                    }
+                                    if(!data["error_msg"]){
+                                        data["error_msg"]=""
+                                    }
+                                    if(!data["log"]){
+                                        data["log"]=""
+                                    }
                             let error = data["status"] + " " + data["msg"] + " " +data["error_msg"] + " " +data["log"]
+                                    $("#chooseOrgLabel").show()
                             $("#chooseOrgLabel").html(`<b style="color:red">Error: ${error} </b>`);
                             $("#LoadingGifCheck").hide()
                             $("#devicesCheckTable").hide()
+                                    $("#loadingLabel").hide()
                         }
-
+                        } else {
+                            console.log("Modal closed - skipping UI updates.");
+                        }
                     },
 
                     error: function (data) {
-
+                        if ($('#checkDeviceModal').is(':visible')) {
                         $("#devicesCheckTable").hide()
                         let error = data["status"] + " " + data["msg"] + " " +data["error_msg"] + " " +data["log"]
                         $("#chooseOrgLabel").html(`<b style="color:red">Error: ${error} </b>`);
-
+                        }
                     }
                 });
 
@@ -4655,8 +4696,9 @@ $(document).ready(function () {
                 let isInDb;
                 let isInKb;
                 let isInOwn;
-                let haveUri;
+                let haveUri_db;
                 let isInBroker;
+                let haveUri_own;
 
                 if($(row.find('td')[1]).text() === "✗"){
                       isInDb=false;
@@ -4665,23 +4707,30 @@ $(document).ready(function () {
                 }
 
                 if($(row.find('td')[2]).text() === "✗"){
+                    haveUri_db=false;
+                }else{
+                    haveUri_db=true;
+                }
+
+                if($(row.find('td')[3]).text() === "✗"){
                       isInKb=false;
                 }else{
                       isInKb=true;
                 }
 
-                if($(row.find('td')[3]).text() === "✗"){
+                if($(row.find('td')[4]).text() === "✗"){
                       isInOwn=false;
                 }else{
                       isInOwn=true;
                 }
 
-                if($(row.find('td')[4]).text() === "✗"){
-                      haveUri=false;
-                }else{
-                      haveUri=true;
-                }
                 if($(row.find('td')[5]).text() === "✗"){
+                    haveUri_own=false;
+                }else{
+                    haveUri_own=true;
+                }
+
+                if($(row.find('td')[6]).text() === "✗"){
                     isInBroker=false;
                 }else{
                     isInBroker=true;
@@ -4696,8 +4745,9 @@ $(document).ready(function () {
                     isInDb: isInDb,
                     isInKb:isInKb,
                     isInOwn:isInOwn,
-                    haveUri:haveUri,
-                    isInBroker:isInBroker
+                    haveUri_db:haveUri_db,
+                    isInBroker:isInBroker,
+                    haveUri_own:haveUri_own
                 });
             });
 
@@ -4707,7 +4757,7 @@ $(document).ready(function () {
             let userForOwnership=$('#ownName').val();
 
             // tutti gli oggetti spuntati
-            console.log(selectedInfo);
+            //console.log(selectedInfo);
             //console.log(JSON.stringify(selectedInfo))
 
             $("#cancelCheckBtn").click()
@@ -4719,7 +4769,7 @@ $(document).ready(function () {
 
             let k1key = generateUUID()
             let k2key = generateUUID()
-
+            console.log(JSON.stringify(selectedInfo))
 
             $.ajax({
                 url: "../legacy/management/WIPcheck.php",
@@ -4738,27 +4788,13 @@ $(document).ready(function () {
                 dataType: 'json',
                 success: function (data) {
 
-                    // if(data["status"]==="ok") {
-
                         $("#LoadingGifCheckResult").hide()
-                        //$("#chooseOrgLabel").hide()
-                        //$("#devicesCheckTableResult").show()
-                        //$("#selectCheckOrganization").hide()
-                        //$('#previousRunBtn').hide()
-                        //$("#runCheckBtn").hide()
-                        //$("#applySelected").show()
 
                         populateDeviceResultTable(data)
+                        $("#checkDeviceModal .modalHeader").text(function(index, currentText) {
+                            return currentText +": "+ organization;
+                        });
 
-                    // }else{
-                    //
-                    //     $("#LoadingGifCheckResult").hide()
-                    //     // let error = data["status"] + " " + data["msg"] + " " +data["error_msg"] + " " +data["log"]
-                    //     // $("#chooseOrgLabel").html(`<b style="color:red">Error: ${error} </b>`);
-                    //     // $("#LoadingGifCheck").hide()
-                    //     // $("#devicesCheckTable").hide()
-                    //     populateDeviceResultTable(data)
-                    // }
 
                 },
 
@@ -4777,6 +4813,7 @@ $(document).ready(function () {
     //cancella tabella dei risultati se chiudo il modal
     $("#cancelResultBtn").off('click');
     $("#cancelResultBtn").on('click', function(){
+        $("#checkDeviceModal .modalHeader").text("Devices check")
         $('#devicesCheckTableResult').DataTable().destroy();
         $('#deviceRowsResult').empty();
     });
@@ -4801,35 +4838,41 @@ $(document).ready(function () {
 
         Object.entries(uriArray).forEach(([uri, details]) => {
             // Skip empty uri
-            console.log(uri)
+
             if (!uri) return;
 
             // Extract the part after "iot/"
             const truncUri = uri.match(/.*iot\/(.*)/)?.[1] ?? uri;
 
+            // Create a scrollable wrapper for the Action column if the content is long
+            uriCell = `<div style="max-width: 200px; overflow: auto; white-space: nowrap; word-wrap: break-word;">...${truncUri}</div>`;
+
+
             let row;
-            if(details.database_record==true && details.knowledge_base==true && details.ownership_record==true && details.has_uri==true && details.broker_record==true){
+            if(details.database_record==true && details.knowledge_base==true && details.ownership_record==true && details.has_uri_db==true && details.broker_record==true && details.has_uri_own==true){
                 row = `
                 <tr>
-                    <td><div font-size:12px">...${truncUri}</div></td>
+                    <td><div style="font-size:11px">${uriCell}</div></td>
                     <td style="text-align: center">${getIcon(details.database_record)}</td>
+                    <td style="text-align: center">${getIcon(details.has_uri_db)}</td>
                     <td style="text-align: center">${getIcon(details.knowledge_base)}</td>
                     <td style="text-align: center">${getIcon(details.ownership_record)}</td>
-                    <td style="text-align: center">${getIcon(details.has_uri)}</td>
                     <td style="text-align: center">${getIcon(details.broker_record)}</td>
+                    <td style="text-align: center">${getIcon(details.has_uri_own)}</td>
                     <td><input type="checkbox" class="retryCheckbox" disabled></td>
                     <td><input type="checkbox" class="deleteCheckbox" disabled></td>
                     <td style="text-align: center">Device working</td>
                 </tr>
             `;
-            }else if(details.database_record==false && details.knowledge_base==false && details.ownership_record==false && details.has_uri==false && details.broker_record==false){
+            }else if(details.database_record==false && details.knowledge_base==false && details.ownership_record==false && details.has_uri_db==false && details.broker_record==false && details.has_uri_own==false){
                 row = `
                 <tr>
-                    <td><div font-size:12px">...${truncUri}</div></td>
+                    <td><div style="font-size:11px">${uriCell}</div></td>
                     <td style="text-align: center">${getIcon(details.database_record)}</td>
+                    <td style="text-align: center">${getIcon(details.has_uri_db)}</td>
                     <td style="text-align: center">${getIcon(details.knowledge_base)}</td>
                     <td style="text-align: center">${getIcon(details.ownership_record)}</td>
-                    <td style="text-align: center">${getIcon(details.has_uri)}</td>
+                    <td style="text-align: center">${getIcon(details.has_uri_own)}</td>
                     <td style="text-align: center">${getIcon(details.broker_record)}</td>
                     <td><input type="checkbox" class="retryCheckbox" disabled></td>
                     <td><input type="checkbox" class="deleteCheckbox" disabled></td>
@@ -4839,11 +4882,12 @@ $(document).ready(function () {
             } else{
             row = `
                 <tr>
-                    <td><div font-size:12px">...${truncUri}</div></td>
+                    <td><div style="font-size:11px">${uriCell}</div></td>
                     <td style="text-align: center">${getIcon(details.database_record)}</td>
+                    <td style="text-align: center">${getIcon(details.has_uri_db)}</td>
                     <td style="text-align: center">${getIcon(details.knowledge_base)}</td>
                     <td style="text-align: center">${getIcon(details.ownership_record)}</td>
-                    <td style="text-align: center">${getIcon(details.has_uri)}</td>
+                    <td style="text-align: center">${getIcon(details.has_uri_own)}</td>
                     <td style="text-align: center">${getIcon(details.broker_record)}</td>
                     <td><input type="checkbox" class="retryCheckbox"></td>
                     <td><input type="checkbox" class="deleteCheckbox"></td>
@@ -4862,67 +4906,199 @@ $(document).ready(function () {
         //inizializza datatable
         let table = $('#devicesCheckTable').DataTable({
             "columnDefs": [
-                {"targets": [6, 7], "orderable": false} // Disabling order for retry and delete columns
+                {"targets": [7, 8], "orderable": false} // Disabling order for retry and delete columns
             ]
         });
 
 
 
-        // gestisce i select all per le colonna retry
+        // Gestisce i select all per le colonne retry e delete con esclusività mutua
+
+// Handler per Retry All checkbox
         $('#retryAllCheckbox').on('change', function () {
             const isChecked = $(this).prop('checked');
+            const currentPageRows = table.rows({ page: 'current' }).nodes().to$();
 
-            // per ogni riga
-            table.rows().nodes().to$().each(function () {
+            if (isChecked) {
+                // Disabilita e deseleziona Delete All quando Retry All è selezionato
+                $('#deleteAllCheckbox').prop('checked', false).prop('disabled', true);
+
+                // Seleziona tutti i retry checkbox e disabilita tutti i delete checkbox
+                currentPageRows.each(function () {
                 const row = $(this);
+                    const retryCheckbox = row.find('.retryCheckbox');
                 const deleteCheckbox = row.find('.deleteCheckbox');
 
-                // se uno dei due è selezionato disabilita l'altro
-                if (deleteCheckbox.prop('checked')) {
-                    row.find('.retryCheckbox').prop('checked', false).prop('disabled', true);
+                    retryCheckbox.prop('checked', true).prop('disabled', false);
+                    deleteCheckbox.prop('checked', false).prop('disabled', true);
+                });
                 } else {
-                    row.find('.retryCheckbox').prop('checked', isChecked).prop('disabled', false);
-                }
-            });
+                // Riabilita Delete All quando Retry All è deselezionato
+                $('#deleteAllCheckbox').prop('disabled', false);
 
-            // disabilita tutti i delete se retry all è selezionato
-            if (isChecked) {
-                table.rows().nodes().to$().find('.deleteCheckbox').prop('disabled', true);
-            } else {
-                // riabilita i delete se deselezionato
-                table.rows().nodes().to$().find('.deleteCheckbox').prop('disabled', false);
+                // Deseleziona tutti i retry checkbox e riabilita tutti i delete checkbox
+                currentPageRows.each(function () {
+                    const row = $(this);
+                    const retryCheckbox = row.find('.retryCheckbox');
+                    const deleteCheckbox = row.find('.deleteCheckbox');
+
+                    retryCheckbox.prop('checked', false);
+                    deleteCheckbox.prop('disabled', false);
+                });
             }
 
-
-            checkSelectAll(table);
+            // Non chiamare checkSelectAll qui per evitare interferenze
+            // checkSelectAll(table);
         });
 
-        // gestisce i select all per le colonna delete
+// Handler per Delete All checkbox
         $('#deleteAllCheckbox').on('change', function () {
             const isChecked = $(this).prop('checked');
+            const currentPageRows = table.rows({ page: 'current' }).nodes().to$();
 
+            if (isChecked) {
+                // Disabilita e deseleziona Retry All quando Delete All è selezionato
+                $('#retryAllCheckbox').prop('checked', false).prop('disabled', true);
 
-            table.rows().nodes().to$().each(function () {
+                // Seleziona tutti i delete checkbox e disabilita tutti i retry checkbox
+                currentPageRows.each(function () {
+                    const row = $(this);
+                    const deleteCheckbox = row.find('.deleteCheckbox');
+                    const retryCheckbox = row.find('.retryCheckbox');
+
+                    deleteCheckbox.prop('checked', true).prop('disabled', false);
+                    retryCheckbox.prop('checked', false).prop('disabled', true);
+                });
+            } else {
+                // Riabilita Retry All quando Delete All è deselezionato
+                $('#retryAllCheckbox').prop('disabled', false);
+
+                // Deseleziona tutti i delete checkbox e riabilita tutti i retry checkbox
+                currentPageRows.each(function () {
                 const row = $(this);
+                    const deleteCheckbox = row.find('.deleteCheckbox');
                 const retryCheckbox = row.find('.retryCheckbox');
 
-                // se uno dei due è selezionato disabilita l'altro
-                if (retryCheckbox.prop('checked')) {
-                    row.find('.deleteCheckbox').prop('checked', false).prop('disabled', true);
+                    deleteCheckbox.prop('checked', false);
+                    retryCheckbox.prop('disabled', false);
+                });
+            }
+
+            // Non chiamare checkSelectAll qui per evitare interferenze
+            // checkSelectAll(table);
+        });
+
+// Handler per i singoli retry checkbox (per gestire la selezione individuale)
+        $(document).on('change', '.retryCheckbox', function () {
+            const row = $(this).closest('tr');
+            const deleteCheckbox = row.find('.deleteCheckbox');
+            const isChecked = $(this).prop('checked');
+
+            if (isChecked) {
+                // Se retry è selezionato, disabilita delete
+                deleteCheckbox.prop('checked', false).prop('disabled', true);
                 } else {
-                    row.find('.deleteCheckbox').prop('checked', isChecked).prop('disabled', false);
+                // Se retry è deselezionato, riabilita delete
+                deleteCheckbox.prop('disabled', false);
+
+                // Se un singolo retry viene deselezionato, deseleziona anche retry all
+                $('#retryAllCheckbox').prop('checked', false);
+            }
+
+            // Aggiorna lo stato dei select all solo se non è un'azione di massa
+            if (!$('#retryAllCheckbox').prop('checked') && !$('#deleteAllCheckbox').prop('checked')) {
+                updateSelectAllStates();
                 }
             });
 
-            // disabilita retry se deleteall è selezionato
+// Handler per i singoli delete checkbox (per gestire la selezione individuale)
+        $(document).on('change', '.deleteCheckbox', function () {
+            const row = $(this).closest('tr');
+            const retryCheckbox = row.find('.retryCheckbox');
+            const isChecked = $(this).prop('checked');
+
             if (isChecked) {
-                table.rows().nodes().to$().find('.retryCheckbox').prop('disabled', true);
+                // Se delete è selezionato, disabilita retry
+                retryCheckbox.prop('checked', false).prop('disabled', true);
             } else {
-                // riabilita se tolgo la spunta
-                table.rows().nodes().to$().find('.retryCheckbox').prop('disabled', false);
+                // Se delete è deselezionato, riabilita retry
+                retryCheckbox.prop('disabled', false);
+
+                // Se un singolo delete viene deselezionato, deseleziona anche delete all
+                $('#deleteAllCheckbox').prop('checked', false);
+            }
+
+            // Aggiorna lo stato dei select all solo se non è un'azione di massa
+            if (!$('#retryAllCheckbox').prop('checked') && !$('#deleteAllCheckbox').prop('checked')) {
+                updateSelectAllStates();
+            }
+        });
+
+// Funzione per aggiornare lo stato dei checkbox "select all"
+        function updateSelectAllStates() {
+            const currentPageRows = table.rows({ page: 'current' }).nodes().to$();
+
+            let allRetryChecked = true;
+            let allDeleteChecked = true;
+            let anyRetryChecked = false;
+            let anyDeleteChecked = false;
+            let totalRows = 0;
+
+            currentPageRows.each(function () {
+                const row = $(this);
+                const retryCheckbox = row.find('.retryCheckbox');
+                const deleteCheckbox = row.find('.deleteCheckbox');
+
+                totalRows++;
+
+                const retryChecked = retryCheckbox.prop('checked');
+                const deleteChecked = deleteCheckbox.prop('checked');
+
+                if (!retryChecked) allRetryChecked = false;
+                if (!deleteChecked) allDeleteChecked = false;
+                if (retryChecked) anyRetryChecked = true;
+                if (deleteChecked) anyDeleteChecked = true;
+            });
+
+            // Se non ci sono righe, reset everything
+            if (totalRows === 0) {
+                $('#retryAllCheckbox').prop('checked', false).prop('disabled', false);
+                $('#deleteAllCheckbox').prop('checked', false).prop('disabled', false);
+                return;
+            }
+
+            // Aggiorna Retry All checkbox: checked solo se TUTTI i retry sono selezionati
+            const shouldRetryAllBeChecked = allRetryChecked && anyRetryChecked;
+            $('#retryAllCheckbox').prop('checked', shouldRetryAllBeChecked);
+
+            // Aggiorna Delete All checkbox: checked solo se TUTTI i delete sono selezionati
+            const shouldDeleteAllBeChecked = allDeleteChecked && anyDeleteChecked;
+            $('#deleteAllCheckbox').prop('checked', shouldDeleteAllBeChecked);
+
+            // Gestisci l'abilitazione/disabilitazione dei select all
+            if (anyDeleteChecked) {
+                $('#retryAllCheckbox').prop('disabled', true);
+            } else if (anyRetryChecked) {
+                $('#deleteAllCheckbox').prop('disabled', true);
+            } else {
+                $('#retryAllCheckbox').prop('disabled', false);
+                $('#deleteAllCheckbox').prop('disabled', false);
             }
 
             checkSelectAll(table);
+        }
+
+// Funzione da chiamare quando si cambia pagina nella DataTable
+// per resettare lo stato dei checkbox "select all"
+        function resetSelectAllOnPageChange() {
+            $('#retryAllCheckbox').prop('checked', false).prop('disabled', false);
+            $('#deleteAllCheckbox').prop('checked', false).prop('disabled', false);
+            updateSelectAllStates();
+        }
+
+// Event listener per il cambio pagina (se necessario)
+table.on('page.dt', function () {
+     resetSelectAllOnPageChange();
         });
 
 
@@ -4950,12 +5126,14 @@ $(document).ready(function () {
 
 
         uriArray.forEach(function(row) {
+            let uriCell = row[0];
+            // Create a scrollable wrapper for the Action column if the content is long
+            uriCell = `<div style="max-width: 300px; overflow: auto; white-space: nowrap; word-wrap: break-word;">${uriCell}</div>`;
 
-
-            let actionContent = row[6];
+            let actionContent = row[7];
             if(actionContent===''){
                 console.log("no action taken");
-                actionContent="ERROR: "+ row[6];
+                actionContent="ERROR: "+ row[7];
             }
 
             // Create a scrollable wrapper for the Action column if the content is long
@@ -4965,11 +5143,12 @@ $(document).ready(function () {
             // Create a table row from the values in the row array
             var tableRow = `
                 <tr>
-                    <td><div font-size:12px">${row[0]}</div></td> <!-- Device ID -->
+                    <td><div style="font-size:11px">${uriCell}</div></td> <!-- Device ID -->
                     <td>${getIcon(row[1])}</td> <!-- DB (boolean) -->
+                    <td>${getIcon(row[4])}</td> <!-- URI DB -->
                     <td>${getIcon(row[2])}</td> <!-- KB (boolean) -->
-                    <td>${getIcon(row[3])}</td> <!-- Ownership (boolean) -->
-                    <td>${getIcon(row[4])}</td> <!-- URI -->
+                    <td>${getIcon(row[3])}</td> <!-- Ownership  -->
+                    <td>${getIcon(row[6])}</td> <!-- Ownership db -->
                     <td>${getIcon(row[5])}</td> <!--broker-->
                     <td>${actionContent}</td> <!-- Action -->
                 </tr>

@@ -153,6 +153,12 @@ $accessToken = "";
             var currentDictionaryStaticAttribAdd = [];
             var currentDictionaryStaticAttribEdit = [];
 
+            <?php if (isset($organization_url) && !empty($organization_url)): ?>
+                var organization_url = "<?php echo $organization_url; ?>";
+            <?php else: ?>
+                var organization_url = "../../dashboardSmartCity/api/organizations.php";
+            <?php endif; ?>
+
             $.ajax({
                 url: "../api/functionality.php",
                 data: {
@@ -2035,7 +2041,9 @@ if (($hide_menu != "hide")) {
                         <select id="selectCheckOrganization" name="selectCheckOrganization" class="modalInputTxt" style="font-weight: normal">
                             <option selected="true" disabled >Select an organization to check</option>
                         </select>
-                        <div class="modalFieldLabelCnt" id="chooseOrgLabel">Choose an organization</div>
+                        <div class="modalFieldLabelCnt" id="chooseOrgLabel" hidden="">Choose an organization</div>
+
+                        <div class="modalFieldLabelCnt" id="loadingLabel" hidden="">Please wait, this operation could require some time...</div>
 
 
                         <div class="col-xs-12 centerWithFlex" ><i id="LoadingGifCheck" class="fa fa-circle-o-notch fa-spin" style="font-size:36px;" ></i></div></div>
@@ -2047,9 +2055,10 @@ if (($hide_menu != "hide")) {
                                 <th data-cellTitle="DeviceId">Device Id</th>
 <!--                                <th data-cellTitle="Problem">Problem</th>-->
                                 <th data-cellTitle="isInDB">DB</th>
+                                <th data-cellTitle="haveUri_db">URI DB</th>
                                 <th data-cellTitle="isInKB">KB</th>
                                 <th data-cellTitle="isInOwn">Ownership</th>
-                                <th data-cellTitle="haveUri">have URI</th>
+                                <th data-cellTitle="haveUri_own">Ownership URI</th>
                                 <th data-cellTitle="isInBroker">Broker</th>
                                 <th data-cellTitle="MarkAsRetry"><div style="max-width: 170px; overflow: auto; white-space: nowrap;  word-wrap: break-word; font-size:10px">Mark as <b style="color: black">Retry</b> (Select all: <input type="checkbox" id="retryAllCheckbox">)</div></th>
                                 <th data-cellTitle="MarkAsDelete"><div style="max-width: 170px; overflow: auto; white-space: nowrap;  word-wrap: break-word; font-size:10px">Mark as <b style="color: black">Delete</b> (Select all: <input type="checkbox" id="deleteAllCheckbox">)</div></th>
@@ -2065,8 +2074,7 @@ if (($hide_menu != "hide")) {
 
                     <div class="col-xs-12 col-md-3 modalCell" id="ownNameDiv" hidden>
                         <input type="text" id="ownName" name="ownName" class="modalInputTxt">
-                        <div class="modalFieldLabelCnt" id="chooseOrgLabel">Input an account name for the ownership:</div>
-
+                        <div class="modalFieldLabelCnt" id="chooseOwnNameLabel">Input an account name for the ownership:</div>
                     </div>
                     <div class="modal-footer d-flex justify-content-between align-items-center">
                         <button id="cancelCheckBtn" type="button" class="btn cancelBtn" data-dismiss="modal">Close</button>
@@ -2120,9 +2128,10 @@ if (($hide_menu != "hide")) {
                             <tr style="background: rgb(0, 162, 211); color: rgb(255, 255, 255); font-size: 1em;">
                                 <th data-cellTitle="DeviceId">Device Id</th>
                                 <th data-cellTitle="isInDB">DB</th>
+                                <th data-cellTitle="haveUri_db">URI Db</th>
                                 <th data-cellTitle="isInKB">KB</th>
                                 <th data-cellTitle="isInOwn">Ownership</th>
-                                <th data-cellTitle="haveUri">URI</th>
+                                <th data-cellTitle="haveUri_own">Ownership URI</th>
                                 <th data-cellTitle="isInBroker">Broker</th>
                                 <th data-cellTitle="action">Action taken</th>
                             </tr>

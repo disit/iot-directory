@@ -17,6 +17,7 @@ class UriComparison {
     private $kbHostIp;
     private $batchSize = 1000;
     private $link;
+    private $link_own;
     private $organization;
 
     /**
@@ -25,11 +26,13 @@ class UriComparison {
      * @param string $kbHostIp The host IP/URL for the knowledge base
      * @param mysqli $dbConnection Active MySQL connection
      * @param string $organization Organization identifier for filtering database results
+     * @param mysqli $dbConnection_own Ownership db connection
      */
-    public function __construct(string $kbHostIp, mysqli $dbConnection, string $organization) {
+    public function __construct(string $kbHostIp, mysqli $dbConnection, string $organization, mysqli $dbConnection_own) {
         $this->kbHostIp = $kbHostIp;
         $this->link = $dbConnection;
         $this->organization = $organization;
+        $this->link_own= $dbConnection_own;
         $this->link->set_charset("utf8mb4");
     }
 
@@ -39,11 +42,11 @@ class UriComparison {
      * @return array List of URIs from ownership records for the current organization
      * @throws Exception If there's an error with the database query
      */
-    public function fetchOwnershipData(): array {
+    public function fetchOwnershipData(&$reconstructedElementUrl): array {
         global $ownershipdburl;
         // Query to get non-deleted IOT device URIs from ownership table
         // Using REGEXP for exact organization match at the beginning of elementId
-        $query = "SELECT elementUrl FROM $ownershipdburl
+        $query = "SELECT elementId, elementUrl FROM $ownershipdburl
              WHERE elementType = 'IOTID' AND deleted IS NULL
              AND elementId REGEXP ?";
 
@@ -51,9 +54,9 @@ class UriComparison {
         $organizationPattern = "^" . $this->organization . ":";
 
         try {
-            $stmt = $this->link->prepare($query);
+            $stmt = $this->link_own->prepare($query);
             if (!$stmt) {
-                throw new Exception("Failed to prepare ownership query: " . $this->link->error);
+                throw new Exception("Failed to prepare ownership query: " . $this->link_own->error);
             }
 
             // Bind the organization pattern parameter
@@ -69,8 +72,30 @@ class UriComparison {
             }
 
             // Fetch all results and extract URIs
-            $ownershipData = $result->fetch_all(MYSQLI_ASSOC);
-            $ownershipUris = array_column($ownershipData, 'elementUrl');
+            //$ownershipData = $result->fetch_all(MYSQLI_ASSOC);
+            //$ownershipUris = array_column($ownershipData, 'elementUrl');
+            $ownershipUris = [];
+            while ($row = $result->fetch_assoc()) {
+
+                // Se c'è l'id ma non l'uri, lo ricostruisco e lo aggiungo sia agli uri che ai recostructed uri
+                if (!empty($row['elementId']) && (empty($row['elementUrl']) || $row['elementUrl'] === null)) {
+                    $elementIdParts=explode(':',$row['elementId']);
+                    $organization=$elementIdParts[0];
+                    $broker=$elementIdParts[1];
+                    $deviceName=$elementIdParts[2];
+
+
+                    $rebuiltElementUrl="http://www.disit.org/km4city/resource/iot/".$broker."/".$organization."/".$deviceName;
+
+                    $ownershipUris[] = $rebuiltElementUrl;
+                    $reconstructedElementUrl[] = $rebuiltElementUrl;
+                }
+
+                // Only add uri to results if it's not empty
+                if (!empty($row['elementUrl'])) {
+                    $ownershipUris[] = $row['elementUrl'];
+                }
+            }
 
             $stmt->close();
             return array_unique($ownershipUris);
@@ -100,57 +125,7 @@ class UriComparison {
         //return "SELECT DISTINCT ?s WHERE { ?s ?p ?o } LIMIT {$this->batchSize} OFFSET {$offset}";
     }
 
-//    public function fetchReconstructableUris(): array {
-//
-//        //magari fare la stessa query per recuperare quelli con gli uri mancanti dalla ownwership
-//        //
-//        // Query to get entries without URIs but with enough information to reconstruct them
-//        $query = "SELECT contextBroker, organization, id FROM iotdb.devices
-//                 WHERE uri IS NULL AND organization = ?
-//                 AND contextBroker IS NOT NULL AND id IS NOT NULL";
-//
-//        try {
-//            $stmt = $this->link->prepare($query);
-//            if (!$stmt) {
-//                throw new Exception("Failed to prepare reconstructable query: " . $this->link->error);
-//            }
-//
-//            // Bind the organization parameter
-//            $stmt->bind_param("s", $this->organization);
-//
-//            if (!$stmt->execute()) {
-//                throw new Exception("Failed to execute reconstructable query: " . $stmt->error);
-//            }
-//
-//            $result = $stmt->get_result();
-//            if (!$result) {
-//                throw new Exception("Failed to get reconstructable results: " . $stmt->error);
-//            }
-//
-//            // Fetch all results
-//            $reconstructableRecords = $result->fetch_all(MYSQLI_ASSOC);
-//
-//            // Reconstruct URIs using the pattern: contextBroker/organization/id
-//            $reconstructedUris = [];
-//            foreach ($reconstructableRecords as $record) {
-//                if (isset($record['contextBroker'], $record['organization'], $record['id'])) {
-//                    $reconstructedUris[] = sprintf("%s/%s/%s/%s",
-//                        "http://www.disit.org/km4city/resource/iot",
-//                        $record['contextBroker'],
-//                        $record['organization'],
-//                        $record['id']
-//                    );
-//                }
-//            }
-//
-//            $stmt->close();
-//            return array_unique($reconstructedUris);
-//
-//        } catch (Exception $e) {
-//            error_log("Error in fetchReconstructableUris: " . $e->getMessage());
-//            throw $e;
-//        }
-//    }
+
 
     /**
      * Compare URIs from all sources automatically, including reconstructable URIs
@@ -162,17 +137,19 @@ class UriComparison {
         try {
             // Fetch URIs from all sources
             $reconstructedUris=[];
+            $reconstructedElementUrl=[];
             $databaseUris = $this->fetchAllDBData($reconstructedUris);
 //            $reconstructableUris = $this->fetchReconstructableUris();
             $knowledgebaseUris = $this->fetchAllKBData();
-            $ownershipUris = $this->fetchOwnershipData();
+            $ownershipUris = $this->fetchOwnershipData($reconstructedElementUrl);
 
             // Perform the comparison with all sources
             return $this->compareUriLists(
                 $databaseUris,
                 $knowledgebaseUris,
                 $ownershipUris,
-                $reconstructedUris
+                $reconstructedUris,
+                $reconstructedElementUrl
             );
         } catch (Exception $e) {
             error_log("Error in compareAllSourcesComplete: " . $e->getMessage());
@@ -317,30 +294,6 @@ class UriComparison {
     }
 
 
-//    /**
-//     * Compare URIs from all sources automatically
-//     *
-//     * @param array $ownershipUris URIs from ownership records
-//     * @param array $reconstructableUris Optional list of URIs that can be reconstructed
-//     * @return array List of URIs with their presence status in each system
-//     */
-//    public function compareAllSources(array $ownershipUris, array $reconstructableUris = []): array {
-//        try {
-//            // Fetch both DB and KB data automatically
-//            $databaseUris = $this->fetchAllDBData();
-//            $knowledgebaseUris = $this->fetchAllKBData();
-//
-//            return $this->compareUriLists($databaseUris, $knowledgebaseUris, $ownershipUris, $reconstructableUris);
-//        } catch (Exception $e) {
-//            error_log("Error in compareAllSources: " . $e->getMessage());
-//            throw $e;
-//        }
-//    }
-
-//    public function handleMissingUri(){
-//
-//    }
-
 
 public function fetchBrokerData(String $uri){
     $pattern = '/iot\/([^\/]+)\/([^\/]+)\/([^\/]+)$/';
@@ -410,13 +363,15 @@ public function fetchBrokerData(String $uri){
         array $databaseUris,
         array $knowledgebaseUris,
         array $ownershipUris,
-        array $reconstructedUris
+        array $reconstructedUris,
+        array $reconstructedElementUrl
     ): array {
         // Create lookup arrays for faster checks
         $dbSet = array_flip($databaseUris);
         $kbSet = array_flip($knowledgebaseUris);
         $ownSet = array_flip($ownershipUris);
         $reconstructedSet = array_flip($reconstructedUris);
+        $reconstructedSetOwnership = array_flip($reconstructedElementUrl);
 
         // Combine all URIs to process
         $allUris = array_unique(array_merge(
@@ -435,6 +390,7 @@ public function fetchBrokerData(String $uri){
             $inKnowledgebase = isset($kbSet[$uri]);
             $inOwnership = isset($ownSet[$uri]);
             $isReconstructed = isset($reconstructedSet[$uri]);
+            $isReconstructedOwnership = isset($reconstructedSetOwnership[$uri]);
 
             // Skip URIs that are present in all three main systems
             if ($inDatabase && $inKnowledgebase && $inOwnership) {
@@ -450,6 +406,11 @@ public function fetchBrokerData(String $uri){
             }else{
                 $isReconstructed=false;
             }
+            if($inOwnership){
+                $isReconstructedOwnership=!$isReconstructedOwnership;
+            }else{
+                $isReconstructedOwnership=false;
+            }
 
 
             $inBroker=$this->fetchBrokerData($uri);
@@ -462,17 +423,25 @@ public function fetchBrokerData(String $uri){
                 'in_database' => $inDatabase,
                 'in_knowledgebase' => $inKnowledgebase,
                 'in_ownership' => $inOwnership,
-                'has_uri' => $isReconstructed,
-                'in_broker'=> $inBroker
+                'has_uri_db' => $isReconstructed,
+                'in_broker'=> $inBroker,
+                'has_uri_own' => $isReconstructedOwnership
             ];
 
             $results[] = $status;
         }
-        $myfile = fopen("/tmp/WIPcheckDump.txt", "w") or die("Unable to open file!");
+
+
+        if(isset($log_path_device_check)){
+            $log_path=$log_path_device_check."WIPcheckDump.txt";
+        }else{
+            $log_path="/tmp/WIPcheckDump.txt";
+        }
+        $logfile = fopen($log_path, "a") or die("Unable to open file!");
 // Convert array to JSON format for better readability
         $jsonResults = json_encode($results, JSON_PRETTY_PRINT);
-        fwrite($myfile, $jsonResults);
-        fclose($myfile);
+        fwrite($logfile, $jsonResults);
+        fclose($logfile);
 
         return $results;
     }
@@ -504,9 +473,7 @@ if ($_SESSION[loggedRole] !== 'RootAdmin') {
 
 
 
-$encryptionMethod = "AES-256-CBC";
-$encryptionInitKey = 'EncryptionIniKey';
-$encryptionIvKey = 'IVKeyivKey123456';
+
 
 
 $allowedElementIDs = [];
@@ -538,12 +505,25 @@ $dbname = $dbFileContent['dbname'][$env];
 $host=$generalFileContent["host"][$env];
 $usernamedb=$dbFileContent['username'][$env];
 $passworddb=$dbFileContent['password'][$env];
-$processId = 1;     // 0 = SELECT & UPDATE; 1 = UPSERT
 $link = mysqli_connect($host, $usernamedb, $passworddb);
 error_reporting(E_ALL);
 ini_set('display_errors', 1);
 error_reporting(E_ERROR | E_PARSE);
 
+
+//////////////////////////////////////////////////
+//Ownership access parametrization
+//////////////////////////////////////////////////
+if($db_own_FileContent = parse_ini_file("../../conf/ownership_db.ini")) {
+    $dbname_own = $db_own_FileContent['dbname_own'][$env];
+    $host_own = $db_own_FileContent["host_own"][$env];
+    $usernamedb_own = $db_own_FileContent['username_own'][$env];
+    $passworddb_own = $db_own_FileContent['password_own'][$env];
+    $link_own = mysqli_connect($host_own, $usernamedb_own, $passworddb_own);
+}else{
+    $link_own=$link;
+}
+//////////////////////////////////////////////////////////////////////////
 
 
 
@@ -590,6 +570,7 @@ if($action=="check_devices"){
     try {
         // Set up database connection with access to both iotdb and profiledb
         $dbConnection = $link;
+        $dbConnection_own = $link_own;
         if ($dbConnection->connect_error) {
             throw new Exception("Database connection failed: " . $dbConnection->connect_error);
         }
@@ -598,7 +579,8 @@ if($action=="check_devices"){
         $comparison = new UriComparison(
             $kbUrl,
             $dbConnection,
-            $_REQUEST['organization']
+            $_REQUEST['organization'],
+            $dbConnection_own
         );
 
         // Get comparison results from all sources
@@ -612,8 +594,9 @@ if($action=="check_devices"){
                 'database_record' => (bool)$result['in_database'],
                 'knowledge_base' => (bool)$result['in_knowledgebase'],
                 'ownership_record' => (bool)$result['in_ownership'],
-                'has_uri' => (bool)$result['has_uri'],
+                'has_uri_db' => (bool)$result['has_uri_db'],
                 'broker_record'=>(bool)$result['in_broker'],
+                'has_uri_own' =>(bool)$result['has_uri_own'],
                 'action_taken' => ''
             ];
         }
@@ -642,16 +625,18 @@ if($action=="check_devices"){
                 $isInDB = $link->real_escape_string($value['database_record'] ? 'true' : 'false');
                 $isInKB = $link->real_escape_string($value['knowledge_base'] ? 'true' : 'false');
                 $isInOwnership = $link->real_escape_string($value['ownership_record'] ? 'true' : 'false');
-                $haveURI = $link->real_escape_string($value['has_uri'] ? 'true' : 'false');
+                $haveUri_db = $link->real_escape_string($value['has_uri_db'] ? 'true' : 'false');
                 $isInBroker = $link->real_escape_string($value['broker_record'] ? 'true' : 'false');
+                $haveURI_own = $link->real_escape_string($value['has_uri_own'] ? 'true' : 'false');
+
 
 
             // Prepare the values for SQL insertion
-                $values[] = "('$uri', '$checkdate', '$organization', '-', $isInDB, $isInKB, $isInOwnership, $haveURI,$isInBroker)";
+                $values[] = "('$uri', '$checkdate', '$organization', '-', $isInDB, $isInKB, $isInOwnership, $haveUri_db,$isInBroker,$haveURI_own)";
 
         }
 
-        $sql = "INSERT INTO iotdb.devicecheck (uri, checkdate, organization, log, isInDB, isInKB, isInOwnership, haveURI,isInBroker) VALUES " . implode(", ", $values);
+        $sql = "INSERT INTO iotdb.devicecheck (uri, checkdate, organization, log, isInDB, isInKB, isInOwnership, haveURI,isInBroker,haveURI_own) VALUES " . implode(", ", $values);
 
         if ($link->query($sql) !== TRUE) {
             $apiResult['error'] .= $link->error;
@@ -731,7 +716,7 @@ if($action=="check_devices"){
 
         // Query to select all the necessary fields
         $sql = "
-            SELECT uri, isInDB, isInKB, isInOwnership, haveURI,log,isInBroker
+            SELECT uri, isInDB, isInKB, isInOwnership, haveURI,log,isInBroker,haveURI_own
             FROM iotdb.devicecheck
             WHERE organization = '" . $link->real_escape_string($organization) . "'
         ";
@@ -754,7 +739,8 @@ if($action=="check_devices"){
                         'ownership_record' => (bool)$row['isInOwnership'],
                         'is_reconstructable' => $row['is_reconstructable'] ?? false,
                         'broker_record'=>(bool)$row['isInBroker'],
-                        'has_uri' => (bool)$row['haveURI'],
+                        'has_uri_db' => (bool)$row['haveURI'],
+                        'has_uri_own' =>(bool)$row['haveURI_own'],
                         'action_taken' => $row["log"]  // Assuming no action has been taken
                     ];
                 }
@@ -797,12 +783,12 @@ if($action=="check_devices"){
 
                     //$apiResult["opResult"].='edo';
 
-                    $resultArray = [$selectedInfo[$i]["uri"], $selectedInfo[$i]["isInDb"], $selectedInfo[$i]["isInKb"], $selectedInfo[$i]["isInOwn"], $selectedInfo[$i]["haveUri"], $selectedInfo[$i]["isInBroker"], ""];
+                    $resultArray = [$selectedInfo[$i]["uri"], $selectedInfo[$i]["isInDb"], $selectedInfo[$i]["isInKb"], $selectedInfo[$i]["isInOwn"], $selectedInfo[$i]["haveUri_db"], $selectedInfo[$i]["isInBroker"],$selectedInfo[$i]['haveUri_own'], ""];
 
-                    AllAroundRetry($selectedInfo[$i], $link, $accessToken, $kbUrl, $apiResult, $resultArray);
+                    AllAroundRetry($selectedInfo[$i], $link, $link_own, $accessToken, $kbUrl, $apiResult, $resultArray);
 
 
-                    $resultArray[6] = $apiResult["actionTaken"];
+                    $resultArray[7] = $apiResult["actionTaken"];
                     $apiResult["opResult"][$i] = $resultArray;
 
 
@@ -824,27 +810,42 @@ if($action=="check_devices"){
                         $uri = "http://www.disit.org/km4city/resource/iot/" . $broker . "/" . $organization . "/" . $deviceId;
 
 
-                        $stmt = $dbConnection->prepare("UPDATE iotdb.devicecheck SET log=?,isInDB=?,isInKB=?,isInOwnership=?, haveURI=?,isInBroker=? WHERE uri=?");
+                        $stmt = $dbConnection->prepare("UPDATE iotdb.devicecheck SET log=?,isInDB=?,isInKB=?,isInOwnership=?, haveURI=?,haveURI_own=?,isInBroker=? WHERE uri=?");
                         $inDb = (int)$apiResult["opResult"][$i][1];
                         $inKb = (int)$apiResult["opResult"][$i][2];
                         $inOwn = (int)$apiResult["opResult"][$i][3];
-                        $haveUri = (int)$apiResult["opResult"][$i][4];
+                        $haveUri_db = (int)$apiResult["opResult"][$i][4];
                         $inBrk = (int)$apiResult["opResult"][$i][5];
+                        $haveUri_own=(int)$apiResult["opResult"][$i][6];
 
                         //var_dump($apiResult["opResult"][$i][6]);
-                        if($apiResult["opResult"][$i][6]==""){
-                            $apiResult["opResult"][$i][6]=$apiResult["errors"];
+                        if($apiResult["opResult"][$i][7]==""){
+                            $apiResult["opResult"][$i][7]=$apiResult["errors"];
                             $log=$apiResult["errors"];
                         }else{
-                            $log=$apiResult["opResult"][$i][6];
+                            $log=$apiResult["opResult"][$i][7];
                         }
 
                         $apiResult["errors"] = "";
                         $apiResult["actionTaken"] = "";
 
-                        $stmt->bind_param("sssssss", $log, $inDb, $inKb, $inOwn, $haveUri, $inBrk, $uri);
+                        $stmt->bind_param("ssssssss", $log, $inDb, $inKb, $inOwn, $haveUri_db,$haveUri_own, $inBrk, $uri);
                         $stmt->execute();
                         $nrows = $stmt->affected_rows;
+
+
+
+                        if (isset($log_path_device_check)) {
+                            $log_path = $log_path_device_check . "WIPResultdump.txt"; // Use dot (.) for string concatenation
+                        } else {
+                            $log_path = "/tmp/WIPResultdump.txt";
+                        }
+                        $timestamp = date("Y-m-d H:i:s");
+                        $logEntry = "[$timestamp] - Action: RETRY - DeviceURI: $uri – Status: $log\n";
+                        $logfile = fopen($log_path, "a") or die("Unable to open file!");
+                        fwrite($logfile, $logEntry);
+                        fclose($logfile);
+
 
 
                     } catch (Exception $e) {
@@ -854,12 +855,12 @@ if($action=="check_devices"){
 
                     //$apiResult["opResult"].='edo';
 
-                    $resultArray = [$selectedInfo[$i]["uri"], $selectedInfo[$i]["isInDb"], $selectedInfo[$i]["isInKb"], $selectedInfo[$i]["isInOwn"], $selectedInfo[$i]["haveUri"], $selectedInfo[$i]["isInBroker"], ""];
+                    $resultArray = [$selectedInfo[$i]["uri"], $selectedInfo[$i]["isInDb"], $selectedInfo[$i]["isInKb"], $selectedInfo[$i]["isInOwn"], $selectedInfo[$i]["haveUri_db"], $selectedInfo[$i]["isInBroker"],$selectedInfo[$i]['haveUri_own'], ""];
 
-                    AllAroundDelete($selectedInfo[$i], $link, $accessToken, $kbUrl, $apiResult, $resultArray);
+                    AllAroundDelete($selectedInfo[$i], $link,$link_own, $accessToken, $kbUrl, $apiResult, $resultArray);
 
 
-                    $resultArray[6] = $apiResult["actionTaken"];
+                    $resultArray[7] = $apiResult["actionTaken"];
                     $apiResult["opResult"][$i] = $resultArray;
 
 
@@ -881,27 +882,40 @@ if($action=="check_devices"){
                         $uri = "http://www.disit.org/km4city/resource/iot/" . $broker . "/" . $organization . "/" . $deviceId;
 
 
-                        $stmt = $dbConnection->prepare("UPDATE iotdb.devicecheck SET log=?,isInDB=?,isInKB=?,isInOwnership=?, haveURI=?,isInBroker=? WHERE uri=?");
+                        $stmt = $dbConnection->prepare("UPDATE iotdb.devicecheck SET log=?,isInDB=?,isInKB=?,isInOwnership=?, haveURI=?,haveURI_own=?,isInBroker=? WHERE uri=?");
                         $inDb = (int)$apiResult["opResult"][$i][1];
                         $inKb = (int)$apiResult["opResult"][$i][2];
                         $inOwn = (int)$apiResult["opResult"][$i][3];
-                        $haveUri = (int)$apiResult["opResult"][$i][4];
+                        $haveUri_db = (int)$apiResult["opResult"][$i][4];
                         $inBrk = (int)$apiResult["opResult"][$i][5];
+                        $haveUri_own=(int)$apiResult["opResult"][$i][6];
+
 
                         //var_dump($apiResult["opResult"][$i][6]);
-                        if($apiResult["opResult"][$i][6]==""){
-                            $apiResult["opResult"][$i][6]=$apiResult["errors"];
+                        if($apiResult["opResult"][$i][7]==""){
+                            $apiResult["opResult"][$i][7]=$apiResult["errors"];
                             $log=$apiResult["errors"];
                         }else{
-                            $log=$apiResult["opResult"][$i][6];
+                            $log=$apiResult["opResult"][$i][7];
                         }
 
                         $apiResult["errors"] = "";
                         $apiResult["actionTaken"] = "";
 
-                        $stmt->bind_param("sssssss", $log, $inDb, $inKb, $inOwn, $haveUri, $inBrk, $uri);
+                        $stmt->bind_param("ssssssss", $log, $inDb, $inKb, $inOwn, $haveUri_db,$haveUri_own, $inBrk, $uri);
                         $stmt->execute();
                         $nrows = $stmt->affected_rows;
+
+                        if (isset($log_path_device_check)) {
+                            $log_path = $log_path_device_check . "WIPResultdump.txt";
+                        } else {
+                            $log_path = "/tmp/WIPResultdump.txt";
+                        }
+                        $timestamp = date("Y-m-d H:i:s");
+                        $logEntry = "[$timestamp] - Action: DELETE - DeviceURI: $uri – Status: $log\n";
+                        $logfile = fopen($log_path, "a") or die("Unable to open file!");
+                        fwrite($logfile, $logEntry);
+                        fclose($logfile);
 
 
                     } catch (Exception $e) {
@@ -927,10 +941,12 @@ if($action=="check_devices"){
 
 
 
-function AllAroundRetry($selectedDevice,$link,$accessToken,$kbUrl,&$apiResult,&$resultArray){
+function AllAroundRetry($selectedDevice,$link,$link_own,$accessToken,$kbUrl,&$apiResult,&$resultArray){
 
 
     $dbConnection = $link;
+    $dbConnection_own = $link_own;
+
     if ($dbConnection->connect_error) {
         throw new Exception("Database connection failed: " . $dbConnection->connect_error);
     }
@@ -951,7 +967,7 @@ function AllAroundRetry($selectedDevice,$link,$accessToken,$kbUrl,&$apiResult,&$
         $uri = "http://www.disit.org/km4city/resource/iot/" . $broker . "/" . $organization . "/" . $deviceId;
 
         //CHECK SE HA URI
-        if($selectedDevice["haveUri"]){
+        if($selectedDevice["haveUri_db"]){
 
             $apiResult["log"].= 'db is ok, ';
 
@@ -967,7 +983,7 @@ function AllAroundRetry($selectedDevice,$link,$accessToken,$kbUrl,&$apiResult,&$
                     //CHECK SE NELLA OWN MANCA SOLO L'URI O TUTTA LA ENTRY
                     global $ownershipdburl;
                     $elementId=$organization.":".$broker.":".$deviceId;
-                    $stmt = $dbConnection->prepare("SELECT elementUrl FROM $ownershipdburl 
+                    $stmt = $dbConnection_own->prepare("SELECT elementUrl FROM $ownershipdburl 
                  WHERE elementType = 'IOTID' AND deleted IS NULL
                     AND elementId =?");
                     $stmt->bind_param("s", $elementId);
@@ -1005,12 +1021,13 @@ function AllAroundRetry($selectedDevice,$link,$accessToken,$kbUrl,&$apiResult,&$
                             );
 
                             $query = "INSERT INTO $ownershipdburl (username, elementId, elementType, elementName, elementUrl,elementDetails,created) VALUES (?, ?, ?, ?, ?, ?, ?)";
-                            $stmt = $dbConnection->prepare($query);
+                            $stmt = $dbConnection_own->prepare($query);
                             $stmt->bind_param("sssssss", $username, $elementId, $elementType, $deviceId, $uri, $elementDetails, $currentDate);
                             $stmt->execute();
                             //ARRIVATO QUA LA OWNERSHIP E DB SONO OK
                             $apiResult['actionTaken'] .= 'recovered ownership entry, ';
                             $resultArray[3]=true;
+                            $resultArray[6]=true;
                         }catch(Exception $e){
                             $apiResult['errors'].='error inserting entry in own, ';
                             $apiResult['log'].='error inserting uri in own, ';
@@ -1036,13 +1053,14 @@ function AllAroundRetry($selectedDevice,$link,$accessToken,$kbUrl,&$apiResult,&$
                             //inserisco l'uri nella ownership
                             global $ownershipdburl;
                             $query = "UPDATE $ownershipdburl SET elementUrl=? WHERE elementId=?";
-                            $stmt = $dbConnection->prepare($query);
+                            $stmt = $dbConnection_own->prepare($query);
                             $stmt->bind_param("ss", $uri, $elementId);
                             $stmt->execute();
 
                             //ARRIVATO QUA LA OWNERSHIP E DB SONO OK
                             $apiResult['actionTaken'].='inserted uri in ownership, ';
                             $resultArray[3]=true;
+                            $resultArray[6]=true;
                         }catch(Exception $e){
                             $apiResult['errors'].='error inserting uri in own, ';
                             $apiResult['log'].='error inserting uri in own, ';
@@ -1060,7 +1078,7 @@ function AllAroundRetry($selectedDevice,$link,$accessToken,$kbUrl,&$apiResult,&$
                 //CASO C: NON HO LA URI NEL DB MA LA ENTRY C'E', RECUPERO L'URI DALLA OWNERSHIP
                     global $ownershipdburl;
                     $elementId=$organization.":".$broker.":".$deviceId;
-                    $stmt = $dbConnection->prepare("SELECT elementUrl FROM $ownershipdburl
+                    $stmt = $dbConnection_own->prepare("SELECT elementUrl FROM $ownershipdburl
                  WHERE elementType = 'IOTID' AND deleted IS NULL
                     AND elementId =?");
                     $stmt->bind_param("s", $elementId);
@@ -1099,7 +1117,7 @@ function AllAroundRetry($selectedDevice,$link,$accessToken,$kbUrl,&$apiResult,&$
                     $elementId=$organization.":".$broker.":".$deviceId;
                     global $ownershipdburl;
                     //guardo nella ownership se manca tutta la entry o solo uri
-                    $stmt = $dbConnection->prepare("SELECT elementUrl FROM $ownershipdburl 
+                    $stmt = $dbConnection_own->prepare("SELECT elementUrl FROM $ownershipdburl 
                  WHERE elementType = 'IOTID' AND deleted IS NULL
                     AND elementId =?");
                     $stmt->bind_param("s", $elementId);
@@ -1136,12 +1154,13 @@ function AllAroundRetry($selectedDevice,$link,$accessToken,$kbUrl,&$apiResult,&$
                         );
 
                         $query = "INSERT INTO $ownershipdburl (username, elementId, elementType, elementName, elementUrl,elementDetails,created) VALUES (?, ?, ?, ?, ?, ?, ?)";
-                        $stmt = $dbConnection->prepare($query);
+                        $stmt = $dbConnection_own->prepare($query);
                         $stmt->bind_param("sssssss", $username, $elementId, $elementType, $deviceId, $uri, $elementDetails, $currentDate);
                         $stmt->execute();
                         //ARRIVATO QUA LA OWNERSHIP E DB SONO OK
                         $apiResult['actionTaken'].='reinserted entry in ownership, ';
                         $resultArray[3]=true;
+                        $resultArray[6]=true;
                     }catch(Exception $e){
                         $apiResult['errors'].='error inserting entry in own, ';
                         $apiResult['log'].='error inserting entry in own,  ';
@@ -1167,11 +1186,12 @@ function AllAroundRetry($selectedDevice,$link,$accessToken,$kbUrl,&$apiResult,&$
                             //inserisco l'uri nella ownership
                             global $ownershipdburl;
                             $query = "UPDATE $ownershipdburl SET elementUrl=? WHERE elementId=?";
-                            $stmt = $dbConnection->prepare($query);
+                            $stmt = $dbConnection_own->prepare($query);
                             $stmt->bind_param("ss", $uri, $elementId);
                             $stmt->execute();
                             $apiResult['actionTaken'].='reinserted uri in ownership, ';
                             $resultArray[3]=true;
+                            $resultArray[6]=true;
                         }catch(Exception $e){
                             $apiResult['errors'].='error inserting uri in own, ';
                             $apiResult['log'].='error inserting uri in own, ';
@@ -1371,8 +1391,9 @@ function AllAroundRetry($selectedDevice,$link,$accessToken,$kbUrl,&$apiResult,&$
 
 }
 
-function AllAroundDelete($selectedDevice,$link,$accessToken,$kbUrl,&$apiResult,&$resultArray){
+function AllAroundDelete($selectedDevice,$link,$link_own,$accessToken,$kbUrl,&$apiResult,&$resultArray){
     $dbConnection = $link;
+    $dbConnection_own = $link_own;
     if ($dbConnection->connect_error) {
         throw new Exception("Database connection failed: " . $dbConnection->connect_error);
     }
@@ -1426,13 +1447,13 @@ function AllAroundDelete($selectedDevice,$link,$accessToken,$kbUrl,&$apiResult,&
         }else{
             //se sono qua il device non è presente nella ownership, controllo se è in DB
             if($selectedDevice["isInDb"]){
-                if($selectedDevice["haveURI"]){
+                if($selectedDevice["haveUri_db"]){
                     //se è presente nel db e ha l'uri posso recuperarlo e inseririrlo nella ownership
                     try{
                         global $ownershipdburl;
                         //Controllo la ownership per vedere se manca tutta la entry o manca solo l'URI
                         $elementId=$organization.":".$broker.":".$deviceId;
-                        $stmt = $dbConnection->prepare("SELECT elementUrl FROM $ownershipdburl 
+                        $stmt = $dbConnection_own->prepare("SELECT elementUrl FROM $ownershipdburl 
                  WHERE elementType = 'IOTID' AND deleted IS NULL
                     AND elementId =?");
                         $stmt->bind_param("s", $elementId);
@@ -1469,13 +1490,14 @@ function AllAroundDelete($selectedDevice,$link,$accessToken,$kbUrl,&$apiResult,&
                             );
 
                             $query = "INSERT INTO $ownershipdburl (username, elementId, elementType, elementName, elementUrl,elementDetails,created) VALUES (?, ?, ?, ?, ?, ?, ?)";
-                            $stmt = $dbConnection->prepare($query);
+                            $stmt = $dbConnection_own->prepare($query);
                             $stmt->bind_param("sssssss", $username, $elementId, $elementType, $deviceId, $uri, $elementDetails, $currentDate);
                             $stmt->execute();
 
                             //A questo punto Ownership è ok
                             $apiResult['actionTaken'] .= 'recovered ownership entry(delete), ';
                             $resultArray[3]=true;
+                            $resultArray[6]=true;
 
                         }catch(Exception $e){
                             $apiResult['errors'].='error inserting entry in own(delete), ';
@@ -1502,13 +1524,14 @@ function AllAroundDelete($selectedDevice,$link,$accessToken,$kbUrl,&$apiResult,&
                                 //Inserisco l'uri nella ownership
                                 global $ownershipdburl;
                                 $query = "UPDATE $ownershipdburl SET elementUrl=? WHERE elementId=?";
-                                $stmt = $dbConnection->prepare($query);
+                                $stmt = $dbConnection_own->prepare($query);
                                 $stmt->bind_param("ss", $uri, $elementId);
                                 $stmt->execute();
 
                                 //A questo punto Ownership è ok
                                 $apiResult['actionTaken'].='inserted uri in ownership(delete), ';
                                 $resultArray[3]=true;
+                                $resultArray[6]=true;
                             }catch(Exception $e){
                                 $apiResult['errors'].='error inserting uri in own(delete), ';
                                 $apiResult['log'].='error inserting uri in own(delete), ';
@@ -1535,7 +1558,7 @@ function AllAroundDelete($selectedDevice,$link,$accessToken,$kbUrl,&$apiResult,&
 
 
                         global $ownershipdburl;
-                        $stmt = $dbConnection->prepare("SELECT elementUrl FROM $ownershipdburl
+                        $stmt = $dbConnection_own->prepare("SELECT elementUrl FROM $ownershipdburl
                  WHERE elementType = 'IOTID' AND deleted IS NULL
                     AND elementId =?");
                         $stmt->bind_param("s", $elementId);
@@ -1572,13 +1595,14 @@ function AllAroundDelete($selectedDevice,$link,$accessToken,$kbUrl,&$apiResult,&
                             );
 
                             $query = "INSERT INTO $ownershipdburl (username, elementId, elementType, elementName, elementUrl,elementDetails,created) VALUES (?, ?, ?, ?, ?, ?, ?)";
-                            $stmt = $dbConnection->prepare($query);
+                            $stmt = $dbConnection_own->prepare($query);
                             $stmt->bind_param("sssssss", $username, $elementId, $elementType, $deviceId, $uri, $elementDetails, $currentDate);
                             $stmt->execute();
 
                             //A questo punto Ownership è ok
                             $apiResult['actionTaken'] .= 'recovered ownership entry(delete), ';
                             $resultArray[3] = true;
+                            $resultArray[6]=true;
 
                         } catch (Exception $e) {
                             $apiResult['errors'] .= 'error inserting entry in own(delete), ';
@@ -1602,13 +1626,14 @@ function AllAroundDelete($selectedDevice,$link,$accessToken,$kbUrl,&$apiResult,&
                                 //Inserisco l'uri nella ownership
                                 global $ownershipdburl;
                                 $query = "UPDATE $ownershipdburl SET elementUrl=? WHERE elementId=?";
-                                $stmt = $dbConnection->prepare($query);
+                                $stmt = $dbConnection_own->prepare($query);
                                 $stmt->bind_param("ss", $uri, $elementId);
                                 $stmt->execute();
 
                                 //A questo punto Ownership è ok
                                 $apiResult['actionTaken'] .= 'inserted uri in ownership(delete), ';
                                 $resultArray[3] = true;
+                                $resultArray[6]=true;
                             } catch (Exception $e) {
                                 $apiResult['errors'] .= 'error inserting uri in own (delete), ';
                                 $apiResult['log'] .= 'error inserting uri in own (delete), ';
@@ -1703,6 +1728,7 @@ function AllAroundDelete($selectedDevice,$link,$accessToken,$kbUrl,&$apiResult,&
                     $apiResult['errors'].='deleted from broker,';
                     $resultArray[5]=false;
                 }else{
+                    $apiResult['actionTaken'].='error deleting from broker, ';
                     $apiResult["log"] .= "error deleting from broker, ";
                     $apiResult['errors'].='error deleting from broker,';
                 }
@@ -1750,11 +1776,12 @@ function AllAroundDelete($selectedDevice,$link,$accessToken,$kbUrl,&$apiResult,&
 
         try{
             global $ownershipdburl;
+            $deleted = date("Y-m-d H:i:s");
+            $deletedBy = "WIPCheck-" . $_SESSION['loggedUsername'];
             $elementId=$organization.":".$broker.":".$deviceId;
-
-            $query = "DELETE FROM $ownershipdburl WHERE elementId=?";
-            $stmt = $dbConnection->prepare($query);
-            $stmt->bind_param("s", $elementId);
+            $query = " UPDATE $ownershipdburl SET deleted=?,deletedBy=? WHERE elementId=?";
+            $stmt = $dbConnection_own->prepare($query);
+            $stmt->bind_param("sss", $deleted,$deletedBy,$elementId);
             $stmt->execute();
         }catch (Exception $e){
             $apiResult["log"].="error deleting from from Ownership";
@@ -1764,6 +1791,7 @@ function AllAroundDelete($selectedDevice,$link,$accessToken,$kbUrl,&$apiResult,&
         $apiResult['actionTaken'].='deleted from ownership, ';
         $apiResult["log"].="deleted from Ownership, ";
         $resultArray[3]=false;
+        $resultArray[6]=false;
 
     }else{
         $apiResult["log"].="no need to delete Ownership, ";
