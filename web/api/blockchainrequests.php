@@ -335,7 +335,7 @@ function create_datatable_data_bc($link, $request, $query, $where) {
         //$output = format_result($draw, $selectedrows + 1, $selectedrows + 1, $data, "", "\r\n action=get_all_device \r\n", $p);
         logAction($link, $username, 'device', 'get_all_device', '', $organization, '', 'success');
     } else {
-        logAction($link, $username, 'device', 'get_all_device', '', $organization, 'Error: errors in reading data about devices.', 'failure');//failure
+        logAction($link, $username, 'device', 'get_all_device', '', $organization, 'Error: errors in reading data about devices.', 'faliure');//failure
         //$output = format_result($_REQUEST["draw"], 0, 0, $data, 'Error: errors in reading data about devices. <br/>' . generateErrorMessage($link), '\n\r Error: errors in reading data about devices.' . generateErrorMessage($link), 'ko');
     }
     my_log($output);

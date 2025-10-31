@@ -46,7 +46,11 @@
     {
         if(checkLdapMembership($ds, $ldapUsername, $ldapToolName, $ldapBaseName))
         {
-           $organization= findLdapOrganizationalUnit($ds, $ldapUsername, $ldapToolName, $ldapBaseName);
+           if(isset($_COOKIE['organization'])) {
+              $organization = $_COOKIE['organization'];
+           } else {
+              $organization = findLdapOrganizationalUnit($ds, $ldapUsername, $ldapBaseName);
+           }
            if(checkLdapRole($ds, $ldapUsername, "RootAdmin", $ldapBaseName))
            {
               $ldapRole = "RootAdmin";
@@ -97,8 +101,8 @@
         $_SESSION['accessToken']=$oidc->getAccessToken();
         $_SESSION['organization']=$organization;
         $_SESSION['kbUrl']="";
-            $_SESSION['gpsCentreLatLng']="";
-            $_SESSION['zoomLevel']="";
+        $_SESSION['gpsCentreLatLng']="";
+        $_SESSION['zoomLevel']="";
         
         if($organization!="NULL"){
             $info=get_organization_info($organizationApiURI, $organization);
@@ -148,51 +152,48 @@ function checkLdapRole($connection, $userDn, $role, $ldapBaseName)
 }
 
 //Fatima
-function findLdapOrganizationalUnit($connection, $userDn, $tool, $ldapBaseName) 
+function findLdapOrganizationalUnit($connection, $userDn, $ldapBaseName) 
 {
-	$result = ldap_search($connection, $ldapBaseName, '(&(objectClass=organizationalUnit)(l=' . $userDn . '))');
-	$entries = ldap_get_entries($connection, $result);
-	
-    //Print $entries here
-    //echo_log(var_dump($entries));
-    //echo_log($entries);
-    
-
-
+    $result = ldap_search($connection, $ldapBaseName, '(&(objectClass=organizationalUnit)(l=' . $userDn . '))');
+    $entries = ldap_get_entries($connection, $result);
     if (ldap_count_entries($connection,$result)==0){
         //TODO thrown an error or return an error
 //        echo_log("No LDAP organization Unit found for user".$userDn);
         return "NULL";
-        }
-    else{
+    } else {
         $ou=$entries["0"]["ou"][0];
-  //      echo_log("Organization found is:".$ou);
-        return $ou;
-        
+//      echo_log("Organization found is:".$ou);
+        return $ou;      
     }
-	// foreach ($entries as $key => $value){
-		// if(is_numeric($key)){
-		   // if($value["ou"]["0"] == $tool) {
-			  // return true;
-		   // }
-		// }
-	// }
+}
+
+function findLdapOrganizations($connection, $userDn, $ldapBaseName) 
+{
+    $result = ldap_search($connection, $ldapBaseName, '(&(objectClass=organizationalUnit)(l=' . $userDn . '))');
+    $entries = ldap_get_entries($connection, $result);
+    
+    $orgs = array();
+    foreach ($entries as $key => $value){
+        if(is_numeric($key)){
+            $orgs[] = $value["ou"]["0"];
+        }    
+    }
+    return orgs;
 }
 
 //Fatima: to get info related to organization
 function get_organization_info($organizationApiURI, $ou_tmp){
-	$url = $organizationApiURI.'organizations.php?org='.$ou_tmp;
-	$context = stream_context_create(null);
-	$result = file_get_contents($url, false, $context);
-
+    $url = $organizationApiURI.'organizations.php?org='.$ou_tmp;
+    $context = stream_context_create(null);
+    $result = file_get_contents($url, false, $context);
 
     $result_json = json_decode($result, true);
-	if(sizeof($result_json)==1){
-		return $result_json[0];
-	}
-	else{
-		return null;
-	}
+    if(sizeof($result_json)==1){
+            return $result_json[0];
+    }
+    else{
+            return null;
+    }
 }
 
 //Fatima for organizations testing

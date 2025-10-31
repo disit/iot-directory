@@ -90,6 +90,19 @@ if (empty($accessToken)) {
 //retrieve username, organization and role from the accetoken
 //TODO avoid passing all the parameters for LDAP
 get_user_info($accessToken, $username, $organization, $oidc, $role, $result, $ldapBaseName, $ldapServer, $ldapPort, $ldapAdminName, $ldapAdminPwd);
+if(is_array($organization)) {
+    if(isset($_COOKIE['organization'])) {
+        if(array_search($_COOKIE['organization'], $organization)!==false) {
+            $organization = $_COOKIE['organization'];
+        } else {
+            error_log("WARNING model.php invalid organization COOKIE ".$_COOKIE['organization']." for multi org user $username");
+            $organization = $organization[0];
+        }
+    } else {
+        $organization = $organization[0];
+        error_log("WARNING model.php missing organization COOKIE for multi org user $username");
+    }
+}
 
 if ($result["status"] != "ok") {
     $result["status"] = "ko";
@@ -320,7 +333,7 @@ else if ($action == "get_all_models_DataTable") {
             }
 
             $output = format_result($draw, $selectedrows + 1, $selectedrows + 1, $data, "", "\r\n action=get_all_models_DataTable \r\n", 'ok');
-            logAction($link, $username, 'model', 'get_all_models_DataTable', '', $organization, '', 'success');
+        logAction($link, $username, 'model', 'get_all_models_DataTable', '', $organization, '', 'success');
         } else {
             $output = format_result($draw, 0, 0, null, 'Error: errors in reading data about model. <br/>' .
                     generateErrorMessage($link), '\n\r Error: errors in reading data about model.' . generateErrorMessage($link), 'ko');

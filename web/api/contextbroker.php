@@ -89,7 +89,7 @@ if (empty($accessToken)) {
 
 //retrieve username, organization and role from the accetoken
 //TODO avoid passing all the parameters for LDAP
-get_user_info($accessToken, $username, $organization, $oidc, $role, $result, $ldapBaseName, $ldapServer, $ldapPort, $ldapAdminName, $ldapAdminPwd);
+get_user_info($accessToken, $username, $organizations, $oidc, $role, $result, $ldapBaseName, $ldapServer, $ldapPort, $ldapAdminName, $ldapAdminPwd);
 
 if ($result["status"] != "ok") {
     $result["status"] = "ko";
@@ -101,6 +101,8 @@ if ($result["status"] != "ok") {
     echo json_encode($result);
     exit();
 }
+
+$organization = get_user_organization($organizations);
 
 if ($action == 'is_broker_up') {
     $result["log"] .= "\n invoked is_broker_up from device.php";
@@ -637,7 +639,7 @@ if ($action == 'is_broker_up') {
                                     $result["log"] .= '\n\r action: subscribe ok. ' . $q;
                                 } else {
                                     //TODOC propagate error
-                                    logAction($link, $username, 'contextbroker', 'insert', $name, $organization, 'Subscribe URL NIFI CALLBACK', 'failure');
+                                    logAction($link, $username, 'contextbroker', 'insert', $name, $organization, 'Subscribe URL NIFI CALLBACK', 'faliure');
                                     $result["status"] = 'ko';
                                     $result["error_msg"] = "Error occurred when registering the subscription";
                                     $result["log"] = "\n\r Error: An error occurred when subscription <br/>" .
@@ -912,14 +914,14 @@ else if ($action == 'get_all_contextbroker' || $action == "get_all_contextbroker
             $result['status'] = 'ko'; // . $q1 . generateErrorMessage($link);
             $result['msg'] = 'Error: errors in reading data about cb. <br/>' . generateErrorMessage($link);
             $result['log'] .= '\n\naction:get_all_contextbroker: number. Error: errors in reading data about devices. ' . generateErrorMessage($link);
-                my_log($result);
-                return;
+            my_log($result);
+            return;
         }
-        
     }
 
     get_all_contextbrokers($username, $organization, $role, $accessToken, $link, $length, $start, $draw, $_REQUEST, $selection, $result);
- $result['number'] = $cb_number;
+    $result['organization'] = $organization;
+    $result['number'] = $cb_number;
     my_log($result);
     mysqli_close($link);
 } else if ($action == "get_all_contextbroker_latlong") {

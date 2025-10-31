@@ -135,20 +135,38 @@ else if($action == 'get_logged_ou')
 	$resultldap = ldap_search($connection, $ldapBaseName, '(&(objectClass=organizationalUnit)(l=' . $userDN . '))');
 	$entries = ldap_get_entries($connection, $resultldap);
 
-	if (ldap_count_entries($connection,$resultldap)==0)
-	{
+	$ou_count = ldap_count_entries($connection,$resultldap);
+	if ($ou_count==0) {
 		$result["error_msg"] .="No LDAP organization Unit found for user".$userDN;
 		$result['status'] = 'ko';
 		$result['msg'] = 'Error: No LDAP organization Unit found for user '.$userDN.' <br/>';
 		$result['log'] .= '\n\r action:get_logged_ou. Error: No LDAP organization Unit found for user '.$userDN;
-	}
-	else
-	{
+	} else if($ou_count==1) {
 		$result["status"] = 'ok';
 		$result["content"] =  $entries["0"]["ou"][0];
 		$result["log"] .= "\n\r action:get_logged_ou. Ok, got ".$entries["0"]["ou"][0];
+	} else {
+		if(isset($_COOKIE['organization'])) {
+			for($i = 0; $i<$entries["count"]; $i++) {
+				if ($entries[$i]["ou"][0]==$_COOKIE['organization']) {
+					$result["status"] = 'ok';
+					$result["content"] = $_COOKIE['organization'];
+					$result["log"] .= "\n\r action:get_logged_ou. Ok, got ".$_COOKIE['organization']." from cookie";  
+					my_log($result);
+					exit();
+				}
+			}
+			$result["status"] = 'ko';
+			$result['msg'] = 'Error: More than one LDAP organization Unit found for user '.$userDN.' but not the one in cookie <br/>';
+			$result["error_msg"] .="More than one LDAP organization Unit found for user ".$userDN." but not the one in cookie";
+			$result['log'] .= '\n\r action:get_logged_ou. Error: More than one LDAP organization Unit found for user '.$userDN.' but not the one in cookie';
+		} else {
+			$result["status"] = 'ok';
+			$result["content"] =  $entries["0"]["ou"][0];
+			$result["log"] .= "\n\r action:get_logged_ou. Ok, got ".$entries["0"]["ou"][0];
+		}
 	}
-	my_log($result);
+    my_log($result);
 }
 else if($action == 'get_group_for_ou')
 {
@@ -179,7 +197,6 @@ else if($action == 'get_group_for_ou')
 		$result['content'] =  $allGroupsUserOu;
 		$result['log'] .= "\n\r action:get_group_for_ou. Ok, got n-entries: ". count($allGroupsUserOu);
 	}
-
 	my_log($result);
 }
 else 

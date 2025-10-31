@@ -27,6 +27,9 @@ $result = array("status" => "", "msg" => "", "content" => "", "log" => "", "erro
   This array should be encoded in json
  */
 
+ini_set('memory_limit', '1024M');
+
+
 header("Content-type: application/json");
 header("Access-Control-Allow-Origin: *\r\n");
 include('../config.php');
@@ -78,6 +81,8 @@ if (isset($_REQUEST['nodered'])) {
         $accessToken = $tkn->access_token;
     }
 }
+session_write_close();
+
 if ($action != 'get_param_values') {
     if (empty($accessToken)) {
         $result["status"] = "ko";
@@ -91,7 +96,7 @@ if ($action != 'get_param_values') {
 
     //retrieve username, organization and role from the accetoken
     //TODO avoid passing all the parameters for LDAP
-    get_user_info($accessToken, $username, $organization, $oidc, $role, $result, $ldapBaseName, $ldapServer, $ldapPort, $ldapAdminName, $ldapAdminPwd);
+    get_user_info($accessToken, $username, $organizations, $oidc, $role, $result, $ldapBaseName, $ldapServer, $ldapPort, $ldapAdminName, $ldapAdminPwd);
     if ($result["status"] != "ok") {
         $result["status"] = "ko";
         $result['msg'] = "Cannot retrieve user information";
@@ -101,10 +106,8 @@ if ($action != 'get_param_values') {
         mysqli_close($link);
         exit();
     }
+    $organization = get_user_organization($organizations);
 }
-
-
-
 
 foreach ($_REQUEST as $key => $param) {
     if ($key == "id" || $key == "device" || $key == "cb" || $key == "contextbroker" || $key == "model" || $key == "value_name") {
@@ -144,7 +147,8 @@ if ($action == "insert") {
         'id', 'type', 'contextbroker', 'kind', 'format', 'model', 'producer',
         'latitude', 'longitude', 'k1', 'k2', 'frequency', 'attributes'
     ));
-
+    $eval_array=checkSensibleCharacters($_REQUEST['id']);
+    if ($eval_array[0]){
     if (!empty($missingParams)) {
         $result["status"] = "ko";
         $result['msg'] = "Missing Parameters";
@@ -255,8 +259,8 @@ if ($action == "insert") {
                     $accessToken,
                     $result,
                     $shouldbeRegistered,
-                    $organization,
-                    retrieveKbUrl($organizationApiURI, $organization),
+                    $organizations,
+                    retrieveKbUrls($organizationApiURI, $organizations),
                     $username,
                     $service,
                     $servicePath,
@@ -310,11 +314,22 @@ if ($action == "insert") {
                         logAction($link, $username, 'device', 'insert', $id . " " . $contextbroker, $organization, 'Problem in deleting the device', 'faliure');
                     }
                 }
+
+                //Pulisco la cache se è andato tutto ok
+                ServerCacheManage($accessToken,'clear',$username . '_own');
+
             } else {
-                logAction($link, $username, 'device', 'insert', $id . " " . $contextbroker, $organization, '', 'failure');
+                logAction($link, $username, 'device', 'insert', $id . " " . $contextbroker, $organization, '', 'faliure');
             }
         }
     }
+    }else{
+        $result['msg'] = 'error inserting device';
+        $result['error_msg']= 'forbidden character detected ( '.$eval_array[1].' )';
+        $result["log"] = 'forbidden character detected ( '.$eval_array[1].' )';
+        logAction($link, $username, 'device', 'insert', $id . " " . $contextbroker, $organization, 'forbidden character detected', 'faliure');
+    }
+    
     my_log($result);
     mysqli_close($link);
 } else if ($action == "update") {
@@ -918,7 +933,8 @@ else if ($action == 'change_visibility') {
                             unset($result["delegation"]);
                         }
 
-                        ServerCacheManage($token, 'clear');
+			// ServerCacheManage($token, 'clear');
+
                         $result["status"] = "ok";
                         $result["msg"] = "The delegation to anonymous has been changed";
                         $result["log"] = "The delegation to anonymous has been changed";
@@ -1629,9 +1645,33 @@ else if ($action == 'change_visibility') {
     if(isset($_REQUEST['only_certified']))
         $certified_flag=true;
 
-    $ownDevices = getOwnerShipDevice($accessToken, $result);
+        if (isset($GLOBALS['Cached_config']) && $GLOBALS['Cached_config']) {
+
+            $GLOBALS['m'] = new Memcached();
+            $GLOBALS['m']->addServer($GLOBALS['Cached_host'], $GLOBALS['Cached_port']);
+            $result["keys"] = $GLOBALS['m']->get($username . '_own');
+            //unset($IoT_Anonymus_id['log']);
+
+            if (!($result["keys"])) {
+                getOwnerShipDevice($accessToken, $result);
+
+                //$result['log'] = '...omissis...';
+                $r = $GLOBALS['m']->set($username . '_own', $result["keys"], $GLOBALS['expTimeCache']);
+                $result['cache_own'] = 'SAVED_OWN ' . $r . ' -- ' . $GLOBALS['m']->getResultCode();
+            } else {
+                //$result['delegation'] = $IoT_Anonymus_id;
+                $result['cache_own'] = 'READ_OWN';
+            }
+	} else {
+            getOwnerShipDevice($accessToken, $result);
+	    //var_dump($ownDevices);
+	    $result['cache_own'] = 'NOCACHE';
+        }
+        //var_dump($result["keys"]);
+        if(!isset($_REQUEST['own'])){
     getDelegatedDevice($accessToken, $username, $result);
 
+        }
     $q = "SELECT d.`contextBroker`, d.`id`, d.`uri`, d.`devicetype`, d.`kind`,
 				CASE WHEN mandatoryproperties AND mandatoryvalues THEN \"active\" ELSE \"idle\" END AS status1, 
 				d.`macaddress`, d.`model`, d.`producer`, d.`longitude`, d.`latitude`, d.`protocol`, d.`format`, d.`visibility`, 
@@ -1650,8 +1690,32 @@ else if ($action == 'change_visibility') {
         $q .= "AND  d.model = '$target_model' ";
     }
 
-    if($certified_flag)
+        if(isset($certified_flag)) {
+            if (!$Sel_Time && !$flag_mod) {
         $q .= "WHERE d.static_attributes LIKE '%isCertified%'";
+            } else {
+                $q .= " AND d.static_attributes LIKE '%isCertified%' ";
+            }
+        }
+
+        $organization=$_COOKIE["organization"];
+        $org_array=findLdapOrganizationalUnits($username, $ldapBaseName, $ldapServer, $ldapPort, $ldapAdminName, $ldapAdminPwd);
+        if(!$organization || in_array($organization,$org_array)){
+
+
+
+
+
+        if ($organization) {
+            if (!$Sel_Time && !$flag_mod && !isset($certified_flag)) {
+                // no WHERE clause yet
+                $q .= " WHERE d.organization = '" . mysqli_real_escape_string($link, $organization) . "' ";
+            } else {
+                // already has WHERE
+                $q .= " AND d.organization = '" . mysqli_real_escape_string($link, $organization) . "' ";
+            }
+        }
+
 
     if (count($selection) != 0) {
         $a = 0;
@@ -1683,6 +1747,7 @@ else if ($action == 'change_visibility') {
     }
     
     $data = array();
+    //var_dump($r);
     if ($r) {
         while ($row = mysqli_fetch_assoc($r)) {
             $eid = $row["organization"] . ":" . $row["contextBroker"] . ":" . $row["id"];
@@ -1806,22 +1871,33 @@ else if ($action == 'change_visibility') {
         }
 
         $output = format_result($draw, $selectedrows + 1, $selectedrows + 1, $data, "", "\r\n action=get_all_device \r\n", 'ok');
-        $output['cache']=$result['cache'];
+            $output['cache']=$result['cache_own'];
         //$output = format_result($draw, $selectedrows + 1, $selectedrows + 1, $data, "", "\r\n action=get_all_device \r\n", 'ok');
         logAction($link, $username, 'device', 'get_all_device', '', $organization, '', 'success');
-    } else {
-            logAction($link, $username, 'device', 'get_all_device', '', $organization, 'Error: devices database didnt respond.', 'failure');
+        } else {
+            logAction($link, $username, 'device', 'get_all_device', '', $organization, 'Error: devices database didnt respond.', 'faliure');
             $output = format_result($_REQUEST["draw"], 0, 0, $data, 'devices database didnt respond. <br/>' . generateErrorMessage($link), '\n\r Error: devices database didnt respond.' . generateErrorMessage($link), 'ko');
         }
+    } else {
+        logAction($link, $username, 'device', 'get_all_device', '', $organization, 'Error: organization dont belong to user.', 'faliure');
+        $output = format_result($_REQUEST["draw"], 0, 0, '', 'organization dont belong to user <br/>' . generateErrorMessage($link), '\n\r Error: organization dont belong to user.' . generateErrorMessage($link), 'ko');
+    }
     }catch (Exception $e){
         $output = format_result($_REQUEST["draw"], 0, 0, $data, 'Exception during devices loading. <br/>' . generateErrorMessage($link), '\n\r Exception during devices loading' . generateErrorMessage($link), 'ko');
     }
     my_log($output);
     mysqli_close($link);
 }
+
 //TODO can be unified with get_all_device
 //assurance on ADMIN is guarranteed by getOwnerShipDevice
 else if ($action == "get_all_device_admin") {
+
+
+
+
+
+
     if (isset($_REQUEST['select']))
         $selection = json_decode($_REQUEST['select']);
     else

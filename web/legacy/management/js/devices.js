@@ -505,11 +505,11 @@ function fetch_data(destroyOld, selected = null) {
     if(loggedRole == "ToolAdmin" || loggedRole == "RootAdmin" ){     
         if (selected == null)//TODO uniform these below calls
         {
-            mydata = {action: "get_all_device_admin", token: sessionToken, no_columns: ["position", "d.visibility", "status1", "edit", "delete", "map", "check"]};
+            mydata = {action: "get_all_device_admin", token: sessionToken, no_columns: ["position", "d.visibility", "status1", "edit", "delete", "map", "check","retry"]};
         } else if (selected == 'delegated') {
             mydata = {action: "get_all_device_admin", delegated: true, token: sessionToken, no_columns: ["position", "d.visibility", "status1", "edit", "delete", "map", "check","retry"]};
         } else if (selected == 'public') {
-            mydata = {action: "get_all_device_admin", public: true, token: sessionToken, no_columns: ["position", "d.visibility", "status1", "edit", "delete", "map", "check"]};
+            mydata = {action: "get_all_device_admin", public: true, token: sessionToken, no_columns: ["position", "d.visibility", "status1", "edit", "delete", "map", "check","retry"]};
         } else if (selected == 'own') {
             mydata = {action: "get_all_device_admin", own: true, token: sessionToken, no_columns: ["position", "d.visibility", "status1", "edit", "delete", "map", "check","retry"]};
         } else
@@ -675,6 +675,7 @@ function fetch_data(destroyOld, selected = null) {
                 data: null,
                 "name": "retry",
                 "orderable": true,
+                "searchable":false,
                 render: function (d) {
 
                     if(d.is_in_kb == null || d.is_in_db == null || d.is_in_broker == null || d.is_in_own==null) {
@@ -727,9 +728,9 @@ function fetch_data(destroyOld, selected = null) {
         {
             mydata = {action: "get_all_device", token: sessionToken, no_columns: ["position", "d.visibility", "status1", "edit", "delete", "map", "check","retry"]};
         } else if (selected == 'delegated') {
-            mydata = {action: "get_all_device", delegated: true, token: sessionToken, no_columns: ["position", "d.visibility", "status1", "edit", "delete", "map", "check"]};
+            mydata = {action: "get_all_device", delegated: true, token: sessionToken, no_columns: ["position", "d.visibility", "status1", "edit", "delete", "map", "check","retry"]};
         } else if (selected == 'public') {
-            mydata = {action: "get_all_device", public: true, token: sessionToken, no_columns: ["position", "d.visibility", "status1", "edit", "delete", "map", "check"]};
+            mydata = {action: "get_all_device", public: true, token: sessionToken, no_columns: ["position", "d.visibility", "status1", "edit", "delete", "map", "check","retry"]};
         } else if (selected == 'own') {
             mydata = {action: "get_all_device", own: true, token: sessionToken, no_columns: ["position", "d.visibility", "status1", "edit", "delete", "map", "check","retry"]};
         } else
@@ -891,6 +892,7 @@ function fetch_data(destroyOld, selected = null) {
                 data: null,
                 "name": "retry",
                 "orderable": true,
+                "searchable":false,
                 render: function (d) {
 
                     if(d.is_in_kb == null || d.is_in_db == null || d.is_in_broker == null || d.is_in_own == null ) {
@@ -955,8 +957,8 @@ function fetch_data(destroyOld, selected = null) {
             url: "../api/device.php",
             data: mydata,
             datatype: 'json',
-            type: "POST"
-
+            type: "POST",
+            async:'true'
         },
         "columns": COL_CAST,
         "order": []
@@ -1576,16 +1578,26 @@ var DeviceAttributes;
 ///END
 
 $(document).ready(function () {
+    console.log(organization)
+    function setActiveButton(buttonId) {
+        $('.filter-btn').removeClass('active');
+        $(buttonId).addClass('active');
+    }
+
     $("#ShowOnlyDelegated").click(function () {
+        setActiveButton("#ShowOnlyDelegated");
         fetch_data(true, 'delegated');
     });
     $("#ShowOnlyPublic").click(function () {
+        setActiveButton("#ShowOnlyPublic");
         fetch_data(true, 'public');
     });
     $("#ShowOnlyOwn").click(function () {
+        setActiveButton("#ShowOnlyOwn");
         fetch_data(true, 'own');
     });
     $("#ShowAll").click(function () {
+        setActiveButton("#ShowAll");
         fetch_data(true);
     });
 //fetch_data function will load the device table 	
@@ -3585,7 +3597,7 @@ $(document).ready(function () {
                             $("#addDeviceOkModalInnerDiv1").html('<h5>The device has been successfully registered. You can find further information on how to use and set up your device at the following page:</h5>' + "   " + '<h5>https://www.snap4city.org/drupal/node/76</h5>');
                         }
                         $('#devicesTable').DataTable().destroy();
-                        fetch_data(true);
+                        fetch_data(true,'own');
                     }
 
                 },
@@ -3704,7 +3716,7 @@ $(document).ready(function () {
                     else
                         $('#dashboardTotPrivateCn .pageSingleDataCnt').html(parseInt($('#dashboardTotPrivateCn .pageSingleDataCnt').html()) - 1);
                     $('#devicesTable').DataTable().destroy();
-                    fetch_data(true);
+                    fetch_data(true,'own');
                     // $('#dashboardTotNumberCnt .pageSingleDataCnt').html(parseInt($('#dashboardTotNumberCnt .pageSingleDataCnt').html()) - 1);
                     // $('#dashboardTotActiveCnt .pageSingleDataCnt').html(parseInt($('#dashboardTotActiveCnt .pageSingleDataCnt').html()) - 1);
                 }
@@ -3931,7 +3943,7 @@ $(document).ready(function () {
                         $('#editDeviceKoIcon').hide();
                         $('#editDeviceOkBtn').show();
                         $('#devicesTable').DataTable().destroy();
-                        fetch_data(true);
+                        fetch_data(true,'own');
                     } else {
                         console.log(data);
                     }
@@ -5336,7 +5348,7 @@ function changeVisibility(id, contextbroker, dev_organization, visibility, uri, 
                     setTimeout(function ()
                     {
                         $('#devicesTable').DataTable().destroy();
-                        fetch_data(true);
+                        fetch_data(true,'own');
                         location.reload();
                     }, 3000);
                 } else if (data["status"] === 'ko')
@@ -5403,7 +5415,7 @@ function changeVisibility(id, contextbroker, dev_organization, visibility, uri, 
                     setTimeout(function ()
                     {
                         $('#devicesTable').DataTable().destroy();
-                        fetch_data(true);
+                        fetch_data(true,'own');
                         location.reload();
                     }, 3000);
                 } else if (data["status"] === 'ko')
@@ -5470,7 +5482,7 @@ function changeVisibility(id, contextbroker, dev_organization, visibility, uri, 
                     setTimeout(function ()
                     {
                         $('#devicesTable').DataTable().destroy();
-                        fetch_data(true);
+                        fetch_data(true,'own');
                         location.reload();
                     }, 3000);
                 } else if (data["status"] === 'ko')

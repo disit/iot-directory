@@ -108,7 +108,7 @@ function checkRegisterOwnerShipObject($token, $object, &$result) {
 function insert_device($link, $id, $devicetype, $contextbroker, $kind, $protocol, $format, $macaddress, $model,
         $producer, $latitude, $longitude, $visibility, $frequency, $k1, $k2, $edgegateway_type, $edgegateway_uri,
         $listAttributes, $subnature, $staticAttributes, $pathCertificate, $accessToken, &$result, $shouldbeRegistered = 'yes',
-        $organization, $kbUrl = "", $username = "", $service = "", $servicePath = "",$wktGeometry="",$hlt) {
+        &$organization, $kbUrl = "", $username = "", $service = "", $servicePath = "",$wktGeometry="",$hlt) {
     if (($k1 == null) || ($k1 == ""))
         $k1 = guidv4();
     if (($k2 == null) || ($k2 == ""))
@@ -192,8 +192,8 @@ if(canBeRegistered($id, $devicetype, $contextbroker, $kind, $protocol, $format, 
                 if ($syntaxRes == 0) {
 
 //                        if ($result["status"] == 'ok' && $result["content"] == null) {
-                        $q = "INSERT INTO devices(id, devicetype, contextBroker,  kind, protocol, format, macaddress, model, producer, latitude, longitude, visibility, frequency, privatekey, certificate, organization, subnature, static_attributes, service, servicePath, wktGeometry, hlt) " .
-                                "VALUES('$id', '$devicetype', '$contextbroker', '$kind', '$protocol', '$format', '$macaddress', '$model', '$producer', '$latitude', '$longitude', '$visibility', '$frequency', '$privatekey','$certificate', '$organization', '$subnature', '$staticAttributes', $service, $servicePath,CASE WHEN '$wktGeometry' = '' THEN NULL ELSE '$wktGeometry' END, '$hlt')";
+                        $q = "INSERT INTO devices(id, devicetype, contextBroker,  kind, protocol, format, macaddress, model, producer, latitude, longitude, visibility, frequency, privatekey, certificate,mandatoryproperties,mandatoryvalues, organization, subnature, static_attributes, service, servicePath, wktGeometry, hlt) " .
+                                "VALUES('$id', '$devicetype', '$contextbroker', '$kind', '$protocol', '$format', '$macaddress', '$model', '$producer', '$latitude', '$longitude', '$visibility', '$frequency', '$privatekey','$certificate',1,1, '$organization', '$subnature', '$staticAttributes', $service, $servicePath,CASE WHEN '$wktGeometry' = '' THEN NULL ELSE '$wktGeometry' END, '$hlt')";
 //                        } else {
 //                            $q = "INSERT INTO devices(id, devicetype, contextBroker,  kind, protocol, format, macaddress, model, producer, latitude, longitude,uri, visibility,  frequency, privatekey, certificate, mandatoryproperties,mandatoryvalues, organization, subnature, static_attributes, service, servicePath,wktGeometry,hlt) " .
 //                                "VALUES('$id', '$devicetype', '$contextbroker', '$kind', '$protocol', '$format', '$macaddress', '$model', '$producer', '$latitude', '$longitude', '" . $result["content"] . "', '$visibility', '$frequency', '$privatekey','$certificate',1,1, '$organization', '$subnature', '$staticAttributes', $service, $servicePath,CASE WHEN '$wktGeometry' = '' THEN NULL ELSE '$wktGeometry' END, '$hlt')";
@@ -476,8 +476,8 @@ function create_datatable_data($link, $request, $query, $where) {
                 $query .= " " . $col["name"] . ' LIKE "%' . $request["search"]["value"] . '%"  OR';
         }
 
-        $query = substr($query, 0, -1);
-        $query = substr($query, 0, -1);
+        $query = preg_replace('/\s+OR\s*$/', '', $query);
+
         if ($where != "")
             $query .= ') ';
 
@@ -499,8 +499,8 @@ function create_datatable_data($link, $request, $query, $where) {
     // echo $query;
     }
 
-
     $result = mysqli_query($link, $query);
+    error_log("WARNING data_table $query");
     $GLOBALS['DataTableQuery'] = $query;
     return $result;
 }
@@ -1049,10 +1049,12 @@ function getDelegatedDevice($token, $user, &$result) {
             if ($result['status'] == 'ko') {
                 return;
             }
-            getUserDelegatedDevice($token, "ANONYMOUS", "ServiceURI", $result);
+	    /*
+	    getUserDelegatedDevice($token, "ANONYMOUS", "ServiceURI", $result);
             if ($result['status'] == 'ko') {
                 return;
-            }
+	    }
+	    */
             $result['log'] = '...omissis...';
             $r = $GLOBALS['m']->set('ANONYMOUS_IOTID', $result['delegation'], $GLOBALS['expTimeCache']);
             $result['cache'] = 'SAVED ' . $r . ' -- ' . $GLOBALS['m']->getResultCode();
@@ -1064,28 +1066,32 @@ function getDelegatedDevice($token, $user, &$result) {
         getUserDelegatedDevice($token, "ANONYMOUS", "IOTID", $result);
         if ($result['status'] == 'ko') {
             return;
-        }
-        getUserDelegatedDevice($token, "ANONYMOUS", "ServiceURI", $result);
+	}
+	/*
+	getUserDelegatedDevice($token, "ANONYMOUS", "ServiceURI", $result);
         if ($result['status'] == 'ko') {
             return;
-        }
+	}
+	*/
         $result['cache'] = 'NO';
     }
     getUserDelegatedDevice($token, $user, "IOTID", $result);
     if ($result['status'] == 'ko') {
         return;
     }
+    /* 
     getUserDelegatedDevice($token, $user, "ServiceURI", $result);
     if ($result['status'] == 'ko') {
         return;
     }
+    */
 }
 
-function ServerCacheManage($token, $action) {
+function ServerCacheManage($token, $action, $cacheName = 'ANONYMOUS_IOTID' ) {
     if ($action == 'clear' && isset($GLOBALS['Cached_config'])) {
         $GLOBALS['m'] = new Memcached();
         $GLOBALS['m']->addServer($GLOBALS['Cached_host'], $GLOBALS['Cached_port']);
-        $GLOBALS['m']->delete('ANONYMOUS_IOTID');
+        $GLOBALS['m']->delete($cacheName);
     }
 }
 
@@ -1369,16 +1375,18 @@ function getOwnerShipDevice($token, &$result, $elementId = null) {
         else
             $url = $GLOBALS["ownershipURI"] . "ownership-api/v1/list/?type=IOTID&accessToken=" . $token;
 
+        //Evito di appendere 30MB ai log
         $local_result = file_get_contents($url);
-        $result["log"] .= $local_result;
+        //$result["log"] .= $local_result;
+        //var_dump($local_result);
         if (strpos($http_response_header[0], '200') == true || strpos($http_response_header[0], '204') == true) {
             $lists = json_decode($local_result);
             for ($i = 0; $i < count($lists); $i++) {
                 if (!isset($lists[$i]->deleted)) {
                     if (strpos($lists[$i]->elementId, ":") > 0) {
-                        $org = substr($lists[$i]->elementId, 0, strpos($lists[$i]->elementId, ":"));
+                        //$org = substr($lists[$i]->elementId, 0, strpos($lists[$i]->elementId, ":"));
                         $cb_name = substr($lists[$i]->elementId, strpos($lists[$i]->elementId, ":") + 1, strlen($lists[$i]->elementId));
-                        $cb = substr($cb_name, 0, strpos($cb_name, ":"));
+                        //$cb = substr($cb_name, 0, strpos($cb_name, ":"));
                         $name = substr($cb_name, strpos($cb_name, ":") + 1, strlen($cb_name));
                     } else {
                         $name = $lists[$i]->elementId;
@@ -1791,7 +1799,7 @@ function canBeModified($name, $type, $contextbroker, $kind, $protocol, $format, 
 }
 
 function canBeRegistered($name, $type, $contextbroker, $kind, $protocol, $format, $macaddress, $model, $producer, $latitude, $longitude,
-        $visibility, $frequency, $listnewAttributes, $subnature, $staticAttr, &$result,$link="",$organization="") {
+        $visibility, $frequency, $listnewAttributes, $subnature, $staticAttr, &$result, $link="",&$organization="") {
     $error = false;
     if ($name == null || $name == "") {
         $error = true;
@@ -1875,6 +1883,72 @@ function canBeRegistered($name, $type, $contextbroker, $kind, $protocol, $format
             $result["log"] .= "\n healthiness_criteria for attribute $att->value_name not specified";
         }
     }
+
+    //guardo se la subnature è stata specificata
+    if($subnature!="") {
+        $subnatureList = null;
+
+        // Guardo se 'memcache' è disponibile
+        if (extension_loaded('memcached') && isset($GLOBALS['Cached_config']) && $GLOBALS['Cached_config']) {
+            // controllo se inizializzzata
+        if (!isset($GLOBALS["mem"])) {
+                $GLOBALS['mem'] = new Memcached();
+                $GLOBALS['mem']->addServer($GLOBALS['Cached_host'], $GLOBALS['Cached_port']);
+            }
+
+            // se disponibile e gia inizializzata provo a recuperare le subnature
+            $cachedData = $GLOBALS['mem']->get("subnature");
+            if ($cachedData !== false) {
+                $subnatureList = json_decode($cachedData);
+            }
+        }
+
+        // se non mi ritorna nulla le recupero
+        if ($subnatureList === null) {
+                $type = "subnature";
+                retrieveFromDictionary($type, $dictionary);
+
+                if ($dictionary['status'] == 'ok') {
+                $subnatureList = $dictionary["content"];
+
+                // se disponibile salvo in memcache
+                if (extension_loaded('memcached') && isset($GLOBALS["mem"])) {
+                    $GLOBALS['mem']->set("subnature", json_encode($subnatureList));
+                }
+                } else {
+                    $error = true;
+                    $result["error_msg"] .= "Cannot check if subnature " . $subnature . " is valid ";
+                    $result["msg"] .= "\n Cannot check if subnature " . $subnature . " is valid ";
+                    $result["log"] .= "Cannot check if subnature " . $subnature . " is valid ";
+                }
+        }
+
+        // valido la subnature
+        if ($subnatureList !== null) {
+        $found = false;
+        if (is_array($subnatureList)) {
+            foreach ($subnatureList as $item) {
+                if (isset($item->value) && $item->value === $subnature) {
+                    $found = true;
+                    break;
+                }
+            }
+        }
+
+        if ($found) {
+            $result["log"] .= $subnature . " is a valid subnature. \n";
+        } else {
+            $error = true;
+            $result["error_msg"] .= "Subnature: " . $subnature . " is not valid";
+            $result["msg"] .= "Subnature: " . $subnature . " is not valid";
+            $result["log"] .= "Subnature: " . $subnature . " is not valid";
+        }
+    }
+    }
+
+
+
+
         // Ensure $link and $organization are not empty before proceeding
        if (!empty($link) && !empty($organization) && !empty($contextbroker)) {
 
@@ -1885,13 +1959,22 @@ function canBeRegistered($name, $type, $contextbroker, $kind, $protocol, $format
 
             if ($queryResult===false) {
                 $error = true;
-                $result["error_msg"] .= "Cannot check if broker belongs to the organization: ". $organization;
-                $result["msg"] .= "\n Cannot check if broker belongs to the organization: " . $organization;
-                $result["log"] .= "Cannot check if broker belongs to the organization: ". $organization;
+                $result["error_msg"] .= "Cannot check if broker $contextbroker belongs to the organization: ". $organization;
+                $result["msg"] .= "\n Cannot check if broker $contextbroker belongs to the organization: " . $organization;
+                $result["log"] .= "Cannot check if broker $contextbroker belongs to the organization: ". $organization;
             } else {
                 while ($row = mysqli_fetch_assoc($queryResult)) {
                     // Check if $row contains a value for 'organization'
-                    if ($row['organization'] == $organization) {
+                    if(is_array($organization)) {
+                        if(array_search($row['organization'], $organization)!==false) {
+                            $result["log"] .= $row['organization']. " belongs to ".$contextbroker. "ok. \n";
+                            $organization = $row['organization'];
+                        } else {
+                            // If no 'organization' found in the row
+                            $error = true;
+                            $result["log"] .= "No 'organization' named ". $row['organization'] . " found for " . $contextbroker ." \n";
+                        }
+                    } else if ($row['organization'] == $organization) {
                         $result["log"] .= $organization. " belongs to ".$contextbroker. "ok. \n";
                     } else {
                         // If no 'organization' found in the row
@@ -1915,7 +1998,7 @@ function canBeRegistered($name, $type, $contextbroker, $kind, $protocol, $format
 
 function registerKB($link, $name, $type, $contextbroker, $kind, $protocol, $format, $macaddress, $model, $producer, $latitude,
         $longitude, $visibility, $frequency, $listnewAttributes, $subnature, $staticAttributes, &$result, $shouldbeRegistered,
-        $organization, $kbUrl = "", $service = "", $servicePath = "", $accessToken, $wktGeometry="",$hlt) {
+        &$organization, $kbUrl = "", $service = "", $servicePath = "", $accessToken, $wktGeometry="",$hlt) {
     $result["status"] = 'ok';
 
     //vedere se questa la posso togliere visto che la chiamo in "insert_device()"
@@ -1935,6 +2018,7 @@ function registerKB($link, $name, $type, $contextbroker, $kind, $protocol, $form
             $shouldbeRegistered = 'no';
         $ip = $rowCB["ip"];
         $port = $rowCB["port"];
+        $organization = $rowCB["organization"];
 
         $msg = array();
         $msg["id"] = $name;
@@ -1996,13 +2080,17 @@ function registerKB($link, $name, $type, $contextbroker, $kind, $protocol, $form
         $result["log"] .= "\n Sending to insertKB:" . $encoda;
         $encoda = str_replace('\\\\', '\\\\u005C', $encoda);
         $encoda = str_replace('\"', '\\\\u0022', $encoda);
-        $result["log"] .= "\n Sending to insertKB (after pulizia):" . $encoda;
 
         try {
             if ($kbUrl == "")
                 $url = $_SESSION['kbUrl'] . "iot/insert";
-            else
+            else if(is_array($kbUrl)) {
+                $url = $kbUrl[$organization] . "iot/insert";
+            } else {
                 $url = $kbUrl . "iot/insert";
+            }
+            $result["log"] .= "\n Sending to $url insertKB (after pulizia):" . $encoda;
+
             $options = array(
                 'http' => array(
                     'header' => "Content-Type: application/json;charset=utf-8",
@@ -2515,23 +2603,37 @@ function delete_amqp($name, $type, $contextbroker, $kind, $protocol, $format, $l
 }
 
 function delete_from_opensearch($serviceUri, $organization, &$result) {
-    $index = $GLOBALS['openSearchDeviceStateIndex'];
+    $index = $GLOBALS['openSearchDeviceStateIndex_'.$organization];
     if(!$index) {        
-        $res = $result["status"] = 'ko';
-        $result["msg"] .= "\n error no openSearchDeviceStateIndex defined, cannot delete $serviceUri from opensearch";
-        $result["log"] .= "\n error no openSearchDeviceStateIndex defined, cannot delete $serviceUri from opensearch";
-} else {
+        $indexPrefix = $GLOBALS['openSearchDeviceStateIndexPrefix'];
+        if($indexPrefix) {
+            $index = $indexPrefix . strtolower($organization);
+        } else {
+            $index = $GLOBALS['openSearchDeviceStateIndex'];
+            if(!$index) {            
+                $res = $result["status"] = 'ko';
+                $result["msg"] .= "\n error no openSearchDeviceStateIndex defined, cannot delete $serviceUri from opensearch";
+                $result["log"] .= "\n error no openSearchDeviceStateIndex defined, cannot delete $serviceUri from opensearch";
+            }
+        } 
+    }
+    if($index) {
         $res = delete_from_opensearch_index($serviceUri, $index, $result);
         if($res == 'ok') {
             $index = $GLOBALS['openSearchFullDeviceStateIndex_'.$organization];
             if(!$index) {
-                $index = $GLOBALS['openSearchFullDeviceStateIndex'];
-                if(!$index) {
-                    $res = $result["status"] = 'ok';
-                    $result["msg"] .= "\n no openSearchFullDeviceStateIndex defined, cannot delete $serviceUri from opensearch";
-                    $result["log"] .= "\n no openSearchFullDeviceStateIndex defined, cannot delete $serviceUri from opensearch";        
-                }
-            } 
+                $indexPrefix = $GLOBALS['openSearchFullDeviceStateIndexPrefix'];
+                if($indexPrefix) {
+                    $index = $indexPrefix . strtolower($organization);
+                } else {
+                    $index = $GLOBALS['openSearchFullDeviceStateIndex'];
+                    if(!$index) {
+                        $res = $result["status"] = 'ko';
+                        $result["msg"] .= "\n no openSearchFullDeviceStateIndex defined, cannot delete $serviceUri from opensearch";
+                        $result["log"] .= "\n no openSearchFullDeviceStateIndex defined, cannot delete $serviceUri from opensearch";        
+                    }
+                } 
+            }
             if($index) {
                 $res = delete_from_opensearch_index($serviceUri, $index, $result);
             }
@@ -2998,15 +3100,32 @@ d.contextBroker='$contextbroker' and d.id='$device';";
 // end of function modify_valueKB
 
 function get_organization_info($organizationApiURI, $ou_tmp) {
-    $url = $organizationApiURI . 'organizations.php?org=' . $ou_tmp;
+    if(is_array($ou_tmp)) {
+        $url = $organizationApiURI . 'organizations.php';
+    } else {
+        $url = $organizationApiURI . 'organizations.php?org=' . $ou_tmp;
+    }
+    
     $context = stream_context_create(null);
     $result = file_get_contents($url, false, $context);
 
     $result_json = json_decode($result, true);
-    if (sizeof($result_json) == 1) {
-        return $result_json[0];
+    //error_log("WARNING get_organization_info org: $ou_tmp --> ". var_export($result_json,true));
+    if(is_array($ou_tmp)) {
+      $res = [];
+      foreach( $result_json as $k => $org) {
+          if (array_search($org['organizationName'], $ou_tmp)!==false) {
+              $res[] = $org;
+          }
+      }
+      return $res;
     } else {
-        return null;
+        if (count($result_json) == 1) {
+            return $result_json[0];
+        } else {
+            error_log("WARNING get_organization_info org: $ou_tmp size: ".count($result_json));
+            return null;
+        }
     }
 }
 
@@ -3424,11 +3543,11 @@ function get_all_contextbrokers($username, $organization, $loggedrole, $accessTo
     getOwnerShipObject($accessToken, "BrokerID", $result);
     getDelegatedObject($accessToken, $username, "BrokerID", $result);
 
-    $q = "SELECT * FROM contextbroker";
+    $q = "SELECT * FROM contextbroker WHERE (organization = '$organization') ";
 
     if (count($selection) != 0) {
         $a = 0;
-        $cond = "";
+        $cond = "(organization = '$organization') AND (";
         while ($a < count($selection)) {
             $sel = $selection[$a];
             $cond .= " (name = '" . $sel->name . "' AND organization = '" . $sel->organization . "') ";
@@ -3436,9 +3555,10 @@ function get_all_contextbrokers($username, $organization, $loggedrole, $accessTo
                 $cond .= " OR ";
             $a++;
         }
+        $cond.=")";
         $r = create_datatable_data($link, $_REQUEST, $q, $cond);
     } else {
-        $r = create_datatable_data($link, $request, $q, '');
+        $r = create_datatable_data($link, $request, $q, "organization = '$organization'");
     }
     $selectedrows = -1;
     if ($length != -1) {
@@ -3580,7 +3700,6 @@ function get_user_info($accessToken, &$username, &$organization, $oidc, &$role, 
     }
 
     if ($result["status"] == "ok") {
-
         if (in_array("RootAdmin", $userinfo["roles"]))
             $role = "RootAdmin";
         else if (in_array("ToolAdmin", $userinfo["roles"]))
@@ -3598,34 +3717,84 @@ function get_user_info($accessToken, &$username, &$organization, $oidc, &$role, 
     }
 
     if ($result["status"] == "ok") {
-        $organization = findLdapOrganizationalUnit($username, $ldapBaseName, $ldapServer, $ldapPort, $ldapAdminName, $ldapAdminPwd);
-        if (empty($organization)) {
+        $organization = findLdapOrganizationalUnits($username, $ldapBaseName, $ldapServer, $ldapPort, $ldapAdminName, $ldapAdminPwd);
+        if(count($organization) == 0) {
             $result["status"] = "ko";
             $result['msg'] = "Organization not found in AccessToken for user " . $username;
             $result['error_msg'] .= "Organization not found in AccessToken for user " . $username;
             $result["log"] = "action=get_user_info -" . " Organization not found in AccessToken for user " . $username . "\r\n";
+        } else if(count($organization)==1) {
+            $organization = $organization[0];
         }
     }
 }
 
+function get_user_organization($orgs) {
+    if(!is_array($orgs)) {
+        return $orgs;
+    }
+    if(isset($_COOKIE['organization'])) {
+        if(array_search($_COOKIE['organization'], $orgs)!==false) {
+            $organization = $_COOKIE['organization'];
+        } else {
+            $organization = $orgs[0];
+            error_log("WARNING get_user_organization invalid organization COOKIE ".$_COOKIE['organization']." for multi org user ".$_SESSION['loggedUsername']);
+        }
+    } else {
+        $organization = $orgs[0];
+        error_log("WARNING get_user_organization missing organization COOKIE for multi org user ".$_SESSION['loggedUsername']);
+    }
+    return $organization;
+}
+
 //TODO armonize with the code available in ssoLogin.php AND ldap.php in api and in nodeRed.php
 function findLdapOrganizationalUnit($username, $ldapBaseName, $ldapServer, $ldapPort, $ldapAdminName, $ldapAdminPwd) {
-    $toreturn = "";
+    $orgs = findLdapOrganizationalUnits($username, $ldapBaseName, $ldapServer, $ldapPort, $ldapAdminName, $ldapAdminPwd);
+    if(count($orgs) == 0)
+        return "Error";
+    if(count($orgs) == 1)
+        return $orgs[0];
+    else {
+        if(isset($_COOKIE['organization'])) {
+            $org = $_COOKIE['organization'];
+            if(array_search($org, $orgs)===false) {
+                error_log("WARNING findLdapOrganizationalUnit user $username invalid cookie $org");
+                return $orgs[0];
+            }
+            return $org;
+        }
+        $org = $orgs[0];
+        error_log("WARNING findLdapOrganizationalUnit user $username no cookie set and and more than one org, returned $org");
+        return $org;
+    }
+}
 
+function findLdapOrganizationalUnits($username, $ldapBaseName, $ldapServer, $ldapPort, $ldapAdminName, $ldapAdminPwd) {
     $ldapUsername = "cn=" . strtolower($username) . "," . $ldapBaseName;
     $ds = ldap_connect($ldapServer, $ldapPort);
     ldap_set_option($ds, LDAP_OPT_PROTOCOL_VERSION, 3);
     $bind = ldap_bind($ds, $ldapAdminName, $ldapAdminPwd);
+    if(!$bind) {
+        error_log("ERROR findLdapOrganizationalUnits failed BIND to $ldapServer:$ldapPort ");
+        return [];
+    }
+
     $result = ldap_search($ds, $ldapBaseName, '(&(objectClass=organizationalUnit)(l=' . $ldapUsername . '))');
     $entries = ldap_get_entries($ds, $result);
 
-    if (ldap_count_entries($ds, $result) == 0) {
-        //TODO thrown an error or return an error, here we just return empty string
-    } else {
-        $toreturn = $entries["0"]["ou"][0];
+    $orgsArray = [];
+    foreach ($entries as $key => $value)
+    {
+        if(is_numeric($key))
+        {
+            if($value["ou"]["0"] != '' )
+            {
+                array_push($orgsArray, $value["ou"]["0"]);
+            }
+        }
     }
-
-    return $toreturn;
+    
+    return $orgsArray;
 }
 
 function missingParameters($requiredParams) {
@@ -3684,23 +3853,45 @@ function enforcementRights($username, $token, $role, $elementId, $elementType, $
 function retrieveKbUrl($organizationApiURI, $org) {
     //retrieve the kburl -> this is needed since this api can be called from OUTSIDE of the IoT directory
     $kburl = "";
-    //if (!isset($_SESSION['kbUrl']))
-    //{
-    $infokburl = get_organization_info($organizationApiURI, $org);
-    if (!is_null($infokburl)) {
-        $kburl = $infokburl["kbUrl"];
+    $org_info = get_organization_info($organizationApiURI, $org);
+    if(is_array($org)) {
+        if(isset($_COOKIE['organization'])) {
+            foreach($org_info as $oinfo) {
+                if($oinfo['organizationName'] == $_COOKIE['organization'])
+                    return $oinfo['kbUrl'];
+            }
+            error_log("WARNING retrieveKbUrl no KBURL for org: ". var_export($org, true)." cookie:".$_COOKIE['organization']." oinfo:".var_export($oinfo,true));
+        } else {
+            error_log("WARNING retrieveKbUrl no KBURL no cookie for org: ". var_export($org, true));
+        }
+        
+    } else if (!is_null($org_info)) {
+        $kburl = $org_info["kbUrl"];
+    } else {
+        error_log("WARNING retrieveKbUrl no KBURL for org: ".$org);
     }
-    /* }
-      else
-      {
-      $kburl=$_SESSION['kbUrl'];
-      }i */
+
+    return $kburl;
+}
+
+function retrieveKbUrls($organizationApiURI, $org) {
+    //retrieve the kburl -> this is needed since this api can be called from OUTSIDE of the IoT directory
+    $kburl = "";
+    $org_info = get_organization_info($organizationApiURI, $org);
+    if(is_array($org_info) && count($org_info)>0 && is_numeric(array_keys($org_info)[0])) {
+        $kburl = [];
+        foreach($org_info as $oinfo) {
+            $kburl[$oinfo['organizationName']] = $oinfo['kbUrl'];
+        }
+    } else  if (!is_null($org_info)) {
+        $kburl = $org_info["kbUrl"];
+    }
+    error_log("DEBUG retrieveKbUrl $org kburl: ".var_export($kburl,true). " org_info " .var_export($org_info, true));
+
     return $kburl;
 }
 
 //FUNZIONE PER TEST da prendere spunto
-
-
 
 function get_device_data($link, $id, $type, $cb, $service, $servicePath, $version, &$result) {
     //retrieve cb information
@@ -3912,7 +4103,7 @@ function get_specific_contextbroker($link, $accessToken, $sub_ID, $resourceLink,
         $result["content"] = ($infoCB);
 
         $result["msg"] = 'response from the query about context broker, given id_sub ';
-        $result["log"] .= '\n response from the query about context broker, given id_sub' . $infoCB;
+        $result["log"] .= '\n response from the query about context broker, given id_sub $sub_ID ' . json_encode($infoCB);
     }
 }
 
@@ -4019,6 +4210,26 @@ function logAction($link, $accessed_by, $target_entity_type, $access_type, $enti
         $result["log"] =$result["log"] . " --- error in inserting log " . $query . "\n";
     }
     return $result["msg"];
+}
+
+function checkSensibleCharacters($text) {
+    $is_valid = true;
+    $eval_log = [];
+
+    if (preg_match('/\//', $text)) {
+        $eval_log[] = "The data contains /";
+        $is_valid = false;
+    }
+    if (preg_match('/:/', $text)) {
+        $eval_log[] = "The data contains :";
+        $is_valid = false;
+    }
+    if (preg_match('/%/', $text)) {
+        $eval_log[] = "The data contains %";
+        $is_valid = false;
+    }
+
+    return [$is_valid, implode(" - ", $eval_log)];
 }
 
 ?>
