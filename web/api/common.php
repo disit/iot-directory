@@ -2630,7 +2630,7 @@ function delete_from_opensearch($serviceUri, $organization, &$result) {
                 } else {
                     $index = $GLOBALS['openSearchFullDeviceStateIndex'];
                     if(!$index) {
-                        $res = $result["status"] = 'ko';
+                        $res = $result["status"] = 'ok';
                         $result["msg"] .= "\n no openSearchFullDeviceStateIndex defined, cannot delete $serviceUri from opensearch";
                         $result["log"] .= "\n no openSearchFullDeviceStateIndex defined, cannot delete $serviceUri from opensearch";        
                     }
