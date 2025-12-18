@@ -882,6 +882,8 @@ else if ($action == 'change_visibility') {
                     $q = "UPDATE devices SET  visibility = '$visibility' WHERE id='$id' and contextBroker='$contextbroker'";
                     $r = mysqli_query($link, $q);
 
+                    updateDateDeviceModified($link,$id,$contextbroker,$organization,$result);
+
                     if ($r) {
                         logAction($link, $username, 'device', 'change_visibility', $id . " " . $contextbroker, $organization, 'new visibility ' . $visibility, 'success');
 
@@ -934,10 +936,11 @@ else if ($action == 'change_visibility') {
                         }
 
 			// ServerCacheManage($token, 'clear');
+                        updateDateDeviceModified($link,$id,$contextbroker,$organization,$result);
 
                         $result["status"] = "ok";
-                        $result["msg"] = "The delegation to anonymous has been changed";
-                        $result["log"] = "The delegation to anonymous has been changed";
+                        $result["msg"] .= "The delegation to anonymous has been changed";
+                        $result["log"] .= "The delegation to anonymous has been changed";
                     } else {
                         logAction($link, $username, 'device', 'change_visibility', $id . " " . $contextbroker, $organization, 'new visibility ' . $visibility, 'faliure');
 
@@ -1676,12 +1679,12 @@ else if ($action == 'change_visibility') {
 				CASE WHEN mandatoryproperties AND mandatoryvalues THEN \"active\" ELSE \"idle\" END AS status1, 
 				d.`macaddress`, d.`model`, d.`producer`, d.`longitude`, d.`latitude`, d.`protocol`, d.`format`, d.`visibility`, 
 				d.`frequency`, d.`created`, d.`privatekey`, d.`certificate`,d.`organization`, cb.`accesslink`, cb.`accessport`, cb.`version`,
-				cb.`sha`, d.`subnature`, d.`static_attributes`,d.`service`, d.`servicePath`,d.`hlt`,d.`wktGeometry`,d.`is_in_kb`,d.`is_in_db`,d.`is_in_broker`,d.`is_in_own` FROM `devices` d JOIN `contextbroker` cb ON (d.contextBroker=cb.name)";
+				cb.`sha`, d.`subnature`, d.`static_attributes`,d.`service`, d.`servicePath`,d.`hlt`,d.`wktGeometry`,d.`is_in_kb`,d.`is_in_db`,d.`is_in_broker`,d.`is_in_own`,d.`modified` FROM `devices` d JOIN `contextbroker` cb ON (d.contextBroker=cb.name)";
 
     if ($Sel_Time) {
         $start_int = mysqli_real_escape_string($link, $_REQUEST['start_time']);
         $end_int = mysqli_real_escape_string($link, $_REQUEST['end_time']);
-        $q .= " WHERE d.created BETWEEN CAST('$start_int' AS DATETIME) AND CAST('$end_int' AS DATETIME)";
+        $q .= " WHERE (d.created BETWEEN CAST('$start_int' AS DATETIME) AND CAST('$end_int' AS DATETIME)) OR (d.modified BETWEEN CAST('$start_int' AS DATETIME) AND CAST('$end_int' AS DATETIME))";
     }
     
     if($flag_mod && !$Sel_Time){ // no where clause yet
@@ -1807,6 +1810,7 @@ else if ($action == 'change_visibility') {
                     $rec["is_in_db"] = $row["is_in_db"];
                     $rec["is_in_broker"] = $row["is_in_broker"];
                     $rec["is_in_own"] = $row["is_in_own"];
+                    $rec["modified"] = $row["modified"];
                     $rec["url"] = get_LDgraph_link($logUriLD, $organizationApiURI, $row["organization"], $row["uri"]);
                     $rec["m_url"] = get_ServiceMap_link($row["uri"], $organizationApiURI, $row["organization"]);
 
@@ -1910,7 +1914,7 @@ else if ($action == "get_all_device_admin") {
     $q = "SELECT d.`contextBroker`, d.`id`, d.`uri`, d.`devicetype`, d.`kind`, 
 	    	  CASE WHEN mandatoryproperties AND mandatoryvalues THEN \"active\" ELSE \"idle\" END AS status1, 
 		      d.`macaddress`, d.`model`, d.`producer`, d.`longitude`, d.`latitude`, d.`protocol`, d.`format`, d.`visibility`, d.`organization`,
-		      d.`frequency`, d.`created`, d.`privatekey`, d.`certificate`, cb.`accesslink`,  cb.`accessport`,cb.`sha`, d.`subnature`, d.`static_attributes`, d.`service`, d.`servicePath` ,d.`is_in_kb`,d.`is_in_db`,d.`is_in_broker`,d.`is_in_own`
+		      d.`frequency`, d.`created`, d.`privatekey`, d.`certificate`, cb.`accesslink`,  cb.`accessport`,cb.`sha`, d.`subnature`, d.`static_attributes`, d.`service`, d.`servicePath` ,d.`is_in_kb`,d.`is_in_db`,d.`is_in_broker`,d.`is_in_own`,d.`modified`
 			  FROM `devices` d JOIN `contextbroker` cb ON (d.contextBroker=cb.name) ";
 
     if (count($selection) != 0) {
@@ -2003,6 +2007,7 @@ else if ($action == "get_all_device_admin") {
                     $rec["is_in_db"]=$row["is_in_db"];
                     $rec["is_in_broker"]=$row["is_in_broker"];
                     $rec["is_in_own"]=$row["is_in_own"];
+                    $rec["modified"]=$row["modified"];
 
                     if ($row["protocol"] == "ngsi w/MultiService") {
                         $rec["id"] = explode(".", $row["id"])[2];
@@ -2296,6 +2301,7 @@ else if ($action == "add_delegation") {
                             }
 
                         }
+                        updateDateDeviceModified($link,$id,$cb,$organization,$result);
 
                     } else {
                         $result["status"] = 'ko';
@@ -2392,6 +2398,7 @@ else if ($action == "add_delegation") {
                             $i++;
                         }
                     }
+                    updateDateDeviceModified($link,$id,$cb,$organization,$result);
                 }
             }
         }

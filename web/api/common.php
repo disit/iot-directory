@@ -13,7 +13,8 @@
   You should have received a copy of the GNU General Public License
   along with this program; if not, write to the Free Software
   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA. */
-  
+include('../config.php');
+
 function get_request_headers() {
     $headers = getallheaders();
   
@@ -2506,6 +2507,7 @@ function updateKB($link, $name, $type, $contextbroker, $kind, $protocol, $format
         if ($res == "ok") {
             $result["msg"] .= "\n ok updated in the context broker";
             $result["log"] .= "\n ok updated in the context broker";
+            updateDateDeviceModified($link,$name,$contextbroker,$organization,$result);
             $q = "UPDATE devices SET is_in_broker = 'success' WHERE id = '$name'";
             $r = mysqli_query($link, $q);
         } elseif ($res == "ko") {
@@ -4231,5 +4233,58 @@ function checkSensibleCharacters($text) {
 
     return [$is_valid, implode(" - ", $eval_log)];
 }
+
+function updateDateDeviceModified($link,$deviceId,$contextBroker,$organization,&$result){
+    
+
+    if(isset($GLOBALS['nifiBaseUrl'])) {
+
+        $elementId= $organization.":".$contextBroker.":".$deviceId;
+        $nifiBaseUrl = $GLOBALS['nifiBaseUrl'];
+
+        $url = $nifiBaseUrl."/purgeCache?elementId=".$elementId; // Replace with your actual URL
+
+
+        $ch = curl_init();
+
+        curl_setopt($ch, CURLOPT_URL, $url);           // Set the URL for the request
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true); // Return the response as a string
+        curl_setopt($ch, CURLOPT_CUSTOMREQUEST, "DELETE"); // Specify the DELETE method
+
+
+        $headers = [
+            "Content-Type: application/json"
+        ];
+        curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
+
+        $response = curl_exec($ch);
+
+        if (curl_errno($ch)) {
+            $result["log"] .= "Error invalidating nifi cache";
+        } else {
+            // Success, display the response
+            $result["msg"] .= "Invalidated nifi cache succesfully, ";
+        }
+        curl_close($ch);
+    }
+
+    $stmt = $link->prepare(
+        "UPDATE devices SET modified = CURRENT_TIMESTAMP() 
+     WHERE id = ? AND contextBroker = ?"
+    );
+
+    $stmt->bind_param("ss", $deviceId, $contextBroker);
+    $stmt->execute();
+
+    if ($stmt->affected_rows >= 0) {
+        $result["msg"] .= "Updated modified field, ";
+    } else {
+        $result["log"] .= "Error setting modified field". mysqli_error($link);
+    }
+
+
+
+}
+
 
 ?>
