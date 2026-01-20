@@ -1858,6 +1858,7 @@ $(document).ready(function () {
         $('#selectEdgeGatewayTypeM').val(gtw_type);
         $('#inputEdgeGatewayUriM').val(gtw_uri);
         $('#selectSubnatureM').val(subnature);
+        $('#selectSubnatureM').trigger('change');
         subnatureChanged("view", JSON.parse(atob($(this).attr("data-static-attributes"))));
         //$('#removeCBServiceBtn').hide();
 

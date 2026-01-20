@@ -2133,6 +2133,7 @@ $(document).ready(function () {
         $('#selectEdgeGatewayTypeM').val(gtw_type);
         $('#inputEdgeGatewayUriM').val(gtw_uri);
         $('#selectSubnatureM').val(subnature);
+        $('#selectSubnatureM').trigger('change');
         $('#selectHLTM').val(hlt);
         $('#selectHLTM').trigger('change');
         $('#wktGeometryTextM').val(wktGeometry);

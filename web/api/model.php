@@ -286,25 +286,22 @@ else if ($action == "get_all_models_DataTable") {
             $data = array();
             while ($row = mysqli_fetch_assoc($r)) {
                 $idTocheck = $row["organization"] . ":" . $row["name"];
+                $isSameOrg = ($row["organization"] == $organization);
+                $isOwner = (isset($result["keys"][$idTocheck]) && $result["keys"][$idTocheck]["owner"] == $username);
+                $isDelegatedPersonal = (isset($result["delegation"][$idTocheck]) && $result["delegation"][$idTocheck]["kind"] != "anonymous");
+                $isPublic = ($row["visibility"] == 'public') ||
+                        (isset($result["delegation"][$idTocheck]) && $result["delegation"][$idTocheck]["kind"] == "anonymous");
                 if (
                         ($role == 'RootAdmin') || ($role == 'ToolAdmin') ||
-                        (
-                        ($row["organization"] == $organization) &&
-                        (
-                        ($row["visibility"] == 'public' ||
-                        (isset($result["delegation"][$idTocheck]) && $result["delegation"][$idTocheck]["kind"] == "anonymous")
-                        )
-                        )
-                        ) ||
-                        (isset($result["delegation"][$idTocheck])) ||
-                        (isset($result["keys"][$idTocheck]) && $result["keys"][$idTocheck]["owner"] == $username)
+                        $isPublic ||
+                        ($isSameOrg && ($isDelegatedPersonal || $isOwner))
                 ) {
 
                     $selectedrows++;
                     if (!$tobelimited || ($tobelimited && $selectedrows >= $start && $selectedrows < ($start + $offset))) {
 
-                        if (((isset($result["keys"][$idTocheck])) && ($role !== 'RootAdmin') && ($role !== 'ToolAdmin')) ||
-                                ((isset($result["keys"][$idTocheck])) && ($result["keys"][$idTocheck]["owner"] == $username) && (($role === 'RootAdmin') || ($role === 'ToolAdmin')))) {
+                        if (($isOwner && ($role !== 'RootAdmin') && ($role !== 'ToolAdmin')) ||
+                                ($isOwner && (($role === 'RootAdmin') || ($role === 'ToolAdmin')))) {
                             //it's mine
                             if ($row["visibility"] == "public") {
                                 $row["visibility"] = "MyOwnPublic";
@@ -315,9 +312,9 @@ else if ($action == "get_all_models_DataTable") {
                                     $row["visibility"] = "MyOwnPrivate";
                             }
                         } else {//it's not mine
-                            if (isset($result["delegation"][$idTocheck]) && ($result["delegation"][$idTocheck]["kind"] == "anonymous")) {//it's delegated as public
+                            if ($isPublic) {//it's delegated as public
                                 $row["visibility"] = 'public';
-                            } else if (isset($result["delegation"][$idTocheck])) {//it's delegated personally
+                            } else if ($isDelegatedPersonal) {//it's delegated personally
                                 $row["visibility"] = 'delegated';
                             } else {
                                 $row["visibility"] = $row["visibility"];
@@ -968,4 +965,3 @@ function modelBcCertification($name,$type,$frequency,$kind,$protocol,$format,$pr
     curl_close($ch);
     return $result;
 }
-

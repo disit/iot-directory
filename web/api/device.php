@@ -2301,7 +2301,7 @@ else if ($action == "add_delegation") {
                             }
 
                         }
-                        updateDateDeviceModified($link,$id,$cb,$organization,$result);
+                        updateDateDeviceModified($link,$id,$cb,$dev_organization,$result);
 
                     } else {
                         $result["status"] = 'ko';
@@ -2398,7 +2398,7 @@ else if ($action == "add_delegation") {
                             $i++;
                         }
                     }
-                    updateDateDeviceModified($link,$id,$cb,$organization,$result);
+                    updateDateDeviceModified($link,$id,$cb,$dev_organization,$result);
                 }
             }
         }

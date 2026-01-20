@@ -268,7 +268,7 @@ if(canBeRegistered($id, $devicetype, $contextbroker, $kind, $protocol, $format, 
                         }
                     } else {
                         $result["status"] = 'ko';
-                        $result["error_msg"] .= "Problem in inserting the device $id in the database. ";
+                        $result["error_msg"] .= "Problem in inserting the device $id in the database. " . generateErrorMessage($link);
                             $result["msg"] .= "\n Problem in inserting the device $id  in the database. :  <br/>" . generateErrorMessage($link);
                             $result["log"] .= "\r\n Problem in inserting the device $id  in the database. :  $q  " . generateErrorMessage($link);
                             //se il database non mi risponde è inutile che provi a scrivere l'errore del device perchè non ho il device nel db
@@ -277,6 +277,9 @@ if(canBeRegistered($id, $devicetype, $contextbroker, $kind, $protocol, $format, 
                     $result["status"] = 'ko';
                     $result["error_msg"] = $servicePath . " is NOT a valid servicePath";
                     }
+                    if ($result["status"] != 'ok')
+                        return $result;
+
                     if (!isset($shouldbeRegistered)) {
                         registerKB($link, $id, $devicetype, $contextbroker, $kind, $protocol,
                                 $format, $macaddress, $model, $producer, $latitude, $longitude, $visibility,
@@ -452,14 +455,38 @@ function format_result_serverside($draw, $number_all_row, $number_filter_row, $d
 
 function create_datatable_data($link, $request, $query, $where) {
     $check_blanket = false;
-    $columns = $request["columns"];
+    $columns = isset($request["columns"]) && is_array($request["columns"]) ? $request["columns"] : array();
+    $noColumns = isset($request["no_columns"]) && is_array($request["no_columns"]) ? $request["no_columns"] : array();
     if (isset($request["searchPanes"]["mode"])) {
-        $query .= ' WHERE (mode  =' . $request["searchPanes"]["mode"][0] . ')';
+        $mode = intval($request["searchPanes"]["mode"][0]);
+        $query .= ' WHERE (mode  =' . $mode . ')';
     }
 
     if (isset($request["searchPanes"]["contextbroker"])) {
-        $query .= ' WHERE (contextBroker  ="' . $request["searchPanes"]["contextbroker"][0] . '")';
+        $cbVal = mysqli_real_escape_string($link, $request["searchPanes"]["contextbroker"][0]);
+        $query .= ' WHERE (contextBroker  ="' . $cbVal . '")';
     }
+
+    // Build a whitelist of usable column names (alphanumeric, underscore, dot).
+    $safeColumns = array();
+    foreach ($columns as $col) {
+        if (isset($col["name"]) && preg_match('/^[a-zA-Z0-9_.]+$/', $col["name"])) {
+            $safeColumns[] = $col["name"];
+        } else {
+            $safeColumns[] = null; // preserve indexes but mark unusable
+        }
+    }
+
+    $formatColumnRef = function ($colName) {
+        if (strpos($colName, '.') !== false) {
+            $parts = explode('.', $colName);
+            $parts = array_map(function ($part) {
+                return '`' . $part . '`';
+            }, $parts);
+            return implode('.', $parts);
+        }
+        return '`' . $colName . '`';
+    };
 
     if (isset($request["search"]["value"]) && $request["search"]["value"] != '') {
         if (strpos($query, 'WHERE') == false) {
@@ -472,9 +499,14 @@ function create_datatable_data($link, $request, $query, $where) {
         if ($where != "")
             $query .= $where . ' AND (';
 
-        foreach ($columns as $col) {
-            if (!in_array($col["name"], $request["no_columns"]))
-                $query .= " " . $col["name"] . ' LIKE "%' . $request["search"]["value"] . '%"  OR';
+        $searchVal = mysqli_real_escape_string($link, $request["search"]["value"]);
+
+        foreach ($safeColumns as $colName) {
+            if ($colName === null) {
+                continue;
+            }
+            if (!in_array($colName, $noColumns))
+                $query .= " " . $formatColumnRef($colName) . ' LIKE "%' . $searchVal . '%"  OR';
         }
 
         $query = preg_replace('/\s+OR\s*$/', '', $query);
@@ -487,20 +519,24 @@ function create_datatable_data($link, $request, $query, $where) {
         }
     }
 
-    if (isset($request["order"])) {
-        $orderColumn=$columns[$request['order']['0']['column']]['name'];
-        if($orderColumn=="retry"){
-            //echo $query;
-            $query .= ' ORDER BY (is_in_kb = FALSE OR is_in_db = FALSE OR is_in_broker = FALSE)  ' . $request['order']['0']['dir'] . '	';
-        }else {
-
-        $query .= ' ORDER BY ' . $columns[$request['order']['0']['column']]['name'] . ' ' . $request['order']['0']['dir'] . '	';
-    }
-
-    // echo $query;
+    if (isset($request["order"]) && count($safeColumns) > 0) {
+        $orderIdx = intval($request['order']['0']['column']);
+        $orderColumn = isset($safeColumns[$orderIdx]) ? $safeColumns[$orderIdx] : '';
+        $dir = strtolower($request['order']['0']['dir']) === 'desc' ? 'DESC' : 'ASC';
+        if ($orderColumn !== '') {
+            if ($orderColumn == "retry") {
+                $query .= ' ORDER BY (is_in_kb = FALSE OR is_in_db = FALSE OR is_in_broker = FALSE)  ' . $dir . '	';
+            } else {
+                $query .= ' ORDER BY ' . $formatColumnRef($orderColumn) . ' ' . $dir . '	';
+            }
+        }
+        // echo $query;
     }
 
     $result = mysqli_query($link, $query);
+    if (!$result) {
+        error_log("ERROR data_table: " . mysqli_error($link));
+    }
     error_log("WARNING data_table $query");
     $GLOBALS['DataTableQuery'] = $query;
     return $result;
@@ -642,7 +678,7 @@ function generateErrorMessage($link) {
             $errmsg = "The proposed identifier has been already used";
             break;
         case 1062:
-            $errmsg = "Duplicate entry";
+            $errmsg = "Duplicate entry: the device id is already in use, please choose a different id";
             break;
         case 1169:
             $errmsg = "Can't write, because of unique constraint";
@@ -3348,15 +3384,16 @@ function get_all_models($username, $organization, $role, $accessToken, $link, &$
     if ($r) {
         while ($row = mysqli_fetch_assoc($r)) {
             $idTocheck = $row["organization"] . ":" . $row["name"];
+            $isSameOrg = ($row["organization"] == $organization);
+            $isOwner = (isset($result["keys"][$idTocheck]) && $result["keys"][$idTocheck]["owner"] == $username);
+            $isDelegatedPersonal = (isset($result["delegation"][$idTocheck]) && $result["delegation"][$idTocheck]["kind"] != "anonymous");
+            $isPublic = ($row["visibility"] == 'public') ||
+                    (isset($result["delegation"][$idTocheck]) && $result["delegation"][$idTocheck]["kind"] == "anonymous");
             if (
                     ($role == 'RootAdmin') || //roles
                     ($role == 'ToolAdmin') ||
-                    (
-                    ($row["organization"] == $organization) && //public
-                    (($row["visibility"] == 'public' || (isset($result["delegation"][$idTocheck]) && $result["delegation"][$idTocheck]["kind"] == "anonymous")) )
-                    ) ||
-                    (isset($result["delegation"][$idTocheck]) && $result["delegation"][$idTocheck]["kind"] != "anonymous") || //delegation
-                    (isset($result["keys"][$idTocheck]) && $result["keys"][$idTocheck]["owner"] == $username)       //owner
+                    $isPublic ||
+                    ($isSameOrg && ($isDelegatedPersonal || $isOwner))
             ) {
                 array_push($res, $row);
             }
@@ -4202,6 +4239,20 @@ function guidv4() {
 }
 
 function logAction($link, $accessed_by, $target_entity_type, $access_type, $entity_name, $organization, $notes, $result) {
+    // Skip logging if the audit table is not available, to avoid breaking main flows.
+    static $accessLogExists = null;
+    if ($accessLogExists === null) {
+        $check = mysqli_query($link, "SHOW TABLES LIKE 'access_log'");
+        $accessLogExists = $check && mysqli_num_rows($check) > 0;
+        if ($check) {
+            mysqli_free_result($check);
+        }
+        if (!$accessLogExists) {
+            error_log("logAction: table access_log not found, skipping audit log write");
+            return '';
+        }
+    }
+
     $query = "INSERT INTO access_log(accessed_by,target_entity_type,access_type,entity_name,organization,notes,result) " .
             "VALUES('$accessed_by','$target_entity_type','$access_type','$entity_name','$organization','" . substr($notes, 0, 65000) . "','$result')";
     $res = mysqli_query($link, $query);
@@ -4209,7 +4260,7 @@ function logAction($link, $accessed_by, $target_entity_type, $access_type, $enti
         $result["msg"] = "correctly logged\n" . $accessed_by . " " . $target_entity_type . " " . $access_type . " " . $entity_name .
                 " " . $notes;
     } else {
-        $result["log"] =$result["log"] . " --- error in inserting log " . $query . "\n";
+        $result["log"] =$result["log"] . " --- error in inserting log " . $query . " -- " . mysqli_error($link) . "\n";
     }
     return $result["msg"];
 }
