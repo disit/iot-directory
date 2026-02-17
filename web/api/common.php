@@ -544,16 +544,18 @@ function create_datatable_data($link, $request, $query, $where) {
 
 function my_log($result) {
     simple_log($result);
+    
     echo json_encode($result);
 }
 
-function simple_log($result) {
+function simple_log(& $result) {
     //TODO rotate
     $fp = fopen($GLOBALS["pathLog"], "a");
     if (!$fp) {
         //TODO create
         $result["status"] = 'ko';
         $result["error_msg"] = "\n Unable to open LOG file. Please contact an administrator";
+        unset($result["log"]);
     } else {
         flock($fp, LOCK_EX);
         $output = date("Y-m-d h:i:sa") . ": " . $result["log"] . "----" .$result["error_msg"]. "\r\n" ;
@@ -1347,8 +1349,8 @@ function getDelegatorDevice($token, $user, &$result, $eId) {
             $result["status"] = 'ok';
 
             $result["delegation"] = $mykeys;
-            $result["msg"] .= '\n identified ' . count($lists) . ' delegations\n' . $local_result . json_encode($mykeys);
-            $result["log"] .= '\n identified ' . count($lists) . ' delegations\n' . json_encode($mykeys);
+            //$result["msg"] .= '\n identified ' . count($lists) . ' delegations\n' . $local_result . json_encode($mykeys);
+            //$result["log"] .= '\n identified ' . count($lists) . ' delegations\n' . json_encode($mykeys);
         } else {
             $result["status"] = 'ko';
             $result["error_msg"] .= 'Error in accessing the delegation. ';
@@ -1386,8 +1388,8 @@ function getDelegatorObject($token, $user, &$result, $object, $delegationId) {
             }
             $result["status"] = 'ok';
             $result["delegation"] = $mykeys;
-            $result["msg"] .= '\n identified ' . count($lists) . ' delegations\n' . $local_result . json_encode($mykeys);
-            $result["log"] .= '\n identified ' . count($lists) . ' delegations\n' . json_encode($mykeys);
+            //$result["msg"] .= '\n identified ' . count($lists) . ' delegations\n' . $local_result . json_encode($mykeys);
+            //$result["log"] .= '\n identified ' . count($lists) . ' delegations\n' . json_encode($mykeys);
         } else {
             $result["status"] = 'ko';
             $result["error_msg"] .= 'Error in accessing the delegation. ';
