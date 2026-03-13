@@ -90,7 +90,7 @@ function checkRegisterOwnerShipObject($token, $object, &$result) {
                 $result["status"] = 'ko';
                 $result["error_msg"] .= "The registration is NOT possible. Reached limit of " . $object;
                 $result["msg"] .= "\n The registration is NOT possible. Reached limit of " . $object . " (" . json_decode($local_result)->limits[0]->limit . ")";
-                $result["log"] .= "\n The registration is NOT possible. Reached limit of " . $object . " (" . json_decode($local_result)->limits[0]->limit . ")";
+                $result["log"] .= "\n The registration is NOT possible. Reached limit of " . $object . " (" . json_decode($local_result)->limits[0]->limit . ") $url->$local_result";
             }
         } else {
             $result["status"] = 'ko';
@@ -1306,8 +1306,8 @@ function checkDelegationObject($username, $token, $elementId, $elementType, &$re
     } else {
         $result["status"] = 'ko';
         $result["error_msg"] = 'Error in accessing the delegation. ';
-        $result["msg"] = '\n error in accessing the delegation';
-        $result["log"] = '\n error in accessing the delegation';
+        $result["msg"] .= '\n error in accessing the delegation';
+        $result["log"] .= '\n error in accessing the delegation';
     }
     unset($result["delegation"]);
 
@@ -1416,7 +1416,8 @@ function getOwnerShipDevice($token, &$result, $elementId = null) {
 
         //Evito di appendere 30MB ai log
         $local_result = file_get_contents($url);
-        //$result["log"] .= $local_result;
+error_log("IOTDIR $url --> $local_result");
+//$result["log"] .= $local_result;
         //var_dump($local_result);
         if (strpos($http_response_header[0], '200') == true || strpos($http_response_header[0], '204') == true) {
             $lists = json_decode($local_result);
@@ -1672,7 +1673,7 @@ function insert_ngsi($link, $name, $type, $contextbroker, $kind, $protocol, $for
     $msg_orion["model"]["value"] = $model;
     $msg_orion["model"]["type"] = "string";
 
-    $url_orion = "http://$ip:$port/v2/entities/";
+    $url_orion = make_orion_baseurl($ip, $port)."/v2/entities/";
 
     try {
         // Setup cURL
@@ -1701,7 +1702,7 @@ function insert_ngsi($link, $name, $type, $contextbroker, $kind, $protocol, $for
             if($retries!==0){
                 usleep(10000);
             }
-        $response_orion = curl_exec($ch);
+            $response_orion = curl_exec($ch);
             $retries++;
         }
 
@@ -2290,8 +2291,8 @@ function update_ngsi($link,$name, $type, $contextbroker, $kind, $protocol, $form
         // get the name from id
         $name = explode(".", $name)[2];
     }
-
-    $url_orion = "http://$ip:$port/v2/entities/$name/attrs";
+    
+    $url_orion = make_orion_baseurl($ip, $port) . "/v2/entities/$name/attrs";
     try {
         // Setup cURL
         $ch = curl_init($url_orion);
@@ -2582,7 +2583,7 @@ function delete_ngsi($name, $type, $contextbroker, $kind, $protocol, $format, $m
     }
 
     $res = "ok";
-    $url_orion = "http://$ip:$port/v2/entities/$name";
+    $url_orion = make_orion_baseurl($ip, $port) . "/v2/entities/$name";
 
     try {
         // Setup cURL
@@ -3426,15 +3427,12 @@ function is_broker_up($link, $cb, $service, $servicePath, $version, $organizatio
     $port = $rowCB["port"];
 
     if ($version == "v2") {
-
-        $IP_PORT = checkIP($ip, $port);
-        $url_orion = "$IP_PORT/v2/entities";
+        //$IP_PORT = checkIP($ip, $port);
+        $url_orion = make_orion_baseurl($ip, $port)."/v2/entities";
     } else
-        $url_orion = "http://$ip:$port/v1/queryContext";
-
+        $url_orion = make_orion_baseurl($ip, $port)."/v1/queryContext";
 
     try {
-
         $ch = curl_init($url_orion);
         $httpheader = array();
         if ($service != "")
@@ -3539,7 +3537,7 @@ function get_device($username, $role, $id, $cb, $accessToken, $link, &$result, $
     } else {
         $result["status"] = "ko";
         $result['msg'] = mysqli_error($link);
-        $result["log"] = "action=get_device -" . " error " . mysqli_error($link) . "\r\n";
+        $result["log"] .= "action=get_device -" . " error " . mysqli_error($link) . "\r\n";
     }
 
     unset($result["username"]);
@@ -3750,10 +3748,11 @@ function get_user_info($accessToken, &$username, &$organization, $oidc, &$role, 
         else if (in_array("Manager", $userinfo["roles"]))
             $role = "Manager";
         else {
-            $result["status"] = "ko";
+            $role = "Observer";
+            /*$result["status"] = "ko";
             $result['msg'] = "Role not found in AccessToken for user " . $username;
             $result["error_msg"] .= "Role not found in AccessToken for user " . $username;
-            $result["log"] = "action=get_user_info -" . " Role not found in AccessToken for user " . $username . "\r\n";
+            $result["log"] = "action=get_user_info -" . " Role not found in AccessToken for user " . $username . "\r\n";*/
         }
     }
 
@@ -3949,11 +3948,12 @@ function get_device_data($link, $id, $type, $cb, $service, $servicePath, $versio
     $ip = $rowCB["ip"];
     $port = $rowCB["port"];
 
-    if ($version == "v2")
-        $url_orion = "http://$ip:$port/v2/entities/$id?type=$type";
-    else
-        $url_orion = "http://$ip:$port/v1/queryContext";
-
+    if ($version == "v2") {
+        $url_orion = make_orion_baseurl($ip, $port)."/v2/entities/$id?type=$type";
+    } else {
+        $url_orion = make_orion_baseurl($ip, $port)."/v1/queryContext";
+    }
+    
     try {
 
         $ch = curl_init($url_orion);
@@ -4047,6 +4047,7 @@ function Loading_value($link, $id, $type, $cb, $service, $servicePath, $version,
     $rowCB = mysqli_fetch_assoc($r);
     $ip = $rowCB["ip"];
     $port = $rowCB["port"];
+
     $r = mysqli_query($link, $queryMobile);
 
     if (!$r) {
@@ -4058,13 +4059,10 @@ function Loading_value($link, $id, $type, $cb, $service, $servicePath, $version,
     }
     $isMobile = (mysqli_fetch_assoc($r));
 
-    $IP_PORT = checkIP($ip, $port);
-
     if ($version == "v2")
-        $url_orion = "$IP_PORT/v2/entities/$id?options=keyValues";
-    //"?options=keyValues";
-//    else
-//        $url_orion = "http://$ip:$port/v1/queryContext";
+        $url_orion = make_orion_baseurl($ip, $port)."/v2/entities/$id?options=keyValues";
+    else
+        $url_orion = make_orion_baseurl($ip, $port)."/v1/queryContext";
 
     try {
 
@@ -4166,10 +4164,9 @@ function Insert_Value($link, $id, $type, $cb, $service, $servicePath, $version, 
     $port = $rowCB["port"];
 
     if ($version == "v2")
-        $url_orion = "http://$ip:$port/v2/entities/$id/attrs";
-
-//    else
-//        $url_orion = "http://$ip:$port/v1/queryContext";
+        $url_orion = make_orion_baseurl($ip,$port)."/v2/entities/$id/attrs";
+    else
+        $url_orion = make_orion_baseurl($ip, $port)."/v1/queryContext";
 
     try {
 
@@ -4184,15 +4181,12 @@ function Insert_Value($link, $id, $type, $cb, $service, $servicePath, $version, 
         array_push($httpheader, 'Content-Length: ' . strlen($payload));
 
         if ($version == "v2") {
-
-
             curl_setopt($ch, CURLOPT_URL, $url_orion);
             curl_setopt($ch, CURLOPT_HTTPHEADER, $httpheader);
             curl_setopt($ch, CURLOPT_CUSTOMREQUEST, 'PATCH');
             curl_setopt($ch, CURLOPT_POSTFIELDS, $payload);
             curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
         } else {
-
             curl_setopt_array($ch, array(
                 CURLOPT_POST => TRUE,
                 CURLOPT_RETURNTRANSFER => TRUE,
@@ -4204,7 +4198,6 @@ function Insert_Value($link, $id, $type, $cb, $service, $servicePath, $version, 
         $response_orion = curl_exec($ch);
 
         if ($response_orion === FALSE) {
-
             $result["status"] = "ko";
             $result["error_msg"] = "Error in the connection with the ngsi context broker. ";
             $result["msg"] = "Error in the connection with the ngsi context broker";
@@ -4334,10 +4327,36 @@ function updateDateDeviceModified($link,$deviceId,$contextBroker,$organization,&
     } else {
         $result["log"] .= "Error setting modified field". mysqli_error($link);
     }
-
-
-
 }
 
+function make_orion_baseurl($ip,$port) {
+    $hasScheme = strpos($ip, "https:") === 0 || strpos($ip, "http:") === 0;
+    $hasPort = strpos($ip, ":") > 0;
+    $lastSlashPos = strrpos($ip, "/");
+    $hasPath =  !$lastSlashPos===false && $lastSlashPos > 8;
+    if($hasScheme && $hasPort) {
+        // ex: https://orion.org:8443
+        // ex: https://orion.org:8443/orion1
+        return $ip;
+    }
+    if($hasScheme && !$hasPath) {
+        // ex: https://192.168.1.1
+        return $ip+":"+$port;
+    }
+    if($hasScheme && $hasPath) {
+        // ex: http://www.orion.org/orion1
+        return $ip; //port is ignored
+    }
+    $scheme = $GLOBALS['orionDefaultScheme'] ?? 'http';     
+    if($hasPort) {
+        return "$scheme://$ip";
+    }
+    if($hasPath) {
+        // port is ignored
+        return "$scheme://$ip";
+    }
+    if($port==="")
+        return "$scheme://$ip";
+    return "$scheme://$ip:$port";
+}
 
-?>
