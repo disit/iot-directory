@@ -903,9 +903,11 @@ else if ($action == 'change_visibility') {
                             //make public the device
                             delegateDeviceValue($eId, $contextbroker, NULL, $username, "ANONYMOUS", "", $accessToken, "", "", $result);
 
-                            //make public any values of this device
-                            while ($value = mysqli_fetch_assoc($values)) {
-                                delegateDeviceValue($uri . "/" . $value["value_name"], $contextbroker, $value["value_name"], $username, "ANONYMOUS", "", $accessToken, "", "", $result);
+                            if ($delegateAttributesOnDeviceDelegationEnabled) {
+                                //make public any values of this device
+                                while ($value = mysqli_fetch_assoc($values)) {
+                                    delegateDeviceValue($uri . "/" . $value["value_name"], $contextbroker, $value["value_name"], $username, "ANONYMOUS", "", $accessToken, "", "", $result);
+                                }
                             }
                         } else {
                             getDelegatorDevice($accessToken, $username, $result, $eId);
@@ -922,14 +924,16 @@ else if ($action == 'change_visibility') {
                             if ($found) {
                                 removeDelegationValue($accessToken, $username, $delegationId, $result);
                             }
-                            //retrieve any public values
-                            getDelegatedDevice($accessToken, "ANONYMOUS", $result);
-                            $publicElement = $result["delegation"];
-                            //remove public from any values of this device (if was public)
-                            while ($value = mysqli_fetch_assoc($values)) {
-                                foreach ($publicElement as $public => $public_value) {
-                                    if ($uri . "/" . $value["value_name"] === $public) {
-                                        removeDelegationValue($accessToken, $username, $public_value['delegationId'], $result);
+                            if ($delegateAttributesOnDeviceDelegationEnabled) {
+                                //retrieve any public values
+                                getDelegatedDevice($accessToken, "ANONYMOUS", $result);
+                                $publicElement = $result["delegation"];
+                                //remove public from any values of this device (if was public)
+                                while ($value = mysqli_fetch_assoc($values)) {
+                                    foreach ($publicElement as $public => $public_value) {
+                                        if ($uri . "/" . $value["value_name"] === $public) {
+                                            removeDelegationValue($accessToken, $username, $public_value['delegationId'], $result);
+                                        }
                                     }
                                 }
                             }
