@@ -783,6 +783,14 @@ function checkNotInsert(inserted, check) {
 }
 
 function addSubnature(element, data) {
+  const selectedValue = element.data('pending-value') || element.val();
+
+  if (element.hasClass('select2-hidden-accessible')) {
+    element.select2('destroy');
+  }
+
+  element.empty().append('<option></option>');
+
   $.each(data, function () {
     let label = decodeHtmlCharCodes(this.label);
 
@@ -799,7 +807,14 @@ function addSubnature(element, data) {
       "<option value='" + this.value + "'>" + label + '&#160;&#160;&#160;<font size="2">(' + this.parent_value[0] + ')</font>' + '</option>'
     );
   });
+
   element.select2(select2option);
+
+  if (selectedValue !== undefined && selectedValue !== null && selectedValue !== "") {
+    element.val(selectedValue).trigger('change');
+  }
+
+  element.removeData('pending-value');
 }
 
 function decodeHtmlCharCodes(str) {

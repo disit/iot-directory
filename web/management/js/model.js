@@ -3,6 +3,7 @@ $.fn.modal.Constructor.prototype.enforceFocus = function () {};
 var gb_datatypes = "";
 var gb_value_units = "";
 var gb_value_types = "";
+var gb_subnature = [];
 var defaultPolicyValue = [];
 var gb_options = [];
 var gb_device = "";
@@ -34,8 +35,9 @@ $.ajax({url: "../api/device.php",
             gb_datatypes = mydata["data_type"];
             gb_value_units = mydata["value_unit"];
             gb_value_types = mydata["value_type"];
-            addSubnature($("#selectSubnature"), mydata["subnature"]);
-            addSubnature($("#selectSubnatureM"), mydata["subnature"]);
+            gb_subnature = mydata["subnature"] || [];
+            addSubnature($("#selectSubnature"), gb_subnature);
+            addSubnature($("#selectSubnatureM"), gb_subnature);
         } else {
             console.log("error getting the data types " + data);
         }
@@ -326,6 +328,16 @@ function updateDeviceTimeout()
     setTimeout(function () {
         location.reload();
     }, 500);
+}
+
+function ensureSubnatureOptions(element, selectedValue) {
+    if (selectedValue !== undefined) {
+        element.data('pending-value', selectedValue);
+    }
+
+    if (gb_subnature.length > 0) {
+        addSubnature(element, gb_subnature);
+    }
 }
 
 
@@ -1580,6 +1592,7 @@ $(document).ready(function ()
         $('#selectFormatModelM').val(format);
         $('#selectHCModelM').val(hc);
         $('#inputHVModelM').val(hv);
+        ensureSubnatureOptions($('#selectSubnatureM'), subnature);
         $('#selectSubnatureM').val(subnature);
         $('#selectSubnatureM').trigger('change');
         subnatureChanged("view", JSON.parse(atob($(this).attr("data-static-attributes"))));
@@ -1712,6 +1725,7 @@ $(document).ready(function ()
         $('#selectFormatModelM').val(format);
         $('#selectHCModelM').val(hc);
         $('#inputHVModelM').val(hv);
+        ensureSubnatureOptions($('#selectSubnatureM'), subnature);
         $('#selectSubnatureM').val(subnature);
         $('#selectSubnatureM').trigger('change');
         subnatureChanged(true, JSON.parse(atob($(this).attr("data-static-attributes"))));
