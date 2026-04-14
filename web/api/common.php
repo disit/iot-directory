@@ -73,7 +73,6 @@ function checkRegisterOwnerShipObject($token, $object, &$result) {
         $options = array(
             'http' => array(
                 'header' => "Content-Type: application/json;charset=utf-8",
-                'header' => "Access-Control-Allow-Origin: *",
                 'method' => 'GET',
                 'ignore_errors' => true,
                 'timeout' => 30
@@ -725,7 +724,6 @@ function removeOwnerShipDevice($elementId, $token, &$result) {
         $options = array(
             'http' => array(
                 'header' => "Content-Type: application/json;charset=utf-8",
-                'header' => "Access-Control-Allow-Origin: *",
                 'method' => 'POST',
                 'ignore_errors' => true,
                 'timeout' => 30
@@ -758,7 +756,6 @@ function removeOwnerShipObject($elementId, $token, $object, &$result) {
         $options = array(
             'http' => array(
                 'header' => "Content-Type: application/json;charset=utf-8",
-                'header' => "Access-Control-Allow-Origin: *",
                 'method' => 'POST',
                 'ignore_errors' => true,
                 'timeout' => 30
@@ -793,7 +790,6 @@ function registerOwnerShipDevice($elementId, $msg, $token, &$result) {
         $options = array(
             'http' => array(
                 'header' => "Content-Type: application/json;charset=utf-8",
-                'header' => "Access-Control-Allow-Origin: *",
                 'method' => 'POST',
                 'content' => json_encode($msg),
                 'ignore_errors' => true,
@@ -827,7 +823,6 @@ function registerOwnerShipObject($msg, $token, $object, &$result) {
         $options = array(
             'http' => array(
                 'header' => "Content-Type: application/json;charset=utf-8",
-                'header' => "Access-Control-Allow-Origin: *",
                 'method' => 'POST',
                 'content' => json_encode($msg),
                 'ignore_errors' => true,
@@ -2133,9 +2128,8 @@ function registerKB($link, $name, $type, $contextbroker, $kind, $protocol, $form
 
             $options = array(
                 'http' => array(
-                    'header' => "Content-Type: application/json;charset=utf-8",
-                    'header' => "Access-Control-Allow-Origin: *",
-                    'header' => "Authorization: Bearer " . $accessToken,
+                    'header' => "Content-Type: application/json;charset=utf-8\r\n" .
+                        "Authorization: Bearer " . $accessToken,
                     'method' => 'POST',
                     'content' => $encoda,
                     'timeout' => 60,
@@ -2476,9 +2470,8 @@ function updateKB($link, $name, $type, $contextbroker, $kind, $protocol, $format
 
             $options = array(
                 'http' => array(
-                    'header' => "Content-Type: application/json;charset=utf-8",
-                    'header' => "Access-Control-Allow-Origin: *",
-                    'header' => "Authorization: Bearer " . $accessToken,
+                    'header' => "Content-Type: application/json;charset=utf-8\r\n" .
+                       "Authorization: Bearer " . $accessToken,
                     'method' => 'POST',
                     'content' => $encoda,
                     'timeout' => 30,
@@ -2880,9 +2873,8 @@ function deleteKB($link, $name, $contextbroker, $kbUrl = "", &$result, $service 
 
             $options = array(
                 'http' => array(
-                    'header' => "Content-Type: application/json;charset=utf-8",
-                    'header' => "Access-Control-Allow-Origin: *",
-                    'header' => "Authorization: Bearer " . $accessToken,
+                    'header' => "Content-Type: application/json;charset=utf-8\r\n" .
+                        "Authorization: Bearer " . $accessToken,
                     'method' => 'POST',
                     'content' => $encoda,
                     'timeout' => 30,
@@ -3078,8 +3070,8 @@ d.contextBroker='$contextbroker' and d.id='$device';";
 
             $options = array(
                 'http' => array(
-                    'header' => "Content-Type: application/json;charset=utf-8",
-                    'header' => "Access-Control-Allow-Origin: *",
+                    'header' => ["Content-Type: application/json;charset=utf-8" ,
+                        "Access-Control-Allow-Origin: *"],
                     'method' => 'POST',
                     'content' => json_encode($msg),
                     'timeout' => 30

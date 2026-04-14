@@ -764,6 +764,11 @@ else if ($action == "add_delegation") {
                     $result["log"] = "action=add_delegations - error Not ownership or enough right to update\r\n";
                 } else {
                     if (($delegated_user != "" || $delegated_group != "") && $username != "") {
+                        // Backward-compatible support for short group names passed via API (e.g. "Developers").
+                        // Existing UI already sends "cn=<group>,ou=<org>" and remains unchanged.
+                        if ($delegated_group != "" && strpos($delegated_group, "=") === false) {
+                            $delegated_group = "cn=" . $delegated_group . ",ou=" . $dev_organization;
+                        }
                         //retrieve any values of this this device
                         $q1 = "SELECT * FROM event_values WHERE cb = '$cb' and device='$id'";
                         $values = mysqli_query($link, $q1);
