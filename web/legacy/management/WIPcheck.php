@@ -455,11 +455,13 @@ require '../../sso/autoload.php';
 use Jumbojett\OpenIDConnectClient;
 #error_reporting(E_ERROR);
 
-session_start();
+if (session_status() !== PHP_SESSION_ACTIVE) {
+    session_start();
+}
 
 //ricontrollare sia root admin
 
-if ($_SESSION[loggedRole] !== 'RootAdmin') {
+if (!isset($_SESSION['loggedRole']) || $_SESSION['loggedRole'] !== 'RootAdmin') {
     $result['status'] = 'ko';
     $result['msg'] = 'unauthorized';
     $result['error_msg'] = 'you are not Root';
@@ -1008,7 +1010,7 @@ function AllAroundRetry($selectedDevice,$link,$link_own,$accessToken,$kbUrl,&$ap
                             $currentDate = date("Y-m-d H:i:s");
 
                             if($userforOwnership=="") {
-                            $username = $_SESSION[loggedUsername];
+                            $username = $_SESSION['loggedUsername'];
                             }else{
                                 $username=$userforOwnership;
                             }
@@ -1141,7 +1143,7 @@ function AllAroundRetry($selectedDevice,$link,$link_own,$accessToken,$kbUrl,&$ap
                         $currentDate = date("Y-m-d H:i:s");
 
                         if($userforOwnership=="") {
-                        $username=$_SESSION[loggedUsername];
+                        $username=$_SESSION['loggedUsername'];
                         }else{
                             $username=$userforOwnership;
                         }
@@ -1477,7 +1479,7 @@ function AllAroundDelete($selectedDevice,$link,$link_own,$accessToken,$kbUrl,&$a
                             $currentDate = date("Y-m-d H:i:s");
 
                             if($userforOwnership=="") {
-                            $username = $_SESSION[loggedUsername];
+                            $username = $_SESSION['loggedUsername'];
                             }else{
                                 $username=$userforOwnership;
                             }
@@ -1582,7 +1584,7 @@ function AllAroundDelete($selectedDevice,$link,$link_own,$accessToken,$kbUrl,&$a
                             $currentDate = date("Y-m-d H:i:s");
 
                             if($userforOwnership=="") {
-                            $username = $_SESSION[loggedUsername];
+                            $username = $_SESSION['loggedUsername'];
                             }else{
                                 $username=$userforOwnership;
                             }
