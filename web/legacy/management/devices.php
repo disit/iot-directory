@@ -1000,6 +1000,9 @@ if (($hide_menu != "hide")) {
                                             <option value="Scenario">Scenario</option>
                                             <option value="Vector_field">Vector Field</option>
                                             <option value="Parking_slot">Parking slot</option>
+                                            <option value="TVCam">TVCam</option>
+                                            <option value="CostalLine">CostalLine</option>
+                                            <option value="File">File</option>
                                         </select>
                                         <div class="modalFieldLabelCnt">Select HLT</div>
 
@@ -1546,6 +1549,9 @@ if (($hide_menu != "hide")) {
                                             <option value="Scenario">Scenario</option>
                                             <option value="Vector_field">Vector Field</option>
                                             <option value="Parking_slot">Parking slot</option>
+                                            <option value="TVCam">TVCam</option>
+                                            <option value="CostalLine">CostalLine</option>
+                                            <option value="File">File</option>
                                         </select>
                                         <div class="modalFieldLabelCnt">Select HLT</div>
                                     </div>

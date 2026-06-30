@@ -1601,7 +1601,7 @@ else if ($action == 'change_visibility') {
             //id management
             if ($protocol == "ngsi w/MultiService")
                 $id = $service . "." . $servicePath . "." . $id;
-            get_device($username, $role, $id, $cb, $accessToken, $link, $result);
+            get_device($username, $role, $id, $cb, $accessToken, $link, $result, isset($_REQUEST['own']) && $_REQUEST['own']=='true' );
             if (empty($result["content"])) {
                 $result["status"] = "ko";
                 $result['msg'] = "Unrecognized device";

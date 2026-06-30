@@ -14,19 +14,19 @@
    along with this program; if not, write to the Free Software
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA. */
 
-    include_once '../common.php';
+    include_once __DIR__ . '/common.php';
 
-    $envFileContent = parse_ini_file("conf/environment.ini"); 
+    $envFileContent = parse_ini_file( __DIR__ . "/conf/environment.ini");
     $activeEnv = $envFileContent["environment"]["value"];
    
-    $filesList = scandir("../conf/");
+    $filesList = scandir( __DIR__ . "/conf/");
     $j = 0;
     
     for($i = 0; $i < count($filesList); $i++)
     {
         if(($filesList[$i] != ".")&&($filesList[$i] != "..")&&($filesList[$i] != "environment.ini"))
         {
-            $fileContent = parse_ini_file("../conf/" . $filesList[$i]);
+            $fileContent = parse_ini_file(__DIR__ . "/conf/" . $filesList[$i]);
            
             foreach($fileContent as $key => $value) 
             {
