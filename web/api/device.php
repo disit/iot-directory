@@ -769,12 +769,18 @@ if ($action == "insert") {
                     $result["error_msg"] .= "Problem in delete device (Not ownership or enough right to delete)";
                     $result["log"] = "action=delete - error Not ownership or enough right to delete\r\n";
                 } else {
-                    $result["log"] = "action=delete id: $id cb: $cb org: $dev_organization ";
+                    $result["log"] = "action=delete id: $id cb: $cb org: $dev_organization \r\n";
                     deleteKB($link, $id, $cb, retrieveKbUrl($organizationApiURI, $dev_organization), $result, $service, $servicePath, $accessToken);
 
                     if ($result["status"] == 'ok') {
                         removeOwnerShipDevice($eId, $accessToken, $result);
                         if($result["status"] == 'ok') {
+                            $errno = nifiPurgeCache($dev_organization, $cb, $id);
+                            if($errno) {
+                                $result["log"] .= "error in nifi purge cache ($errno)\r\n";
+                            } else {
+                                $result["log"] .= "success in nifi purge cache\r\n";
+                            }
                             //unique name for deleted devices
                             $milliseconds = round(microtime(true) * 1000);
                             $deleted_id = $id . "_" . $milliseconds;

@@ -4272,33 +4272,36 @@ function checkSensibleCharacters($text) {
     return [$is_valid, implode(" - ", $eval_log)];
 }
 
+function nifiPurgeCache($organization, $contextBroker, $deviceId) {
+    $elementId= $organization.":".$contextBroker.":".$deviceId;
+    $nifiBaseUrl = $GLOBALS['nifiBaseUrl'];
+
+    $url = $nifiBaseUrl."/purgeCache?elementId=".$elementId; // Replace with your actual URL
+
+    $ch = curl_init();
+
+    curl_setopt($ch, CURLOPT_URL, $url);           // Set the URL for the request
+    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true); // Return the response as a string
+    curl_setopt($ch, CURLOPT_CUSTOMREQUEST, "DELETE"); // Specify the DELETE method
+
+    $headers = [
+        "Content-Type: application/json"
+    ];
+    curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
+
+    $response = curl_exec($ch);
+
+    $error = curl_errno($ch);
+    curl_close($ch);    
+    return $error;
+}
+
 function updateDateDeviceModified($link,$deviceId,$contextBroker,$organization,&$result){
     
-
     if(isset($GLOBALS['nifiBaseUrl'])) {
-
-        $elementId= $organization.":".$contextBroker.":".$deviceId;
-        $nifiBaseUrl = $GLOBALS['nifiBaseUrl'];
-
-        $url = $nifiBaseUrl."/purgeCache?elementId=".$elementId; // Replace with your actual URL
-
-
-        $ch = curl_init();
-
-        curl_setopt($ch, CURLOPT_URL, $url);           // Set the URL for the request
-        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true); // Return the response as a string
-        curl_setopt($ch, CURLOPT_CUSTOMREQUEST, "DELETE"); // Specify the DELETE method
-
-
-        $headers = [
-            "Content-Type: application/json"
-        ];
-        curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
-
-        $response = curl_exec($ch);
-
-        if (curl_errno($ch)) {
-            $result["log"] .= "Error invalidating nifi cache";
+        $error = nifiPurgeCache($organization, $contextBroker, $deviceId);
+        if ($error) {
+            $result["log"] .= "Error invalidating nifi cache ($error) $organization:$contextBroker:$deviceId";
         } else {
             // Success, display the response
             $result["msg"] .= "Invalidated nifi cache succesfully, ";
