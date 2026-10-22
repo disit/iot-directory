@@ -3186,7 +3186,7 @@ function changeVisibility(id, contextbroker, dev_organization, visibility, uri, 
 
 
     //listen about the confimation
-    $(document).on("click", "#newDelegationConfirmBtn", function (event) {
+    $(document).off("click.newDelegation", "#newDelegationConfirmBtn").on("click.newDelegation", "#newDelegationConfirmBtn", function (event) {
         var newDelegation = document.getElementById('newDelegation').value;
         newk1 = generateUUID();
         newk2 = generateUUID();
@@ -3260,7 +3260,7 @@ function changeVisibility(id, contextbroker, dev_organization, visibility, uri, 
     });//single delegation -end
 
     //group delegation -start------------------------------------------------------------------------------------------------------------
-    $(document).on("click", "#newDelegationConfirmBtnGroup", function (event) {
+    $(document).off("click", "#newDelegationConfirmBtnGroup").on("click", "#newDelegationConfirmBtnGroup", function (event) {
         var delegatedDN = "";
         var e = document.getElementById("newDelegationGroup");
         if ((typeof e.options[e.selectedIndex] !== 'undefined') && (e.options[e.selectedIndex].text !== 'All groups')) {
