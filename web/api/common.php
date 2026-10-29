@@ -175,7 +175,7 @@ if(canBeRegistered($id, $devicetype, $contextbroker, $kind, $protocol, $format, 
 
                 $syntaxRes = 0;
                 if ($protocol == 'ngsi w/MultiService') {
-                    if (strlen($servicePath) > 0 && $servicePath{0} != "/") {//TODO: do we need to insert this if in any other place?
+                    if (strlen($servicePath) > 0 && $servicePath[0] != "/") {//TODO: do we need to insert this if in any other place?
                         $servicePath = "/" + $servicePath;
                     }
                     $id = $service . "." . $servicePath . "." . $id;
@@ -1011,7 +1011,7 @@ function getUserDelegatedDevice($token, $user, $type, &$result) {
         $result["log"] .= '\n error in accessing the delegation ' . $ex;
     }
     if (strpos($http_response_header[0], '200') == true || strpos($http_response_header[0], '204') == true) {
-        $lists = json_decode($local_result);
+        $lists = json_decode($local_result) ?: [];
         $kind = ($user == "ANONYMOUS" ? 'anonymous' : 'specific');
         for ($i = 0; $i < count($lists); $i++) {
             if (isset($lists[$i]->elementType) && ($lists[$i]->elementType == "ServiceURI" || $lists[$i]->elementType == "IOTID")) {
@@ -1211,7 +1211,7 @@ function getDelegatedObject($token, $user, $object, &$result) {
         $result["log"] .= '\n error in accessing the delegation ' . $ex;
     }
     if (strpos($http_response_header[0], '200') == true || strpos($http_response_header[0], '204') == true) {
-        $lists = json_decode($local_result);
+        $lists = json_decode($local_result) ?: [];
         for ($i = 0; $i < count($lists); $i++) {
             if (isset($lists[$i]->elementType) && $lists[$i]->elementType == $object) {
                 $a = $lists[$i]->elementId;
@@ -1242,7 +1242,7 @@ function getDelegatedObject($token, $user, $object, &$result) {
             $url = $GLOBALS["delegationURI"] . "datamanager/api/v1/username/ANONYMOUS/delegated?accessToken=" . $token . "&sourceRequest=iotdirectory&elementType=" . $object;
             $local_result = file_get_contents($url);
             if (strpos($http_response_header[0], '200') == true || strpos($http_response_header[0], '204') == true) {
-                $lists = json_decode($local_result);
+                $lists = json_decode($local_result) ?: [];
                 for ($i = 0; $i < count($lists); $i++) {
                     if (isset($lists[$i]->elementType) && $lists[$i]->elementType == $object) {
                         $a = $lists[$i]->elementId;
@@ -1318,7 +1318,7 @@ function getDelegatorDevice($token, $user, &$result, $eId) {
                 "&sourceRequest=iotdirectory";
         $local_result = file_get_contents($url);
         if (strpos($http_response_header[0], '200') == true || strpos($http_response_header[0], '204') == true) {
-            $lists = json_decode($local_result);
+            $lists = json_decode($local_result) ?: [];
 
             for ($i = 0; $i < count($lists); $i++) {
                 if (isset($lists[$i]->elementType) && ($lists[$i]->elementType == "ServiceURI" || $lists[$i]->elementType == "IOTID")) {
@@ -1368,7 +1368,7 @@ function getDelegatorObject($token, $user, &$result, $object, $delegationId) {
         $local_result = file_get_contents($url);
 
         if (strpos($http_response_header[0], '200') == true || strpos($http_response_header[0], '204') == true) {
-            $lists = json_decode($local_result);
+            $lists = json_decode($local_result) ?: [];
             for ($i = 0; $i < count($lists); $i++) {
                 if (isset($lists[$i]->elementType) && $lists[$i]->elementType == $object) {
                     $a = $lists[$i]->elementId;
@@ -1415,7 +1415,7 @@ error_log("IOTDIR $url --> $local_result");
 //$result["log"] .= $local_result;
         //var_dump($local_result);
         if (strpos($http_response_header[0], '200') == true || strpos($http_response_header[0], '204') == true) {
-            $lists = json_decode($local_result);
+            $lists = json_decode($local_result) ?: [] ;
             for ($i = 0; $i < count($lists); $i++) {
                 if (!isset($lists[$i]->deleted)) {
                     if (strpos($lists[$i]->elementId, ":") > 0) {
@@ -1472,7 +1472,7 @@ function getOwnerShipObject($token, $object, &$result) {
         $result["log"] .= $local_result;
 
         if (strpos($http_response_header[0], '200') == true || strpos($http_response_header[0], '204') == true) {
-            $lists = json_decode($local_result);
+            $lists = json_decode($local_result)?: [];
             for ($i = 0; $i < count($lists); $i++) {
                 if (!isset($lists[$i]->deleted)) {
                     $org = substr($lists[$i]->elementId, 0, strpos($lists[$i]->elementId, ":"));
@@ -1505,7 +1505,7 @@ function checkOwnershipObject($token, $elementId, $elementType, &$result) {
         $local_result = file_get_contents($url);
 
         if (strpos($http_response_header[0], '200') == true || strpos($http_response_header[0], '204') == true) {
-            $lists = json_decode($local_result);
+            $lists = json_decode($local_result) ?: [] ;
             for ($i = 0; $i < count($lists); $i++) {
                 if (!isset($lists[$i]->deleted) &&
                         isset($lists[$i]->elementId) && ($lists[$i]->elementId == $elementId) &&
@@ -1589,7 +1589,7 @@ function retrieveFromDictionary($type, &$result) {
                 $result["log"] .= '\n ok, returning dictionary';
             } else {
                 $result["status"] = 'ko';
-                $result["error_msg"] = $dictionary{'result'};
+                $result["error_msg"] = $dictionary->{'result'};
                 $result["msg"] .= '\n ko NOT returning dictionary';
                 $result["log"] .= '\n ko NOT returning dictionary';
             }
@@ -4243,6 +4243,7 @@ function logAction($link, $accessed_by, $target_entity_type, $access_type, $enti
     $query = "INSERT INTO access_log(accessed_by,target_entity_type,access_type,entity_name,organization,notes,result) " .
             "VALUES('$accessed_by','$target_entity_type','$access_type','$entity_name','$organization','" . substr($notes, 0, 65000) . "','$result')";
     $res = mysqli_query($link, $query);
+    $result = ["msg" => "", "log" => ""];
     if ($res) {
         $result["msg"] = "correctly logged\n" . $accessed_by . " " . $target_entity_type . " " . $access_type . " " . $entity_name .
                 " " . $notes;
@@ -4292,7 +4293,7 @@ function nifiPurgeCache($organization, $contextBroker, $deviceId) {
     $response = curl_exec($ch);
 
     $error = curl_errno($ch);
-    curl_close($ch);    
+    //curl_close($ch);    
     return $error;
 }
 
@@ -4306,7 +4307,7 @@ function updateDateDeviceModified($link,$deviceId,$contextBroker,$organization,&
             // Success, display the response
             $result["msg"] .= "Invalidated nifi cache succesfully, ";
         }
-        curl_close($ch);
+        //curl_close($ch);
     }
 
     $stmt = $link->prepare(

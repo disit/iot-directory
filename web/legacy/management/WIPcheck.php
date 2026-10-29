@@ -604,10 +604,14 @@ if($action=="check_devices"){
         }
 
 
-        $sql="TRUNCATE TABLE iotdb.devicecheck";
+        $organization = $link->real_escape_string($_REQUEST['organization']);
+
+        $sql = "DELETE FROM iotdb.devicecheck 
+                WHERE organization = '$organization'";
+
         if ($link->query($sql) !== TRUE) {
-            $apiResult['error']=$link->error;
-        }
+            $apiResult['error'] = $link->error;
+}
 
 
         $values = [];
@@ -1895,15 +1899,18 @@ function deleteEventValues($dbConnection,$contextbroker,$deviceId,&$apiResult){
 function recoverBrokerAddress($dbConnection,$contextbroker,$organization)
 {
     try {
-        $stmt = $dbConnection->prepare("SELECT port,ip from iotdb.contextbroker WHERE name = '$contextbroker' AND organization='$organization'");
+        $stmt = $dbConnection->prepare("SELECT port,ip from iotdb.contextbroker WHERE name = ? AND organization = ?");
         $stmt->bind_param("ss", $contextbroker, $organization);
         $stmt->execute();
         $result = $stmt->get_result();
         $row = $result->fetch_assoc();
-        $ip = $row["ip"];
-        $port = $row["port"];
+        if ($row){
+            $ip = $row["ip"];
+            $port = $row["port"];
+            return $brokerAddress = [$ip, $port, true];
+        }
 
-        return $brokerAddress = [$ip, $port, true];
+        return $brokerAddress = ['', '', false];
     }catch(Exception $e){
         return $brokerAddress = ['', '', false];
     }

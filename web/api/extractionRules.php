@@ -202,7 +202,7 @@ if ($action == "insert") {
 	if ($role == 'ToolAdmin' || $role == 'RootAdmin') {
 		$r = create_datatable_data($link, $_REQUEST, $q, "");
 	} else {
-		$r = create_datatable_data($link, $_REQUEST, $q, "username = '" + md5($username) + "' AND organization='$organization'");
+		$r = create_datatable_data($link, $_REQUEST, $q, "username = '" . md5($username) . "' AND organization='$organization'");
 	}
 	$selectedrows = -1;
 	if ($_REQUEST["length"] != -1) {
