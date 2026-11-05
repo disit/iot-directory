@@ -1315,7 +1315,7 @@ function getDelegatorDevice($token, $user, &$result, $eId) {
     $mykeys = array();
     try {
         $url = $GLOBALS["delegationURI"] . "datamanager/api/v2/username/" . urlencode($user) . "/delegator?accessToken=" . $token .
-                "&sourceRequest=iotdirectory";
+                "&sourceRequest=iotdirectory&elementType=IOTID";
         $local_result = file_get_contents($url);
         if (strpos($http_response_header[0], '200') == true || strpos($http_response_header[0], '204') == true) {
             $lists = json_decode($local_result) ?: [];
