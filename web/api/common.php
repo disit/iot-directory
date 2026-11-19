@@ -268,8 +268,8 @@ if(canBeRegistered($id, $devicetype, $contextbroker, $kind, $protocol, $format, 
                     } else {
                         $result["status"] = 'ko';
                         $result["error_msg"] .= "Problem in inserting the device $id in the database. " . generateErrorMessage($link);
-                            $result["msg"] .= "\n Problem in inserting the device $id  in the database. :  <br/>" . generateErrorMessage($link);
-                            $result["log"] .= "\r\n Problem in inserting the device $id  in the database. :  $q  " . generateErrorMessage($link);
+                        $result["msg"] .= "\n Problem in inserting the device $id  in the database. :  <br/>" . generateErrorMessage($link);
+                        $result["log"] .= "\r\n Problem in inserting the device $id  in the database. :  $q  " . generateErrorMessage($link);
                             //se il database non mi risponde è inutile che provi a scrivere l'errore del device perchè non ho il device nel db
                     }
                 } else {

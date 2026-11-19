@@ -29,6 +29,7 @@ $result = array("status" => "", "msg" => "", "content" => "", "log" => "", "erro
 
 header("Content-type: application/json");
 header("Access-Control-Allow-Origin: *\r\n");
+mysqli_report(MYSQLI_REPORT_OFF);
 include ('../config.php');
 include ('common.php');
 $link = mysqli_connect($host, $username, $password) or die("failed to connect to server !!");
